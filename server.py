@@ -1,3 +1,4 @@
+import os
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("bzm-mcp")
