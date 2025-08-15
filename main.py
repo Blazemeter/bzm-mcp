@@ -1,6 +1,4 @@
-def main():
-    print("Hello from bzm-mcp!")
-
+from server import mcp
 
 if __name__ == "__main__":
-    main()
+    mcp.run()
