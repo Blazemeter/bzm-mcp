@@ -1,6 +1,5 @@
-import os
-from mcp.server.fastmcp import FastMCP
+from tools.retrieve_user import register as register_retrieve_user
+from config.token import BzmToken
 
-mcp = FastMCP("bzm-mcp")
-
-BLAZEMETER_API_KEY_FILE_PATH = os.getenv('BLAZEMETER_API_KEY')
+def register_tools(mcp, token):
+    register_retrieve_user(mcp, token)
