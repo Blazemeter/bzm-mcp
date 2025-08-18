@@ -6,7 +6,7 @@ from functools import lru_cache
 
 
 class BzmTokenError(Exception):
-    """Error general al construir o cargar BzmToken."""
+    """Error when constructing or loading BzmToken."""
     pass
 
 
@@ -27,25 +27,25 @@ class BzmToken:
     def from_file(cls, path: Union[str, Path]) -> "BzmToken":
         p = Path(path)
         if not p.exists() or not p.is_file():
-            raise BzmTokenError(f"No existe o no es fichero: {p!r}")
+            raise BzmTokenError(f"File does not exist: {p!r}")
 
         try:
             raw = p.read_text(encoding="utf-8")
             data = json.loads(raw)
         except Exception as e:
-            raise BzmTokenError(f"Error al leer/parsear JSON de {p!r}: {e}") from e
+            raise BzmTokenError(f"Error reading/parsing JSON from {p!r}: {e}") from e
 
         try:
             id_val = data["id"]
             secret_val = data["secret"]
         except KeyError as e:
-            raise BzmTokenError(f"Falta el campo {e.args[0]!r} en {p!r}") from e
+            raise BzmTokenError(f"Missing field {e.args[0]!r} in {p!r}") from e
 
         return cls(id=id_val, secret=secret_val)
 
     def as_basic_auth(self) -> str:
         """
-        Devuelve el header de autenticación HTTP Basic:
+        Returns the HTTP Basic Authentication header:
             "Basic <base64(id:secret)>"
         """
         combo = f"{self.id}:{self.secret}".encode("utf-8")
