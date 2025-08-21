@@ -1,0 +1,34 @@
+name: Build Binaries
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: linux
+          - os: windows-latest  
+            name: windows
+          - os: macos-latest
+            name: macos
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v4
+    - name: Build binary
+      run: |
+        uv sync
+        uv run build.py
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: bzm-mcp-${{ matrix.name }}
+        path: dist/
