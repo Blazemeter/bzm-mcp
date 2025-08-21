@@ -11,14 +11,14 @@ MCP server for BlazeMeter API integration. Provides authentication handling and 
 
 ## Setup
 
-1. **Clone and install dependencies:**
+### 1. **Clone and install dependencies:**
    ```bash
    git clone <repo>
    cd bzm-mcp
    uv sync
    ```
 
-2. **Create API key file in BlazeMeter:**
+### 2. **Create API key file in BlazeMeter:**
    
    Should look like:
    ```json
@@ -29,8 +29,9 @@ MCP server for BlazeMeter API integration. Provides authentication handling and 
    ```
    > `/path/to/your/api-key.json`
 
-3. **Configure MCP client:**
-
+ ### 3.**Configure MCP client:**
+   
+   **3.1. Cursor**
    ```json
    {
      "mcpServers": {
@@ -44,9 +45,13 @@ MCP server for BlazeMeter API integration. Provides authentication handling and 
      }
    }
    ```
-   > **Cursor**: ~/.cursor/mcp.json 
-   >
-   > **Claude**: ~/Library/Application\ Support/Claude/claude_desktop_config.json
+   > Location in MacOs: `~/.cursor/mcp.json`
+
+   **3.2. Claude**
+   ```json
+   Configuration not defined
+   ```
+   > Location in MacOs: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
 
 ## Development
 
