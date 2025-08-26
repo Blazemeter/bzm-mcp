@@ -9,10 +9,10 @@ def register(mcp, token: Optional[BzmToken]):
     """
 
     @mcp.tool(
-        name="bzm_mcp_get_available_tests_for_project",
+        name="bzm_mcp_get_retrieve_all_tests",
         description="Get all tests in a specific project as project_id, workspace as workspace_id and account as account_id formatted for easy selection during test updates. Use this when a user needs to select a test for updating."
     )
-    async def bzm_mcp_get_available_tests_for_project(project_id: id, workspace_id: id, account_id: id) -> Dict[str, Any]:
+    async def bzm_mcp_get_retrieve_all_tests(project_id: id, workspace_id: id, account_id: id) -> Dict[str, Any]:
         tests_response = await api_request(token, "GET", f"/tests?projectId={project_id}&workspaceId={workspace_id}&accountId={account_id}")
         
         if "error" in tests_response:
