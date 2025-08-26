@@ -14,7 +14,7 @@ def register(mcp, token: Optional[BzmToken]) -> None:
 
         api_response = await api_request(token, "GET", ACCOUNTS_ENDPOINT)
         
-        if "error" in api_response:
+        if "error" in api_response and api_response["error"]:
             return f"Error retrieving accounts: {api_response['error']}"
         
         accounts = api_response.get("result", [])
