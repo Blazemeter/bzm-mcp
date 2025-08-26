@@ -1,4 +1,5 @@
 from tools.retrieve_user import register as register_retrieve_user
+from tools.retrieve_workspaces import register as register_retrieve_workspaces
 from config.token import BzmToken
 from typing import Optional
 
@@ -11,3 +12,4 @@ def register_tools(mcp, token: Optional[BzmToken]):
         token: Optional BlazeMeter token (can be None if not configured)
     """
     register_retrieve_user(mcp, token)
+    register_retrieve_workspaces(mcp, token)
