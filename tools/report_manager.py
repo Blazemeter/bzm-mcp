@@ -33,9 +33,6 @@ class ReportManager:
         
         # Get the most recent master (first in the list)
         master_id = masters[0].get("id")
-        logging.info("########### MASTER REQUEST RESPONSE ###########")
-
-        logging.info(masters)
         return {
             "master_id": master_id,
             "error": None
