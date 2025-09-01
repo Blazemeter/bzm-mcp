@@ -2,6 +2,7 @@ from tools.retrieve_user import register as register_retrieve_user
 from tools.retrieve_projects import register as register_retrieve_projects
 from tools.retrieve_workspaces import register as register_retrieve_workspaces
 from tools.test_manager import register as register_test_manager
+from tools.test_execution_manager import register as register_test_execution_manager
 from tools.retrieve_account import register as register_retrieve_account
 from tools.report_manager import register as register_report_manager
 from config.token import BzmToken
@@ -19,5 +20,6 @@ def register_tools(mcp, token: Optional[BzmToken]):
     register_retrieve_projects(mcp, token)
     register_retrieve_workspaces(mcp, token)
     register_test_manager(mcp, token)
+    register_test_execution_manager(mcp, token)
     register_retrieve_account(mcp, token)
     register_report_manager(mcp, token)
