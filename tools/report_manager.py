@@ -3,7 +3,6 @@ from .base import api_request
 from typing import Optional
 from config.token import BzmToken
 from typing import Any, Dict
-import logging
 
 class ReportManager:
 
@@ -101,46 +100,3 @@ class ReportManager:
             "raw_data": report_data
         }
 
-
-def register(mcp, token: Optional[BzmToken]):
-
-    @mcp.tool(
-        name="bzm_mcp_reports_tool",
-        description="""
-        Retrieves multiple types of reports (summary, error, and request statistics) for a given test from the Blazemeter MCP.
-        This tool allows you to fetch detailed information about a test's execution, including overall results, encountered errors, and request-level statistics.
-        Provide the test ID to obtain the relevant reports.
-        Arguments:
-        - test_id (int): The id of the test to get reports for.
-        Returns:
-        - summary_report (dict): The summary report for the test.
-        - error_report (dict): The error report for the test.
-        - request_stats_report (dict): The request statistics report for the test.
-        """
-    )
-    async def bzm_mcp_reports_tool(args: Dict[str, Any]) -> Dict[str, Any]:
-        report_manager = ReportManager(token)
-        try:
-            master_result = await report_manager.get_master_id(args["test_id"])
-            
-            if master_result.get("error"):
-                return {
-                    "result": {
-                        "error": master_result["error"],
-                        "summary_report": {},
-                        "error_report": {},
-                        "request_stats_report": {}
-                    }
-                }
-            
-            master_id = master_result["master_id"]
-            
-            return { 
-                "result": { 
-                    "summary_report": await report_manager.get_summary_report(master_id),
-                    "error_report": await report_manager.get_error_report(master_id),
-                    "request_stats_report": await report_manager.get_request_stats_report(master_id)
-                }
-            }
-        except Exception as e:
-            return {"result": f"Error: {traceback.format_exc()}"}

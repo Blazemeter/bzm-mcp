@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any
 from config.blazemeter import BZM_BASE_URL
 from config.token import BzmToken
 from tools.base import api_request
+from tools.report_manager import ReportManager
 
 
 class TestExecutionManager:
@@ -37,20 +38,46 @@ def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
         name="bzm_mcp_test_execution_tool",
         description="""
-        Operations on tests.
+        Operations on tests and reports.
         Actions:
         - start: start a preconfigured load test, you need to know the testId of a created and configured test.
             args(dict): Dictionary with the following required parameters:
                 test_id (int): The test Id that should be started.
+        - get_summary_report: get the summary report for a given master ID.
+            args(dict): Dictionary with the following required parameters:
+                master_id (int): The master ID to get the summary report for.
+        - get_error_report: get the error report for a given master ID.
+            args(dict): Dictionary with the following required parameters:
+                master_id (int): The master ID to get the error report for.
+        - get_request_stats_report: get the request statistics report for a given master ID.
+            args(dict): Dictionary with the following required parameters:
+                master_id (int): The master ID to get the request statistics report for.
+        - get_all_reports: get all reports (summary, error, and request statistics) for a given master ID.
+            args(dict): Dictionary with the following required parameters:
+                master_id (int): The master ID to get all reports for.
         """
     )
     async def bzm_mcp_test_execution_tool(action: str, args: Dict[str, Any]) -> Dict[str, Any]:
         test_manager = TestExecutionManager(token)
+        report_manager = ReportManager(token)
+        
         try:
             match action:
                 case "start":
-                    return await test_manager.start(args["test_id"])
+                    return {"result": await test_manager.start(args["test_id"])}
+                case "get_summary_report":
+                    return {"result": await report_manager.get_summary_report(args["master_id"])}
+                case "get_error_report":
+                    return {"result": await report_manager.get_error_report(args["master_id"])}
+                case "get_request_stats_report":
+                    return {"result": await report_manager.get_request_stats_report(args["master_id"])}
+                case "get_all_reports":
+                    return {"result": {
+                        "summary_report": await report_manager.get_summary_report(args["master_id"]),
+                        "error_report": await report_manager.get_error_report(args["master_id"]),
+                        "request_stats_report": await report_manager.get_request_stats_report(args["master_id"])
+                    }}
                 case _:
-                    return {"result": f"Action {action} not found in tests manager tool"}
+                    return {"result": f"Action {action} not found in test execution manager tool"}
         except Exception as e:
             return {"result": f"Error: {traceback.format_exc()}"}
