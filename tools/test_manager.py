@@ -1,8 +1,12 @@
 import traceback
+import os
+import asyncio
+from pathlib import Path
 from .base import api_request
-from typing import Optional
+from typing import Optional, List
 from config.token import BzmToken
 from typing import Any, Dict
+import httpx
 
 class TestManager:
 
@@ -22,6 +26,143 @@ class TestManager:
             }
         }
         return await api_request(self.token, "POST", "/tests", json=test_body)
+
+    async def upload_assets(self, test_id: int, file_paths: List[str], main_script: Optional[str] = None) -> Dict[str, Any]:
+  
+        valid_files = []
+        invalid_files = []
+        
+        for file_path in file_paths:
+            if os.path.exists(file_path) and os.path.isfile(file_path):
+                valid_files.append(file_path)
+            else:
+                invalid_files.append(file_path)
+        
+        if not valid_files:
+            return {
+                "error": "No valid files found to upload",
+                "invalid_files": invalid_files
+            }
+        
+        upload_tasks = [self._upload_single_file(test_id, file_path) for file_path in valid_files]
+        upload_results = await asyncio.gather(*upload_tasks, return_exceptions=True)
+        
+        successful_uploads = []
+        failed_uploads = []
+        
+        for i, result in enumerate(upload_results):
+            if isinstance(result, Exception):
+                failed_uploads.append({
+                    "file": valid_files[i],
+                    "error": str(result)
+                })
+            else:
+                successful_uploads.append({
+                    "file": valid_files[i],
+                    "result": result
+                })
+        
+        config_update_result = None
+        if main_script and main_script in valid_files:
+            config_update_result = await self._update_test_configuration(test_id, main_script)
+        
+        return {
+            "test_id": test_id,
+            "successful_uploads": successful_uploads,
+            "failed_uploads": failed_uploads,
+            "invalid_files": invalid_files,
+            "config_update": config_update_result
+        }
+    
+    async def _upload_single_file(self, test_id: int, file_path: str) -> Dict[str, Any]:
+        try:
+            file_path_obj = Path(file_path)
+            file_name = file_path_obj.name
+            
+            # Read file content
+            with open(file_path, 'rb') as file:
+                file_content = file.read()
+            
+            files = {
+                'file': (file_name, file_content, self._get_mime_type(file_path))
+            }
+            
+            endpoint = f"/tests/{test_id}/files"
+            result = await api_request(
+                self.token, 
+                "POST", 
+                endpoint, 
+                files=files
+            )
+            
+            return result
+            
+        except Exception as e:
+            raise Exception(f"Failed to upload {file_path}: {str(e)}")
+    
+    async def _update_test_configuration(self, test_id: int, main_script_path: str) -> Dict[str, Any]:
+        try:
+            file_name = Path(main_script_path).name
+            
+            script_type = self._get_script_type(file_name)
+            
+            config_update = {
+                "configuration": {
+                    "filename": file_name,
+                    "scriptType": script_type
+                }
+            }
+            
+            endpoint = f"/tests/{test_id}"
+            result = await api_request(
+                self.token,
+                "PATCH",
+                endpoint,
+                json=config_update
+            )
+            
+            return result
+            
+        except Exception as e:
+            raise Exception(f"Failed to update test configuration: {str(e)}")
+    
+    def _get_mime_type(self, file_path: str) -> str:
+        """
+        Get MIME type based on file extension.
+        
+        Args:
+            file_path: Path to the file
+        
+        Returns:
+            MIME type string
+        """
+        extension = Path(file_path).suffix.lower()
+        
+        mime_types = {
+            '.jmx': 'application/xml',
+            '.yaml': 'text/yaml',
+            '.yml': 'text/yaml',
+            '.csv': 'text/csv',
+            '.zip': 'application/zip',
+            '.jar': 'application/java-archive',
+            '.properties': 'text/plain',
+            '.xml': 'application/xml'
+        }
+        
+        return mime_types.get(extension, 'application/octet-stream')
+    
+    def _get_script_type(self, file_name: str) -> str:
+        extension = Path(file_name).suffix.lower()
+        
+        script_types = {
+            '.jmx': 'jmeter',
+            '.yaml': 'taurus',
+            '.yml': 'taurus',
+            '.py': 'python',
+            '.js': 'javascript'
+        }
+        
+        return script_types.get(extension, 'unknown')
 
     async def list(self, account_id: int, workspace_id: int, project_id: int, limit: int = 50, offset: int = 0):
         parameters = {
@@ -79,6 +220,11 @@ def register(mcp, token: Optional[BzmToken]):
                 project_id (int): The id of the project to list tests from.
                 limit (int, default=50): The number of tests to list.
                 offset (int, default=0): Number of tests to skip.
+        - upload_assets: Upload multiple assets to a test. Supports .zip, .csv, .jmx, .yaml and other file types.
+            args(dict): Dictionary with the following required parameters:
+                test_id (int): The id of the test to upload assets to.
+                file_paths (list): List of full file paths to upload.
+                main_script (str, optional): Path to the main script file. If provided, will update test configuration to use this script.
         """
     )
     async def bzm_mcp_tests_tool(action: str, args: Dict[str, Any]) -> Dict[str, Any]:
@@ -89,6 +235,12 @@ def register(mcp, token: Optional[BzmToken]):
                     return await test_manager.create(args["test_name"], args["project_id"])
                 case "list":
                     return await test_manager.list(args["account_id"], args["workspace_id"], args["project_id"], args["limit"], args["offset"])
+                case "upload_assets":
+                    return await test_manager.upload_assets(
+                        args["test_id"], 
+                        args["file_paths"], 
+                        args.get("main_script")
+                    )
                 case _:
                     return {"result": f"Action {action} not found in tests manager tool"}
         except Exception as e:
