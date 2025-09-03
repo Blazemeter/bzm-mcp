@@ -6,7 +6,10 @@ from .base import api_request
 from typing import Optional, List
 from config.token import BzmToken
 from typing import Any, Dict
-import httpx
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class TestManager:
 
@@ -28,35 +31,50 @@ class TestManager:
         return await api_request(self.token, "POST", "/tests", json=test_body)
 
     async def upload_assets(self, test_id: int, file_paths: List[str], main_script: Optional[str] = None) -> Dict[str, Any]:
-  
+        logger.debug(f"Starting upload_assets for test_id: {test_id}")
+        logger.debug(f"File paths: {file_paths}")
+        logger.debug(f"Main script: {main_script}")
+        
         valid_files = []
         invalid_files = []
         
         for file_path in file_paths:
+            logger.debug(f"Checking file: {file_path}")
             if os.path.exists(file_path) and os.path.isfile(file_path):
+                logger.debug(f"File exists: {file_path}")
                 valid_files.append(file_path)
             else:
+                logger.debug(f"File does not exist: {file_path}")
                 invalid_files.append(file_path)
         
+        logger.debug(f"Valid files: {valid_files}")
+        logger.debug(f"Invalid files: {invalid_files}")
+        
         if not valid_files:
+            logger.error("No valid files found to upload")
             return {
                 "error": "No valid files found to upload",
                 "invalid_files": invalid_files
             }
         
+        logger.debug("Starting concurrent uploads")
         upload_tasks = [self._upload_single_file(test_id, file_path) for file_path in valid_files]
         upload_results = await asyncio.gather(*upload_tasks, return_exceptions=True)
+        
+        logger.debug(f"Upload results: {upload_results}")
         
         successful_uploads = []
         failed_uploads = []
         
         for i, result in enumerate(upload_results):
             if isinstance(result, Exception):
+                logger.error(f"Upload failed for {valid_files[i]}: {result}")
                 failed_uploads.append({
                     "file": valid_files[i],
                     "error": str(result)
                 })
             else:
+                logger.debug(f"Upload successful for {valid_files[i]}: {result}")
                 successful_uploads.append({
                     "file": valid_files[i],
                     "result": result
@@ -64,6 +82,7 @@ class TestManager:
         
         config_update_result = None
         if main_script and main_script in valid_files:
+            logger.debug(f"Updating test configuration with main script: {main_script}")
             config_update_result = await self._update_test_configuration(test_id, main_script)
         
         return {
@@ -75,29 +94,34 @@ class TestManager:
         }
     
     async def _upload_single_file(self, test_id: int, file_path: str) -> Dict[str, Any]:
+        logger.debug(f"Uploading single file: {file_path} to test: {test_id}")
         try:
             file_path_obj = Path(file_path)
             file_name = file_path_obj.name
             
+            logger.debug(f"File name: {file_name}")
+            
             # Read file content
             with open(file_path, 'rb') as file:
                 file_content = file.read()
+            
+            logger.debug(f"File size: {len(file_content)} bytes")
             
             files = {
                 'file': (file_name, file_content, self._get_mime_type(file_path))
             }
             
             endpoint = f"/tests/{test_id}/files"
-            result = await api_request(
-                self.token, 
-                "POST", 
-                endpoint, 
-                files=files
-            )
+            logger.debug(f"Uploading to endpoint: {endpoint}")
+            
+            result = await api_request(self.token, "POST", endpoint, files=files)
+            logger.debug(f"Upload result: {result}")
             
             return result
             
         except Exception as e:
+            logger.error(f"Exception in _upload_single_file: {e}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             raise Exception(f"Failed to upload {file_path}: {str(e)}")
     
     async def _update_test_configuration(self, test_id: int, main_script_path: str) -> Dict[str, Any]:
@@ -127,15 +151,6 @@ class TestManager:
             raise Exception(f"Failed to update test configuration: {str(e)}")
     
     def _get_mime_type(self, file_path: str) -> str:
-        """
-        Get MIME type based on file extension.
-        
-        Args:
-            file_path: Path to the file
-        
-        Returns:
-            MIME type string
-        """
         extension = Path(file_path).suffix.lower()
         
         mime_types = {
