@@ -5,7 +5,6 @@ from config.token import BzmToken
 from typing import Any, Dict
 from models.performance_test import PerformanceTestObject
 
-
 class TestManager:
 
     def __init__(self,token: Optional[BzmToken]):
@@ -98,11 +97,11 @@ def register(mcp, token: Optional[BzmToken]):
                      The test will be configured based on the following parameters only if user confirms the configuration:
             args(dict): Dictionary with the following parameters:
                 test_id (int): The only required parameter. The id of the test to configure.
-                iterations (int, default=1): The number of iterations to run the test with. Not available if holdFor is provided. null if disabled.
-                holdFor (str, default=1m): The length of time the test will run at the peak concurrency. Values can be provided in m (minutes) only. Not available if iterations is provided. null if disabled.
+                iterations (int, default=1): The number of iterations to run the test with. Not available if hold-for is provided. null if disabled.
+                hold-for (str, default=1m): The length of time the test will run at the peak concurrency. Values can be provided in m (minutes) only. Not available if iterations is provided. null if disabled.
                 concurrency (int, default=20): The number of concurrent virtual users simulated to run. For example, 20 will set the test to run with 20 concurrent users. Minimum: 1.
-                rampUp (str): The length of time the test will take to ramp-up to full concurrency. Values can be provided in m (minutes) only. Can be empty.
-                steps (int, default=1): The number of rampup steps. Can be empty.
+                ramp-up (str): The length of time the test will take to ramp-up to full concurrency. Values can be provided in m (minutes) only. Can be empty.
+                steps (int, default=1): The number of ramp-up steps. Can be empty.
                 executor (str, default=jmeter): The script type you are running. Includes the following options: (gatling,grinder,jmeter,locust,pbench,selenium,siege).
         """
     )
