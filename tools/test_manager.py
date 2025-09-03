@@ -3,6 +3,7 @@ from .base import api_request
 from typing import Optional
 from config.token import BzmToken
 from typing import Any, Dict
+from models.performance_test import PerformanceTestObject
 
 class TestManager:
 
@@ -41,6 +42,19 @@ class TestManager:
             "has_more": has_more
         }
     
+    async def configure(self, performance_test: PerformanceTestObject): 
+        if not performance_test.is_valid():
+            raise ValueError("PerformanceTestObject must have a valid test_id")
+        
+        configuration = performance_test.get_configuration()
+        configuration_body = {
+            "overrideExecutions": [configuration]
+        }
+        
+        response = await api_request(self.token, "PATCH", f"/tests/{performance_test.test_id}", json=configuration_body)
+        return response
+    
+
     def normalize_tests(self, tests) -> Dict[str, Any]:
         
         formatted_tests = []
@@ -79,6 +93,16 @@ def register(mcp, token: Optional[BzmToken]):
                 project_id (int): The id of the project to list tests from.
                 limit (int, default=50): The number of tests to list.
                 offset (int, default=0): Number of tests to skip.
+        - configure: Configure a performance test for the given test id. The test id is the only required parameter. 
+                     The test will be configured based on the following parameters only if user confirms the configuration:
+            args(dict): Dictionary with the following parameters:
+                test_id (int): The only required parameter. The id of the test to configure.
+                iterations (int, default=1): The number of iterations to run the test with. Not available if hold-for is provided. null if disabled.
+                hold-for (str, default=1m): The length of time the test will run at the peak concurrency. Values can be provided in m (minutes) only. Not available if iterations is provided. null if disabled.
+                concurrency (int, default=20): The number of concurrent virtual users simulated to run. For example, 20 will set the test to run with 20 concurrent users. Minimum: 1.
+                ramp-up (str): The length of time the test will take to ramp-up to full concurrency. Values can be provided in m (minutes) only. Can be empty.
+                steps (int, default=1): The number of ramp-up steps. Can be empty.
+                executor (str, default=jmeter): The script type you are running. Includes the following options: (gatling,grinder,jmeter,locust,pbench,selenium,siege).
         """
     )
     async def bzm_mcp_tests_tool(action: str, args: Dict[str, Any]) -> Dict[str, Any]:
@@ -89,6 +113,9 @@ def register(mcp, token: Optional[BzmToken]):
                     return await test_manager.create(args["test_name"], args["project_id"])
                 case "list":
                     return await test_manager.list(args["account_id"], args["workspace_id"], args["project_id"], args["limit"], args["offset"])
+                case "configure":
+                    performance_test = PerformanceTestObject.from_args(args)
+                    return await test_manager.configure(performance_test)
                 case _:
                     return {"result": f"Action {action} not found in tests manager tool"}
         except Exception as e:
