@@ -101,7 +101,6 @@ class TestManager:
             
             logger.debug(f"File name: {file_name}")
             
-            # Read file content
             with open(file_path, 'rb') as file:
                 file_content = file.read()
             
