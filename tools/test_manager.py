@@ -30,15 +30,8 @@ class TestManager:
             }
         }
         return await api_request(self.token, "POST", "/tests", json=test_body)
-
-    async def upload_assets(self, test_id: int, file_paths: List[str], main_script: Optional[str] = None) -> Dict[str, Any]:
-        logger.debug(f"Starting upload_assets for test_id: {test_id}")
-        logger.debug(f"File paths: {file_paths}")
-        logger.debug(f"Main script: {main_script}")
-        
-        valid_files = []
-        invalid_files = []
-        
+    
+    def _validate_files(self, file_paths: List[str], valid_files: List[str], invalid_files: List[str]):
         for file_path in file_paths:
             logger.debug(f"Checking file: {file_path}")
             if os.path.exists(file_path) and os.path.isfile(file_path):
@@ -47,6 +40,30 @@ class TestManager:
             else:
                 logger.debug(f"File does not exist: {file_path}")
                 invalid_files.append(file_path)
+    def _process_upload_results(self, upload_results: List[Dict[str, Any]], valid_files: List[str], successful_uploads: List[Dict[str, Any]], failed_uploads: List[Dict[str, Any]]):
+        for i, result in enumerate(upload_results):
+            if isinstance(result, Exception):
+                logger.error(f"Upload failed for {valid_files[i]}: {result}")
+                failed_uploads.append({
+                    "file": valid_files[i],
+                    "error": str(result)
+                })
+            else:
+                logger.debug(f"Upload successful for {valid_files[i]}: {result}")
+                successful_uploads.append({
+                    "file": valid_files[i],
+                    "result": result
+                })
+        
+    async def upload_assets(self, test_id: int, file_paths: List[str], main_script: Optional[str] = None) -> Dict[str, Any]:
+        logger.debug(f"Starting upload_assets for test_id: {test_id}")
+        logger.debug(f"File paths: {file_paths}")
+        logger.debug(f"Main script: {main_script}")
+        
+        valid_files = []
+        invalid_files = []
+        
+        self._validate_files(file_paths, valid_files, invalid_files)
         
         logger.debug(f"Valid files: {valid_files}")
         logger.debug(f"Invalid files: {invalid_files}")
@@ -67,19 +84,7 @@ class TestManager:
         successful_uploads = []
         failed_uploads = []
         
-        for i, result in enumerate(upload_results):
-            if isinstance(result, Exception):
-                logger.error(f"Upload failed for {valid_files[i]}: {result}")
-                failed_uploads.append({
-                    "file": valid_files[i],
-                    "error": str(result)
-                })
-            else:
-                logger.debug(f"Upload successful for {valid_files[i]}: {result}")
-                successful_uploads.append({
-                    "file": valid_files[i],
-                    "result": result
-                })
+        self._process_upload_results(upload_results, valid_files, successful_uploads, failed_uploads)
         
         config_update_result = None
         if main_script and main_script in valid_files:
@@ -258,7 +263,7 @@ def register(mcp, token: Optional[BzmToken]):
                 ramp-up (str): The length of time the test will take to ramp-up to full concurrency. Values can be provided in m (minutes) only. Can be empty.
                 steps (int, default=1): The number of ramp-up steps. Can be empty.
                 executor (str, default=jmeter): The script type you are running. Includes the following options: (gatling,grinder,jmeter,locust,pbench,selenium,siege).
-        - upload_assets: Upload multiple assets to a test. Supports .zip, .csv, .jmx, .yaml and other file types.
+        - upload_assets: Upload main script test as well as multiple related assets to a test. Supports .zip, .csv, .jmx, .yaml and other file types.
             args(dict): Dictionary with the following required parameters:
                 test_id (int): The id of the test to upload assets to.
                 file_paths (list): List of full file paths to upload.
