@@ -3,11 +3,13 @@ from datetime import datetime
 from typing import Any, Dict
 from typing import Optional, List, Union
 
+from mcp.server.fastmcp import Context
 from pydantic import Field, BaseModel
 
 from config.token import BzmToken
 from models.performance_test import PerformanceTestObject
-from .base import api_request, BaseResult
+from models.result import BaseResult
+from .base import api_request, get_date_time_iso, TOOLS_PREFIX
 
 
 class Test(BaseModel):
@@ -15,8 +17,8 @@ class Test(BaseModel):
     test_id: int = Field(description="The unique identifier for the test. Also known as a testId")
     test_name: str = Field(description="The test name")
     description: str = Field(description="A description of the test")
-    created: datetime = Field(description="The datetime that the test was created.")
-    updated: datetime = Field(description="The datetime that the test was updated")
+    created: Optional[str] = Field(description="The datetime that the test was created.", default=None)
+    updated: Optional[str] = Field(description="The datetime that the test was updated", default=None)
     project_id: int = Field(description="The project Id to which this test belongs")
     status: str = Field(description="The status of the test")  # TODO: Really exist?
     type: str = Field(description="The type of the test")  # TODO: Really exist?
@@ -44,6 +46,12 @@ class TestManager:
             }
         }
         test_response = await api_request(self.token, "POST", "/tests", json=test_body)
+
+        if "error" in test_response and test_response["error"]:
+            return TestResult(
+                error=test_response.get("error")
+            )
+
         tests = [test_response.get("result", None)]
         return TestResult(
             result=self.normalize_tests(tests)
@@ -61,6 +69,12 @@ class TestManager:
         }
 
         tests_response = await api_request(self.token, "GET", "/tests", params=parameters)
+
+        if "error" in tests_response and tests_response["error"]:
+            return TestResult(
+                error=tests_response.get("error")
+            )
+
         tests = tests_response.get("result", [])
         has_more = tests_response.get("total", 0) - (offset + limit) > 0
 
@@ -80,6 +94,12 @@ class TestManager:
 
         test_response = await api_request(self.token, "PATCH", f"/tests/{performance_test.test_id}",
                                           json=configuration_body)
+
+        if "error" in test_response and test_response["error"]:
+            return TestResult(
+                error=test_response.get("error")
+            )
+
         tests = [test_response.get("result", None)]
         return TestResult(
             result=self.normalize_tests(tests)
@@ -94,8 +114,8 @@ class TestManager:
                 "test_id": test.get("id"),
                 "test_name": test.get("name", "Unknown"),
                 "description": test.get("description", ""),
-                "created": datetime.fromtimestamp(test.get("created")),
-                "updated": datetime.fromtimestamp(test.get("updated")),
+                "created": get_date_time_iso(test.get("created")),
+                "updated": get_date_time_iso(test.get("updated")),
                 "project_id": test.get("projectId"),
                 "status": test.get("status", "Unknown"),
                 "type": test.get("type", "Unknown"),
@@ -109,7 +129,7 @@ class TestManager:
 
 def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
-        name="bzm_mcp_tests",
+        name=f"{TOOLS_PREFIX}_tests",
         description="""
         Operations on tests.
         Actions:
@@ -136,7 +156,7 @@ def register(mcp, token: Optional[BzmToken]):
                 executor (str, default=jmeter): The script type you are running. Includes the following options: (gatling,grinder,jmeter,locust,pbench,selenium,siege).
         """
     )
-    async def bzm_mcp_tests_tool(action: str, args: Dict[str, Any]) -> TestResult:
+    async def tests(action: str, args: Dict[str, Any], ctx: Context) -> TestResult:
         test_manager = TestManager(token)
         try:
             match action:
@@ -144,7 +164,7 @@ def register(mcp, token: Optional[BzmToken]):
                     return await test_manager.create(args["test_name"], args["project_id"])
                 case "list":
                     return await test_manager.list(args["account_id"], args["workspace_id"], args["project_id"],
-                                                   args["limit"], args["offset"])
+                                                   args.get("limit", 50), args.get("offset", 0))
                 case "configure":
                     performance_test = PerformanceTestObject.from_args(args)
                     return await test_manager.configure(performance_test)
