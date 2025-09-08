@@ -2,18 +2,20 @@ import traceback
 from datetime import datetime
 from typing import Any, Dict, Optional, List, Union
 
+from mcp.server.fastmcp import Context
 from pydantic import BaseModel, Field
 
 from config.token import BzmToken
-from .base import api_request, BaseResult
+from models.result import BaseResult
+from .base import api_request, get_date_time_iso, TOOLS_PREFIX
 
 
 class Workspace(BaseModel):
     """Workspace basic information structure."""
     workspace_id: int = Field(description="The unique identifier for the workspace. Also known as a workspaceId")
     name: str = Field(description="The name of this workspace")
-    created: datetime = Field(description="The datetime for when the workspace was created")
-    updated: datetime = Field(description="The datetime for when the workspace was updated")
+    created: Optional[str] = Field(description="The datetime for when the workspace was created", default=None)
+    updated: Optional[str] = Field(description="The datetime for when the workspace was updated", default=None)
     enabled: bool = Field(description="Denotes if the workspace is enabled or not")
 
 
@@ -68,8 +70,8 @@ class WorkspaceManager:
             workspace_element = {
                 "workspace_id": workspace["id"],
                 "name": workspace["name"],
-                "created": datetime.fromtimestamp(workspace["created"]),
-                "updated": datetime.fromtimestamp(workspace["updated"]),
+                "created": get_date_time_iso(workspace["created"]),
+                "updated": get_date_time_iso(workspace["updated"]),
                 "enabled": workspace["enabled"],
             }
             if detailed:
@@ -85,13 +87,8 @@ class WorkspaceManager:
 
 
 def register(mcp, token: Optional[BzmToken]):
-    """
-    Registers the `bzm_mcp_retrieve_workspaces` tool on the given MCP server,
-    using the provided BzmToken for authentication.
-    """
-
     @mcp.tool(
-        name="bzm_mcp_workspaces",
+        name=f"{TOOLS_PREFIX}_workspaces",
         description="""
                 Operations on workspaces.
                 Actions: 
@@ -105,14 +102,15 @@ def register(mcp, token: Optional[BzmToken]):
                         offset (int, default=0): Number of workspaces to skip.
                 """
     )
-    async def bzm_mcp_tests_tool(action: str, args: Dict[str, Any]) -> WorkspaceResult:
+    async def workspace(action: str, args: Dict[str, Any], ctx: Context) -> WorkspaceResult:
         workspace_manager = WorkspaceManager(token)
         try:
             match action:
                 case "read":
                     return await workspace_manager.read(args["workspace_id"])
                 case "list":
-                    return await workspace_manager.list(args["account_id"], args.get("limit", 50), args.get("offset", 0))
+                    return await workspace_manager.list(args["account_id"], args.get("limit", 50),
+                                                        args.get("offset", 0))
                 case _:
                     return WorkspaceResult(
                         error=f"Action {action} not found in tests manager tool"

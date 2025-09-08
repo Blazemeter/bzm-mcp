@@ -1,15 +1,15 @@
 """
 Simple utilities for BlazeMeter MCP tools.
 """
-
-from typing import Any, Dict, Optional, List
+from datetime import datetime
+from typing import Any, Dict, Optional
 
 import httpx
-from pydantic import BaseModel, Field
 
 from config.blazemeter import BZM_API_BASE_URL
 from config.token import BzmToken
 
+TOOLS_PREFIX = "blazemeter"
 
 async def api_request(token: Optional[BzmToken], method: str, endpoint: str, **kwargs) -> Dict[str, Any]:
     """
@@ -32,14 +32,8 @@ async def api_request(token: Optional[BzmToken], method: str, endpoint: str, **k
                 return {"error": "Invalid credentials"}
             raise
 
-
-class BaseResult(BaseModel):
-    result: Optional[List[Any]] = Field(description="Result List", default=None)
-    has_more: Optional[bool] = Field(description="More records per page to list", default=None)
-    error: Optional[str] = Field(description="Error message", default=None)
-
-    def model_dump(self, **kwargs):
-        return super().model_dump(exclude_none=True, **kwargs)
-
-    def model_dump_json(self, **kwargs):
-        return super().model_dump_json(exclude_none=True, **kwargs)
+def get_date_time_iso(timestamp: int) -> Optional[str]:
+    if timestamp is None:
+        return None
+    else:
+        return datetime.fromtimestamp(timestamp).isoformat()

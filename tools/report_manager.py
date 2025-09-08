@@ -1,8 +1,8 @@
-import traceback
-from .base import api_request
 from typing import Optional
+
 from config.token import BzmToken
-from typing import Any, Dict
+from .base import api_request
+
 
 class ReportManager:
 
@@ -12,12 +12,12 @@ class ReportManager:
 
     def _apply_paging(self, all_data: list, limit: int, offset: int, master_id: int, report_type: str):
         total = len(all_data)
-        
+
         start_idx = offset
         end_idx = offset + limit
         paged_data = all_data[start_idx:end_idx]
         has_more = end_idx < total
-        
+
         return {
             "execution_id": master_id,
             "report_type": report_type,
@@ -33,16 +33,16 @@ class ReportManager:
 
     async def get_summary_report(self, master_id: int):
         endpoint = f"/masters/{master_id}/reports/default/summary"
-        
+
         report_response = await api_request(self.token, "GET", endpoint)
-        
+
         if "error" in report_response and report_response["error"]:
             return {
                 "error": report_response.get("error")
             }
-        
+
         report_data = report_response.get("result", {})
-        
+
         return {
             "master_id": master_id,
             "report_type": "summary",
@@ -55,9 +55,9 @@ class ReportManager:
         Always returns paged results for AI efficiency.
         """
         endpoint = f"/masters/{master_id}/reports/errorsreport/data"
-        
+
         report_response = await api_request(self.token, "GET", endpoint)
-        
+
         if "error" in report_response and report_response["error"]:
             return {
                 "master_id": master_id,
@@ -67,7 +67,7 @@ class ReportManager:
                 "has_more": False,
                 "total": 0
             }
-        
+
         all_data = report_response.get("result", [])
         return self._apply_paging(all_data, limit, offset, master_id, "errors")
 
@@ -77,9 +77,9 @@ class ReportManager:
         Always returns paged results for AI efficiency.
         """
         endpoint = f"/masters/{master_id}/reports/aggregatereport/data"
-        
+
         report_response = await api_request(self.token, "GET", endpoint)
-        
+
         if "error" in report_response and report_response["error"]:
             return {
                 "master_id": master_id,
@@ -89,9 +89,6 @@ class ReportManager:
                 "has_more": False,
                 "total": 0
             }
-        
+
         all_data = report_response.get("result", [])
         return self._apply_paging(all_data, limit, offset, master_id, "request_stats")
-
-   
-
