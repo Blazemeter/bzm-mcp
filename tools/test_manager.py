@@ -1,17 +1,38 @@
 import traceback
-from .base import api_request
-from typing import Optional
-from config.token import BzmToken
+from datetime import datetime
 from typing import Any, Dict
+from typing import Optional, List, Union
+
+from pydantic import Field, BaseModel
+
+from config.token import BzmToken
 from models.performance_test import PerformanceTestObject
+from .base import api_request, BaseResult
+
+
+class Test(BaseModel):
+    """Test basic information structure."""
+    test_id: int = Field(description="The unique identifier for the test. Also known as a testId")
+    test_name: str = Field(description="The test name")
+    description: str = Field(description="A description of the test")
+    created: datetime = Field(description="The datetime that the test was created.")
+    updated: datetime = Field(description="The datetime that the test was updated")
+    project_id: int = Field(description="The project Id to which this test belongs")
+    status: str = Field(description="The status of the test")  # TODO: Really exist?
+    type: str = Field(description="The type of the test")  # TODO: Really exist?
+    configuration: Dict[str, Any] = Field(description="Contains all the advanced BlazeMeter related configurations")
+
+
+class TestResult(BaseResult):
+    result: Optional[List[Union[Test]]] = Field(description="Tests List", default=None)
+
 
 class TestManager:
 
-    def __init__(self,token: Optional[BzmToken]):
-        self.tests = []
+    def __init__(self, token: Optional[BzmToken]):
         self.token = token
 
-    async def create(self, test_name: str, project_id: int):
+    async def create(self, test_name: str, project_id: int) -> TestResult:
         test_body = {
             "name": test_name,
             "projectId": project_id,
@@ -22,63 +43,73 @@ class TestManager:
                 "scriptType": "jmeter"
             }
         }
-        return await api_request(self.token, "POST", "/tests", json=test_body)
+        test_response = await api_request(self.token, "POST", "/tests", json=test_body)
+        tests = [test_response.get("result", None)]
+        return TestResult(
+            result=self.normalize_tests(tests)
+        )
 
-    async def list(self, account_id: int, workspace_id: int, project_id: int, limit: int = 50, offset: int = 0):
+    async def list(self, account_id: int, workspace_id: int, project_id: int, limit: int = 50,
+                   offset: int = 0) -> TestResult:
         parameters = {
             "projectId": project_id,
             "workspaceId": workspace_id,
             "accountId": account_id,
             "limit": limit,
-            "skip": offset
+            "skip": offset,
+            "sort[]": "-updated"
         }
 
-        tests_response = await api_request(self.token, "GET", f"/tests", params=parameters)
+        tests_response = await api_request(self.token, "GET", "/tests", params=parameters)
         tests = tests_response.get("result", [])
         has_more = tests_response.get("total", 0) - (offset + limit) > 0
 
-        return {
-            "tests": self.normalize_tests(tests),
-            "has_more": has_more
-        }
-    
-    async def configure(self, performance_test: PerformanceTestObject): 
+        return TestResult(
+            result=self.normalize_tests(tests),
+            has_more=has_more
+        )
+
+    async def configure(self, performance_test: PerformanceTestObject) -> TestResult:
         if not performance_test.is_valid():
             raise ValueError("PerformanceTestObject must have a valid test_id")
-        
+
         configuration = performance_test.get_configuration()
         configuration_body = {
             "overrideExecutions": [configuration]
         }
-        
-        response = await api_request(self.token, "PATCH", f"/tests/{performance_test.test_id}", json=configuration_body)
-        return response
-    
 
-    def normalize_tests(self, tests) -> Dict[str, Any]:
-        
+        test_response = await api_request(self.token, "PATCH", f"/tests/{performance_test.test_id}",
+                                          json=configuration_body)
+        tests = [test_response.get("result", None)]
+        return TestResult(
+            result=self.normalize_tests(tests)
+        )
+
+    @staticmethod
+    def normalize_tests(tests: List[Any]) -> List[Test]:
+
         formatted_tests = []
         for test in tests:
-            formatted_test = {
-                "id": test.get("id"),
-                "name": test.get("name", "Unknown"),
+            test_element = {
+                "test_id": test.get("id"),
+                "test_name": test.get("name", "Unknown"),
                 "description": test.get("description", ""),
-                "created": test.get("created"),
-                "updated": test.get("updated"),
-                "projectId": test.get("projectId"),
+                "created": datetime.fromtimestamp(test.get("created")),
+                "updated": datetime.fromtimestamp(test.get("updated")),
+                "project_id": test.get("projectId"),
                 "status": test.get("status", "Unknown"),
                 "type": test.get("type", "Unknown"),
                 "configuration": test.get("configuration", {})
             }
-            formatted_tests.append(formatted_test)
-        
+            test_object = Test(**test_element)
+            formatted_tests.append(test_object)
+
         return formatted_tests
 
 
 def register(mcp, token: Optional[BzmToken]):
-
     @mcp.tool(
-        name="bzm_mcp_tests_tool",
+        name="bzm_mcp_tests",
         description="""
         Operations on tests.
         Actions:
@@ -105,18 +136,23 @@ def register(mcp, token: Optional[BzmToken]):
                 executor (str, default=jmeter): The script type you are running. Includes the following options: (gatling,grinder,jmeter,locust,pbench,selenium,siege).
         """
     )
-    async def bzm_mcp_tests_tool(action: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    async def bzm_mcp_tests_tool(action: str, args: Dict[str, Any]) -> TestResult:
         test_manager = TestManager(token)
         try:
             match action:
-                case "create": 
+                case "create":
                     return await test_manager.create(args["test_name"], args["project_id"])
                 case "list":
-                    return await test_manager.list(args["account_id"], args["workspace_id"], args["project_id"], args["limit"], args["offset"])
+                    return await test_manager.list(args["account_id"], args["workspace_id"], args["project_id"],
+                                                   args["limit"], args["offset"])
                 case "configure":
                     performance_test = PerformanceTestObject.from_args(args)
                     return await test_manager.configure(performance_test)
                 case _:
-                    return {"result": f"Action {action} not found in tests manager tool"}
-        except Exception as e:
-            return {"result": f"Error: {traceback.format_exc()}"}
+                    return TestResult(
+                        error=f"Action {action} not found in tests manager tool"
+                    )
+        except Exception:
+            return TestResult(
+                error=f"Error: {traceback.format_exc()}"
+            )
