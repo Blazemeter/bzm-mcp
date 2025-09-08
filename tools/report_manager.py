@@ -10,33 +10,6 @@ class ReportManager:
         self.reports = []
         self.token = token
 
-    async def get_master_id(self, test_id: int):
-        """Get the masterId for a given testId from the /masters endpoint"""
-        endpoint = f"/masters?testId={test_id}"
-        
-        masters_response = await api_request(self.token, "GET", endpoint)
-        
-        if "error" in masters_response and masters_response["error"]:
-            return {
-                "error": masters_response.get("error"),
-                "master_id": None
-            }
-        
-        masters = masters_response.get("result", [])
-        
-        if not masters:
-            return {
-                "error": f"No masters found for testId {test_id}",
-                "master_id": None
-            }
-        
-        # Get the most recent master (first in the list)
-        master_id = masters[0].get("id")
-        return {
-            "master_id": master_id,
-            "error": None
-        }
-
     def _apply_paging(self, all_data: list, limit: int, offset: int, master_id: int, report_type: str):
         total = len(all_data)
         
@@ -46,7 +19,7 @@ class ReportManager:
         has_more = end_idx < total
         
         return {
-            "master_id": master_id,
+            "execution_id": master_id,
             "report_type": report_type,
             "raw_data": paged_data,
             "has_more": has_more,
@@ -65,10 +38,7 @@ class ReportManager:
         
         if "error" in report_response and report_response["error"]:
             return {
-                "master_id": master_id,
-                "report_type": "summary",
-                "error": report_response.get("error"),
-                "raw_data": {}
+                "error": report_response.get("error")
             }
         
         report_data = report_response.get("result", {})
