@@ -36,6 +36,7 @@ jobs:
         platforms: arm64
     
     - name: Build binary
+      shell: bash
       run: |
         uv sync
         if [[ "${{ matrix.name }}" == "linux" && "${{ matrix.arch }}" == "arm64" && "$(uname -m)" != "aarch64" ]]; then
