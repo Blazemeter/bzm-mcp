@@ -16,8 +16,8 @@ jobs:
           - os: ubuntu-latest
             name: linux
             arch: amd64
-          - os: ubuntu-latest
-            name: linux
+          - os: ubuntu-24.04-arm
+            name: linux  
             arch: arm64
           - os: windows-latest  
             name: windows
@@ -29,27 +29,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: astral-sh/setup-uv@v4
-    - name: Set up QEMU for cross-compilation
-      if: matrix.name == 'linux' && matrix.arch == 'arm64'
-      uses: docker/setup-qemu-action@v3
-      with:
-        platforms: arm64
-    
     - name: Build binary
       shell: bash
       run: |
         uv sync
-        if [[ "${{ matrix.name }}" == "linux" && "${{ matrix.arch }}" == "arm64" && "$(uname -m)" != "aarch64" ]]; then
-          echo "Cross-compiling for ARM64 Linux..."
-          # Use Docker for cross-compilation to ARM64
-          docker run --rm --platform linux/arm64 \
-            -v "$(pwd)":/workspace \
-            -w /workspace \
-            python:3.11-slim \
-            bash -c "apt-get update && apt-get install -y binutils && pip install uv && uv sync && uv run build.py"
-        else
-          uv run build.py
-        fi
+        uv run build.py
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
