@@ -46,7 +46,7 @@ jobs:
             -v "$(pwd)":/workspace \
             -w /workspace \
             python:3.11-slim \
-            bash -c "pip install uv && uv sync && uv run build.py"
+            bash -c "apt-get update && apt-get install -y binutils && pip install uv && uv sync && uv run build.py"
         else
           uv run build.py
         fi
