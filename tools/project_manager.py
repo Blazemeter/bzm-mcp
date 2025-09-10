@@ -67,6 +67,7 @@ def register(mcp, token: Optional[BzmToken]):
                 offset (int, default=0): Number of projects to skip.
         Hints:
         - For a particular project, go directly to the read action (you don't need account or workspace information).
+        - Reading also allows you to obtain the number of tests the project has without having to use a list to count.
         """
     )
     async def project(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
