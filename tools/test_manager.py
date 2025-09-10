@@ -202,12 +202,10 @@ class TestManager:
 
         return script_types.get(extension, 'unknown')
 
-    async def list(self, account_id: int, workspace_id: int, project_id: int, limit: int = 50,
+    async def list(self, project_id: int, limit: int = 50,
                    offset: int = 0) -> BaseResult:
         parameters = {
             "projectId": project_id,
-            "workspaceId": workspace_id,
-            "accountId": account_id,
             "limit": limit,
             "skip": offset,
             "sort[]": "-updated"
@@ -250,8 +248,6 @@ def register(mcp, token: Optional[BzmToken]):
                 project_id (int): The id of the project to list tests from.
         - list: List all tests. 
             args(dict): Dictionary with the following required parameters:
-                account_id (int): The id of the account to list the tests from
-                workspace_id (int): The id of the workspace to list tests from.
                 project_id (int): The id of the project to list tests from.
                 limit (int, default=50): The number of tests to list.
                 offset (int, default=0): Number of tests to skip.
@@ -279,8 +275,7 @@ def register(mcp, token: Optional[BzmToken]):
                 case "create":
                     return await test_manager.create(args["test_name"], args["project_id"])
                 case "list":
-                    return await test_manager.list(args["account_id"], args["workspace_id"], args["project_id"],
-                                                   args.get("limit", 50), args.get("offset", 0))
+                    return await test_manager.list(args["project_id"], args.get("limit", 50), args.get("offset", 0))
                 case "configure":
                     performance_test = PerformanceTestObject.from_args(args)
                     return await test_manager.configure(performance_test)
