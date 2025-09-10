@@ -31,6 +31,8 @@ def register(mcp, token: Optional[BzmToken]):
             Operations on user information.
             Actions:
             - read: Read a current user information from BlazeMeter.
+            Hints:
+            - For default account, workspace and project, use the 'read' action. 
         """
     )
     async def user(

@@ -56,6 +56,8 @@ def register(mcp, token: Optional[BzmToken]):
                         account_id (int): The id of the account to list the workspaces from
                         limit (int, default=50): The number of workspaces to list.
                         offset (int, default=0): Number of workspaces to skip.
+                Hints:
+                - For available locations and available billing usage use the 'read' action for a particular workspace.
                 """
     )
     async def workspace(

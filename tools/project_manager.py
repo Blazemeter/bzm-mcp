@@ -9,7 +9,6 @@ from formatters.project import format_projects
 from models.result import BaseResult
 from tools.test_manager import TestManager
 from tools.utils import api_request
-from tools.workspace_manager import WorkspaceManager
 
 
 class ProjectManager:
@@ -28,24 +27,15 @@ class ProjectManager:
         if project_result.error:
             return project_result
         project_element = project_result.result[0]
-        workspace_id = project_element.get("workspace_id", 0)
-        # Get the account information from workspace
-        workspace_result = await WorkspaceManager(self.token, self.ctx).read(workspace_id = workspace_id)
-        if  hasattr(workspace_result, "errors") and workspace_result.errors:
-            return workspace_result
-
-        workspace_element = workspace_result.result[0]
-        account_id = workspace_element.account_id
 
         # Get the amount of test
-        tests_result = await TestManager(self.token).list(account_id=account_id, project_id=project_id, workspace_id=workspace_id, limit=1, offset=0)
+        tests_result = await TestManager(self.token, self.ctx).list(project_id=project_id, limit=1, offset=0)
         project_element["tests_count"] = tests_result.total
         return project_result
 
-    async def list(self, account_id: int, workspace_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
+    async def list(self, workspace_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
         parameters = {
             "workspaceId": workspace_id,
-            "accountId": account_id,
             "limit": limit,
             "skip": offset,
             "sort[]": "-updated"
@@ -72,7 +62,6 @@ def register(mcp, token: Optional[BzmToken]):
                 project_id (int): The id of the project to get information.
         - list: List all projects. 
             args(dict): Dictionary with the following required parameters:
-                account_id (int): The id of the account to list the projects from
                 workspace_id (int): The id of the workspace to list projects from.
                 limit (int, default=50): The number of projects to list.
                 offset (int, default=0): Number of projects to skip.
@@ -89,7 +78,7 @@ def register(mcp, token: Optional[BzmToken]):
                 case "list":
                     limit = args.get("limit", 10)
                     offset = args.get("offset", 0)
-                    return await project_manager.list(args["account_id"], args["workspace_id"], limit, offset)
+                    return await project_manager.list(args["workspace_id"], limit, offset)
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in project manager tool"
