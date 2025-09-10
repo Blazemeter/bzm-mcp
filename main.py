@@ -17,8 +17,12 @@ def run():
         except Exception as e:
             # Other errors (file not found, permissions, etc.) - also handled by tools
             pass
-    
-    mcp = FastMCP("bzm-mcp")
+
+    instructions = """
+    General rules:
+        - Correlation: user -> accounts -> workspaces -> projects -> tests -> executions 
+    """
+    mcp = FastMCP("blazemeter-mcp", instructions=instructions)
     register_tools(mcp, token)
     mcp.run(transport="stdio")
 

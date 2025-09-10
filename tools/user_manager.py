@@ -2,28 +2,48 @@ import traceback
 from typing import Any, Dict, Optional
 
 from mcp.server.fastmcp import Context
+from pydantic import Field
 
+from config.blazemeter import TOOLS_PREFIX, USER_ENDPOINT
 from config.token import BzmToken
 from models.result import BaseResult
-from .base import api_request, TOOLS_PREFIX
+from tools.utils import api_request
+
+
+class UserManager:
+
+    def __init__(self, token: Optional[BzmToken], ctx: Context):
+        self.token = token
+        self.ctx = ctx
+
+    async def read(self) -> BaseResult:
+        return await api_request(
+            self.token,
+            "GET",
+            f"{USER_ENDPOINT}"
+        )
 
 
 def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_user",
         description="""
-            Operations on tests executions and results reports.
+            Operations on user information.
             Actions:
             - read: Read a current user information from BlazeMeter.
         """
     )
-    async def user(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
+    async def user(
+            action: str = Field(description="The action id to execute"),
+            args: Dict[str, Any] = Field(description="Dictionary with parameters"),
+            ctx: Context = Field(description="Context object providing access to MCP capabilities")
+    ) -> BaseResult:
+
+        user_manager = UserManager(token, ctx)
         try:
             match action:
                 case "read":
-                    return BaseResult(
-                        result=[await api_request(token, "GET", "/user")]
-                    )
+                    return await user_manager.read()
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in user manager tool"

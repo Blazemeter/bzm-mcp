@@ -1,31 +1,46 @@
 import traceback
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 
 from mcp.server.fastmcp import Context
 
+from config.blazemeter import TOOLS_PREFIX, PROJECTS_ENDPOINT
 from config.token import BzmToken
+from formatters.project import format_projects
 from models.result import BaseResult
-from .base import api_request, get_date_time_iso, TOOLS_PREFIX
+from tools.test_manager import TestManager
+from tools.utils import api_request
+from tools.workspace_manager import WorkspaceManager
 
 
 class ProjectManager:
 
-    def __init__(self, token: Optional[BzmToken]):
+    def __init__(self, token: Optional[BzmToken], ctx: Context):
         self.token = token
+        self.ctx = ctx
 
     async def read(self, project_id: int) -> BaseResult:
-        project_response = await api_request(self.token, "GET", f"/projects/{project_id}")
-
-        if "error" in project_response and project_response["error"]:
-            return BaseResult(
-                error=project_response.get("error")
-            )
-
-        projects = [project_response.get("result", None)]
-        return BaseResult(
-            result=self.normalize_projects(projects),
-            has_more=False
+        project_result = await api_request(
+            self.token,
+            "GET",
+            f"{PROJECTS_ENDPOINT}/{project_id}",
+            result_formatter=format_projects
         )
+        if project_result.error:
+            return project_result
+        project_element = project_result.result[0]
+        workspace_id = project_element.get("workspace_id", 0)
+        # Get the account information from workspace
+        workspace_result = await WorkspaceManager(self.token, self.ctx).read(workspace_id = workspace_id)
+        if  hasattr(workspace_result, "errors") and workspace_result.errors:
+            return workspace_result
+
+        workspace_element = workspace_result.result[0]
+        account_id = workspace_element.account_id
+
+        # Get the amount of test
+        tests_result = await TestManager(self.token).list(account_id=account_id, project_id=project_id, workspace_id=workspace_id, limit=1, offset=0)
+        project_element["tests_count"] = tests_result.total
+        return project_result
 
     async def list(self, account_id: int, workspace_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
         parameters = {
@@ -36,57 +51,37 @@ class ProjectManager:
             "sort[]": "-updated"
         }
 
-        projects_response = await api_request(self.token, "GET", f"/projects", params=parameters)
-
-        if "error" in projects_response and projects_response["error"]:
-            return BaseResult(
-                error=projects_response.get("error")
-            )
-
-        projects = projects_response.get("result", [])
-        has_more = projects_response.get("total", 0) - (offset + limit) > 0
-
-        return BaseResult(
-            result=self.normalize_projects(projects),
-            has_more=has_more
+        return await api_request(
+            self.token,
+            "GET",
+            f"{PROJECTS_ENDPOINT}",
+            result_formatter=format_projects,
+            params=parameters
         )
-
-    @staticmethod
-    def normalize_projects(projects: List[Any]) -> List[Any]:
-        formatted_projects = []
-        for project in projects:
-            formatted_project = {
-                "project_id": project.get("id"),
-                "project_name": project.get("name", "Unknown"),
-                "description": project.get("description", ""),
-                "created": get_date_time_iso(project.get("created")),
-                "updated": get_date_time_iso(project.get("updated")),
-                "tests_count": project.get("testsCount", 0)
-            }
-            formatted_projects.append(formatted_project)
-        return formatted_projects
 
 
 def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_project",
         description="""
-        Operations on projects in a specific workspace as workspace_id and account as account_id. 
+        Operations on projects. 
         Use this when a user needs to select a project for test allocation.
         Actions:
-        - read: Read a Project. Get the information of a project.
+        - read: Read a Project. Obtain information about a particular project.
             args(dict): Dictionary with the following required parameters:
                 project_id (int): The id of the project to get information.
-        - list: List all tests. 
+        - list: List all projects. 
             args(dict): Dictionary with the following required parameters:
-                account_id (int): The id of the account to list the tests from
-                workspace_id (int): The id of the workspace to list tests from.
-                limit (int, default=50): The number of tests to list.
-                offset (int, default=0): Number of tests to skip.
+                account_id (int): The id of the account to list the projects from
+                workspace_id (int): The id of the workspace to list projects from.
+                limit (int, default=50): The number of projects to list.
+                offset (int, default=0): Number of projects to skip.
+        Hints:
+        - For a particular project, go directly to the read action (you don't need account or workspace information).
         """
     )
     async def project(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        project_manager = ProjectManager(token)
+        project_manager = ProjectManager(token, ctx)
         try:
             match action:
                 case "read":

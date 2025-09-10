@@ -4,45 +4,28 @@ import os
 import traceback
 from pathlib import Path
 from typing import Any, Dict
-from typing import Optional, List, Union
+from typing import Optional, List
 
 from mcp.server.fastmcp import Context
-from pydantic import Field, BaseModel
 
+from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
 from config.token import BzmToken
+from formatters.test import format_tests
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
-from .base import api_request, get_date_time_iso, TOOLS_PREFIX
+from tools.utils import api_request
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-class Test(BaseModel):
-    """Test basic information structure."""
-    test_id: int = Field(description="The unique identifier for the test. Also known as a testId")
-    test_name: str = Field(description="The test name")
-    description: str = Field(description="A description of the test")
-    created: Optional[str] = Field(description="The datetime that the test was created.", default=None)
-    updated: Optional[str] = Field(description="The datetime that the test was updated", default=None)
-    project_id: int = Field(description="The project Id to which this test belongs")
-    status: str = Field(description="The status of the test")  # TODO: Really exist?
-    type: str = Field(description="The type of the test")  # TODO: Really exist?
-    configuration: Dict[str, Any] = Field(description="Contains all the advanced BlazeMeter related configurations")
-
-
-class TestResult(BaseResult):
-    result: Optional[List[Union[Test]]] = Field(description="Tests List", default=None)
-
-class TestUploadResult:
-    result: Optional[Dict[str: Any]] = Field(description="Upload Result", default=None)
-
 class TestManager:
 
-    def __init__(self, token: Optional[BzmToken]):
+    def __init__(self, token: Optional[BzmToken], ctx: Context):
         self.token = token
+        self.ctx = ctx
 
-    async def create(self, test_name: str, project_id: int) -> TestResult:
+    async def create(self, test_name: str, project_id: int) -> BaseResult:
         test_body = {
             "name": test_name,
             "projectId": project_id,
@@ -53,15 +36,12 @@ class TestManager:
                 "scriptType": "jmeter"
             }
         }
-        test_response = await api_request(self.token, "POST", "/tests", json=test_body)
-        if "error" in test_response and test_response["error"]:
-            return TestResult(
-                error=test_response.get("error")
-            )
-
-        tests = [test_response.get("result", None)]
-        return TestResult(
-            result=self.normalize_tests(tests)
+        return await api_request(
+            self.token,
+            "POST",
+            f"{TESTS_ENDPOINT}",
+            result_formatter=format_tests,
+            json=test_body
         )
 
     @staticmethod
@@ -75,7 +55,8 @@ class TestManager:
                 logger.debug(f"File does not exist: {file_path}")
                 invalid_files.append(file_path)
 
-    def _process_upload_results(self, upload_results: List[Dict[str, Any]], valid_files: List[str],
+    @staticmethod
+    def _process_upload_results(upload_results: List[Dict[str, Any]], valid_files: List[str],
                                 successful_uploads: List[Dict[str, Any]], failed_uploads: List[Dict[str, Any]]):
         for i, result in enumerate(upload_results):
             if isinstance(result, Exception):
@@ -136,7 +117,7 @@ class TestManager:
             "config_update": config_update_result
         }
 
-    async def _upload_single_file(self, test_id: int, file_path: str) -> Dict[str, Any]:
+    async def _upload_single_file(self, test_id: int, file_path: str) -> BaseResult:
         logger.debug(f"Uploading single file: {file_path} to test: {test_id}")
         try:
             file_path_obj = Path(file_path)
@@ -153,10 +134,15 @@ class TestManager:
                 'file': (file_name, file_content, self._get_mime_type(file_path))
             }
 
-            endpoint = f"/tests/{test_id}/files"
+            endpoint = f"{TESTS_ENDPOINT}/{test_id}/files"
             logger.debug(f"Uploading to endpoint: {endpoint}")
 
-            result = await api_request(self.token, "POST", endpoint, files=files)
+            result = await api_request(
+                self.token,
+                "POST",
+                endpoint,
+                files=files)
+
             logger.debug(f"Upload result: {result}")
 
             return result
@@ -166,28 +152,22 @@ class TestManager:
             logger.error(f"Traceback: {traceback.format_exc()}")
             raise Exception(f"Failed to upload {file_path}: {str(e)}")
 
-    async def _update_test_configuration(self, test_id: int, main_script_path: str) -> Dict[str, Any]:
+    async def _update_test_configuration(self, test_id: int, main_script_path: str) -> BaseResult:
         try:
             file_name = Path(main_script_path).name
-
-            script_type = self._get_script_type(file_name)
-
             config_update = {
                 "configuration": {
                     "filename": file_name,
-                    "scriptType": script_type
+                    "scriptType": self._get_script_type(file_name)
                 }
             }
 
-            endpoint = f"/tests/{test_id}"
-            result = await api_request(
+            return await api_request(
                 self.token,
                 "PATCH",
-                endpoint,
+                f"{TESTS_ENDPOINT}/{test_id}",
                 json=config_update
             )
-
-            return result
 
         except Exception as e:
             raise Exception(f"Failed to update test configuration: {str(e)}")
@@ -208,7 +188,8 @@ class TestManager:
 
         return mime_types.get(extension, 'application/octet-stream')
 
-    def _get_script_type(self, file_name: str) -> str:
+    @staticmethod
+    def _get_script_type(file_name: str) -> str:
         extension = Path(file_name).suffix.lower()
 
         script_types = {
@@ -222,7 +203,7 @@ class TestManager:
         return script_types.get(extension, 'unknown')
 
     async def list(self, account_id: int, workspace_id: int, project_id: int, limit: int = 50,
-                   offset: int = 0) -> TestResult:
+                   offset: int = 0) -> BaseResult:
         parameters = {
             "projectId": project_id,
             "workspaceId": workspace_id,
@@ -232,22 +213,15 @@ class TestManager:
             "sort[]": "-updated"
         }
 
-        tests_response = await api_request(self.token, "GET", "/tests", params=parameters)
-
-        if "error" in tests_response and tests_response["error"]:
-            return TestResult(
-                error=tests_response.get("error")
-            )
-
-        tests = tests_response.get("result", [])
-        has_more = tests_response.get("total", 0) - (offset + limit) > 0
-
-        return TestResult(
-            result=self.normalize_tests(tests),
-            has_more=has_more
+        return await api_request(
+            self.token,
+            "GET",
+            f"{TESTS_ENDPOINT}",
+            result_formatter=format_tests,
+            params=parameters
         )
 
-    async def configure(self, performance_test: PerformanceTestObject) -> TestResult:
+    async def configure(self, performance_test: PerformanceTestObject) -> BaseResult:
         if not performance_test.is_valid():
             raise ValueError("PerformanceTestObject must have a valid test_id")
 
@@ -256,42 +230,12 @@ class TestManager:
             "overrideExecutions": [configuration]
         }
 
-        test_response = await api_request(self.token, "PATCH", f"/tests/{performance_test.test_id}",
-                                          json=configuration_body)
-
-        if "error" in test_response and test_response["error"]:
-            return TestResult(
-                error=test_response.get("error")
-            )
-
-        tests = [test_response.get("result", None)]
-        return TestResult(
-            result=self.normalize_tests(tests)
-        )
-
-    @staticmethod
-    def normalize_tests(tests: List[Any]) -> List[Test]:
-
-        formatted_tests = []
-        for test in tests:
-            test_element = {
-                "test_id": test.get("id"),
-                "test_name": test.get("name", "Unknown"),
-                "description": test.get("description", ""),
-                "created": get_date_time_iso(test.get("created")),
-                "updated": get_date_time_iso(test.get("updated")),
-                "project_id": test.get("projectId"),
-                "status": test.get("status", "Unknown"),
-                "type": test.get("type", "Unknown"),
-                "configuration": test.get("configuration", {})
-            }
-            test_object = Test(**test_element)
-            formatted_tests.append(test_object)
-
-        return formatted_tests
-
-
-
+        return await api_request(
+            self.token,
+            "PATCH",
+            f"{TESTS_ENDPOINT}/{performance_test.test_id}",
+            result_formatter=format_tests,
+            json=configuration_body)
 
 
 def register(mcp, token: Optional[BzmToken]):
@@ -329,7 +273,7 @@ def register(mcp, token: Optional[BzmToken]):
         """
     )
     async def tests(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        test_manager = TestManager(token)
+        test_manager = TestManager(token, ctx)
         try:
             match action:
                 case "create":
@@ -342,16 +286,16 @@ def register(mcp, token: Optional[BzmToken]):
                     return await test_manager.configure(performance_test)
                 case "upload_assets":
                     return BaseResult(
-                        result = [await test_manager.upload_assets(
-                        args["test_id"],
-                        args["file_paths"],
-                        args.get("main_script"))]
+                        result=[await test_manager.upload_assets(
+                            args["test_id"],
+                            args["file_paths"],
+                            args.get("main_script"))]
                     )
                 case _:
-                    return TestResult(
+                    return BaseResult(
                         error=f"Action {action} not found in tests manager tool"
                     )
         except Exception:
-            return TestResult(
+            return BaseResult(
                 error=f"Error: {traceback.format_exc()}"
             )
