@@ -16,9 +16,6 @@ jobs:
           - os: ubuntu-latest
             name: linux
             arch: amd64
-          - os: ubuntu-24.04-arm
-            name: linux  
-            arch: arm64
           - os: windows-latest  
             name: windows
             arch: amd64
