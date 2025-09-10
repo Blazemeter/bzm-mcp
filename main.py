@@ -31,6 +31,7 @@ def run():
     
     General rules:
         - If you have the information needed to call a tool action with its arguments, do so.
+        - Read action always get more information about a particular item than the list action, list only display minimal information.
         - Read the current user information at startup to learn the username, default account, workspace and project, and other important information.
         - Dependencies:
             accounts: It doesn't depend on anyone. In user you can access which is the default account, and in the list of accounts, you can see the accounts available to the user.

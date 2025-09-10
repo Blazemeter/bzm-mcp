@@ -6,6 +6,7 @@ from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX, USER_ENDPOINT
 from config.token import BzmToken
+from formatters.user import format_users
 from models.result import BaseResult
 from tools.utils import api_request
 
@@ -20,7 +21,8 @@ class UserManager:
         return await api_request(
             self.token,
             "GET",
-            f"{USER_ENDPOINT}"
+            f"{USER_ENDPOINT}",
+            result_formatter=format_users
         )
 
 
