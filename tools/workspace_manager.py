@@ -1,50 +1,31 @@
 import traceback
-from datetime import datetime
-from typing import Any, Dict, Optional, List, Union
+from typing import Any, Dict, Optional
 
 from mcp.server.fastmcp import Context
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from config.blazemeter import WORKSPACES_ENDPOINT, TOOLS_PREFIX
 from config.token import BzmToken
+from formatters.workspace import format_workspaces, format_workspaces_detailed
 from models.result import BaseResult
-from .base import api_request, get_date_time_iso, TOOLS_PREFIX
-
-
-class Workspace(BaseModel):
-    """Workspace basic information structure."""
-    workspace_id: int = Field(description="The unique identifier for the workspace. Also known as a workspaceId")
-    name: str = Field(description="The name of this workspace")
-    created: Optional[str] = Field(description="The datetime for when the workspace was created", default=None)
-    updated: Optional[str] = Field(description="The datetime for when the workspace was updated", default=None)
-    enabled: bool = Field(description="Denotes if the workspace is enabled or not")
-
-
-class WorkspaceDetailed(Workspace):
-    """Workspace detailed information structure."""
-    owner: Dict[str, Any] = Field(description="The details of the owner of the workspace")
-    allowance: Dict[str, Any] = Field(description="The available billing usage details")
-    users_count: int = Field(description="The number of users in the workspace")
-    locations: List[Dict[str, Any]] = Field(description="The location details available to the workspace")
-
-
-class WorkspaceResult(BaseResult):
-    result: Optional[List[Union[WorkspaceDetailed, Workspace]]] = Field(description="Workspaces List", default=None)
+from tools.utils import api_request
 
 
 class WorkspaceManager:
 
-    def __init__(self, token: Optional[BzmToken]):
+    def __init__(self, token: Optional[BzmToken], ctx: Context):
         self.token = token
+        self.ctx = ctx
 
-    async def read(self, workspace_id: int) -> WorkspaceResult:
-        workspace_response = await api_request(self.token, "GET", f"/workspaces/{workspace_id}")
-        workspaces = [workspace_response.get("result", None)]
-        return WorkspaceResult(
-            result=self.normalize_workspaces(workspaces, detailed=True),
-            has_more=False
+    async def read(self, workspace_id: int) -> BaseResult:
+        return await api_request(
+            self.token,
+            "GET",
+            f"{WORKSPACES_ENDPOINT}/{workspace_id}",
+            result_formatter=format_workspaces_detailed
         )
 
-    async def list(self, account_id: int, limit: int = 50, offset: int = 0) -> WorkspaceResult:
+    async def list(self, account_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
         parameters = {
             "accountId": account_id,
             "limit": limit,
@@ -52,38 +33,13 @@ class WorkspaceManager:
             "sort[]": "-updated"
         }
 
-        workspaces_response = await api_request(self.token, "GET", "/workspaces", params=parameters)
-        workspaces = workspaces_response.get("result", [])
-        has_more = workspaces_response.get("total", 0) - (offset + limit) > 0
-
-        return WorkspaceResult(
-            result=self.normalize_workspaces(workspaces),
-            has_more=has_more
+        return await api_request(
+            self.token,
+            "GET",
+            f"{WORKSPACES_ENDPOINT}",
+            result_formatter=format_workspaces,
+            params=parameters
         )
-
-    @staticmethod
-    def normalize_workspaces(workspaces: List[Any], detailed: bool = False) -> List[
-        Union[WorkspaceDetailed, Workspace]]:
-        normalized_workspaces = []
-        for workspace in workspaces:
-
-            workspace_element = {
-                "workspace_id": workspace["id"],
-                "name": workspace["name"],
-                "created": get_date_time_iso(workspace["created"]),
-                "updated": get_date_time_iso(workspace["updated"]),
-                "enabled": workspace["enabled"],
-            }
-            if detailed:
-                workspace_element.update({
-                    "owner": workspace["owner"],
-                    "allowance": workspace["allowance"],
-                    "users_count": workspace["membersCount"],
-                    "locations": workspace["locations"],
-                })
-            workspace_object = WorkspaceDetailed(**workspace_element) if detailed else Workspace(**workspace_element)
-            normalized_workspaces.append(workspace_object)
-        return normalized_workspaces
 
 
 def register(mcp, token: Optional[BzmToken]):
@@ -102,8 +58,13 @@ def register(mcp, token: Optional[BzmToken]):
                         offset (int, default=0): Number of workspaces to skip.
                 """
     )
-    async def workspace(action: str, args: Dict[str, Any], ctx: Context) -> WorkspaceResult:
-        workspace_manager = WorkspaceManager(token)
+    async def workspace(
+            action: str = Field(description="The action id to execute"),
+            args: Dict[str, Any] = Field(description="Dictionary with parameters"),
+            ctx: Context = Field(description="Context object providing access to MCP capabilities")
+    ) -> BaseResult:
+
+        workspace_manager = WorkspaceManager(token, ctx)
         try:
             match action:
                 case "read":
@@ -112,10 +73,10 @@ def register(mcp, token: Optional[BzmToken]):
                     return await workspace_manager.list(args["account_id"], args.get("limit", 50),
                                                         args.get("offset", 0))
                 case _:
-                    return WorkspaceResult(
+                    return BaseResult(
                         error=f"Action {action} not found in tests manager tool"
                     )
         except Exception:
-            return WorkspaceResult(
+            return BaseResult(
                 error=f"Error: {traceback.format_exc()}"
             )

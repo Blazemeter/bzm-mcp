@@ -1,11 +1,10 @@
-from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
 
+
 class TestExecution(BaseModel):
     """Test execution basic information structure."""
-    test_id: int = Field(description="The unique identifier for the test. Also known as a testId")
     execution_id: int = Field(
         description="The unique identifier of the execution. This is known as the masterId or test execution id")
     execution_name: str = Field(description="The test execution report name")
@@ -33,4 +32,5 @@ class TestExecutionDetailed(TestExecution):
     ended: Optional[str] = Field(description="The datetime that the test execution was ended.", default=None)
     execution_status: str = Field(
         description="Indicates the ending status of the test execution. Value can be pass, fail, unset, error, abort, or noData")
-    execution_status_detailed: TestExecutionStatus = Field("Indicates the current status of the test execution.")
+    execution_status_detailed: Optional[TestExecutionStatus] = Field(
+        "Indicates the current status of the test execution.")

@@ -1,3 +1,10 @@
-BZM_API_BASE_URL = "https://a.blazemeter.com/api/v4"
-BZM_BASE_URL = "https://a.blazemeter.com/"
+BZM_API_BASE_URL: str = "https://a.blazemeter.com/api/v4"
+BZM_BASE_URL: str = "https://a.blazemeter.com/"
+TOOLS_PREFIX: str = "blazemeter"
 
+USER_ENDPOINT: str = "/user"
+ACCOUNTS_ENDPOINT: str = "/accounts"
+PROJECTS_ENDPOINT: str = "/projects"
+WORKSPACES_ENDPOINT: str = "/workspaces"
+TESTS_ENDPOINT: str = "/tests"
+EXECUTIONS_ENDPOINT: str = "/masters"
