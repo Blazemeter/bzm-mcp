@@ -1,11 +1,6 @@
 name: Build Multi-Platform Docker Images
 
 on:
-  workflow_run:
-    workflows: ["Build Binaries"]
-    types: [completed]
-  push:
-    tags: [ 'v*' ]
   workflow_dispatch:
 
 env:
