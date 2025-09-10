@@ -1,6 +1,9 @@
 name: Build Multi-Platform Docker Images
 
 on:
+  push:
+    branches: ['*']
+  pull_request:
   workflow_dispatch:
 
 env:
