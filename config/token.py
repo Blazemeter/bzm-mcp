@@ -13,14 +13,14 @@ class BzmTokenError(Exception):
 class BzmToken:
     __slots__ = ("id", "secret")
 
-    def __init__(self, id: str, secret: str):
-        if not id or not isinstance(id, str):
-            raise BzmTokenError(f"Invalid ID: {id!r}")
-        if not secret or not isinstance(secret, str):
-            raise BzmTokenError(f"Invalid secret: {secret!r}")
+    def __init__(self, token_id: str, token_secret: str):
+        if not token_id or not isinstance(token_id, str):
+            raise BzmTokenError(f"Invalid Token ID: {token_id!r}")
+        if not token_secret or not isinstance(token_secret, str):
+            raise BzmTokenError(f"Invalid Token secret: {token_secret!r}")
 
-        self.id = id
-        self.secret = secret
+        self.id = token_id
+        self.secret = token_secret
 
     @classmethod
     @lru_cache(maxsize=1)
@@ -41,7 +41,7 @@ class BzmToken:
         except KeyError as e:
             raise BzmTokenError(f"Missing field {e.args[0]!r} in {p!r}") from e
 
-        return cls(id=id_val, secret=secret_val)
+        return cls(token_id=id_val, token_secret=secret_val)
 
     def as_basic_auth(self) -> str:
         """

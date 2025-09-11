@@ -172,7 +172,8 @@ class TestManager:
         except Exception as e:
             raise Exception(f"Failed to update test configuration: {str(e)}")
 
-    def _get_mime_type(self, file_path: str) -> str:
+    @staticmethod
+    def _get_mime_type(file_path: str) -> str:
         extension = Path(file_path).suffix.lower()
 
         mime_types = {

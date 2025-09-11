@@ -14,10 +14,10 @@ def run():
     if BLAZEMETER_API_KEY_FILE_PATH:
         try:
             token = BzmToken.from_file(BLAZEMETER_API_KEY_FILE_PATH)
-        except BzmTokenError as e:
+        except BzmTokenError:
             # Token file exists but is invalid - this will be handled by individual tools
             pass
-        except Exception as e:
+        except Exception:
             # Other errors (file not found, permissions, etc.) - also handled by tools
             pass
 

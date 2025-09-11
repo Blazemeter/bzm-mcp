@@ -12,7 +12,8 @@ class PerformanceTestObject:
     def from_args(cls, args: Dict[str, Any]) -> 'PerformanceTestObject':
         return cls(args)
 
-    def _extract_override_execution(self, test_data: Dict[str, Any]) -> Dict[str, Any]:
+    @staticmethod
+    def _extract_override_execution(test_data: Dict[str, Any]) -> Dict[str, Any]:
         execution_config = {}
         for param in ["iterations", "concurrency", "hold-for", "ramp-up", "steps", "executor"]:
             if param in test_data:
