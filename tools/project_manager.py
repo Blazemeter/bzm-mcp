@@ -30,7 +30,7 @@ class ProjectManager:
 
         # Get the amount of test
         tests_result = await TestManager(self.token, self.ctx).list(project_id=project_id, limit=1, offset=0)
-        project_element["tests_count"] = tests_result.total
+        project_element.tests_count = tests_result.total
         return project_result
 
     async def list(self, workspace_id: int, limit: int = 50, offset: int = 0) -> BaseResult:

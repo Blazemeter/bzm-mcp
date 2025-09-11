@@ -1,9 +1,11 @@
+from typing import Any, List
+
 from config.blazemeter import BZM_BASE_URL
 from models.execution import TestExecution, TestExecutionDetailed, TestExecutionStatus, TestExecutionStatuses
 from tools.utils import get_date_time_iso
 
 
-def format_executions(executions):
+def format_executions(executions: List[Any]) -> List[TestExecution]:
     formatted_executions = []
     for execution in executions:
         execution_id = execution.get("id")
@@ -18,7 +20,7 @@ def format_executions(executions):
     return formatted_executions
 
 
-def format_executions_detailed(executions):
+def format_executions_detailed(executions: List[Any]) -> List[TestExecutionDetailed]:
     formatted_executions = []
     for execution in executions:
         execution_id = execution.get("id")
@@ -37,7 +39,7 @@ def format_executions_detailed(executions):
     return formatted_executions
 
 
-def format_executions_status(statuses):
+def format_executions_status(statuses: List[Any]) -> List[TestExecutionStatus]:
     formatted_statuses = []
     for status_element in statuses:
         execution_step = status_element.get("executionStep", "Unknown")

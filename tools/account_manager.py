@@ -53,6 +53,9 @@ def register(mcp, token: Optional[BzmToken]) -> None:
             args(dict): Dictionary with the following required parameters:
                 limit (int, default=50): The number of tests to list.
                 offset (int, default=0): Number of tests to skip.
+        Hints:
+        - If you need to get the default account, use the project id to get the workspace and with that the account.
+        - Use the read operation if AI consent information is needed. The AI Consent it's located at account level.
     """
     )
     async def account(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
