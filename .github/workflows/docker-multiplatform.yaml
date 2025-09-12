@@ -1,0 +1,113 @@
+name: Build Multi-Platform Docker Images
+
+on:
+  workflow_run:
+    workflows: ["Build Binaries"]
+    types: [completed]
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+env:
+  # GitHub Container Registry (default)
+  GHCR_REGISTRY: ghcr.io
+  GHCR_IMAGE_NAME: ${{ github.repository }}
+  
+  GCP_REGISTRY: ${{ vars.GCP_REGISTRY || 'us-central1-docker.pkg.dev' }}
+  GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY || 'bzm-mcp' }}
+
+jobs:
+  build-docker:
+    name: Build Multi-Platform Docker Image
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' || github.event_name == 'release' }}
+    
+    permissions:
+      contents: read
+      packages: write
+      actions: read
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download artifacts from Build Binaries workflow
+      uses: dawidd6/action-download-artifact@v6
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        workflow: build.yaml
+        run_id: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'release') && '' || github.event.workflow_run.id }}
+        name_is_regexp: true
+        name: bzm-mcp-.*
+        path: artifacts/
+    
+    - name: Organize binaries for Docker build
+      run: |
+        mkdir -p dist/
+        # Copy and rename binaries to match Docker expectations
+        if [ -f artifacts/bzm-mcp-linux-amd64/bzm-mcp-linux-amd64 ]; then
+          cp artifacts/bzm-mcp-linux-amd64/bzm-mcp-linux-amd64 dist/bzm-mcp-linux-amd64
+          echo "AMD64 binary found"
+        else
+          echo "AMD64 binary missing"
+          exit 1
+        fi
+        
+        # Check for ARM64 binary (optional for now)
+        if [ -f artifacts/bzm-mcp-linux-arm64/bzm-mcp-linux-arm64 ]; then
+          cp artifacts/bzm-mcp-linux-arm64/bzm-mcp-linux-arm64 dist/bzm-mcp-linux-arm64
+          echo "ARM64 binary found"
+          echo "PLATFORMS=linux/amd64,linux/arm64" >> $GITHUB_ENV
+        else
+          echo "ARM64 binary missing - building AMD64 only"
+          echo "PLATFORMS=linux/amd64" >> $GITHUB_ENV
+        fi
+        
+        echo "Available binaries:"
+        ls -la dist/
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.GHCR_REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Log in to Google Artifact Registry
+      if: env.GCP_PROJECT_ID != ''
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.GCP_REGISTRY }}
+        username: _json_key
+        password: ${{ secrets.GCP_GAR_JSON_KEY }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: |
+          ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_NAME }}
+          ${{ env.GCP_PROJECT_ID != '' && format('{0}/{1}/{2}/bzm-mcp', env.GCP_REGISTRY, env.GCP_PROJECT_ID, env.GCP_REPOSITORY) || '' }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr  
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: ${{ env.PLATFORMS }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
