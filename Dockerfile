@@ -12,17 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.19
+FROM ubuntu:24.04
+
 
 WORKDIR /app
 
-# Create a non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Update system packages for security patches
+RUN apt-get update -y && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Required for the binary to run (PyInstaller)
-RUN apk add --no-cache \
-    libc6-compat \
-    libgcc
+# Create a non-root user
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 
 ARG TARGETPLATFORM
 
