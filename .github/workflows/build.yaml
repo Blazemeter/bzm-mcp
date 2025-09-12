@@ -16,6 +16,10 @@ jobs:
           - os: ubuntu-24.04
             name: linux
             arch: amd64
+          # TODO: Uncomment when repository is public
+          # - os: ubuntu-24.04-arm
+          #   name: linux-arm
+          #   arch: arm64
           - os: windows-latest  
             name: windows
             arch: amd64
