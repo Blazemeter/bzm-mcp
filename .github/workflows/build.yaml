@@ -7,6 +7,9 @@ on:
     branches: ['main']
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -41,3 +44,17 @@ jobs:
       with:
         name: bzm-mcp-${{ matrix.name }}-${{ matrix.arch }}
         path: dist/
+        
+    - name: Commit artifacts to repository
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        git config --local user.email "actions@github.com"
+        git config --local user.name "GitHub Actions"
+        git pull origin main  # Get latest changes to avoid race conditions due to OSs matrix running in parallel
+        git add dist/
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "[skip ci] Update bzm-mcp-${{ matrix.name }}-${{ matrix.arch }} binary"
+          git push origin main
+        fi
