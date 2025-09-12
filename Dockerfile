@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:24.04
+FROM ubuntu:25.10
 
 
 WORKDIR /app
@@ -21,7 +21,7 @@ WORKDIR /app
 RUN apt-get update -y && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user
-RUN groupadd -r appgroup && useradd -r -g appgroup appuser
+RUN groupadd -r bzm-mcp && useradd -r -g bzm-mcp bzm-mcp
 
 ARG TARGETPLATFORM
 
@@ -39,10 +39,10 @@ RUN case "${TARGETPLATFORM}" in \
 
     
 RUN chmod +x ./bzm-mcp && \
-    chown appuser:appgroup ./bzm-mcp
+    chown bzm-mcp:bzm-mcp ./bzm-mcp
 
 # Switch to non-root user
-USER appuser
+USER bzm-mcp
 
 # Command to run the application
 ENTRYPOINT ["./bzm-mcp"]
