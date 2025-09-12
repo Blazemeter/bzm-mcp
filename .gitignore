@@ -2,7 +2,7 @@
 __pycache__/
 *.py[oc]
 build/
-dist/
+# dist/ - Keep this for binary artifacts
 wheels/
 *.egg-info
 
