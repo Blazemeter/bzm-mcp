@@ -21,7 +21,7 @@ jobs:
             arch: amd64
           # TODO: Uncomment when repository is public
           # - os: ubuntu-24.04-arm
-          #   name: linux-arm
+          #   name: linux
           #   arch: arm64
           - os: windows-latest  
             name: windows
@@ -32,8 +32,41 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: astral-sh/setup-uv@v4
-    - name: Build binary
+    
+    - name: Build binary (Linux in Ubuntu 25.10 container)
+      if: matrix.name == 'linux'
+      shell: bash
+      run: |
+        # Docker container with Ubuntu 25.10 and build the binary inside it
+        docker run --rm \
+          -v "$PWD:/workspace" \
+          -w /workspace \
+          ubuntu:25.10 \
+          bash -c "
+            set -e
+            echo 'Setting up Ubuntu 25.10 build environment...'
+            
+            apt-get update -y
+            apt-get install -y curl python3 python3-pip python3-venv binutils
+            
+            # Install uv (Python package manager)
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            export PATH=\"\$HOME/.local/bin:\$PATH\"
+            
+            echo 'Building binary with uv...'
+            uv sync
+            uv run build.py
+            
+            echo 'Build completed. Checking output:'
+            ls -la dist/
+          "
+    
+    - name: Setup uv for Windows/macOS
+      if: matrix.name != 'linux'
+      uses: astral-sh/setup-uv@v4
+    
+    - name: Build binary (Windows/macOS native)
+      if: matrix.name != 'linux'
       shell: bash
       run: |
         uv sync
