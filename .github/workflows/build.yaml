@@ -44,18 +44,49 @@ jobs:
       with:
         name: bzm-mcp-${{ matrix.name }}-${{ matrix.arch }}
         path: dist/
-        
-    - name: Commit artifacts to repository
+
+  commit-artifacts:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts/
+    
+    - name: Organize artifacts into dist/
       shell: bash
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        mkdir -p dist/
+        # Copy all binaries from artifact directories to dist/ 
+        if [ -d "artifacts/bzm-mcp-linux-amd64" ]; then
+          cp artifacts/bzm-mcp-linux-amd64/* dist/
+          echo "Copied Linux AMD64 binary"
+        fi
+        if [ -d "artifacts/bzm-mcp-windows-amd64" ]; then
+          cp artifacts/bzm-mcp-windows-amd64/* dist/
+          echo "Copied Windows AMD64 binary"
+        fi
+        if [ -d "artifacts/bzm-mcp-macos-arm64" ]; then
+          cp artifacts/bzm-mcp-macos-arm64/* dist/
+          echo "Copied macOS ARM64 binary"
+        fi
+       
+        echo "Final dist/ contents:"
+        ls -la dist/ || echo "No dist/ directory found"
+    
+    - name: Commit all artifacts to repository
+      shell: bash
       run: |
         git config --local user.email "actions@github.com"
         git config --local user.name "GitHub Actions"
-        git pull origin main  # Get latest changes to avoid race conditions due to OSs matrix running in parallel
         git add dist/
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
-          git commit -m "[skip ci] Update bzm-mcp-${{ matrix.name }}-${{ matrix.arch }} binary"
-          git push origin main
+          git commit -m "[skip ci] Update all binary artifacts"
+          git push
         fi
