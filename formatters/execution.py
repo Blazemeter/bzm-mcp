@@ -1,11 +1,11 @@
-from typing import Any, List
+from typing import Any, List, Optional
 
 from config.blazemeter import BZM_BASE_URL
 from models.execution import TestExecution, TestExecutionDetailed, TestExecutionStatus, TestExecutionStatuses
 from tools.utils import get_date_time_iso
 
 
-def format_executions(executions: List[Any]) -> List[TestExecution]:
+def format_executions(executions: List[Any], params: Optional[dict] = None) -> List[TestExecution]:
     formatted_executions = []
     for execution in executions:
         execution_id = execution.get("id")

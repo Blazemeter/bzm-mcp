@@ -1,10 +1,10 @@
-from typing import List, Any
+from typing import List, Any, Optional
 
 from models.user import User
 from tools.utils import get_date_time_iso
 
 
-def format_users(users: List[Any]) -> List[User]:
+def format_users(users: List[Any], params: Optional[dict] = None) -> List[User]:
     formatted_users = []
     for user in users:
         formatted_users.append(

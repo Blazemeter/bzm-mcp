@@ -250,7 +250,7 @@ def register(mcp, token: Optional[BzmToken]):
         - list: List all tests. 
             args(dict): Dictionary with the following required parameters:
                 project_id (int): The id of the project to list tests from.
-                limit (int, default=50): The number of tests to list.
+                limit (int, default=10, valid=[1 to 50]): The number of tests to list.
                 offset (int, default=0): Number of tests to skip.
         - configure: Configure a performance test for the given test id. The test id is the only required parameter. 
                      The test will be configured based on the following parameters only if user confirms the configuration:

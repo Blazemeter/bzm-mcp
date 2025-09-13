@@ -11,7 +11,9 @@ from config.token import BzmToken
 from models.result import BaseResult
 
 
-async def api_request(token: Optional[BzmToken], method: str, endpoint: str, result_formatter: Callable = None,
+async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
+                      result_formatter: Callable = None,
+                      result_formatter_params: Optional[dict] = None,
                       **kwargs) -> BaseResult:
     """
     Make an authenticated request to the BlazeMeter API.
@@ -35,7 +37,7 @@ async def api_request(token: Optional[BzmToken], method: str, endpoint: str, res
             if not isinstance(result, list):  # Generalize result always as a list
                 result = [result]
                 default_total = 1
-            final_result = result_formatter(result) if result_formatter else result
+            final_result = result_formatter(result, result_formatter_params) if result_formatter else result
             return BaseResult(
                 result=final_result,
                 error=response_dict.get("error", None),
