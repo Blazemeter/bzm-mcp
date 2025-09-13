@@ -1,10 +1,10 @@
-from typing import List, Any
+from typing import List, Any, Optional
 
 from models.project import Project
 from tools.utils import get_date_time_iso
 
 
-def format_projects(projects: List[Any]) -> List[Project]:
+def format_projects(projects: List[Any], params: Optional[dict] = None) -> List[Project]:
     formatted_projects = []
     for project in projects:
         formatted_projects.append(

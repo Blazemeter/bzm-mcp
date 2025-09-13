@@ -1,10 +1,10 @@
-from typing import List, Any
+from typing import List, Any, Optional
 
 from models.test import Test
 from tools.utils import get_date_time_iso
 
 
-def format_tests(tests: List[Any]) -> List[Test]:
+def format_tests(tests: List[Any], params: Optional[dict] = None) -> List[Test]:
     formatted_tests = []
     for test in tests:
         formatted_tests.append(

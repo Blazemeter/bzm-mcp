@@ -6,7 +6,7 @@ from pydantic import Field
 
 from config.blazemeter import WORKSPACES_ENDPOINT, TOOLS_PREFIX
 from config.token import BzmToken
-from formatters.workspace import format_workspaces, format_workspaces_detailed
+from formatters.workspace import format_workspaces, format_workspaces_detailed, format_workspaces_locations
 from models.result import BaseResult
 from tools.utils import api_request
 
@@ -41,6 +41,14 @@ class WorkspaceManager:
             params=parameters
         )
 
+    async def read_locations(self, workspace_id: int, purpose: str = "local") -> BaseResult:
+        return await api_request(
+            self.token,
+            "GET",
+            f"{WORKSPACES_ENDPOINT}/{workspace_id}",
+            result_formatter=format_workspaces_locations,
+            result_formatter_params={"purpose": purpose}
+        )
 
 def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
@@ -54,8 +62,12 @@ def register(mcp, token: Optional[BzmToken]):
                 - list: List all workspaces. 
                     args(dict): Dictionary with the following required parameters:
                         account_id (int): The id of the account to list the workspaces from
-                        limit (int, default=50): The number of workspaces to list.
+                        limit (int, default=10, valid=[1 to 50]): The number of workspaces to list.
                         offset (int, default=0): Number of workspaces to skip.
+                - read_locations: get the location list for a given workspace ID.
+                    args(dict): Dictionary with the following required parameters:
+                        workspace_id (int): The id of the workspace.
+                        purpose (str, default="load", valid=["load", "functional", "grid", "mock"]): The purpose filter.
                 Hints:
                 - For available locations and available billing usage use the 'read' action for a particular workspace.
                 """
@@ -74,9 +86,11 @@ def register(mcp, token: Optional[BzmToken]):
                 case "list":
                     return await workspace_manager.list(args["account_id"], args.get("limit", 50),
                                                         args.get("offset", 0))
+                case "read_locations":
+                    return await workspace_manager.read_locations(args["workspace_id"], args.get("purpose", "load"))
                 case _:
                     return BaseResult(
-                        error=f"Action {action} not found in tests manager tool"
+                        error=f"Action {action} not found in workspace manager tool"
                     )
         except Exception:
             return BaseResult(

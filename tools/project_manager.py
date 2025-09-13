@@ -63,7 +63,7 @@ def register(mcp, token: Optional[BzmToken]):
         - list: List all projects. 
             args(dict): Dictionary with the following required parameters:
                 workspace_id (int): The id of the workspace to list projects from.
-                limit (int, default=50): The number of projects to list.
+                limit (int, default=10, valid=[1 to 50]): The number of projects to list.
                 offset (int, default=0): Number of projects to skip.
         Hints:
         - For a particular project, go directly to the read action (you don't need account or workspace information).

@@ -51,7 +51,7 @@ def register(mcp, token: Optional[BzmToken]) -> None:
                 account_id (int): The id of the account to get information.
         - list: List all accounts. 
             args(dict): Dictionary with the following required parameters:
-                limit (int, default=50): The number of tests to list.
+                limit (int, default=10, valid=[1 to 50]): The number of tests to list.
                 offset (int, default=0): Number of tests to skip.
         Hints:
         - If you need to get the default account, use the project id to get the workspace and with that the account.

@@ -111,15 +111,15 @@ def register(mcp, token: Optional[BzmToken]):
         - list: List all executions for a test ID. 
             args(dict): Dictionary with the following required parameters:
                 test_id (int): The id of the test to list the execution from
-                limit (int, default=50): The number of test executions to list.
+                limit (int, default=10, valid=[1 to 50]): The number of test executions to list.
                 offset (int, default=0): Number of test executions to skip.       
         - read_summary: get the summary report for a given execution ID.
             args(dict): Dictionary with the following required parameters:
                 execution_id (int): The execution ID to get the summary report for.
-        - read_errors: get the error report for a given execution ID with optional paging.
+        - read_errors: get the error report for a given execution ID.
             args(dict): Dictionary with the following required parameters:
                 execution_id (int): The execution ID to get the error report for.
-        - read_request_stats: get the request statistics report for a given execution ID with optional paging.
+        - read_request_stats: get the request statistics report for a given execution ID.
             args(dict): Dictionary with the following required parameters:
                 execution_id (int): The execution ID to get the request statistics report for.
         - read_all_reports: get all reports (summary, error, and request statistics) for a given execution ID.

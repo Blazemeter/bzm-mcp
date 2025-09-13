@@ -1,8 +1,10 @@
+from typing import Optional, List
+
 from models.account import Account
 from tools.utils import get_date_time_iso
 
 
-def format_accounts(accounts):
+def format_accounts(accounts, params: Optional[dict] = None) -> List[Account]:
     formatted_accounts = []
     for account in accounts:
         formatted_accounts.append(
