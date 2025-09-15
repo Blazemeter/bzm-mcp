@@ -45,13 +45,13 @@ MCP server for BlazeMeter API integration. Provides authentication handling and 
      }
    }
    ```
-   > Location in MacOs: `~/.cursor/mcp.json`
+   > Location in macOS: `~/.cursor/mcp.json`
 
    **3.2. Claude**
    ```json
    Configuration not defined
    ```
-   > Location in MacOs: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
+   > Location in macOS: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
 
 ## Development
 

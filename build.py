@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Build script for creating PyInstaller binary."""
 
-import PyInstaller.__main__
-import sys
 import platform
-from pathlib import Path
+
+import PyInstaller.__main__
+
 
 def build():
     """Build the binary using PyInstaller."""
@@ -33,6 +33,7 @@ def build():
         '--clean',
         '--noconfirm',
     ])
+
 
 if __name__ == "__main__":
     build()
