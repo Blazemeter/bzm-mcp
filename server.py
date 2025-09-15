@@ -1,9 +1,9 @@
-from tools.retrieve_user import register as register_retrieve_user
-from tools.retrieve_projects import register as register_retrieve_projects
-from tools.retrieve_workspaces import register as register_retrieve_workspaces
+from tools.user_manager import register as register_user_manager
+from tools.project_manager import register as register_project_manager
+from tools.workspace_manager import register as register_workspace_manager
 from tools.test_manager import register as register_test_manager
-from tools.test_execution_manager import register as register_test_execution_manager
-from tools.retrieve_account import register as register_retrieve_account
+from tools.execution_manager import register as register_execution_manager
+from tools.account_manager import register as register_account_manager
 from config.token import BzmToken
 from typing import Optional
 
@@ -15,9 +15,9 @@ def register_tools(mcp, token: Optional[BzmToken]):
         mcp: The MCP server instance
         token: Optional BlazeMeter token (can be None if not configured)
     """
-    register_retrieve_user(mcp, token)
-    register_retrieve_projects(mcp, token)
-    register_retrieve_workspaces(mcp, token)
+    register_user_manager(mcp, token)
+    register_project_manager(mcp, token)
+    register_workspace_manager(mcp, token)
     register_test_manager(mcp, token)
-    register_test_execution_manager(mcp, token)
-    register_retrieve_account(mcp, token)
+    register_execution_manager(mcp, token)
+    register_account_manager(mcp, token)
