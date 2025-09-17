@@ -9,6 +9,8 @@ BLAZEMETER_API_KEY_FILE_PATH = os.getenv('BLAZEMETER_API_KEY')
 
 
 def run():
+    # Verify if running inside Docker container
+    is_docker = os.getenv('MCP_DOCKER', 'false').lower() == 'true'
     token = None
 
     if BLAZEMETER_API_KEY_FILE_PATH:
@@ -20,6 +22,9 @@ def run():
         except Exception:
             # Other errors (file not found, permissions, etc.) - also handled by tools
             pass
+    elif is_docker:
+        token = BzmToken(os.getenv('API_KEY_ID'), os.getenv('API_KEY_SECRET'))
+
 
     instructions = """
     # BlazeMeter MCP Server
