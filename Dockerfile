@@ -44,5 +44,7 @@ RUN chmod +x ./bzm-mcp && \
 # Switch to non-root user
 USER bzm-mcp
 
+ENV MCP_DOCKER=true
+
 # Command to run the application
 ENTRYPOINT ["./bzm-mcp"]
