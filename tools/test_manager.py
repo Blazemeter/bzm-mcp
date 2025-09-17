@@ -262,6 +262,7 @@ def register(mcp, token: Optional[BzmToken]):
                 ramp-up (str): The length of time the test will take to ramp-up to full concurrency. Values can be provided in m (minutes) only. Can be empty.
                 steps (int, default=1): The number of ramp-up steps. Can be empty.
                 executor (str, default=jmeter): The script type you are running. Includes the following options: (gatling,grinder,jmeter,locust,pbench,selenium,siege).
+                locations (list[str]): List of locations with their percentage distribution of user load in a key value format "location_id=percent_value". Example: ["us-east4-a=25", "us-east1-b=25", "us-west1-a=25", "us-central1-a=25"]
         - upload_assets: Upload main script test as well as multiple related assets to a test. Supports .zip, .csv, .jmx, .yaml and other file types.
             args(dict): Dictionary with the following required parameters:
                 test_id (int): The id of the test to upload assets to.
