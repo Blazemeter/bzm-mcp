@@ -13,6 +13,7 @@ from config.token import BzmToken
 from formatters.test import format_tests
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
+from config.path_mapper import PathMapperFactory
 from tools.utils import api_request
 
 logging.basicConfig(level=logging.DEBUG)
@@ -24,6 +25,7 @@ class TestManager:
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         self.token = token
         self.ctx = ctx
+        self.path_mapper = PathMapperFactory.create_strategy()
 
     async def create(self, test_name: str, project_id: int) -> BaseResult:
         test_body = {
@@ -75,13 +77,22 @@ class TestManager:
     async def upload_assets(self, test_id: int, file_paths: List[str], main_script: Optional[str] = None) -> Dict[
         str, Any]:
         logger.debug(f"Starting upload_assets for test_id: {test_id}")
-        logger.debug(f"File paths: {file_paths}")
+        logger.debug(f"Original file paths: {file_paths}")
         logger.debug(f"Main script: {main_script}")
+
+        mapped_file_paths = self.path_mapper.map_paths(file_paths)
+        logger.debug(f"Mapped file paths: {mapped_file_paths}")
+        
+        mapped_main_script = None
+        if main_script:
+            mapped_main_script_list = self.path_mapper.map_paths([main_script])
+            mapped_main_script = mapped_main_script_list[0] if mapped_main_script_list else None
+            logger.debug(f"Mapped main script: {mapped_main_script}")
 
         valid_files = []
         invalid_files = []
 
-        self._validate_files(file_paths, valid_files, invalid_files)
+        self._validate_files(mapped_file_paths, valid_files, invalid_files)
 
         logger.debug(f"Valid files: {valid_files}")
         logger.debug(f"Invalid files: {invalid_files}")
@@ -105,9 +116,9 @@ class TestManager:
         self._process_upload_results(upload_results, valid_files, successful_uploads, failed_uploads)
 
         config_update_result = None
-        if main_script and main_script in valid_files:
-            logger.debug(f"Updating test configuration with main script: {main_script}")
-            config_update_result = await self._update_test_configuration(test_id, main_script)
+        if mapped_main_script and mapped_main_script in valid_files:
+            logger.debug(f"Updating test configuration with main script: {mapped_main_script}")
+            config_update_result = await self._update_test_configuration(test_id, mapped_main_script)
 
         return {
             "test_id": test_id,
