@@ -8,14 +8,20 @@ class PerformanceTestObject:
         self.test_id = test_data.get("test_id")
         self.override_execution = self._extract_override_execution(test_data)
 
+    @staticmethod
+    def safe_float(value):
+        try:
+            return float(value)
+        except ValueError:
+            return None
+
     @classmethod
     def from_args(cls, args: Dict[str, Any]) -> 'PerformanceTestObject':
         return cls(args)
 
     @staticmethod
-    def _extract_override_execution(test_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _extract_override_execution(test_data: Dict[str, Any], concurrency: int = 1) -> Dict[str, Any]:
         execution_config = {}
-        concurrency = int(test_data["concurrency"]) if "concurrency" in test_data and test_data["concurrency"] else 1
         for param in ["iterations", "concurrency", "hold-for", "ramp-up", "steps", "executor", "locations"]:
             if param in test_data:
                 match param:
@@ -25,14 +31,11 @@ class PerformanceTestObject:
                         execution_config["holdFor"] = test_data[param]
                     case "locations":
                         locations_percents = {}
-                        locations_concurrency = {}
                         for location in test_data[param]:
                             location_kv = location.split("=")
-                            location_percent = int(location_kv[1])
-                            locations_percents[location_kv[0]] = location_percent
-                            locations_concurrency[location_kv[0]] = int(location_percent * concurrency / 100)
-
-                        execution_config["locations"] = locations_concurrency
+                            location_percent = PerformanceTestObject.safe_float(location_kv[1])
+                            if location_percent:
+                                locations_percents[location_kv[0]] = location_percent
                         execution_config["locationsPercents"] = locations_percents
                     case _:
                         execution_config[param] = test_data[param]

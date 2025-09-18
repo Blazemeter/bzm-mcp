@@ -9,11 +9,11 @@ from typing import Optional, List
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
+from config.path_mapper import PathMapperFactory
 from config.token import BzmToken
 from formatters.test import format_tests
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
-from config.path_mapper import PathMapperFactory
 from tools.utils import api_request
 
 logging.basicConfig(level=logging.DEBUG)
@@ -26,6 +26,14 @@ class TestManager:
         self.token = token
         self.ctx = ctx
         self.path_mapper = PathMapperFactory.create_strategy()
+
+    async def read(self, test_id: int) -> BaseResult:
+        return await api_request(
+            self.token,
+            "GET",
+            f"{TESTS_ENDPOINT}/{test_id}",
+            result_formatter=format_tests
+        )
 
     async def create(self, test_name: str, project_id: int) -> BaseResult:
         test_body = {
@@ -82,7 +90,7 @@ class TestManager:
 
         mapped_file_paths = self.path_mapper.map_paths(file_paths)
         logger.debug(f"Mapped file paths: {mapped_file_paths}")
-        
+
         mapped_main_script = None
         if main_script:
             mapped_main_script_list = self.path_mapper.map_paths([main_script])
@@ -235,9 +243,49 @@ class TestManager:
         if not performance_test.is_valid():
             raise ValueError("PerformanceTestObject must have a valid test_id")
 
+        test_data = await self.read(performance_test.test_id)
+        test_override_executions = test_data.result[0].override_executions
+        test_data_override = {}
+        # Flat the overrides if more then one exists
+        for override in test_override_executions:
+            test_data_override.update(override)
         configuration = performance_test.get_configuration()
+        test_data_override.update(configuration)
+
+        # Switch between iteration and duration
+        if configuration.get("holdFor", None) and test_data_override.get("iterations", None):
+            del test_data_override["iterations"]
+
+        if configuration.get("iterations", None) and test_data_override.get("holdFor", None):
+            del test_data_override["holdFor"]
+
+        # Remove concurrency if value it's zero
+        if test_data_override.get("concurrency") < 1:
+            del test_data_override["concurrency"]
+
+        # Remove ramp up steps if value it's -1
+        if test_data_override.get("steps") < 0:
+            del test_data_override["steps"]
+
+        # Remove ramp up if it's empty
+        if test_data_override.get("rampUp") == "":
+            del test_data_override["rampUp"]
+
+        # Recalculate location concurrency
+        concurrency = test_data_override.get("concurrency", 1)
+        locations_concurrency = {}
+        for location, percent in test_data_override["locationsPercents"].items():
+            locations_concurrency[location] = int(percent * concurrency / 100)
+
+        for location, users in locations_concurrency.items():
+            if users == 0:
+                locations_concurrency[location] = 1 # Default behaviour on BlazeMeter
+            break
+
+        test_data_override["locations"] = locations_concurrency
+
         configuration_body = {
-            "overrideExecutions": [configuration]
+            "overrideExecutions": [test_data_override]
         }
 
         return await api_request(
@@ -254,6 +302,9 @@ def register(mcp, token: Optional[BzmToken]):
         description="""
         Operations on tests.
         Actions:
+        - read: Read a test. Get the detailed information of a test.
+            args(dict): Dictionary with the following required parameters:
+                test_id (int): The only required parameter. The id of the test to read.
         - create: Create a new test. Do not create a test if the user has not confirmed the location for validation of workspace, project and account.
             args(dict): Dictionary with the following required parameters:
                 test_name (str): The required name of the test to create.
@@ -263,17 +314,21 @@ def register(mcp, token: Optional[BzmToken]):
                 project_id (int): The id of the project to list tests from.
                 limit (int, default=10, valid=[1 to 50]): The number of tests to list.
                 offset (int, default=0): Number of tests to skip.
-        - configure: Configure a performance test for the given test id. The test id is the only required parameter. 
+        - configure_load: Configure the load of a test for the given test id. The test id is the only required parameter. 
                      The test will be configured based on the following parameters only if user confirms the configuration:
             args(dict): Dictionary with the following parameters:
                 test_id (int): The only required parameter. The id of the test to configure.
-                iterations (int, default=1): The number of iterations to run the test with. Not available if hold-for is provided. null if disabled.
-                hold-for (str, default=1m): The length of time the test will run at the peak concurrency. Values can be provided in m (minutes) only. Not available if iterations is provided. null if disabled.
-                concurrency (int, default=20): The number of concurrent virtual users simulated to run. For example, 20 will set the test to run with 20 concurrent users. Minimum: 1.
-                ramp-up (str): The length of time the test will take to ramp-up to full concurrency. Values can be provided in m (minutes) only. Can be empty.
-                steps (int, default=1): The number of ramp-up steps. Can be empty.
+                iterations (int, default=1, infinite=-1): The number of iterations to run the test with. Don't use if hold-for is provided.
+                hold-for (str, default=1m): The length of time the test will run at the peak concurrency. Values can be provided in m (minutes) only. Don't use if iterations is provided.
+                concurrency (int, default=20, disable=0, max=500000): The number of concurrent virtual users simulated to run. For example, 20 will set the test to run with 20 concurrent users. To disable it set to 0.
+                ramp-up (str, disable=""): The length of time the test will take to ramp-up to full concurrency. Values can be provided in m (minutes) only. Can be empty.
+                steps (int, default=1, disable=-1): The number of ramp-up steps. Can be empty.
                 executor (str, default=jmeter): The script type you are running. Includes the following options: (gatling,grinder,jmeter,locust,pbench,selenium,siege).
-                locations (list[str]): List of locations with their percentage distribution of user load in a key value format "location_id=percent_value". Example: ["us-east4-a=25", "us-east1-b=25", "us-west1-a=25", "us-central1-a=25"]
+        - configure_locations: Configure the distribution of a test for given test id. The test id is the only required parameter. 
+                     The test will be configured based on the following parameters only if user confirms the configuration:
+            args(dict): Dictionary with the following parameters:
+                test_id (int): The only required parameter. The id of the test to configure.
+                locations (list[str]): List of all locations with their percentage distribution of user load in a key value format "location_id=percent_value". Example: ["us-east4-a=25", "us-east1-b=25", "us-west1-a=25", "us-central1-a=25"]
         - upload_assets: Upload main script test as well as multiple related assets to a test. Supports .zip, .csv, .jmx, .yaml and other file types.
             args(dict): Dictionary with the following required parameters:
                 test_id (int): The id of the test to upload assets to.
@@ -285,11 +340,16 @@ def register(mcp, token: Optional[BzmToken]):
         test_manager = TestManager(token, ctx)
         try:
             match action:
+                case "read":
+                    return await test_manager.read(args["test_id"])
                 case "create":
                     return await test_manager.create(args["test_name"], args["project_id"])
                 case "list":
                     return await test_manager.list(args["project_id"], args.get("limit", 50), args.get("offset", 0))
-                case "configure":
+                case "configure_load":
+                    performance_test = PerformanceTestObject.from_args(args)
+                    return await test_manager.configure(performance_test)
+                case "configure_locations":
                     performance_test = PerformanceTestObject.from_args(args)
                     return await test_manager.configure(performance_test)
                 case "upload_assets":

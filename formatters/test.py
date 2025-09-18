@@ -14,7 +14,8 @@ def format_tests(tests: List[Any], params: Optional[dict] = None) -> List[Test]:
                 description=test.get("description", ""),
                 created=get_date_time_iso(test.get("created")),
                 updated=get_date_time_iso(test.get("updated")),
-                configuration=test.get("configuration", {})
+                configuration=test.get("configuration", {}),
+                override_executions=test.get("overrideExecutions", {})
             )
         )
     return formatted_tests
