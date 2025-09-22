@@ -253,22 +253,25 @@ class TestManager:
         test_data_override.update(configuration)
 
         # Switch between iteration and duration
-        if configuration.get("holdFor", None) and test_data_override.get("iterations", None):
+        if configuration.get("holdFor") is not None and test_data_override.get("iterations") is not None:
             del test_data_override["iterations"]
 
-        if configuration.get("iterations", None) and test_data_override.get("holdFor", None):
+        if configuration.get("iterations") is not None and test_data_override.get("holdFor") is not None:
             del test_data_override["holdFor"]
 
         # Remove concurrency if value it's zero
-        if test_data_override.get("concurrency") < 1:
+        concurrency = test_data_override.get("concurrency")
+        if concurrency is not None and concurrency < 1:
             del test_data_override["concurrency"]
 
         # Remove ramp up steps if value it's -1
-        if test_data_override.get("steps") < 0:
+        steps = test_data_override.get("steps")
+        if steps is not None and steps < 0:
             del test_data_override["steps"]
 
         # Remove ramp up if it's empty
-        if test_data_override.get("rampUp") == "":
+        ramp_up = test_data_override.get("rampUp")
+        if ramp_up is not None and ramp_up == "":
             del test_data_override["rampUp"]
 
         # Recalculate location concurrency
