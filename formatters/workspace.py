@@ -1,6 +1,5 @@
 from typing import List, Any, Union, Optional
 
-from models.result import BaseResult
 from models.workspace import WorkspaceDetailed, Workspace
 from tools.utils import get_date_time_iso
 
@@ -48,9 +47,10 @@ def format_workspaces_locations(workspaces: List[Any], params: Optional[dict] = 
         purpose_filter_id = "serviceMock"
     private_locations = []
     public_locations = []
-
+    account_id = None
     for workspace in workspaces:
         # The locations are inside a particular workspace
+        account_id = workspace["accountId"]
         locations = workspace["locations"]
         for location in locations:
             purposes = location.get("purposes", {})
@@ -71,6 +71,7 @@ def format_workspaces_locations(workspaces: List[Any], params: Optional[dict] = 
                     public_locations.append(location_element)
     return [
         {
+            "account_id": account_id,
             "private": private_locations,
             "public": public_locations,
         }

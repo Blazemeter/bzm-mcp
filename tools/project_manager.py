@@ -7,7 +7,7 @@ from config.blazemeter import TOOLS_PREFIX, PROJECTS_ENDPOINT
 from config.token import BzmToken
 from formatters.project import format_projects
 from models.result import BaseResult
-from tools.test_manager import TestManager
+from tools import utils, bridge
 from tools.utils import api_request
 
 
@@ -24,16 +24,27 @@ class ProjectManager:
             f"{PROJECTS_ENDPOINT}/{project_id}",
             result_formatter=format_projects
         )
+
         if project_result.error:
             return project_result
         project_element = project_result.result[0]
 
+        # Check if it's valid or allowed
+        workspace_result = await bridge.read_workspace(self.token, self.ctx, project_element.workspace_id)
+        if workspace_result.error:
+            return workspace_result
+
         # Get the amount of test
-        tests_result = await TestManager(self.token, self.ctx).list(project_id=project_id, limit=1, offset=0)
-        project_element.tests_count = tests_result.total
+        project_element.tests_count = await bridge.count_project_tests(self.token, self.ctx, project_id)
         return project_result
 
     async def list(self, workspace_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
+
+        # Check if it's valid or allowed
+        workspace_result = await bridge.read_workspace(self.token, self.ctx, workspace_id)
+        if workspace_result.error:
+            return workspace_result
+
         parameters = {
             "workspaceId": workspace_id,
             "limit": limit,
