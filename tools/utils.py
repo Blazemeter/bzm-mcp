@@ -1,15 +1,24 @@
 """
 Simple utilities for BlazeMeter MCP tools.
 """
+import platform
 from datetime import datetime
+
 from typing import Optional, Callable
 
 import httpx
 
 from config.blazemeter import BZM_API_BASE_URL
 from config.token import BzmToken
+from config.version import __version__
 from models.result import BaseResult
 
+so = platform.system()       # "Windows", "Linux", "Darwin"
+version = platform.version() # kernel / build version
+release = platform.release() # ex. "10", "5.15.0-76-generic"
+machine = platform.machine() # ex. "x86_64", "AMD64", "arm64"
+
+ua_part = f"{so} {release}; {machine}"
 
 async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
                       result_formatter: Callable = None,
@@ -26,6 +35,7 @@ async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
 
     headers = kwargs.pop("headers", {})
     headers["Authorization"] = token.as_basic_auth()
+    headers["User-Agent"] = f"bzm-mcp/{__version__} ({ua_part})"
 
     async with (httpx.AsyncClient(base_url=BZM_API_BASE_URL, http2=True) as client):
         try:
