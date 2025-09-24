@@ -15,7 +15,7 @@ VSVersionInfo(
       StringTable(
         '040904B0',
         [StringStruct('CompanyName', 'BlazeMeter'),
-        StringStruct('FileDescription', 'Add your description here'),
+        StringStruct('FileDescription', 'BlazeMeter MCP'),
         StringStruct('FileVersion', '0.1.0'),
         StringStruct('InternalName', 'bzm-mcp'),
         StringStruct('LegalCopyright', '© 2025 BlazeMeter'),
