@@ -1,8 +1,10 @@
+import argparse
 import os
 
 from mcp.server.fastmcp import FastMCP
 
 from config.token import BzmToken, BzmTokenError
+from config.version import __version__
 from server import register_tools
 
 BLAZEMETER_API_KEY_FILE_PATH = os.getenv('BLAZEMETER_API_KEY')
@@ -24,7 +26,6 @@ def run():
             pass
     elif is_docker:
         token = BzmToken(os.getenv('API_KEY_ID'), os.getenv('API_KEY_SECRET'))
-
 
     instructions = """
     # BlazeMeter MCP Server
@@ -51,4 +52,12 @@ def run():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog="bzm-mcp")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}"
+    )
+
+    args = parser.parse_args()
     run()

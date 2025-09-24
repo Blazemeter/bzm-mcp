@@ -27,7 +27,7 @@ async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
     headers = kwargs.pop("headers", {})
     headers["Authorization"] = token.as_basic_auth()
 
-    async with (httpx.AsyncClient(base_url=BZM_API_BASE_URL) as client):
+    async with (httpx.AsyncClient(base_url=BZM_API_BASE_URL, http2=True) as client):
         try:
             resp = await client.request(method, endpoint, headers=headers, **kwargs)
             resp.raise_for_status()
