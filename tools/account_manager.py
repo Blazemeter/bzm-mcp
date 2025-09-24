@@ -11,19 +11,37 @@ from tools.utils import api_request
 
 
 class AccountManager:
+
+    # Note: It's allowed to list all the user account without AI consent
+    # the format_accounts only expose minimum information to user
+    # The read operation verify permissions and don't allow to share if don't have permissions.
+
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         self.token = token
         self.ctx = ctx
 
     async def read(self, account_id: int) -> BaseResult:
-        return await api_request(
+        account_result = await api_request(
             self.token,
             "GET",
             f"{ACCOUNTS_ENDPOINT}/{account_id}",
             result_formatter=format_accounts
         )
+        if account_result.error:
+            return account_result
+        else:
+            ai_consent = account_result.result[0].ai_consent
+            if ai_consent is not True:
+                return BaseResult(
+                    error=f"The Account ID {account_id} does not have AI consent. Contact your account manager for more information."
+                )
+            else:
+                return account_result
 
     async def list(self, limit: int = 50, offset: int = 0) -> BaseResult:
+
+        # Note: Not it's needed to control AI consent at this level
+
         parameters = {
             "limit": limit,
             "skip": offset,
