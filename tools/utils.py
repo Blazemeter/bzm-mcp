@@ -37,7 +37,14 @@ async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
     headers["Authorization"] = token.as_basic_auth()
     headers["User-Agent"] = f"bzm-mcp/{__version__} ({ua_part})"
 
-    async with (httpx.AsyncClient(base_url=BZM_API_BASE_URL, http2=True) as client):
+    timeout = httpx.Timeout(
+        connect=15.0,
+        read=60.0,
+        write=15.0,
+        pool=60.0
+    )
+
+    async with (httpx.AsyncClient(base_url=BZM_API_BASE_URL, http2=True, timeout=timeout) as client):
         try:
             resp = await client.request(method, endpoint, headers=headers, **kwargs)
             resp.raise_for_status()
