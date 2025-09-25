@@ -296,15 +296,16 @@ class TestManager:
         # Recalculate location concurrency
         concurrency = test_data_override.get("concurrency", 1)
         locations_concurrency = {}
-        for location, percent in test_data_override["locationsPercents"].items():
-            locations_concurrency[location] = int(percent * concurrency / 100)
+        if "locationsPercents" in test_data_override:
+            for location, percent in test_data_override["locationsPercents"].items():
+                locations_concurrency[location] = int(percent * concurrency / 100)
 
-        for location, users in locations_concurrency.items():
-            if users == 0:
-                locations_concurrency[location] = 1  # Default behaviour on BlazeMeter
-            break
+            for location, users in locations_concurrency.items():
+                if users == 0:
+                    locations_concurrency[location] = 1  # Default behaviour on BlazeMeter
+                break
 
-        test_data_override["locations"] = locations_concurrency
+            test_data_override["locations"] = locations_concurrency
 
         return test_data_override
 
@@ -328,8 +329,9 @@ class TestManager:
         # Normalize Override
         test_data_override = self._normalize_configuration_override(test_data_override, test_data_override)
 
+        override_executions = [test_data_override] if test_data_override else None
         configuration_body = {
-            "overrideExecutions": [test_data_override]
+            "overrideExecutions": override_executions
         }
 
         return await api_request(
@@ -338,7 +340,6 @@ class TestManager:
             f"{TESTS_ENDPOINT}/{performance_test.test_id}",
             result_formatter=format_tests,
             json=configuration_body)
-
 
 def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
