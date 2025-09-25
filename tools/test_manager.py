@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Dict
 from typing import Optional, List
 
+import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
@@ -14,7 +15,7 @@ from config.token import BzmToken
 from formatters.test import format_tests
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
-from tools import utils, bridge
+from tools import bridge
 from tools.utils import api_request
 
 logging.basicConfig(level=logging.DEBUG)
@@ -246,7 +247,7 @@ class TestManager:
         return script_types.get(extension, 'unknown')
 
     async def list(self, project_id: int, limit: int = 50,
-                   offset: int = 0, control_ai_consent:bool=True) -> BaseResult:
+                   offset: int = 0, control_ai_consent: bool = True) -> BaseResult:
 
         if control_ai_consent:
             # Check if it's valid or allowed
@@ -341,6 +342,7 @@ class TestManager:
             result_formatter=format_tests,
             json=configuration_body)
 
+
 def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_tests",
@@ -408,7 +410,12 @@ def register(mcp, token: Optional[BzmToken]):
                     return BaseResult(
                         error=f"Action {action} not found in tests manager tool"
                     )
-        except Exception:
+        except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {traceback.format_exc()}"
+            )
+        except Exception:
+            return BaseResult(
+                error=f"""Error: {traceback.format_exc()}
+                          If you think this is a bug, please contact blazemeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
             )

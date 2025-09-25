@@ -1,6 +1,7 @@
 import traceback
 from typing import Any, Dict, Optional
 
+import httpx
 from mcp.server.fastmcp import Context
 from pydantic import Field
 
@@ -8,7 +9,7 @@ from config.blazemeter import WORKSPACES_ENDPOINT, TOOLS_PREFIX
 from config.token import BzmToken
 from formatters.workspace import format_workspaces, format_workspaces_detailed, format_workspaces_locations
 from models.result import BaseResult
-from tools import utils, bridge
+from tools import bridge
 from tools.utils import api_request
 
 
@@ -35,7 +36,7 @@ class WorkspaceManager:
         else:
             # Check if it's valid or allowed
             account_result = await bridge.read_account(self.token, self.ctx,
-                workspace_result.result[0].account_id)
+                                                       workspace_result.result[0].account_id)
             if account_result.error:
                 return account_result
             else:
@@ -77,7 +78,7 @@ class WorkspaceManager:
         else:
             # Check if it's valid or allowed
             account_result = await bridge.read_account(self.token, self.ctx,
-                                                         locations_result.result[0]["account_id"])
+                                                       locations_result.result[0]["account_id"])
             if account_result.error:
                 return account_result
             else:
@@ -126,7 +127,12 @@ def register(mcp, token: Optional[BzmToken]):
                     return BaseResult(
                         error=f"Action {action} not found in workspace manager tool"
                     )
-        except Exception:
+        except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {traceback.format_exc()}"
+            )
+        except Exception:
+            return BaseResult(
+                error=f"""Error: {traceback.format_exc()}
+                          If you think this is a bug, please contact blazemeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
             )

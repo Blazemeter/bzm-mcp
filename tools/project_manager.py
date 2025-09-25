@@ -1,13 +1,14 @@
 import traceback
 from typing import Optional, Dict, Any
 
+import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TOOLS_PREFIX, PROJECTS_ENDPOINT
 from config.token import BzmToken
 from formatters.project import format_projects
 from models.result import BaseResult
-from tools import utils, bridge
+from tools import bridge
 from tools.utils import api_request
 
 
@@ -95,7 +96,12 @@ def register(mcp, token: Optional[BzmToken]):
                     return BaseResult(
                         error=f"Action {action} not found in project manager tool"
                     )
-        except Exception:
+        except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {traceback.format_exc()}"
+            )
+        except Exception:
+            return BaseResult(
+                error=f"""Error: {traceback.format_exc()}
+                          If you think this is a bug, please contact blazemeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
             )
