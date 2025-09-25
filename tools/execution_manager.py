@@ -1,6 +1,7 @@
 import traceback
 from typing import Optional, Dict, Any, List, Union
 
+import httpx
 from mcp.server.fastmcp import Context
 from pydantic import Field
 
@@ -9,7 +10,7 @@ from config.token import BzmToken
 from formatters.execution import format_executions, format_executions_detailed, format_executions_status
 from models.execution import TestExecutionDetailed
 from models.result import BaseResult
-from tools import utils, bridge
+from tools import bridge
 from tools.report_manager import ReportManager
 from tools.utils import api_request
 
@@ -179,7 +180,12 @@ def register(mcp, token: Optional[BzmToken]):
                     return BaseResult(
                         error=f"Action {action} not found in test execution manager tool"
                     )
-        except Exception:
+        except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {traceback.format_exc()}"
+            )
+        except Exception:
+            return BaseResult(
+                error=f"""Error: {traceback.format_exc()}
+                          If you think this is a bug, please contact blazemeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
             )
