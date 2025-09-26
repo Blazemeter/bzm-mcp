@@ -41,6 +41,7 @@ jobs:
       shell: bash
       run: |
         # Docker container with Ubuntu 25.10 and build the binary inside it
+        rm -rf dist/*
         docker run --rm \
           -v "$PWD:/workspace" \
           -w /workspace \
