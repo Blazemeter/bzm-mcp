@@ -38,7 +38,7 @@ The easiest way to configure your MCP client is using our interactive CLI tool:
 > [!NOTE]
 > Choose the binary that matches your OS (Windows, macOS, Linux)
 2. **Place the binary** in the same folder as your `api-keys.json` file
-3. **Double-click the binary** to launch the interactive configuration tool
+3. **Execute or Double-click the binary** to launch the interactive configuration tool
 4. **The tool automatically generates** the JSON configuration file for you
 
 ![CLI Demo](/docs/cli-tool.gif)
@@ -52,7 +52,7 @@ The easiest way to configure your MCP client is using our interactive CLI tool:
 ```json
 {
   "mcpServers": {
-    "blazemeter": {
+    "BlazeMeter MCP": {
       "command": "/path/to/bzm-mcp-binary",
       "args": ["--mcp"],
       "env": {
@@ -170,7 +170,7 @@ The BlazeMeter MCP Server provides comprehensive access to BlazeMeter's API thro
 ```json
 {
   "mcpServers": {
-    "Docker Blazemeter MCP": {
+    "Docker BlazeMeter MCP": {
       "command": "docker",
       "args": [
         "run",
