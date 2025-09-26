@@ -134,7 +134,7 @@ if __name__ == "__main__":
         if not get_token():
             print(" [X] BlazeMeter API Key not configured.")
             print(" ")
-            print(" Copy the BlazeMeter API Key file (api-key.json) to the same location of our executable.")
+            print(" Copy the BlazeMeter API Key file (api-key.json) to the same location of this executable.")
             print(" ")
             print(" How to obtain the api-key.json file:")
             print(" https://help.blazemeter.com/docs/guide/api-blazemeter-api-keys.html")
