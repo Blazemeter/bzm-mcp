@@ -29,6 +29,9 @@ jobs:
           - os: macos-latest
             name: macos
             arch: arm64
+          - os: macos-15-intel
+            name: macos
+            arch: amd64
 
     steps:
     - uses: actions/checkout@v4
@@ -69,6 +72,7 @@ jobs:
       if: matrix.name != 'linux'
       shell: bash
       run: |
+        rm -rf dist/*
         uv sync
         uv run build.py
     
@@ -99,6 +103,10 @@ jobs:
           cp artifacts/bzm-mcp-linux-amd64/* dist/
           echo "Copied Linux AMD64 binary"
         fi
+        if [ -d "artifacts/bzm-mcp-linux-arm64" ]; then
+          cp artifacts/bzm-mcp-linux-arm64/* dist/
+          echo "Copied Linux ARM64 binary"
+        fi
         if [ -d "artifacts/bzm-mcp-windows-amd64" ]; then
           cp artifacts/bzm-mcp-windows-amd64/* dist/
           echo "Copied Windows AMD64 binary"
@@ -107,7 +115,11 @@ jobs:
           cp artifacts/bzm-mcp-macos-arm64/* dist/
           echo "Copied macOS ARM64 binary"
         fi
-       
+        if [ -d "artifacts/bzm-mcp-macos-amd64" ]; then
+          cp artifacts/bzm-mcp-macos-amd64/* dist/
+          echo "Copied macOS AMD64 binary"
+        fi
+
         echo "Final dist/ contents:"
         ls -la dist/ || echo "No dist/ directory found"
     
