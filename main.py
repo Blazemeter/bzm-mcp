@@ -1,19 +1,26 @@
 import argparse
+import json
 import os
 
 from mcp.server.fastmcp import FastMCP
 
 from config.token import BzmToken, BzmTokenError
-from config.version import __version__
+from config.version import __version__, __executable__
 from server import register_tools
 
 BLAZEMETER_API_KEY_FILE_PATH = os.getenv('BLAZEMETER_API_KEY')
 
 
-def run():
+def get_token():
+    global BLAZEMETER_API_KEY_FILE_PATH
+
     # Verify if running inside Docker container
     is_docker = os.getenv('MCP_DOCKER', 'false').lower() == 'true'
     token = None
+
+    local_api_key_file = os.path.join(os.path.dirname(__executable__), "api-key.json")
+    if not BLAZEMETER_API_KEY_FILE_PATH and os.path.exists(local_api_key_file):
+        BLAZEMETER_API_KEY_FILE_PATH = local_api_key_file
 
     if BLAZEMETER_API_KEY_FILE_PATH:
         try:
@@ -26,7 +33,11 @@ def run():
             pass
     elif is_docker:
         token = BzmToken(os.getenv('API_KEY_ID'), os.getenv('API_KEY_SECRET'))
+    return token
 
+
+def run():
+    token = get_token()
     instructions = """
     # BlazeMeter MCP Server
     A comprehensive integration tool that provides AI assistants with full programmatic access to BlazeMeter's 
@@ -53,11 +64,61 @@ def run():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="bzm-mcp")
+
     parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {__version__}"
     )
 
+    parser.add_argument(
+        "--mcp",
+        action="store_true",
+        help="Execute MCP Server"
+    )
+
     args = parser.parse_args()
-    run()
+
+    if args.mcp:
+        run()
+    else:
+
+        logo_ascii = (
+            "  ____  _                              _            \n"
+            " | __ )| | __ _ _______ _ __ ___   ___| |_ ___ _ __ \n"
+            " |  _ \| |/ _` |_  / _ \ '_ \` _ \/ _ \ __/ _ \ '__|\n"
+            " | |_) | | (_| |/ /  __/ | | | | |  __/ ||  __/ |   \n"
+            " |____/|_|\__,_/___\___|_| |_| |_|\___|\__\___|_|   \n"
+            "                                                    \n"
+            f" BlazeMeter MCP Server v{__version__} \n"
+        )
+        print(logo_ascii)
+
+        config_dict = {
+            "Blazmeter MCP": {
+                "command": f"{__executable__}",
+                "args": ["--mcp"],
+            }
+        }
+
+        print(" MCP Server Configuration:\n")
+        print(" In your tool with MCP server support, locate the MCP server configuration file")
+        print(" and add the following server to the server list.\n")
+
+        json_str = json.dumps(config_dict, ensure_ascii=False, indent=4)
+        print("\n".join(json_str.split("\n")[1:-1]) + "\n")
+
+        if not get_token():
+            print(" [X] BlazeMeter API Key not configured.")
+            print(" ")
+            print(" Copy the BlazeMeter API Key file (api-key.json) to the same location of our executable.")
+            print(" ")
+            print(" How to obtain the api-key.json file:")
+            print(" https://help.blazemeter.com/docs/guide/api-blazemeter-api-keys.html")
+        else:
+            print(" [OK] BlazeMeter API Key configured correctly.")
+        print(" ")
+        print(" There are configuration alternatives, if you want to know more:")
+        print(" https://github.com/Blazemeter/bzm-mcp/")
+        print(" ")
+        input("Press Enter to exit...")
