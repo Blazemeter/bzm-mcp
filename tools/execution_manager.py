@@ -1,6 +1,7 @@
 import traceback
 from typing import Optional, Dict, Any, List, Union
 
+import httpx
 from mcp.server.fastmcp import Context
 from pydantic import Field
 
@@ -9,6 +10,7 @@ from config.token import BzmToken
 from formatters.execution import format_executions, format_executions_detailed, format_executions_status
 from models.execution import TestExecutionDetailed
 from models.result import BaseResult
+from tools import bridge
 from tools.report_manager import ReportManager
 from tools.utils import api_request
 
@@ -26,6 +28,12 @@ class ExecutionManager:
 
     async def start(self, test_id: int, delayed_start_ready: bool = True,
                     is_debug_run: bool = False) -> BaseResult:
+
+        # Check if it's valid or allowed
+        test_result = await bridge.read_test(self.token, self.ctx, test_id)
+        if test_result.error:
+            return test_result
+
         parameters = {
             "delayedStart": delayed_start_ready
         }
@@ -55,6 +63,11 @@ class ExecutionManager:
 
         execution_element = execution_response.result[0]
 
+        # Check if it's valid or allowed
+        project_result = await bridge.read_project(self.token, self.ctx, execution_element.project_id)
+        if project_result.error:
+            return project_result
+
         # Get status information and append that to execution element
         # https://help.blazemeter.com/apidocs/performance/masters_tracking_test_status.htm
         parameters = {
@@ -80,6 +93,12 @@ class ExecutionManager:
         )
 
     async def list(self, test_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
+
+        # Check if it's valid or allowed
+        test_result = await bridge.read_test(self.token, self.ctx, test_id)
+        if test_result.error:
+            return test_result
+
         parameters = {
             "testId": test_id,
             "limit": limit,
@@ -161,7 +180,12 @@ def register(mcp, token: Optional[BzmToken]):
                     return BaseResult(
                         error=f"Action {action} not found in test execution manager tool"
                     )
-        except Exception:
+        except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {traceback.format_exc()}"
+            )
+        except Exception:
+            return BaseResult(
+                error=f"""Error: {traceback.format_exc()}
+                          If you think this is a bug, please contact blazemeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
             )

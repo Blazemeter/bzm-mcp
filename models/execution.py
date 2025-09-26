@@ -8,6 +8,7 @@ class TestExecution(BaseModel):
     execution_id: int = Field(
         description="The unique identifier of the execution. This is known as the masterId or test execution id")
     execution_name: str = Field(description="The test execution report name")
+    project_id: int = Field(description="The project id of the test execution")
     execution_url: str = Field(description="The test execution report URL")
 
 
