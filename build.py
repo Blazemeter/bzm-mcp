@@ -58,7 +58,8 @@ VSVersionInfo(
 
 def build():
     """Build the binary using PyInstaller."""
-    suffix = '.exe' if platform.system() == 'Windows' else ''
+    system = platform.system().lower()
+    suffix = '.exe' if system == 'windows' else ''
     arch = platform.machine().lower()
 
     # Map architecture names to Docker-compatible format
@@ -69,12 +70,8 @@ def build():
     elif arch.startswith('arm'):
         arch = 'arm64'  # Assume ARM64 for Docker compatibility
 
-    # For Docker builds, we want Linux binaries with architecture
-    system = platform.system().lower()
-    if system == 'linux':
-        name = f'bzm-mcp-linux-{arch}'
-    else:
-        name = f'bzm-mcp-{system}{suffix}'
+    system = "macos" if system == 'darwin' else system
+    name = f'bzm-mcp-{system}-{arch}{suffix}'
 
     PyInstaller.__main__.run([
         'main.py',
