@@ -1,6 +1,9 @@
 import argparse
 import json
+import logging
 import os
+import sys
+from typing import Literal, cast
 
 from mcp.server.fastmcp import FastMCP
 
@@ -9,6 +12,18 @@ from config.version import __version__, __executable__
 from server import register_tools
 
 BLAZEMETER_API_KEY_FILE_PATH = os.getenv('BLAZEMETER_API_KEY')
+
+LOG_LEVELS = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
+
+def init_logging(level_name: str) -> None:
+    level = getattr(logging, level_name.upper(), logging.CRITICAL)
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        stream=sys.stdout,
+        force=True,
+    )
 
 
 def get_token():
@@ -36,7 +51,7 @@ def get_token():
     return token
 
 
-def run():
+def run(log_level: str = "CRITICAL"):
     token = get_token()
     instructions = """
     # BlazeMeter MCP Server
@@ -57,7 +72,7 @@ def run():
             tests: Tests belong to a particular project.
             executions: Executions belong to a particular test.
     """
-    mcp = FastMCP("blazemeter-mcp", instructions=instructions)
+    mcp = FastMCP("blazemeter-mcp", instructions=instructions, log_level=cast(LOG_LEVELS, log_level))
     register_tools(mcp, token)
     mcp.run(transport="stdio")
 
@@ -77,10 +92,18 @@ if __name__ == "__main__":
         help="Execute MCP Server"
     )
 
+    parser.add_argument(
+        "--log-level",
+        default="CRITICAL",  # By default, only critical errors
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Logging level (default: CRITICAL = critical errors only)"
+    )
+
     args = parser.parse_args()
+    init_logging(args.log_level)
 
     if args.mcp:
-        run()
+        run(log_level=args.log_level.upper())
     else:
 
         logo_ascii = (
