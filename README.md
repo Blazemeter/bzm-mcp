@@ -41,6 +41,12 @@ The easiest way to configure your MCP client is using our interactive CLI tool:
 3. **Execute or Double-click the binary** to launch the interactive configuration tool
 4. **The tool automatically generates** the JSON configuration file for you
 
+> [!IMPORTANT]
+> For macOS: You may encounter a security alert saying "Apple could not verify 'bzm-mcp-darwin' is free of malware." To resolve this:
+> 1. Go to **System Settings** → **Privacy & Security** → **Security**
+> 2. Look for the blocked application and click **"Allow Anyway"**
+> 3. Try running the binary again
+
 ![CLI Demo](/docs/cli-tool.gif)
 
 <details>
