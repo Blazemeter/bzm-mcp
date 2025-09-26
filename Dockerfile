@@ -48,3 +48,4 @@ ENV MCP_DOCKER=true
 
 # Command to run the application
 ENTRYPOINT ["./bzm-mcp"]
+CMD ["--mcp"]
