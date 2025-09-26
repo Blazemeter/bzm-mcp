@@ -10,17 +10,19 @@ def format_executions(executions: List[Any], params: Optional[dict] = None) -> L
     for execution in executions:
         execution_id = execution.get("id")
         execution_name = execution.get("name")
+        project_id = execution.get("projectId")
         formatted_executions.append(
             TestExecution(
                 execution_id=execution_id,
                 execution_name=execution_name,
+                project_id=project_id,
                 execution_url=f"{BZM_BASE_URL}/app/#/masters/{execution_id}"
             )
         )
     return formatted_executions
 
 
-def format_executions_detailed(executions: List[Any]) -> List[TestExecutionDetailed]:
+def format_executions_detailed(executions: List[Any], params: Optional[dict] = None) -> List[TestExecutionDetailed]:
     formatted_executions = []
     for execution in executions:
         execution_id = execution.get("id")
@@ -32,6 +34,7 @@ def format_executions_detailed(executions: List[Any]) -> List[TestExecutionDetai
                 created=get_date_time_iso(execution.get("created")),
                 updated=get_date_time_iso(execution.get("updated")),
                 ended=get_date_time_iso(execution.get("ended")),
+                project_id=execution.get("projectId"),
                 execution_status=execution.get("reportStatus", "unset"),
                 execution_status_detailed=None
             )
@@ -39,7 +42,7 @@ def format_executions_detailed(executions: List[Any]) -> List[TestExecutionDetai
     return formatted_executions
 
 
-def format_executions_status(statuses: List[Any]) -> List[TestExecutionStatus]:
+def format_executions_status(statuses: List[Any], params: Optional[dict] = None) -> List[TestExecutionStatus]:
     formatted_statuses = []
     for status_element in statuses:
         execution_step = status_element.get("executionStep", "Unknown")

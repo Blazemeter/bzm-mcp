@@ -1,6 +1,7 @@
 import traceback
 from typing import Any, Dict, Optional
 
+import httpx
 from mcp.server.fastmcp import Context
 from pydantic import Field
 
@@ -52,7 +53,12 @@ def register(mcp, token: Optional[BzmToken]):
                     return BaseResult(
                         error=f"Action {action} not found in user manager tool"
                     )
-        except Exception:
+        except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {traceback.format_exc()}"
+            )
+        except Exception:
+            return BaseResult(
+                error=f"""Error: {traceback.format_exc()}
+                          If you think this is a bug, please contact blazemeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
             )

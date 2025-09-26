@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Dict
 from typing import Optional, List
 
+import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
@@ -14,6 +15,7 @@ from config.token import BzmToken
 from formatters.test import format_tests
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
+from tools import bridge
 from tools.utils import api_request
 
 logging.basicConfig(level=logging.DEBUG)
@@ -28,14 +30,30 @@ class TestManager:
         self.path_mapper = PathMapperFactory.create_strategy()
 
     async def read(self, test_id: int) -> BaseResult:
-        return await api_request(
+
+        test_result = await api_request(
             self.token,
             "GET",
             f"{TESTS_ENDPOINT}/{test_id}",
             result_formatter=format_tests
         )
+        if test_result.error:
+            return test_result
+        else:
+            # Check if it's valid or allowed
+            project_result = await bridge.read_project(self.token, self.ctx, test_result.result[0].project_id)
+            if project_result.error:
+                return project_result
+            else:
+                return test_result
 
     async def create(self, test_name: str, project_id: int) -> BaseResult:
+
+        # Check if it's valid or allowed
+        project_result = await bridge.read_project(self.token, self.ctx, project_id)
+        if project_result.error:
+            return project_result
+
         test_body = {
             "name": test_name,
             "projectId": project_id,
@@ -84,6 +102,12 @@ class TestManager:
 
     async def upload_assets(self, test_id: int, file_paths: List[str], main_script: Optional[str] = None) -> Dict[
         str, Any]:
+
+        # Check if it's valid or allowed
+        test_data = await self.read(test_id)
+        if test_data.error:
+            return {"error": test_data.error}
+
         logger.debug(f"Starting upload_assets for test_id: {test_id}")
         logger.debug(f"Original file paths: {file_paths}")
         logger.debug(f"Main script: {main_script}")
@@ -223,7 +247,14 @@ class TestManager:
         return script_types.get(extension, 'unknown')
 
     async def list(self, project_id: int, limit: int = 50,
-                   offset: int = 0) -> BaseResult:
+                   offset: int = 0, control_ai_consent: bool = True) -> BaseResult:
+
+        if control_ai_consent:
+            # Check if it's valid or allowed
+            project_result = await bridge.read_project(self.token, self.ctx, project_id)
+            if project_result.error:
+                return project_result
+
         parameters = {
             "projectId": project_id,
             "limit": limit,
@@ -239,11 +270,55 @@ class TestManager:
             params=parameters
         )
 
+    @staticmethod
+    def _normalize_configuration_override(configuration: dict, test_data_override: dict) -> dict:
+        # Switch between iteration and duration
+        if configuration.get("holdFor") is not None and test_data_override.get("iterations") is not None:
+            del test_data_override["iterations"]
+
+        if configuration.get("iterations") is not None and test_data_override.get("holdFor") is not None:
+            del test_data_override["holdFor"]
+
+        # Remove concurrency if value it's zero
+        concurrency = test_data_override.get("concurrency")
+        if concurrency is not None and concurrency < 1:
+            del test_data_override["concurrency"]
+
+        # Remove ramp up steps if value it's -1
+        steps = test_data_override.get("steps")
+        if steps is not None and steps < 0:
+            del test_data_override["steps"]
+
+        # Remove ramp up if it's empty
+        ramp_up = test_data_override.get("rampUp")
+        if ramp_up is not None and ramp_up == "":
+            del test_data_override["rampUp"]
+
+        # Recalculate location concurrency
+        concurrency = test_data_override.get("concurrency", 1)
+        locations_concurrency = {}
+        if "locationsPercents" in test_data_override:
+            for location, percent in test_data_override["locationsPercents"].items():
+                locations_concurrency[location] = int(percent * concurrency / 100)
+
+            for location, users in locations_concurrency.items():
+                if users == 0:
+                    locations_concurrency[location] = 1  # Default behaviour on BlazeMeter
+                break
+
+            test_data_override["locations"] = locations_concurrency
+
+        return test_data_override
+
     async def configure(self, performance_test: PerformanceTestObject) -> BaseResult:
         if not performance_test.is_valid():
             raise ValueError("PerformanceTestObject must have a valid test_id")
 
+        # Check if it's valid or allowed
         test_data = await self.read(performance_test.test_id)
+        if test_data.error:
+            return test_data
+
         test_override_executions = test_data.result[0].override_executions
         test_data_override = {}
         # Flat the overrides if more then one exists
@@ -252,40 +327,12 @@ class TestManager:
         configuration = performance_test.get_configuration()
         test_data_override.update(configuration)
 
-        # Switch between iteration and duration
-        if configuration.get("holdFor", None) and test_data_override.get("iterations", None):
-            del test_data_override["iterations"]
+        # Normalize Override
+        test_data_override = self._normalize_configuration_override(test_data_override, test_data_override)
 
-        if configuration.get("iterations", None) and test_data_override.get("holdFor", None):
-            del test_data_override["holdFor"]
-
-        # Remove concurrency if value it's zero
-        if test_data_override.get("concurrency") < 1:
-            del test_data_override["concurrency"]
-
-        # Remove ramp up steps if value it's -1
-        if test_data_override.get("steps") < 0:
-            del test_data_override["steps"]
-
-        # Remove ramp up if it's empty
-        if test_data_override.get("rampUp") == "":
-            del test_data_override["rampUp"]
-
-        # Recalculate location concurrency
-        concurrency = test_data_override.get("concurrency", 1)
-        locations_concurrency = {}
-        for location, percent in test_data_override["locationsPercents"].items():
-            locations_concurrency[location] = int(percent * concurrency / 100)
-
-        for location, users in locations_concurrency.items():
-            if users == 0:
-                locations_concurrency[location] = 1 # Default behaviour on BlazeMeter
-            break
-
-        test_data_override["locations"] = locations_concurrency
-
+        override_executions = [test_data_override] if test_data_override else None
         configuration_body = {
-            "overrideExecutions": [test_data_override]
+            "overrideExecutions": override_executions
         }
 
         return await api_request(
@@ -363,7 +410,12 @@ def register(mcp, token: Optional[BzmToken]):
                     return BaseResult(
                         error=f"Action {action} not found in tests manager tool"
                     )
-        except Exception:
+        except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {traceback.format_exc()}"
+            )
+        except Exception:
+            return BaseResult(
+                error=f"""Error: {traceback.format_exc()}
+                          If you think this is a bug, please contact blazemeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
             )
