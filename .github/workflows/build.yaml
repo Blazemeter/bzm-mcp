@@ -99,12 +99,17 @@ jobs:
       run: |
         mkdir -p dist/
         # Copy all binaries from artifact directories to dist/ 
+        # upload-artifacts job does not preserve the executable permission
+        # so we need to set it manually: https://github.com/actions/download-artifact?tab=readme-ov-file#limitations
+
         if [ -d "artifacts/bzm-mcp-linux-amd64" ]; then
           cp artifacts/bzm-mcp-linux-amd64/* dist/
+          chmod +x dist/bzm-mcp-linux-amd64
           echo "Copied Linux AMD64 binary"
         fi
         if [ -d "artifacts/bzm-mcp-linux-arm64" ]; then
           cp artifacts/bzm-mcp-linux-arm64/* dist/
+          chmod +x dist/bzm-mcp-linux-arm64
           echo "Copied Linux ARM64 binary"
         fi
         if [ -d "artifacts/bzm-mcp-windows-amd64" ]; then
@@ -113,10 +118,12 @@ jobs:
         fi
         if [ -d "artifacts/bzm-mcp-macos-arm64" ]; then
           cp artifacts/bzm-mcp-macos-arm64/* dist/
+          chmod +x dist/bzm-mcp-macos-arm64
           echo "Copied macOS ARM64 binary"
         fi
         if [ -d "artifacts/bzm-mcp-macos-amd64" ]; then
           cp artifacts/bzm-mcp-macos-amd64/* dist/
+          chmod +x dist/bzm-mcp-macos-amd64
           echo "Copied macOS AMD64 binary"
         fi
 
