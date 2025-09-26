@@ -196,6 +196,12 @@ The BlazeMeter MCP Server provides comprehensive access to BlazeMeter's API thro
   }
 }
 ```
+> [!IMPORTANT]
+> For Windows OS, paths must use backslashes (`\`) and be properly escaped as double backslashes (`\\`) in the JSON configuration.
+> E.g.: `C:\\User\\Desktop\\mcp_test_folder`
+
+> [!NOTE]
+> In order to obtain the `API_KEY_ID` and`API_KEY_SECRET` refere to [BlazeMeter API keys](https://help.blazemeter.com/docs/guide/api-blazemeter-api-keys.html)
 
 ---
 
