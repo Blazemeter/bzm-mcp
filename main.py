@@ -95,7 +95,7 @@ if __name__ == "__main__":
         print(logo_ascii)
 
         config_dict = {
-            "Blazmeter MCP": {
+            "BlazeMeter MCP": {
                 "command": f"{__executable__}",
                 "args": ["--mcp"],
             }
