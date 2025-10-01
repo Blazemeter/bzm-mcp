@@ -79,6 +79,7 @@ def build():
         '--version-file=version_info.txt',
         f'--add-data=pyproject.toml{sep}.',
         f'--name={name}',
+        '--icon=app.ico',
         '--clean',
         '--noconfirm',
     ])
