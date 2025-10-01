@@ -73,13 +73,15 @@ def build():
     system = "macos" if system == 'darwin' else system
     name = f'bzm-mcp-{system}-{arch}{suffix}'
 
+    icon = 'app.ics' if system == 'macos' else 'app.ico'
+    
     PyInstaller.__main__.run([
         'main.py',
         '--onefile',
         '--version-file=version_info.txt',
         f'--add-data=pyproject.toml{sep}.',
         f'--name={name}',
-        '--icon=app.ico',
+        f'--icon={icon}',
         '--clean',
         '--noconfirm',
     ])
