@@ -83,7 +83,7 @@ The easiest way to configure your MCP client is using our interactive CLI tool:
     "BlazeMeter MCP": {
       "command": "uvx",
       "args": [
-        "--from", "git+https://github.com/Blazemeter/bzm-mcp.git@v1.1",
+        "--from", "git+https://github.com/Blazemeter/bzm-mcp.git@v1.0.1",
         "-q", "bzm-mcp", "--mcp"
       ],
       "env": {
@@ -95,7 +95,7 @@ The easiest way to configure your MCP client is using our interactive CLI tool:
 ```
 > [!NOTE]
 > uvx installs and runs the package and its dependencies in a temporary environment.
-> You can change to any version that has been released or any branch you want. Package support for uvx command is supported from version 1.1 onwards.
+> You can change to any version that has been released or any branch you want. Package support for uvx command is supported from version 1.0.1 onwards.
 > For more details on the uv/uvx arguments used, please refer to the official [uv documentation](https://docs.astral.sh/uv/).
 
 </details>
