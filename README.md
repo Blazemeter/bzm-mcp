@@ -20,6 +20,7 @@ Built for developers and QA teams who want to connect their AI tools to BlazeMet
 - BlazeMeter API credentials (API Key ID and Secret)
 - Compatible MCP host (VS Code, Claude Desktop, Cursor, Windsurf, etc.)
 - Docker (only for Docker-based deployment)
+- [uv](https://docs.astral.sh/uv/) and Python 3.11+ (only for installation from source code distribution)
 
 ## Setup
 
@@ -70,7 +71,34 @@ The easiest way to configure your MCP client is using our interactive CLI tool:
 ```
 
 </details>
+<details>
+<summary><strong>Manual Client Configuration (From Remote Source Code)</strong></summary>
 
+1. **Prerequisites:** [uv](https://docs.astral.sh/uv/) and Python 3.11+
+2. **Configure your MCP client** with the following settings:
+
+```json
+{
+  "mcpServers": {
+    "BlazeMeter MCP": {
+      "command": "uvx",
+      "args": [
+        "--from", "git+https://github.com/Blazemeter/bzm-mcp.git@v1.0.1",
+        "-q", "bzm-mcp", "--mcp"
+      ],
+      "env": {
+        "BLAZEMETER_API_KEY": "/path/to/your/api-key.json"
+      }
+    }
+  }
+}
+```
+> [!NOTE]
+> uvx installs and runs the package and its dependencies in a temporary environment.
+> You can change to any version that has been released or any branch you want. Package support for uvx command is supported from version 1.0.1 onwards.
+> For more details on the uv/uvx arguments used, please refer to the official [uv documentation](https://docs.astral.sh/uv/).
+
+</details>
 ---
 
 ## Available Tools

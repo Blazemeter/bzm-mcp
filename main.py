@@ -77,7 +77,7 @@ def run(log_level: str = "CRITICAL"):
     mcp.run(transport="stdio")
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(prog="bzm-mcp")
 
     parser.add_argument(
@@ -145,3 +145,6 @@ if __name__ == "__main__":
         print(" https://github.com/Blazemeter/bzm-mcp/")
         print(" ")
         input("Press Enter to exit...")
+
+if __name__ == "__main__":
+    main()

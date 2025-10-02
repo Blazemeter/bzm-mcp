@@ -1,6 +1,6 @@
 [project]
 name = "bzm-mcp"
-version = "1.0"
+version = "1.0.1"
 description = "BlazeMeter MCP"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -14,4 +14,11 @@ dependencies = [
 ]
 
 [project.scripts]
-bzm-mcp = "main:run"
+bzm-mcp = "main:main"
+
+[tool.setuptools]
+py-modules = ["main", "server"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tools", "config", "models", "formatters"]

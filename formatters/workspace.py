@@ -43,7 +43,7 @@ def format_workspaces_detailed(workspaces: List[Any], params: Optional[dict] = N
 def format_workspaces_locations(workspaces: List[Any], params: Optional[dict] = None) -> List[Any]:
     purpose_filter = params.get("purpose", "local") if params else None
     purpose_filter_id = purpose_filter
-    if purpose_filter and purpose_filter is "mock":
+    if purpose_filter and purpose_filter == "mock":
         purpose_filter_id = "serviceMock"
     private_locations = []
     public_locations = []
