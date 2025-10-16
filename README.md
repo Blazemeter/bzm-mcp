@@ -283,7 +283,7 @@ When using custom CA certificate bundles, you must configure both:
 - The container path `/etc/ssl/certs/custom-ca-bundle.crt` can be any path you prefer (just ensure it matches `SSL_CERT_FILE`)
 
 > [!IMPORTANT]
-> The `SSL_CERT_FILE` environment variable must be explicitly configured because the `httpx` client library does not automatically honor certificates that are simply placed inside the container without this explicit declaration.
+> The `SSL_CERT_FILE` environment variable must be set to point to your custom CA certificate bundle. The `httpx` library [automatically respects the `SSL_CERT_FILE` environment variable](https://www.python-httpx.org/advanced/ssl/#working-with-ssl_cert_file-and-ssl_cert_dir) for SSL certificate verification.
 
 > [!TIP]
 > **Common CA bundle locations on host systems:**
