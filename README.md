@@ -199,7 +199,7 @@ The BlazeMeter MCP Server provides comprehensive access to BlazeMeter's API thro
 
 ## Docker Support
 
-### **MCP Client Configuration for Docker**
+### **Basic MCP Client Configuration for Docker**
 
 ```json
 {
@@ -230,6 +230,68 @@ The BlazeMeter MCP Server provides comprehensive access to BlazeMeter's API thro
 
 > [!NOTE]
 > In order to obtain the `API_KEY_ID` and`API_KEY_SECRET` refere to [BlazeMeter API keys](https://help.blazemeter.com/docs/guide/api-blazemeter-api-keys.html)
+
+---
+
+### **Custom CA Certificates (Corporate Environments)**
+
+**When you need this:**
+- Your organization uses self-signed certificates
+- You're behind a corporate proxy with SSL inspection
+- You have a custom Certificate Authority (CA)
+- You encounter SSL certificate verification errors when running tests
+
+**Required Configuration:**
+
+When using custom CA certificate bundles, you must configure both:
+
+1. **Certificate Volume Mount**: Mount your custom CA certificate bundle into the container
+2. **SSL_CERT_FILE Environment Variable**: Explicitly set the `SSL_CERT_FILE` environment variable to point to the certificate location inside the container
+
+**Example Configuration:**
+
+```json
+{
+  "mcpServers": {
+    "Docker BlazeMeter MCP": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--mount",
+        "type=bind,source=/path/to/your/test/files,target=/home/bzm-mcp/working_directory/",
+        "-v",
+        "/path/to/your/ca-bundle.crt:/etc/ssl/certs/custom-ca-bundle.crt",
+        "-e",
+        "SSL_CERT_FILE=/etc/ssl/certs/custom-ca-bundle.crt",
+        "-e",
+        "API_KEY_ID=your_api_key_id",
+        "-e",
+        "API_KEY_SECRET=your_api_key_secret",
+        "-e",
+        "SOURCE_WORKING_DIRECTORY=/path/to/your/test/files",
+        "ghcr.io/blazemeter/bzm-mcp:latest"
+      ]
+    }
+  }
+}
+```
+
+**Replace:**
+- `/path/to/your/ca-bundle.crt` with your host system's CA certificate file path
+- The container path `/etc/ssl/certs/custom-ca-bundle.crt` can be any path you prefer (just ensure it matches `SSL_CERT_FILE`)
+
+> [!IMPORTANT]
+> The `SSL_CERT_FILE` environment variable must be explicitly configured because the `httpx` client library does not automatically honor certificates that are simply placed inside the container without this explicit declaration.
+
+> [!TIP]
+> **Common CA bundle locations on host systems:**
+> - **Linux**: `/etc/ssl/certs/ca-certificates.crt` or `/etc/pki/tls/certs/ca-bundle.crt`
+> - **macOS**: `/etc/ssl/cert.pem`
+> - **Windows**: Contact your IT department for the certificate location
+>
+> You can mount these to any path inside the container (e.g., `/certs/ca-bundle.crt`), just ensure the `SSL_CERT_FILE` environment variable points to the same path
 
 ---
 
