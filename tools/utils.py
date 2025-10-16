@@ -1,7 +1,6 @@
 """
 Simple utilities for BlazeMeter MCP tools.
 """
-import os
 import platform
 from datetime import datetime
 
@@ -45,10 +44,6 @@ async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
         pool=60.0
     )
 
-    # Read SSL_CERT_FILE environment variable for custom CA certificates
-    # This is needed in Docker environments with self-signed certificates or custom CAs
-    # verify = os.environ.get("SSL_CERT_FILE", True)
-    
     async with (httpx.AsyncClient(base_url=BZM_API_BASE_URL, http2=True, timeout=timeout) as client):
         try:
             resp = await client.request(method, endpoint, headers=headers, **kwargs)
