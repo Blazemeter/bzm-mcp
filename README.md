@@ -93,6 +93,7 @@ The easiest way to configure your MCP client is using our interactive CLI tool:
   }
 }
 ```
+
 > [!NOTE]
 > uvx installs and runs the package and its dependencies in a temporary environment.
 > You can change to any version that has been released or any branch you want. Package support for uvx command is supported from version 1.0.1 onwards.
@@ -233,7 +234,7 @@ The BlazeMeter MCP Server provides comprehensive access to BlazeMeter's API thro
 
 ---
 
-### **Custom CA Certificates (Corporate Environments)**
+### **Custom CA Certificates (Corporate Environments) for Docker**
 
 **When you need this:**
 - Your organization uses self-signed certificates
@@ -284,14 +285,6 @@ When using custom CA certificate bundles, you must configure both:
 
 > [!IMPORTANT]
 > The `SSL_CERT_FILE` environment variable must be set to point to your custom CA certificate bundle. The `httpx` library [automatically respects the `SSL_CERT_FILE` environment variable](https://www.python-httpx.org/advanced/ssl/#working-with-ssl_cert_file-and-ssl_cert_dir) for SSL certificate verification.
-
-> [!TIP]
-> **Common CA bundle locations on host systems:**
-> - **Linux**: `/etc/ssl/certs/ca-certificates.crt` or `/etc/pki/tls/certs/ca-bundle.crt`
-> - **macOS**: `/etc/ssl/cert.pem`
-> - **Windows**: Contact your IT department for the certificate location
->
-> You can mount these to any path inside the container (e.g., `/certs/ca-bundle.crt`), just ensure the `SSL_CERT_FILE` environment variable points to the same path
 
 ---
 
