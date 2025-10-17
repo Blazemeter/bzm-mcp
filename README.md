@@ -21,6 +21,7 @@ Built for developers and QA teams who want to connect their AI tools to BlazeMet
 ## Prerequisites
 
 - BlazeMeter API credentials (API Key ID and Secret)
+- Comply [Blazemeter AI Consent](https://help.blazemeter.com/docs/guide/administration-ai-consent.html)
 - Compatible MCP host (VS Code, Claude Desktop, Cursor, Windsurf, etc.)
 - Docker (only for Docker-based deployment)
 - [uv](https://docs.astral.sh/uv/) and Python 3.11+ (only for installation from source code distribution)
