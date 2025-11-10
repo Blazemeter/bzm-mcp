@@ -5,16 +5,8 @@
 
 The BlazeMeter MCP Server connects AI tools directly to BlazeMeter's cloud-based performance testing platform. This gives AI agents, assistants, and chatbots the ability to manage complete load testing workflows from creation to execution and reporting. All through natural language interactions.
 
-## Use Cases
-
-- **Performance Test Management**: Create, configure, and manage performance tests with automated script uploads and asset management.
-- **Test Execution & Monitoring**: Start tests, monitor execution status, and retrieve comprehensive reports including summary, errors, and request statistics.
-- **Workspace & Project Organization**: Navigate through accounts, workspaces, and projects to organize your testing infrastructure.
-- **Load Configuration**: Configure test parameters including concurrency, iterations, duration, ramp-up settings, and geographic distribution.
-- **Report Analysis**: Access detailed execution reports, error analysis, and performance metrics for comprehensive test insights.
-- **Account & Permission Management**: Manage multiple accounts and workspaces with proper AI consent controls and permission validation.
-
-Built for developers and QA teams who want to connect their AI tools to BlazeMeter's enterprise-grade performance testing capabilities, from simple test creation to complex multi-step automation workflows.
+> [!NOTE]
+> **For detailed documentation including use cases, available tools, integration points, and troubleshooting, see the [BlazeMeter MCP Server documentation](https://help.blazemeter.com/docs/guide/integrations-blazemeter-mcp-server.html).**
 
 ---
 
@@ -196,102 +188,6 @@ When using custom CA certificate bundles, you must configure both:
 
 ---
 
-## Available Tools
-
-The BlazeMeter MCP Server provides comprehensive access to BlazeMeter's API through six main tools:
-
-| Tool | Purpose | Key Capabilities |
-|------|---------|------------------|
-| **User** | User Information | Get current user details, default account/workspace/project |
-| **Account** | Account Management | List accounts, check AI consent, read account details |
-| **Workspace** | Workspace Management | Manage workspaces, get locations, check billing usage |
-| **Project** | Project Management | Organize projects, get test counts, manage project settings |
-| **Tests** | Test Management | Create, configure, and manage performance tests |
-| **Execution** | Test Execution | Run tests, monitor status, retrieve reports |
-
----
-
-### **User Management**
-**What it does:** Get information about your BlazeMeter account and default settings.
-
-| Action | What you get |
-|--------|-------------|
-| Get user info | Your username, default account, workspace, and project IDs |
-
-**When to use:** Start here to get your default account, workspace, and project IDs.
-
----
-
-### **Account Management**
-**What it does:** Manage your BlazeMeter accounts and check permissions.
-
-| Action | What you get |
-|--------|-------------|
-| Get account details | Account information and AI consent status |
-| List accounts | All accounts you have access to |
-
-**When to use:** Verify AI consent and access account-level information.
-
----
-
-### **Workspace Management**
-**What it does:** Navigate and manage your testing workspaces.
-
-| Action | What you get |
-|--------|-------------|
-| Get workspace details | Workspace information and billing details |
-| List workspaces | All workspaces in an account |
-| Get locations | Available test locations for different purposes |
-
-**When to use:** Navigate your testing infrastructure and check available locations.
-
----
-
-### **Project Management**
-**What it does:** Organize your tests within workspaces.
-
-| Action | What you get |
-|--------|-------------|
-| Get project details | Project information and test count |
-| List projects | All projects in a workspace |
-
-**When to use:** Organize tests within workspaces and check project statistics.
-
----
-
-### **Test Management**
-**What it does:** Create, configure, and manage your performance tests.
-
-| Action | What you get |
-|--------|-------------|
-| Get test details | Test configuration and current settings |
-| Create test | New performance test |
-| List tests | All tests in a project |
-| Configure load | Set users, duration, ramp-up settings |
-| Configure locations | Set geographic distribution |
-| Upload files | Upload test scripts and assets |
-
-**When to use:** Create and configure performance tests with scripts and load parameters.
-
----
-
-### **Execution Management**
-**What it does:** Run tests and analyze results.
-
-| Action | What you get |
-|--------|-------------|
-| Start test | Launch a configured test |
-| Get execution status | Current test status and details |
-| List executions | All executions for a test |
-| Get summary report | Test execution summary |
-| Get error report | Error analysis and details |
-| Get request stats | Request statistics and performance metrics |
-| Get all reports | Complete test results (summary, errors, stats) |
-
-**When to use:** Run tests and analyze results with comprehensive reporting.
-
----
-
 ## License
 
 This project is licensed under the Apache License, Version 2.0. Please refer to [LICENSE](./LICENSE) for the full terms.
@@ -300,6 +196,7 @@ This project is licensed under the Apache License, Version 2.0. Please refer to 
 
 ## Support
 
-- **Documentation**: [BlazeMeter API Documentation](https://help.blazemeter.com/apidocs/)
+- **MCP Server Documentation**: [BlazeMeter MCP Server Guide](https://help.blazemeter.com/docs/guide/integrations-blazemeter-mcp-server.html)
+- **API Documentation**: [BlazeMeter API Documentation](https://help.blazemeter.com/apidocs/)
 - **Issues**: [GitHub Issues](https://github.com/BlazeMeter/bzm-mcp/issues)
 - **Support**: Contact BlazeMeter support for enterprise assistance
