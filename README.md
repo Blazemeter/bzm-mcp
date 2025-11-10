@@ -5,6 +5,7 @@
 
 The BlazeMeter MCP Server connects AI tools directly to BlazeMeter's cloud-based performance testing platform. This gives AI agents, assistants, and chatbots the ability to manage complete load testing workflows from creation to execution and reporting. All through natural language interactions.
 
+> [!NOTE]
 > **For detailed documentation including use cases, available tools, integration points, and troubleshooting, see the [BlazeMeter MCP Server documentation](https://help.blazemeter.com/docs/guide/integrations-blazemeter-mcp-server.html).**
 
 ---
