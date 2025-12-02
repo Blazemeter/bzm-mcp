@@ -4,15 +4,15 @@ from mcp.server.fastmcp import Context
 
 from config.blazemeter import EXECUTIONS_ENDPOINT
 from config.token import BzmToken
+from models.manager import Manager
 from tools import bridge
 from tools.utils import api_request
 
 
-class ReportManager:
+class ReportManager(Manager):
 
     def __init__(self, token: Optional[BzmToken], ctx: Context):
-        self.token = token
-        self.ctx = ctx
+        super().__init__(token, ctx)
 
     async def read_summary(self, master_id: int):
         # Check if it's valid or allowed

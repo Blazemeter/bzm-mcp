@@ -13,20 +13,19 @@ from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
 from config.path_mapper import PathMapperFactory
 from config.token import BzmToken
 from formatters.test import format_tests
+from models.manager import Manager
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
 from tools import bridge
 from tools.utils import api_request
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-class TestManager:
+class TestManager(Manager):
 
     def __init__(self, token: Optional[BzmToken], ctx: Context):
-        self.token = token
-        self.ctx = ctx
+        super().__init__(token, ctx)
         self.path_mapper = PathMapperFactory.create_strategy()
 
     async def read(self, test_id: int) -> BaseResult:
