@@ -5,10 +5,11 @@ import httpx
 from mcp.server.fastmcp import Context
 from pydantic import Field
 
-from config.blazemeter import TOOLS_PREFIX, EXECUTIONS_ENDPOINT
+from config.blazemeter import TOOLS_PREFIX, EXECUTIONS_ENDPOINT, SUPPORT_MESSAGE
 from config.token import BzmToken
 from formatters.execution import format_executions, format_executions_detailed, format_executions_status
 from models.execution import TestExecutionDetailed
+from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
 from tools.report_manager import ReportManager
@@ -20,11 +21,10 @@ class ExecutionResult(BaseResult):
                                                                  default=None)
 
 
-class ExecutionManager:
+class ExecutionManager(Manager):
 
     def __init__(self, token: Optional[BzmToken], ctx: Context):
-        self.token = token
-        self.ctx = ctx
+        super().__init__(token, ctx)
 
     async def start(self, test_id: int, delayed_start_ready: bool = True,
                     is_debug_run: bool = False) -> BaseResult:
@@ -186,6 +186,5 @@ def register(mcp, token: Optional[BzmToken]):
             )
         except Exception:
             return BaseResult(
-                error=f"""Error: {traceback.format_exc()}
-                          If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
+                error=f"Error: {traceback.format_exc()}\n{SUPPORT_MESSAGE}"
             )

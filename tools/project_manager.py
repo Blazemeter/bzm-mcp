@@ -7,16 +7,16 @@ from mcp.server.fastmcp import Context
 from config.blazemeter import TOOLS_PREFIX, PROJECTS_ENDPOINT
 from config.token import BzmToken
 from formatters.project import format_projects
+from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
 from tools.utils import api_request
 
 
-class ProjectManager:
+class ProjectManager(Manager):
 
     def __init__(self, token: Optional[BzmToken], ctx: Context):
-        self.token = token
-        self.ctx = ctx
+        super().__init__(token, ctx)
 
     async def read(self, project_id: int) -> BaseResult:
         project_result = await api_request(
