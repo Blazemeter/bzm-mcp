@@ -88,8 +88,24 @@ class ExecutionManager:
         # Append the status information
         execution_element.execution_status_detailed = status_response.result[0]
 
+        result = {
+            "result": execution_element,
+            "context": "The execution_status is main attribute that indicates if the test passed or failed.\n"
+                    "The possible values are:\n"
+                    "pass: Passed - A test is deemed to pass if none of the Failure Criteria defined for the test"
+                    " are met.\n"
+                    "fail: Failed - A test is deemed to fail if one or more of the Failure Criteria defined for the test"
+                    " are met,\n"
+                    "unset: Not Set - A test that has no Failure Criteria defined. Do not report as failed.\n"
+                    "abort: Aborted - A test that is terminated using the Abort Test command available during the"
+                    " booting phase.\n"
+                    "error: Error - A test with one or more execution errors that causes the test to end with no data.\n"
+                    "noData: No Data - deprecated. Legacy reports with execution errors that ended with no data will"
+                    " remain in No Data status.\n"
+        }
+
         return BaseResult(
-            result=[execution_element]
+            result=[result],
         )
 
     async def list(self, test_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
