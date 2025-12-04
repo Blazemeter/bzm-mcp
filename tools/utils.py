@@ -11,7 +11,7 @@ import httpx
 from config.blazemeter import BZM_API_BASE_URL
 from config.token import BzmToken
 from config.version import __version__
-from models.result import BaseResult
+from models.result import BaseResult, HttpBaseResult
 
 so = platform.system()       # "Windows", "Linux", "Darwin"
 version = platform.version() # kernel / build version
@@ -19,6 +19,13 @@ release = platform.release() # ex. "10", "5.15.0-76-generic"
 machine = platform.machine() # ex. "x86_64", "AMD64", "arm64"
 
 ua_part = f"{so} {release}; {machine}"
+user_agent = f"bzm-mcp/{__version__} ({ua_part})"
+timeout = httpx.Timeout(
+    connect=15.0,
+    read=60.0,
+    write=15.0,
+    pool=60.0
+)
 
 async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
                       result_formatter: Callable = None,
@@ -35,14 +42,7 @@ async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
 
     headers = kwargs.pop("headers", {})
     headers["Authorization"] = token.as_basic_auth()
-    headers["User-Agent"] = f"bzm-mcp/{__version__} ({ua_part})"
-
-    timeout = httpx.Timeout(
-        connect=15.0,
-        read=60.0,
-        write=15.0,
-        pool=60.0
-    )
+    headers["User-Agent"] = user_agent
 
     async with (httpx.AsyncClient(base_url=BZM_API_BASE_URL, http2=True, timeout=timeout) as client):
         try:
@@ -69,6 +69,35 @@ async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
                 )
             raise
 
+
+async def http_request(method: str, endpoint: str,
+                       result_formatter: Callable = None,
+                       result_formatter_params: Optional[dict] = None,
+                       **kwargs) -> HttpBaseResult:
+    """
+    Make an http request to Webpage.
+    """
+
+    headers = kwargs.pop("headers", {})
+    headers["User-Agent"] = user_agent
+
+    async with (httpx.AsyncClient(base_url="", http2=True, timeout=timeout) as client):
+        try:
+            resp = await client.request(method, endpoint, headers=headers, **kwargs)
+            resp.raise_for_status()
+            result = resp.text
+            error = None
+            final_result = result_formatter(result, result_formatter_params) if result_formatter else result
+            return HttpBaseResult(
+                result=final_result,
+                error=error,
+            )
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in [401, 403]:
+                return HttpBaseResult(
+                    error="Invalid credentials"
+                )
+            raise
 
 def get_date_time_iso(timestamp: int) -> Optional[str]:
     if timestamp is None:

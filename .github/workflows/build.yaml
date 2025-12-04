@@ -50,7 +50,7 @@ jobs:
             echo 'Setting up Ubuntu 25.10 build environment...'
             
             apt-get update -y
-            apt-get install -y curl python3 python3-pip python3-venv binutils
+            apt-get install -y --fix-missing curl python3 python3-pip python3-venv binutils
             
             # Install uv (Python package manager)
             curl -LsSf https://astral.sh/uv/install.sh | sh

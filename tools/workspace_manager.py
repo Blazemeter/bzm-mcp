@@ -8,20 +8,20 @@ from pydantic import Field
 from config.blazemeter import WORKSPACES_ENDPOINT, TOOLS_PREFIX
 from config.token import BzmToken
 from formatters.workspace import format_workspaces, format_workspaces_detailed, format_workspaces_locations
+from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
 from tools.utils import api_request
 
 
-class WorkspaceManager:
+class WorkspaceManager(Manager):
 
     # Note: It's allowed to list all the user workspaces without AI consent
     # the format_workspaces only expose minimum information to user
     # The read operation verify permissions and don't allow to share details.
 
     def __init__(self, token: Optional[BzmToken], ctx: Context):
-        self.token = token
-        self.ctx = ctx
+        super().__init__(token, ctx)
 
     async def read(self, workspace_id: int) -> BaseResult:
 

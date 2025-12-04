@@ -2,7 +2,6 @@ from typing import Any, Optional, List
 
 from pydantic import BaseModel, Field
 
-
 class BaseResult(BaseModel):
     result: Optional[List[Any]] = Field(description="Result List", default=None)
     total: Optional[int] = Field(description="Total available records", default=None)
@@ -26,3 +25,7 @@ class BaseResult(BaseModel):
 
     def model_dump_json(self, **kwargs):
         return super().model_dump_json(exclude_none=True, **kwargs)
+
+
+class HttpBaseResult(BaseResult):
+    result: Optional[Any] = Field(description="Result", default=None)

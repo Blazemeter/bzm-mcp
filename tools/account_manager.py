@@ -3,22 +3,22 @@ from typing import Optional, Dict, Any
 import httpx
 from mcp.server.fastmcp import Context
 
-from config.blazemeter import ACCOUNTS_ENDPOINT, TOOLS_PREFIX
+from config.blazemeter import ACCOUNTS_ENDPOINT, TOOLS_PREFIX, SUPPORT_MESSAGE
 from config.token import BzmToken
 from formatters.account import format_accounts
+from models.manager import Manager
 from models.result import BaseResult
 from tools.utils import api_request
 
 
-class AccountManager:
+class AccountManager(Manager):
 
     # Note: It's allowed to list all the user account without AI consent
     # the format_accounts only expose minimum information to user
     # The read operation verify permissions and don't allow to share if don't have permissions.
 
     def __init__(self, token: Optional[BzmToken], ctx: Context):
-        self.token = token
-        self.ctx = ctx
+        super().__init__(token, ctx)
 
     async def read(self, account_id: int) -> BaseResult:
         account_result = await api_request(
@@ -94,6 +94,5 @@ def register(mcp, token: Optional[BzmToken]) -> None:
             )
         except Exception:
             return BaseResult(
-                error=f"""Error: {traceback.format_exc()}
-                          If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
+                error=f"Error: {traceback.format_exc()}\n{SUPPORT_MESSAGE}"
             )
