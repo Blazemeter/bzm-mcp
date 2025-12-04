@@ -8,15 +8,15 @@ from pydantic import Field
 from config.blazemeter import TOOLS_PREFIX, USER_ENDPOINT
 from config.token import BzmToken
 from formatters.user import format_users
+from models.manager import Manager
 from models.result import BaseResult
 from tools.utils import api_request
 
 
-class UserManager:
+class UserManager(Manager):
 
     def __init__(self, token: Optional[BzmToken], ctx: Context):
-        self.token = token
-        self.ctx = ctx
+        super().__init__(token, ctx)
 
     async def read(self) -> BaseResult:
         return await api_request(
