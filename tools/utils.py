@@ -1,9 +1,12 @@
 """
 Simple utilities for BlazeMeter MCP tools.
 """
+import os
 import platform
+import sys
 from datetime import datetime
-
+from importlib import resources
+from pathlib import Path
 from typing import Optional, Callable
 
 import httpx
@@ -13,10 +16,10 @@ from config.token import BzmToken
 from config.version import __version__
 from models.result import BaseResult, HttpBaseResult
 
-so = platform.system()       # "Windows", "Linux", "Darwin"
-version = platform.version() # kernel / build version
-release = platform.release() # ex. "10", "5.15.0-76-generic"
-machine = platform.machine() # ex. "x86_64", "AMD64", "arm64"
+so = platform.system()  # "Windows", "Linux", "Darwin"
+version = platform.version()  # kernel / build version
+release = platform.release()  # ex. "10", "5.15.0-76-generic"
+machine = platform.machine()  # ex. "x86_64", "AMD64", "arm64"
 
 ua_part = f"{so} {release}; {machine}"
 user_agent = f"bzm-mcp/{__version__} ({ua_part})"
@@ -26,6 +29,7 @@ timeout = httpx.Timeout(
     write=15.0,
     pool=60.0
 )
+
 
 async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
                       result_formatter: Callable = None,
@@ -99,8 +103,22 @@ async def http_request(method: str, endpoint: str,
                 )
             raise
 
+
 def get_date_time_iso(timestamp: int) -> Optional[str]:
     if timestamp is None:
         return None
     else:
         return datetime.fromtimestamp(timestamp).isoformat()
+
+
+def get_resources_path():
+    try:
+        resources_path = resources.files("resources")
+    except ModuleNotFoundError:
+        # Fallback for development or if not installed as package
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(os.path.abspath(__file__))
+        resources_path = Path(base_path) / 'resources'
+    return resources_path
