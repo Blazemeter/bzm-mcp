@@ -719,7 +719,7 @@ For detailed information about API Monitoring management, use the BlazeMeter MCP
 **Teams and Buckets**:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
-- **Help ID**: `api-monitoring-manage-your-teams` (para teams) y `api-monitoring-manage-your-buckets` (para buckets)
+- **Help ID**: `api-monitoring-manage-your-teams` (for teams) y `api-monitoring-manage-your-buckets` (for buckets)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["api-monitoring-manage-your-teams", "api-monitoring-manage-your-buckets"]}`
 
 **Secrets Management**:
