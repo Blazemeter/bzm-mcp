@@ -80,10 +80,10 @@ The [BlazeMeter Chrome Extension](https://help.blazemeter.com/docs/guide/recorde
 Recording a test with the Chrome extension is one way to create Objects for the [Test Action Library](https://help.blazemeter.com/docs/guide/functional-test-action-library.html) when you [Create Scriptless GUI Functional Tests](https://help.blazemeter.com/docs/guide/functional-create-scriptless-test.html).
 
 **This article covers the following topics:**
-- [Record Mode](skill-blazemeter-recorders://references/chrome-extension.md#record-mode) [Advanced Options](skill-blazemeter-recorders://references/chrome-extension.md#advanced-options)
-- [How to Record a Test](skill-blazemeter-recorders://references/chrome-extension.md#how-to-record-a-test) [How multi tab recording for Selenium scripts works](skill-blazemeter-recorders://references/chrome-extension.md#how-multi-tab-recording-for-selenium-scripts-works)
-- [BlazeMeter Script Editor](skill-blazemeter-recorders://references/chrome-extension.md#blazemeter-script-editor)
-- [How to Download the Recording](skill-blazemeter-recorders://references/chrome-extension.md#how-to-download-the-recording)
+- [Record Mode](skill-blazemeter-recorders://references/chrome-extension.md) [Advanced Options](skill-blazemeter-recorders://references/chrome-extension.md)
+- [How to Record a Test](skill-blazemeter-recorders://references/chrome-extension.md) [How multi tab recording for Selenium scripts works](skill-blazemeter-recorders://references/chrome-extension.md)
+- [BlazeMeter Script Editor](skill-blazemeter-recorders://references/chrome-extension.md)
+- [How to Download the Recording](skill-blazemeter-recorders://references/chrome-extension.md)
 
 The extension supports:
 - Browser-based test recording

@@ -649,7 +649,7 @@ This plug-in works on Bamboo Server instance as well as remote agents.
 
 1. Once installed, click the cog in the upper right-hand corner and select 'Overview.'
 2. On the left-hand side of the screen, you will see a section 'BlazeMeter Administration' is now present. Click on the 'Settings page'.
-3. Enter your API key ID and API key secret from your BlazeMeter account (API key ID & API key secret can be found following [BlazeMeter API keys guide](skill-blazemeter-api-reference://references/authentication.md#api-keys)), and in the 'Server URL', enter [https://a.blazemeter.com](https://a.blazemeter.com) and click the Save button.
+3. Enter your API key ID and API key secret from your BlazeMeter account (API key ID & API key secret can be found following [BlazeMeter API keys guide](skill-blazemeter-api-reference://references/authentication.md)), and in the 'Server URL', enter [https://a.blazemeter.com](https://a.blazemeter.com) and click the Save button.
 
 ### Troubleshooting Bamboo BlazeMeter Plugin
 
@@ -782,7 +782,7 @@ $ ../TeamCity/bin/teamcity-server.sh start
 
 ### How to Configure BlazeMeter's Plugin for TeamCity
 
-First, Get the BlazeMeter user key. [How to get the API Key?](skill-blazemeter-api-reference://references/authentication.md#api-keys)
+First, Get the BlazeMeter user key. [How to get the API Key?](skill-blazemeter-api-reference://references/authentication.md)
 
 1. The plugin's configuration page is accessible in TeamCity from the 'Administration' section, in the 'BlazeMeter' link on the left side of the screen.
 2. Please set the 'BlazeMeter URL' field to [https://a.blazemeter.com](https://a.blazemeter.com)
@@ -1019,18 +1019,18 @@ For detailed information about CI/CD integrations, use the BlazeMeter MCP help t
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**:
-  - `integrations-blazemeter-jenkins-plugin-guide` (Jenkins) ✅
-  - `integrations-blazemeter-plugin-to-bamboo` (Bamboo) ✅
-  - `integrations-blazemeter-teamcity-plugin` (TeamCity) ✅
-  - `integrations-shiftleft-converter-for-loadrunner` (ShiftLeft Converter) ✅
-  - `integrations-testing-via-aws-codepipeline` (AWS CodePipeline) ✅
-  - `integrations-testing-via-azure-devops-pipeline` (Azure DevOps) ✅
-  - `integrations-blazemeter-add-load-tests-to-CI-CD.htm` (Add to CI/CD Pipeline) ✅
-  - `integrations-run-bzm-tests-from-github-actions.htm` (GitHub Actions) ✅
-  - `integrations-github-actions-and-bzm-related-functions_.htm` (GitHub Actions Functions) ✅
-  - `integrations-github-actions-and-bzm-related-variables.htm` (GitHub Actions Variables) ✅
-  - `integrations-run-bzm-tests-from-gitlab-ci-cd.htm` (GitLab CI/CD) ✅
-  - `integrations-gitlab-docker-img-and-bzm-related-functions.htm` (GitLab Functions) ✅
-  - `integrations-gitlab-docker-img-and-bzm-related-variables.htm` (GitLab Variables) ✅
+  - `integrations-blazemeter-jenkins-plugin-guide` (Jenkins)
+  - `integrations-blazemeter-plugin-to-bamboo` (Bamboo)
+  - `integrations-blazemeter-teamcity-plugin` (TeamCity)
+  - `integrations-shiftleft-converter-for-loadrunner` (ShiftLeft Converter)
+  - `integrations-testing-via-aws-codepipeline` (AWS CodePipeline)
+  - `integrations-testing-via-azure-devops-pipeline` (Azure DevOps)
+  - `integrations-blazemeter-add-load-tests-to-CI-CD.htm` (Add to CI/CD Pipeline)
+  - `integrations-run-bzm-tests-from-github-actions.htm` (GitHub Actions)
+  - `integrations-github-actions-and-bzm-related-functions_.htm` (GitHub Actions Functions)
+  - `integrations-github-actions-and-bzm-related-variables.htm` (GitHub Actions Variables)
+  - `integrations-run-bzm-tests-from-gitlab-ci-cd.htm` (GitLab CI/CD)
+  - `integrations-gitlab-docker-img-and-bzm-related-functions.htm` (GitLab Functions)
+  - `integrations-gitlab-docker-img-and-bzm-related-variables.htm` (GitLab Variables)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["integrations-blazemeter-jenkins-plugin-guide", "integrations-blazemeter-plugin-to-bamboo", "integrations-blazemeter-teamcity-plugin", "integrations-shiftleft-converter-for-loadrunner", "integrations-testing-via-aws-codepipeline", "integrations-testing-via-azure-devops-pipeline", "integrations-blazemeter-add-load-tests-to-CI-CD.htm", "integrations-run-bzm-tests-from-github-actions.htm", "integrations-github-actions-and-bzm-related-functions_.htm", "integrations-github-actions-and-bzm-related-variables.htm", "integrations-run-bzm-tests-from-gitlab-ci-cd.htm", "integrations-gitlab-docker-img-and-bzm-related-functions.htm", "integrations-gitlab-docker-img-and-bzm-related-variables.htm"]}`
 

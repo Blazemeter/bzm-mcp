@@ -1,6 +1,6 @@
 ---
 name: blazemeter-api-monitoring
-description: Comprehensive guide for BlazeMeter API Monitoring, including test creation, configuration, scripting, integrations, notifications, and management. Use when working with API Monitoring tests for: (1) Creating and configuring API tests, (2) Writing custom scripts (Initial, Pre-request, Post-response), (3) Integrating with third-party services (Slack, PagerDuty, Datadog, etc.), (4) Managing teams, buckets, and RBAC, (5) Configuring notifications and sharing results, (6) Using test data (CSV, Data Entities), (7) Advanced features (GraphQL, SOAP, file uploads, environments), or any other API Monitoring tasks.
+description: Comprehensive guide for BlazeMeter API Monitoring, including test creation, configuration, scripting, integrations, notifications, and management. Use when working with API Monitoring tests for (1) Creating and configuring API tests, (2) Writing custom scripts (Initial, Pre-request, Post-response), (3) Integrating with third-party services (Slack, PagerDuty, Datadog, etc.), (4) Managing teams, buckets, and RBAC, (5) Configuring notifications and sharing results, (6) Using test data (CSV, Data Entities), (7) Advanced features (GraphQL, SOAP, file uploads, environments), or any other API Monitoring tasks.
 ---
 
 # BlazeMeter API Monitoring
@@ -17,48 +17,6 @@ API Monitoring enables continuous testing of APIs with support for REST, GraphQL
 2. **Scripting**: Use Initial Script, Pre-request Scripts, and Post-response Scripts
 3. **Integrations**: Connect with 30+ third-party services
 4. **Management**: Organize tests with teams, buckets, and RBAC
-
-## MCP Tools Integration
-
-BlazeMeter MCP tools provide programmatic access to API Monitoring tests, executions, and results. Use these tools to automate test management and integrate API Monitoring into your workflows.
-
-### Available MCP Tools
-
-- **Test Management**: 
-  - `blazemeter_tests` with action `read` - Read test details and configuration
-  - `blazemeter_tests` with action `list` - List all tests in a project
-  - `blazemeter_tests` with action `create` - Create new API Monitoring tests
-  - Required args: `test_id` (integer) or `project_id` (integer)
-  - Returns: Test details including configuration, steps, and settings
-
-- **Test Execution**:
-  - `blazemeter_execution` with action `read` - Read execution details and results
-  - `blazemeter_execution` with action `list` - List all executions for a test
-  - `blazemeter_execution` with action `read_summary` - Get execution summary report
-  - `blazemeter_execution` with action `read_errors` - Get execution error report
-  - Required args: `execution_id` (integer) or `test_id` (integer)
-  - Returns: Execution details, status, results, and reports
-
-### When to Use MCP Tools
-
-- **Automation**: Automate test creation, execution, and management
-- **Integration**: Integrate API Monitoring into CI/CD pipelines
-- **Reporting**: Programmatically retrieve test results and reports
-- **Monitoring**: Monitor test execution status and results
-
-### Example Workflows
-
-**Creating and Executing Tests**:
-1. Use `blazemeter_tests` with action `create` to create new API Monitoring test
-2. Configure test using test configuration
-3. Use `blazemeter_execution` with action `read` to monitor execution status
-4. Use `blazemeter_execution` with action `read_summary` to get test results
-
-**Monitoring Test Results**:
-1. Use `blazemeter_execution` with action `list` to get all executions for a test
-2. Use `blazemeter_execution` with action `read` to get detailed execution information
-3. Use `blazemeter_execution` with action `read_errors` to get error details if test failed
-4. Process results programmatically for reporting or alerting
 
 ## Reference Files
 

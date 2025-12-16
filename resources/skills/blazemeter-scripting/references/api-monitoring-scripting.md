@@ -304,9 +304,9 @@ For detailed information about API Monitoring scripting, use the BlazeMeter MCP 
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**:
-  - `api-monitoring-script-engine-overview` ✅ (Script Engine Overview)
-  - `api-monitoring-initial-script` ✅ (Initial Script)
-  - `api-monitoring-included-libraries` ✅ (Included Libraries)
-  - `api-monitoring-custom-libraries` ✅ (Custom Libraries)
+  - `api-monitoring-script-engine-overview` (Script Engine Overview)
+  - `api-monitoring-initial-script` (Initial Script)
+  - `api-monitoring-included-libraries` (Included Libraries)
+  - `api-monitoring-custom-libraries` (Custom Libraries)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["api-monitoring-script-engine-overview", "api-monitoring-initial-script", "api-monitoring-included-libraries", "api-monitoring-custom-libraries"]}`
 

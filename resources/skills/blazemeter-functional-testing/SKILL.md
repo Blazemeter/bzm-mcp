@@ -1,6 +1,6 @@
 ---
 name: blazemeter-functional-testing
-description: Comprehensive guide for BlazeMeter Functional Testing, including GUI Functional Tests, API Tests (deprecated), Action Library, and debugging. Use when working with Functional Testing for: (1) Creating GUI Functional Tests (YAML, Java IDE, Python IDE), (2) Managing Functional Tests (duplicate, delete, move, rename), (3) Using test data in Functional Tests, (4) Working with Action Library, (5) Debugging Functional Tests, (6) Understanding browser support, or any other Functional Testing tasks. Note: API Functional Tests are deprecated in favor of API Monitoring.
+description: Comprehensive guide for BlazeMeter Functional Testing, including GUI Functional Tests, API Tests (deprecated), Action Library, and debugging. Use when working with Functional Testing for (1) Creating GUI Functional Tests (YAML, Java IDE, Python IDE), (2) Managing Functional Tests (duplicate, delete, move, rename), (3) Using test data in Functional Tests, (4) Working with Action Library, (5) Debugging Functional Tests, (6) Understanding browser support, or any other Functional Testing tasks. Note - API Functional Tests are deprecated in favor of API Monitoring.
 ---
 
 # BlazeMeter Functional Testing

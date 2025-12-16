@@ -1,6 +1,6 @@
 ---
 name: blazemeter-scripting
-description: Comprehensive guide for BlazeMeter Scripting, including Groovy/Beanshell, JMeter plugins, JMeter DSL, and API Monitoring scripting. Use when working with scripting for: (1) Writing files in Groovy/Beanshell scripts, (2) Using non-standard JMeter plugins, (3) Creating JMeter tests with JMeter DSL, (4) Writing custom scripts for API Monitoring (custom libraries, included libraries, initial script, reusable snippets), or any other scripting tasks.
+description: Comprehensive guide for BlazeMeter Scripting, including Groovy/Beanshell, JMeter plugins, JMeter DSL, and API Monitoring scripting. Use when working with scripting for (1) Writing files in Groovy/Beanshell scripts, (2) Using non-standard JMeter plugins, (3) Creating JMeter tests with JMeter DSL, (4) Writing custom scripts for API Monitoring (custom libraries, included libraries, initial script, reusable snippets), or any other scripting tasks.
 ---
 
 # BlazeMeter Scripting

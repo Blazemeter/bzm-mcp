@@ -1,6 +1,6 @@
 ---
 name: blazemeter-recorders
-description: Comprehensive guide for BlazeMeter Recorders, including Chrome Extension and Proxy Recorder. Use when working with recorders for: (1) Recording tests with Chrome Extension, (2) Creating and using Proxy Recorder, (3) Configuring browsers and devices for proxy recording, (4) Setting port ranges for proxy recorder, or any other recording tasks.
+description: Comprehensive guide for BlazeMeter Recorders, including Chrome Extension and Proxy Recorder. Use when working with recorders for (1) Recording tests with Chrome Extension, (2) Creating and using Proxy Recorder, (3) Configuring browsers and devices for proxy recording, (4) Setting port ranges for proxy recorder, or any other recording tasks.
 ---
 
 # BlazeMeter Recorders

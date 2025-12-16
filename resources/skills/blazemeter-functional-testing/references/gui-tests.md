@@ -1299,7 +1299,7 @@ For detailed information, use the BlazeMeter MCP help tools:
 **Functional Secrets**:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
-- **Help ID**: `functional-secrets.htm` ✅
+- **Help ID**: `functional-secrets.htm`
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["functional-secrets.htm"]}`
 
 ### Prerequisites
@@ -1378,7 +1378,7 @@ For detailed information about GUI Functional Tests, use the BlazeMeter MCP help
 **Running a Functional Test**:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
-- **Help ID**: `functional-test-run` ✅
+- **Help ID**: `functional-test-run`
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["functional-test-run"]}`
 
 **GUI Functional Test Report**:

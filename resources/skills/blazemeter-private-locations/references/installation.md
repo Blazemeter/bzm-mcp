@@ -524,12 +524,12 @@ For detailed information about Private Location installation, use the BlazeMeter
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `private-locations-install-blazemeter-agent-for-docker` (Docker) ✅
-  - `private-locations-install-blazemeter-agent-for-kubernetes` (Kubernetes) ✅
-  - `private-locations-install-blazemeter-agent-for-kubernetes-for-mock-services` (Kubernetes Mock Services) ✅
-  - `private-locations-install-blazemeter-agent-helm-chart` (Helm Chart) ✅
-  - `private-locations-system-requirements` (system requirements) ✅
-  - `private-locations-optional-installation-step-manual-kubernetes-agent-installation` (manual Kubernetes) ✅
-  - `private-locations-upgrade-from-legacy-blazemeter-supervisor-ship-to-new-dockerized-agent` (upgrade from legacy) ✅
+  - `private-locations-install-blazemeter-agent-for-docker` (Docker)
+  - `private-locations-install-blazemeter-agent-for-kubernetes` (Kubernetes)
+  - `private-locations-install-blazemeter-agent-for-kubernetes-for-mock-services` (Kubernetes Mock Services)
+  - `private-locations-install-blazemeter-agent-helm-chart` (Helm Chart)
+  - `private-locations-system-requirements` (system requirements)
+  - `private-locations-optional-installation-step-manual-kubernetes-agent-installation` (manual Kubernetes)
+  - `private-locations-upgrade-from-legacy-blazemeter-supervisor-ship-to-new-dockerized-agent` (upgrade from legacy)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["private-locations-install-blazemeter-agent-for-docker", "private-locations-install-blazemeter-agent-for-kubernetes", "private-locations-install-blazemeter-agent-for-kubernetes-for-mock-services", "private-locations-install-blazemeter-agent-helm-chart", "private-locations-system-requirements", "private-locations-optional-installation-step-manual-kubernetes-agent-installation", "private-locations-upgrade-from-legacy-blazemeter-supervisor-ship-to-new-dockerized-agent"]}`
 

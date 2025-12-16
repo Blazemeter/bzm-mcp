@@ -247,6 +247,6 @@ For detailed information about allowlisting BlazeMeter infrastructure, use the B
 **API Monitoring IP Addresses**:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
-- **Help ID**: `api-monitoring-ip-addresses-allowlisting` ✅
+- **Help ID**: `api-monitoring-ip-addresses-allowlisting`
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["api-monitoring-ip-addresses-allowlisting"]}`
 

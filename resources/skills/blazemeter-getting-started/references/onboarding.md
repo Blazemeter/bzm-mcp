@@ -127,7 +127,7 @@ For detailed information about BlazeMeter University onboarding, use the BlazeMe
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `blazeu-blazemeter-university` (BlazeMeter University) ✅
-  - `blazeu-onboarding-faq` (onboarding FAQ) ✅
+  - `blazeu-blazemeter-university` (BlazeMeter University)
+  - `blazeu-onboarding-faq` (onboarding FAQ)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["blazeu-blazemeter-university", "blazeu-onboarding-faq"]}`
 

@@ -1,6 +1,6 @@
 ---
 name: blazemeter-performance-testing
-description: Comprehensive guide for BlazeMeter Performance Testing, including load configuration, reporting, JMeter configuration, Taurus, scenarios, and advanced features. Use when working with Performance tests for: (1) Configuring load settings and distribution, (2) Creating and running tests (JMeter, Browser, URL/API, Multi-Test), (3) Analyzing reports and filtering data, (4) Configuring JMeter properties and scenarios, (5) Using Taurus for test configuration, (6) Advanced features (AI Log Analysis, APM Integration, Network Emulation, Mainframe Testing), (7) Troubleshooting test issues, or any other Performance Testing tasks.
+description: Comprehensive guide for BlazeMeter Performance Testing, including load configuration, reporting, JMeter configuration, Taurus, scenarios, and advanced features. Use when working with Performance tests for (1) Configuring load settings and distribution, (2) Creating and running tests (JMeter, Browser, URL/API, Multi-Test), (3) Analyzing reports and filtering data, (4) Configuring JMeter properties and scenarios, (5) Using Taurus for test configuration, (6) Advanced features (AI Log Analysis, APM Integration, Network Emulation, Mainframe Testing), (7) Troubleshooting test issues, or any other Performance Testing tasks.
 ---
 
 # BlazeMeter Performance Testing

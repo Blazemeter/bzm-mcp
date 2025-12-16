@@ -729,21 +729,21 @@ For detailed information about Radar Agent, use the BlazeMeter MCP help tools:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `private-locations-radar-agent-overview` (overview) ✅
-  - `private-locations-radar-agent-changelog` (changelog) ✅
-  - `private-locations-radar-agent-connection-errors` (connection errors) ✅
-  - `private-locations-radar-agent-sso-login-error` (SSO login) ✅
-  - `private-locations-radar-agent-http-https-proxy-setup` (proxy setup) ✅
-  - `private-locations-radar-agent-high-availability-failover-capability` (HA/failover) ✅
-  - `private-locations-handle-radar-agent-availability-issues` (availability) ✅
-  - `private-locations-remote-agent-expired` (expired) ✅
-  - `private-locations-auto-restart-radar-agent-on-linux` (auto-restart) ✅
-  - `private-locations-radar-agent-support-for-https-common-name-in-x509-certificates` (HTTPS certificates) ✅
-  - `private-locations-radar-agent-certificates.htm` (certificates) ✅
-  - `private-locations-improve-timeout-handling.htm` (timeout handling) ✅
-  - `private-locations-run-radar-agent-as-container` (container) ✅
-  - `private-locations-run-radar-agent-as-service-or-daemon` (service/daemon) ✅
-  - `private-locations-manual-update-of-images` (manual update) ✅
-  - `private-locations-enable-rss-subscription-for-image-updates` (RSS subscription) ✅
+  - `private-locations-radar-agent-overview` (overview)
+  - `private-locations-radar-agent-changelog` (changelog)
+  - `private-locations-radar-agent-connection-errors` (connection errors)
+  - `private-locations-radar-agent-sso-login-error` (SSO login)
+  - `private-locations-radar-agent-http-https-proxy-setup` (proxy setup)
+  - `private-locations-radar-agent-high-availability-failover-capability` (HA/failover)
+  - `private-locations-handle-radar-agent-availability-issues` (availability)
+  - `private-locations-remote-agent-expired` (expired)
+  - `private-locations-auto-restart-radar-agent-on-linux` (auto-restart)
+  - `private-locations-radar-agent-support-for-https-common-name-in-x509-certificates` (HTTPS certificates)
+  - `private-locations-radar-agent-certificates.htm` (certificates)
+  - `private-locations-improve-timeout-handling.htm` (timeout handling)
+  - `private-locations-run-radar-agent-as-container` (container)
+  - `private-locations-run-radar-agent-as-service-or-daemon` (service/daemon)
+  - `private-locations-manual-update-of-images` (manual update)
+  - `private-locations-enable-rss-subscription-for-image-updates` (RSS subscription)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["private-locations-radar-agent-overview", "private-locations-radar-agent-changelog", "private-locations-radar-agent-connection-errors", "private-locations-radar-agent-sso-login-error", "private-locations-radar-agent-http-https-proxy-setup", "private-locations-radar-agent-high-availability-failover-capability", "private-locations-handle-radar-agent-availability-issues", "private-locations-remote-agent-expired", "private-locations-auto-restart-radar-agent-on-linux", "private-locations-radar-agent-support-for-https-common-name-in-x509-certificates", "private-locations-radar-agent-certificates.htm", "private-locations-improve-timeout-handling.htm", "private-locations-run-radar-agent-as-container", "private-locations-run-radar-agent-as-service-or-daemon", "private-locations-manual-update-of-images", "private-locations-enable-rss-subscription-for-image-updates"]}`
 

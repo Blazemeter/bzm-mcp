@@ -1567,33 +1567,33 @@ For detailed information about performance test reporting, use the BlazeMeter MC
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `performance-report-statuses` (report statuses) ✅
-  - `performance-exclude-failed-transactions` (exclude failed transactions) ✅
-  - `performance-filter-report-data` (filter) ✅
-  - `performance-compare-reports` (compare) ✅
-  - `performance-manage-tags-for-tests` (tags) ✅
-  - `performance-restore-archived-report` (restore) ✅
-  - `performance-share-reports` (share) ✅
-  - `performance-advanced-search` (advanced search) ✅
-  - `performance-intro-to-reporting` (intro) ✅
-  - `performance-monitoring-post-test-analysis` (monitoring) ✅
-  - `performance-kpis-purpose` (KPIs) ✅
-  - `performance-kpis-key-perf-test-metrics.htm` (key performance metrics) ✅
-  - `performance-kpis-metric-types.htm` (metric types) ✅
-  - `performance-kpis-higher-number-concurrent-users.htm` (higher concurrent users) ✅
-  - `performance-kpis-hits-in-blazemeter-reports.htm` (HITS KPI) ✅
-  - `performance-metrics-for-websites.htm` (website metrics) ✅
-  - `performance-jmeter-aggregate-report.htm` (JMeter aggregate report discrepancies) ✅
-  - `performance-anomaly-testing.htm` (anomaly detection) ✅
-  - `performance-summary-report` (summary) ✅
-  - `performance-timeline-report` (timeline) ✅
-  - `performance-errors-report` (errors) ✅
-  - `performance-request-stats-report` (request stats) ✅
-  - `performance-logs-report` (logs) ✅
-  - `performance-original-test-configuration-report` (original configuration) ✅
-  - `performance-filter-by-location-scenario` (location/scenario filter) ✅
-  - `performance-engine-health-report` (engine health) ✅
-  - `performance-baseline-comparison` (baseline comparison) ✅
-  - `performance-ignore-labels-in-reports.htm` (ignore labels) ✅
+  - `performance-report-statuses` (report statuses)
+  - `performance-exclude-failed-transactions` (exclude failed transactions)
+  - `performance-filter-report-data` (filter)
+  - `performance-compare-reports` (compare)
+  - `performance-manage-tags-for-tests` (tags)
+  - `performance-restore-archived-report` (restore)
+  - `performance-share-reports` (share)
+  - `performance-advanced-search` (advanced search)
+  - `performance-intro-to-reporting` (intro)
+  - `performance-monitoring-post-test-analysis` (monitoring)
+  - `performance-kpis-purpose` (KPIs)
+  - `performance-kpis-key-perf-test-metrics.htm` (key performance metrics)
+  - `performance-kpis-metric-types.htm` (metric types)
+  - `performance-kpis-higher-number-concurrent-users.htm` (higher concurrent users)
+  - `performance-kpis-hits-in-blazemeter-reports.htm` (HITS KPI)
+  - `performance-metrics-for-websites.htm` (website metrics)
+  - `performance-jmeter-aggregate-report.htm` (JMeter aggregate report discrepancies)
+  - `performance-anomaly-testing.htm` (anomaly detection)
+  - `performance-summary-report` (summary)
+  - `performance-timeline-report` (timeline)
+  - `performance-errors-report` (errors)
+  - `performance-request-stats-report` (request stats)
+  - `performance-logs-report` (logs)
+  - `performance-original-test-configuration-report` (original configuration)
+  - `performance-filter-by-location-scenario` (location/scenario filter)
+  - `performance-engine-health-report` (engine health)
+  - `performance-baseline-comparison` (baseline comparison)
+  - `performance-ignore-labels-in-reports.htm` (ignore labels)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["performance-report-statuses", "performance-exclude-failed-transactions", "performance-filter-report-data", "performance-compare-reports", "performance-manage-tags-for-tests", "performance-restore-archived-report", "performance-share-reports", "performance-advanced-search", "performance-intro-to-reporting", "performance-monitoring-post-test-analysis", "performance-kpis-purpose", "performance-kpis-key-perf-test-metrics.htm", "performance-kpis-metric-types.htm", "performance-kpis-higher-number-concurrent-users.htm", "performance-kpis-hits-in-blazemeter-reports.htm", "performance-metrics-for-websites.htm", "performance-jmeter-aggregate-report.htm", "performance-anomaly-testing.htm", "performance-summary-report", "performance-timeline-report", "performance-errors-report", "performance-request-stats-report", "performance-logs-report", "performance-original-test-configuration-report", "performance-filter-by-location-scenario", "performance-engine-health-report", "performance-baseline-comparison", "performance-ignore-labels-in-reports.htm"]}`
 

@@ -802,18 +802,16 @@ For detailed information about APM integrations, use the BlazeMeter MCP help too
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `integrations-integrate-with-appdynamics` (AppDynamics) ✅
-  - `integrations-integrate-with-datadog` (Datadog) ✅
-  - `integrations-integrate-with-delphix` (Delphix) ✅
-  - `integrations-new-relic-apm` (New Relic APM) ✅
-  - `integrations-blazemeter-integration-with-cloudwatch` (CloudWatch) ✅
-  - `integrations-set-up-aws-iam` (AWS IAM for CloudWatch) ✅
-  - `integrations-blazemeter-integration-with-dynatrace-apm` (Dynatrace) ✅
-  - `integrations-blazemeter-integration-with-dx-apm` (DX APM) ✅
-  - `integrations-new-relic-infrastructure.htm` (New Relic Infrastructure) ✅
-  - `integrations-new-relic.htm` (New Relic Integrations Overview) ✅
-  - `integrations-overview.htm` (Integrations Overview) ✅
+  - `integrations-integrate-with-appdynamics` (AppDynamics)
+  - `integrations-integrate-with-datadog` (Datadog)
+  - `integrations-integrate-with-delphix` (Delphix)
+  - `integrations-new-relic-apm` (New Relic APM)
+  - `integrations-blazemeter-integration-with-cloudwatch` (CloudWatch)
+  - `integrations-set-up-aws-iam` (AWS IAM for CloudWatch)
+  - `integrations-blazemeter-integration-with-dynatrace-apm` (Dynatrace)
+  - `integrations-blazemeter-integration-with-dx-apm` (DX APM)
+  - `integrations-new-relic-infrastructure.htm` (New Relic Infrastructure)
+  - `integrations-new-relic.htm` (New Relic Integrations Overview)
+  - `integrations-overview.htm` (Integrations Overview)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["integrations-integrate-with-appdynamics", "integrations-integrate-with-datadog", "integrations-integrate-with-delphix", "integrations-new-relic-apm", "integrations-new-relic-infrastructure.htm", "integrations-blazemeter-integration-with-cloudwatch", "integrations-set-up-aws-iam", "integrations-blazemeter-integration-with-dynatrace-apm", "integrations-blazemeter-integration-with-dx-apm", "integrations-new-relic.htm", "integrations-overview.htm"]}`
-
-Note: For New Relic Infrastructure and DX APM, some help IDs may be unavailable or have technical issues. Refer to the BlazeMeter documentation for the most up-to-date information in such case.
 

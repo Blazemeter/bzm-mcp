@@ -1,6 +1,6 @@
 ---
 name: blazemeter-private-locations
-description: Comprehensive guide for BlazeMeter Private Locations, including Radar Agent, installation (Docker, Kubernetes, Helm), configuration, management, and troubleshooting. Use when working with Private Locations for: (1) Installing agents (Docker, Kubernetes, Helm Chart), (2) Configuring Radar Agent for API Monitoring, (3) Setting up environment variables and certificates, (4) Managing private locations and agents, (5) Troubleshooting installation and connectivity issues, or any other Private Location tasks.
+description: Comprehensive guide for BlazeMeter Private Locations, including Radar Agent, installation (Docker, Kubernetes, Helm), configuration, management, and troubleshooting. Use when working with Private Locations for (1) Installing agents (Docker, Kubernetes, Helm Chart), (2) Configuring Radar Agent for API Monitoring, (3) Setting up environment variables and certificates, (4) Managing private locations and agents, (5) Troubleshooting installation and connectivity issues, or any other Private Location tasks.
 ---
 
 # BlazeMeter Private Locations

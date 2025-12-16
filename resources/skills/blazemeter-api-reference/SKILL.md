@@ -1,6 +1,6 @@
 ---
 name: blazemeter-api-reference
-description: Comprehensive reference for BlazeMeter REST APIs, including authentication, identifiers, and API endpoints. Use when working with BlazeMeter APIs for: (1) Understanding BlazeMeter REST API structure, (2) Authenticating API requests, (3) Obtaining identifiers (Workspace ID, Project ID, Test ID, etc.), (4) Using Test Data API, (5) Using Cloning API, (6) Using Export API, (7) Using Service Virtualization Bulk Operations APIs, or any other API tasks.
+description: Comprehensive reference for BlazeMeter REST APIs, including authentication, identifiers, and API endpoints. Use when working with BlazeMeter APIs for (1) Understanding BlazeMeter REST API structure, (2) Authenticating API requests, (3) Obtaining identifiers (Workspace ID, Project ID, Test ID, etc.), (4) Using Test Data API, (5) Using Cloning API, (6) Using Export API, (7) Using Service Virtualization Bulk Operations APIs, or any other API tasks.
 ---
 
 # BlazeMeter API Reference

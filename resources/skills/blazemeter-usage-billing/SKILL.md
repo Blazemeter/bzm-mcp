@@ -1,6 +1,6 @@
 ---
 name: blazemeter-usage-billing
-description: Guide for BlazeMeter Usage & Billing, including credit types and charging. Use when working with usage and billing for: (1) Understanding BlazeMeter credit types (VU, VUH, Tests), (2) Calculating credit consumption for different test types, or any other usage and billing tasks.
+description: Guide for BlazeMeter Usage & Billing, including credit types and charging. Use when working with usage and billing for (1) Understanding BlazeMeter credit types (VU, VUH, Tests), (2) Calculating credit consumption for different test types, or any other usage and billing tasks.
 ---
 
 # BlazeMeter Usage & Billing

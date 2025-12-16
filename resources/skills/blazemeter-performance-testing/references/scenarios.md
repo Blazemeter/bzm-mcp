@@ -787,23 +787,23 @@ For detailed information about performance test scenarios, use the BlazeMeter MC
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `performance-scenario-definition` (scenario definition) ✅
-  - `performance-upload-files` (uploading files) ✅
-  - `performance-duplicate-delete-move-test` (duplicate/delete/move) ✅
-  - `performance-run-test` (run test) ✅
-  - `performance-stop-test` (stop test) ✅
-  - `performance-configure-ultimate-thread-group-scenario` (Ultimate Thread Group) ✅
-  - `performance-cvs-split-distribute-engines` (CSV split) ✅
-  - `performance-schedule-test` (schedule) ✅
+  - `performance-scenario-definition` (scenario definition)
+  - `performance-upload-files` (uploading files)
+  - `performance-duplicate-delete-move-test` (duplicate/delete/move)
+  - `performance-run-test` (run test)
+  - `performance-stop-test` (stop test)
+  - `performance-configure-ultimate-thread-group-scenario` (Ultimate Thread Group)
+  - `performance-cvs-split-distribute-engines` (CSV split)
+  - `performance-schedule-test` (schedule)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["performance-scenario-definition", "performance-upload-files", "performance-duplicate-delete-move-test", "performance-run-test", "performance-stop-test", "performance-configure-ultimate-thread-group-scenario", "performance-cvs-split-distribute-engines", "performance-schedule-test"]}`
 
 **Creating Performance Tests**:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**:
-  - `performance-create-jmeter-test` (JMeter test) ✅
-  - `performance-create-taurus-test` (Taurus test) ✅
-  - `performance-create-multi-test` (Multi-Test) ✅
-  - `performance-create-url-api-test` (URL/API test) ✅
+  - `performance-create-jmeter-test` (JMeter test)
+  - `performance-create-taurus-test` (Taurus test)
+  - `performance-create-multi-test` (Multi-Test)
+  - `performance-create-url-api-test` (URL/API test)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["performance-create-jmeter-test", "performance-create-taurus-test", "performance-create-multi-test", "performance-create-url-api-test"]}`
 

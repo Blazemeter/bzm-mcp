@@ -1,6 +1,6 @@
 ---
 name: blazemeter-network-security
-description: Comprehensive guide for BlazeMeter Network & Security, including allowlisting, DNS configuration, and security best practices. Use when working with network and security for: (1) Configuring allowlists for BlazeMeter engines and infrastructure, (2) Disabling DNS caching, (3) Implementing security best practices for API Monitoring, or any other network and security tasks.
+description: Comprehensive guide for BlazeMeter Network & Security, including allowlisting, DNS configuration, and security best practices. Use when working with network and security for (1) Configuring allowlists for BlazeMeter engines and infrastructure, (2) Disabling DNS caching, (3) Implementing security best practices for API Monitoring, or any other network and security tasks.
 ---
 
 # BlazeMeter Network & Security

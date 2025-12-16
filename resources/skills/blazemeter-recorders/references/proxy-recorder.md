@@ -36,13 +36,13 @@ The Proxy Recorder captures HTTP/HTTPS traffic between your application and the 
    - A proxy with random IP over port 80
    - A proxy with a random IP over a random port which is not 80
 6. For iOS devices, enable "Launch proxy recorder with random port"
-7. If your network is not open to external networks, generate the proxy recorder in a [private location](skill-blazemeter-private-locations://references/introduction.md). To do so, open the location drop-down and chose the private location you wish to use. The proxy recorder will be generated on the first available load generator in the chosen location. If needed, [set the port range for your ships](skill-blazemeter-recorders://references/proxy-recorder.md#setting-port-range-on-your-agent) now
+7. If your network is not open to external networks, generate the proxy recorder in a [private location](skill-blazemeter-private-locations://references/introduction.md). To do so, open the location drop-down and chose the private location you wish to use. The proxy recorder will be generated on the first available load generator in the chosen location. If needed, [set the port range for your ships](skill-blazemeter-recorders://references/proxy-recorder.md) now
 
 Before you can start recording, you must configure you device or browser to use the proxy recorder:
-- [Configure Android Devices for Proxy Recording](skill-blazemeter-recorders://references/proxy-recorder.md#configure-android-devices-for-proxy-recording)
-- [Configure Apple Devices for Proxy Recording](skill-blazemeter-recorders://references/proxy-recorder.md#configure-apple-devices-for-proxy-recording)
-- [Configure Firefox for Proxy Recording](skill-blazemeter-recorders://references/proxy-recorder.md#configure-firefox-for-proxy-recording)
-- [Configure Chrome for Proxy Recording](skill-blazemeter-recorders://references/proxy-recorder.md#configure-chrome-for-proxy-recording)
+- [Configure Android Devices for Proxy Recording](skill-blazemeter-recorders://references/proxy-recorder.md)
+- [Configure Apple Devices for Proxy Recording](skill-blazemeter-recorders://references/proxy-recorder.md)
+- [Configure Firefox for Proxy Recording](skill-blazemeter-recorders://references/proxy-recorder.md)
+- [Configure Chrome for Proxy Recording](skill-blazemeter-recorders://references/proxy-recorder.md)
 
 ### Proxy Types
 
@@ -71,7 +71,7 @@ Before you can start recording, you must configure you device or browser to use 
 
 ## Recording Your Session
 
-After you have created a [Proxy Recorder](skill-blazemeter-recorders://references/proxy-recorder.md#creating-the-proxy-recorder), and configured your mobile device or browser, you are now ready to record your session for the performance test.
+After you have created a [Proxy Recorder](skill-blazemeter-recorders://references/proxy-recorder.md), and configured your mobile device or browser, you are now ready to record your session for the performance test.
 
 **Use when**: Recording performance test sessions using the proxy recorder or capturing requests, pausing/stopping recording, exporting as JMX/JSON/URL list/Smart JMX, and shutting down the proxy.
 
@@ -517,21 +517,21 @@ For detailed information about Proxy Recorder, use the BlazeMeter MCP help tools
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**:
-  - `recorders-configure-chrome-for-proxy-recording` ✅ (Chrome)
-  - `recorders-configure-firefox-for-proxy-recording` ✅ (Firefox)
-  - `recorders-configure-apple-devices-for-proxy-recorder` ✅ (Apple)
-  - `recorders-configure-android-devices-for-proxy-recording` ✅ (Android)
+  - `recorders-configure-chrome-for-proxy-recording` (Chrome)
+  - `recorders-configure-firefox-for-proxy-recording` (Firefox)
+  - `recorders-configure-apple-devices-for-proxy-recorder` (Apple)
+  - `recorders-configure-android-devices-for-proxy-recording` (Android)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["recorders-configure-chrome-for-proxy-recording", "recorders-configure-firefox-for-proxy-recording", "recorders-configure-apple-devices-for-proxy-recorder", "recorders-configure-android-devices-for-proxy-recording"]}`
 
 **Using the Other Certificate**:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
-- **Help ID**: `recorders-using-the-other-certificate` ✅
+- **Help ID**: `recorders-using-the-other-certificate`
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["recorders-using-the-other-certificate"]}`
 
 **Setting Port Range**:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
-- **Help ID**: `recorders-setting-port-range-on-your-agent` ✅
+- **Help ID**: `recorders-setting-port-range-on-your-agent`
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["recorders-setting-port-range-on-your-agent"]}`
 

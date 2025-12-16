@@ -1,6 +1,6 @@
 ---
 name: blazemeter-troubleshooting
-description: Comprehensive troubleshooting guide for BlazeMeter, covering API Monitoring, Performance Testing, general issues, integrations, and security. Use when troubleshooting for: (1) API Monitoring issues (Radar Agent auth, SSL certificates, debug tests), (2) Performance Testing issues (high response time, 500 errors, partial load, tests not starting), (3) General issues (delete non-empty project, forbidden domains, Chrome Extension export failures), (4) Integration issues (New Relic reporting), (5) Security issues (Apache Log4j2 vulnerability), (6) Support requests and tickets, or any other troubleshooting tasks.
+description: Comprehensive troubleshooting guide for BlazeMeter, covering API Monitoring, Performance Testing, general issues, integrations, and security. Use when troubleshooting for (1) API Monitoring issues (Radar Agent auth, SSL certificates, debug tests), (2) Performance Testing issues (high response time, 500 errors, partial load, tests not starting), (3) General issues (delete non-empty project, forbidden domains, Chrome Extension export failures), (4) Integration issues (New Relic reporting), (5) Security issues (Apache Log4j2 vulnerability), (6) Support requests and tickets, or any other troubleshooting tasks.
 ---
 
 # BlazeMeter Troubleshooting
