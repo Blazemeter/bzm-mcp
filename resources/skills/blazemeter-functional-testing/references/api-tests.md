@@ -88,7 +88,7 @@ For detailed information about API Monitoring (the replacement for deprecated AP
 **API Monitoring** (Recommended):
 - **Category**: `root_category`
 - **Subcategory**: `guide`
-- **Help ID**: `functional-api-test-create` (create), `functional-api-test-report` (report), `functional-api-test-scripting-in-ui` (scripting), `functional-api-test-create-from-existing-script` (create from script). **Nota**: API Functional Tests están deprecados, usar API Monitoring en su lugar.
+- **Help ID**: `functional-api-test-create` (create), `functional-api-test-report` (report), `functional-api-test-scripting-in-ui` (scripting), `functional-api-test-create-from-existing-script` (create from script). Note: API Functional Tests are deprecated; use API Monitoring instead.
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["functional-api-test-create", "functional-api-test-report", "functional-api-test-scripting-in-ui", "functional-api-test-create-from-existing-script"]}`
 
 **Note**: For API Functional Tests (deprecated), refer to legacy documentation, but strongly consider migrating to API Monitoring.
