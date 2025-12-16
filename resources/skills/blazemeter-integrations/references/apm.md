@@ -815,5 +815,5 @@ For detailed information about APM integrations, use the BlazeMeter MCP help too
   - `integrations-overview.htm` (Integrations Overview) ✅
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["integrations-integrate-with-appdynamics", "integrations-integrate-with-datadog", "integrations-integrate-with-delphix", "integrations-new-relic-apm", "integrations-new-relic-infrastructure.htm", "integrations-blazemeter-integration-with-cloudwatch", "integrations-set-up-aws-iam", "integrations-blazemeter-integration-with-dynatrace-apm", "integrations-blazemeter-integration-with-dx-apm", "integrations-new-relic.htm", "integrations-overview.htm"]}`
 
-**Nota**: Para New Relic Infrastructure y DX APM, algunos help_ids pueden no estar disponibles o tener problemas técnicos. Consulta la documentación de BlazeMeter para información actualizada.
+Note: For New Relic Infrastructure and DX APM, some help IDs may be unavailable or have technical issues. Refer to the BlazeMeter documentation for the most up-to-date information in such case.
 
