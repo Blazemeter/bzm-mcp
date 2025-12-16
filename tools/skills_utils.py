@@ -154,9 +154,10 @@ def read_skill_meta(md_path) -> Tuple[Dict[str, None], str | None]:
 
 
 def get_skill_file_path(skill_name: str, file_path: str) -> Path:
+    fixed_file_path = file_path.split("#")[0]  # Protection against the use of anchors
     full_skills_dir = os.path.join(get_resources_path(), 'skills')
     skills_path = Path(full_skills_dir)
-    return skills_path / skill_name / file_path
+    return skills_path / skill_name / fixed_file_path
 
 
 def replace_skills_markdown_links(content: str, skill_name: str, file_path: str) -> str:
@@ -177,7 +178,7 @@ def replace_skills_markdown_links(content: str, skill_name: str, file_path: str)
                 new_url = f"{SKILL_PREFIX}{skill_name}://{url}"
                 return f"[{text}]({new_url})"
             except:
-                return match.group(0) # In case the relative not it's valid, use the original
+                return match.group(0)  # In case the relative not it's valid, use the original
         else:
             return match.group(0)  # Other case return the original
 
@@ -212,6 +213,7 @@ def parse_skill_uri(uri: str) -> Tuple[str, str]:
         raise ValueError(f"Invalid Skill URI : {uri}")
     return match.group("skill_name"), match.group("path")
 
+
 def list_skill_resources_uri(skill_name: str) -> List[str]:
     full_skills_dir = os.path.join(get_resources_path(), 'skills')
     skills_path = Path(full_skills_dir)
@@ -222,6 +224,7 @@ def list_skill_resources_uri(skill_name: str) -> List[str]:
             url = file_path.relative_to(skills_path / skill_name).as_posix()
             skill_resources.append(f"{SKILL_PREFIX}{skill_name}://{url}")
     return skill_resources
+
 
 def read_skill_definition(skill_name: str) -> Tuple[str | None, str | None]:
     return read_skill_file(skill_name, 'SKILL.md')
