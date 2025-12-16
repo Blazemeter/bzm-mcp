@@ -286,6 +286,6 @@ For detailed information about API Monitoring security, use the BlazeMeter MCP h
 **Secrets Management**:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
-- **Help ID**: `api-monitoring-secrets-management` (para API Monitoring) o `administration-secrets.htm` (para administración general)
+- **Help ID**: `api-monitoring-secrets-management` (for API Monitoring) or `administration-secrets.htm` (for general administration)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["api-monitoring-secrets-management"]}`
 
