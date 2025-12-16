@@ -131,7 +131,7 @@ For detailed information, use the BlazeMeter MCP help tools:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `administration-ai-consent` (administración general) ✅
+  - `administration-ai-consent`
   - `api-monitoring-ai-consent` (para API Monitoring)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["administration-ai-consent", "api-monitoring-ai-consent"]}`
 - **Account AI Consent**: Use MCP tool `blazemeter_account` with action `read` to check AI consent settings programmatically
