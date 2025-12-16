@@ -224,5 +224,4 @@ For detailed information about service management, use the BlazeMeter MCP help t
   - `mock-service-upgrade-outdated` (upgrade) ✅
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["mock-service-rename-move", "mock-service-clone-service-with-transactions", "mock-service-export-import-services-with-transactions", "mock-service-rename-or-delete-a-service", "mock-service-upgrade-outdated"]}`
 
-**Note**: `mock-service-rename-move` y `mock-service-clone-service-with-transactions` ya estaban completamente documentados en `management.md` con toda la información necesaria (Rename/Move, Clone All Transactions, Find and Replace Text, Create Virtual Service after Cloning). Se agregó nota de verificación en el archivo.
 
