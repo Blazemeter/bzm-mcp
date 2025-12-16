@@ -1,5 +1,6 @@
+import asyncio
 import traceback
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 import httpx
 from mcp.server.fastmcp import Context
@@ -31,6 +32,8 @@ class SkillsManager(Manager):
 
         return BaseResult(
             result=SkillsManager.skills,
+            total=len(SkillsManager.skills),
+            has_more=False,
             error=errors[0] if errors and len(errors) > 0 else None  # Only the first error
         )
 
@@ -65,7 +68,9 @@ class SkillsManager(Manager):
             result=[{
                 "skill_name": skill_name,
                 "resources": skill_resources,
-            }]
+            }],
+            total=len(skill_resources),
+            has_more=False,
         )
 
     @staticmethod
@@ -86,6 +91,16 @@ class SkillsManager(Manager):
                 error=f"Invalid Skill URI: {skill_uri}"
             )
 
+
+    @staticmethod
+    async def read_skill_resource_uri_list(skill_uri_list: List[str]) -> BaseResult:
+        results = await asyncio.gather(
+            *(SkillsManager.read_skill_resource_uri(skill_uri) for skill_uri in skill_uri_list)
+        )
+        return BaseResult(
+            result=results,
+            total=len(results),
+        )
 
 def register(mcp, token: Optional[BzmToken]):
     @mcp.resource("skills-{skill_name}://{path}")
@@ -112,9 +127,12 @@ Actions:
 - list_skill_resources: List all the Skills Resources available to learn.
     args(dict): Dictionary with the following required parameters:
         skill_name (str): The skill name.
-- read_skill_resource_uri: Read file content based on a Skill Resource URI (skill-{skill_name}://{resource_path}).
+- read_skill_resource_uri: Read file content based on a Skill Resource URI (blazemeter-skill-{skill_name}://{resource_path}).
     args(dict): Dictionary with the following required parameters:
         skill_resource_uri (str): The skill URI.
+- read_skill_resource_uri_list: Read file content based on a Skill Resource URI list (['blazemeter-skill-{skill_name}://{resource_path}', ...]).
+    args(dict): Dictionary with the following required parameters:
+        skill_resource_uri_list (List[str]): The skill URI list.
 
 """
     )
@@ -136,6 +154,8 @@ Actions:
                     return await skills_manager.list_skill_resources(args.get("skill_name", ""))
                 case "read_skill_resource_uri":
                     return await skills_manager.read_skill_resource_uri(args.get("skill_resource_uri", ""))
+                case "read_skill_resource_uri_list":
+                    return await skills_manager.read_skill_resource_uri_list(args.get("skill_resource_uri_list", []))
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in skills manager tool"
