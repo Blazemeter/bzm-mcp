@@ -62,7 +62,7 @@ lower(${firstName}) + "." + lower(${lastName}) + "@" + randFromList(["acme.com",
 For detailed documentation of all functions, their parameters, and examples, see the [Test Data Generator Functions](https://help.blazemeter.com/docs/guide/test-data-generator-functions.html) help documentation.
 
 For related functions, see also:
-- [Test Data Generator - Seed Lists](skill-blazemeter-test-data://references/generation.md#generator-functions-seed-lists)
+- [Test Data Generator - Seed Lists](skill-blazemeter-test-data://references/generation.md)
 
 ---
 
@@ -289,7 +289,7 @@ BlazeMeter's test data integration helps you save time by generating negative an
 **Steps:**
 
 1. Open any test or virtual service transaction
-2. Open the **Test Data/Service Data** pane, and open a Data Entity. If you want to switch between positive and negative, create a [Data Variant](skill-blazemeter-test-data://references/generation.md#variants) for the negative cases now
+2. Open the **Test Data/Service Data** pane, and open a Data Entity. If you want to switch between positive and negative, create a [Data Variant](skill-blazemeter-test-data://references/generation.md) for the negative cases now
 3. Find the Data Parameter for which you need negative test data and click its **Distribution** button. The **Synthetic Data Generation By Distribution** dialog opens
 4. Click the **Suggest Negative Data** button and choose a suggestion:
    - **Out of bounds numbers**: Extreme values
@@ -308,7 +308,7 @@ BlazeMeter's test data integration helps you save time by generating negative an
 
 Run the test to see how your app reacts to chaotic and negative test data.
 
-To learn more about providing alternative values and their probabilities, see [Random Distributions](skill-blazemeter-test-data://references/generation.md#how-to-randomize).
+To learn more about providing alternative values and their probabilities, see [Random Distributions](skill-blazemeter-test-data://references/generation.md).
 
 ### Documentation References
 
@@ -407,7 +407,7 @@ Generate test data for negative tests and chaos testing, including out-of-bounds
 **Steps:**
 
 1. Open any test or virtual service transaction
-2. Open the **Test Data/Service Data** pane, and open a Data Entity. If you want to switch between positive and negative, create a [Data Variant](skill-blazemeter-test-data://references/generation.md#variants) for the negative cases now
+2. Open the **Test Data/Service Data** pane, and open a Data Entity. If you want to switch between positive and negative, create a [Data Variant](skill-blazemeter-test-data://references/generation.md) for the negative cases now
 3. Find the Data Parameter for which you need negative test data and click its **Distribution** button. The **Synthetic Data Generation By Distribution** dialog opens
 4. Click the **Suggest Negative Data** button and choose a suggestion:
    - **Out of bounds numbers, extreme values**: Negative numbers where positive numbers are expected, and vice versa
@@ -424,13 +424,13 @@ Generate test data for negative tests and chaos testing, including out-of-bounds
 
 Run the test to see how your app reacts to chaotic and negative test data.
 
-To learn more about providing alternative values and their probabilities, see [Random Distributions](skill-blazemeter-test-data://references/generation.md#how-to-randomize)
+To learn more about providing alternative values and their probabilities, see [Random Distributions](skill-blazemeter-test-data://references/generation.md)
 
 ---
 
 ## How to Generate Synthetic Test Data
 
-When parameterizing tests with different variable values, you can [Load Test Data from Spreadsheets](skill-blazemeter-test-data://references/core-concepts.md#load-from-spreadsheets) or generate synthetic test data, or a combination of these sources.
+When parameterizing tests with different variable values, you can [Load Test Data from Spreadsheets](skill-blazemeter-test-data://references/core-concepts.md) or generate synthetic test data, or a combination of these sources.
 
 Synthetic test data looks like real or random data, but you have full control over its form, and you don't have to collect it yourself.
 
@@ -469,7 +469,7 @@ After you have recorded a test, you want to add synthetic test data. The provide
 6. (Optional) Hover over an example line and click **Preview parameter value** to see an instance of generated data
 7. Click **Add** to insert the example into your Test Data pane. BlazeMeter creates data parameters and initializes them with functions and values
 
-As described in [How to Use Test Data](skill-blazemeter-test-data://references/core-concepts.md#how-to-use), identify the data parameter that you want to use, click **Copy Parameter Name to Clipboard**, return to the test steps, and replace the hard-coded value with the pasted parameter. You can now run your test case as usual.
+As described in [How to Use Test Data](skill-blazemeter-test-data://references/core-concepts.md), identify the data parameter that you want to use, click **Copy Parameter Name to Clipboard**, return to the test steps, and replace the hard-coded value with the pasted parameter. You can now run your test case as usual.
 
 **Important Notes:**
 - Some inserted example parameters rely on other parameters -- multi-column seed lists rely on an index parameter; an address is a concatenation of street and postal code parameters; a drivers license ID is a concatenation of name and date parameters; and so on. Before you edit or delete an example parameter, verify that no other parameter depends on it
@@ -491,7 +491,7 @@ You have familiarized yourself with the list of available [Test Data Generator F
 6. (Optional) Click **Preview** to view an example of generated test data. In our example, the `${address}` preview might show a street name like "`Quarry High Street`" or an empty string with 50% probability. Click **Preview** a second time to return to the function definition
 7. Click outside the field to save your changes
 
-As described in [How to Use Test Data](skill-blazemeter-test-data://references/core-concepts.md#how-to-use), identify the data parameter that you want to use, click **Copy Parameter Name to Clipboard**, return to the test step and replace the static value with the pasted parameter. In this example, you replace the hard-coded **Text** value "`Wall Street`" with `${address}`. You can now run your test case as usual.
+As described in [How to Use Test Data](skill-blazemeter-test-data://references/core-concepts.md), identify the data parameter that you want to use, click **Copy Parameter Name to Clipboard**, return to the test step and replace the static value with the pasted parameter. In this example, you replace the hard-coded **Text** value "`Wall Street`" with `${address}`. You can now run your test case as usual.
 
 ### Scenario: Use CSV Data as Input to Synthetically Generate Data
 
@@ -559,13 +559,13 @@ For detailed information about test data generation, use the BlazeMeter MCP help
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `test-data-generator-functions` (generator functions) ✅
-  - `test-data-generator-functions-seedlists` (seed lists) ✅
-  - `test-data-how-to-randomize` (randomize) ✅
-  - `test-data-variants` (variants) ✅
-  - `test-data-load-from-spreadsheets` (load from spreadsheets) ✅
-  - `test-data-generate-synthetic` (generate synthetic) ✅
-  - `test-data-generator-functions-javascript` (JavaScript generator functions) ✅
-  - `test-data-negative-chaos-testing` (negative and chaos testing) ✅
+  - `test-data-generator-functions` (generator functions)
+  - `test-data-generator-functions-seedlists` (seed lists)
+  - `test-data-how-to-randomize` (randomize)
+  - `test-data-variants` (variants)
+  - `test-data-load-from-spreadsheets` (load from spreadsheets)
+  - `test-data-generate-synthetic` (generate synthetic)
+  - `test-data-generator-functions-javascript` (JavaScript generator functions)
+  - `test-data-negative-chaos-testing` (negative and chaos testing)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["test-data-generator-functions", "test-data-generator-functions-seedlists", "test-data-how-to-randomize", "test-data-variants", "test-data-load-from-spreadsheets", "test-data-generate-synthetic", "test-data-generator-functions-javascript", "test-data-negative-chaos-testing"]}`
 

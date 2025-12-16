@@ -47,16 +47,16 @@ For detailed information, use the BlazeMeter MCP help tools:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `administration-security` (account security) ✅
-  - `integrations-saml-sso-integration` (SAML SSO Integration) ✅
-  - `administration-changing-your-email-address` (change email) ✅
-  - `administration-changing-your-password` (change password) ✅
+  - `administration-security` (account security)
+  - `integrations-saml-sso-integration` (SAML SSO Integration)
+  - `administration-changing-your-email-address` (change email)
+  - `administration-changing-your-password` (change password)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["administration-security", "administration-changing-your-email-address", "administration-changing-your-password"]}`
 
 **Administration Secrets**:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
-- **Help ID**: `administration-secrets.htm` ✅
+- **Help ID**: `administration-secrets.htm`
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["administration-secrets.htm"]}`
 
 **SAML SSO Integration**:
@@ -193,7 +193,7 @@ For detailed information, use the BlazeMeter MCP help tools:
 **Administration Secrets**:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
-- **Help ID**: `administration-secrets.htm` ✅
+- **Help ID**: `administration-secrets.htm`
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["administration-secrets.htm"]}`
 
 ### Feature Availability

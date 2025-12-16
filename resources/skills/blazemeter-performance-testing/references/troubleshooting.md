@@ -351,8 +351,8 @@ For detailed information about performance test troubleshooting, use the BlazeMe
   - `answers-performance-troubleshoot-jmeter` (JMeter works locally) - subcategory: `answers`
   - `answers-performance-troubleshoot-taurus` (Taurus works locally) - subcategory: `answers`
   - `answers-performance-debug-test-multiple-scenarios` (debug test) - subcategory: `answers`
-  - `performance-200-ok-errors` (HTTP 200 OK errors) - subcategory: `guide` ✅
-  - `performance-no-data-for-report` (no data for report) - subcategory: `guide` ✅
+  - `performance-200-ok-errors` (HTTP 200 OK errors) - subcategory: `guide`
+  - `performance-no-data-for-report` (no data for report) - subcategory: `guide`
 - **Read help**: 
   - For `performance-test-won-t-start`, `performance-200-ok-errors`, `performance-no-data-for-report`: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["performance-test-won-t-start", "performance-200-ok-errors", "performance-no-data-for-report"]}`
   - For other help_ids: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "answers", "help_id_list": ["answers-high-response-time", "answers-performance-500-response", "answers-performance-partial-load", "answers-performance-selenium-versus-jmeter-load-testing", "answers-performance-troubleshoot-jmeter", "answers-performance-troubleshoot-taurus", "answers-performance-debug-test-multiple-scenarios"]}`

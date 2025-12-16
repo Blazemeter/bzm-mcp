@@ -44,7 +44,7 @@ To learn more, see [How to Share Test Data](https://help.blazemeter.com/docs/gui
 
 ## How to Manage Spreadsheets
 
-Manage CSV test data files, including downloading, editing, and deleting spreadsheet files attached to data entities. BlazeMeter can load test data from CSV files. To learn more about their creation, see [How to Load Test Data from Spreadsheets](skill-blazemeter-test-data://references/core-concepts.md#how-to-load-from-spreadsheets).
+Manage CSV test data files, including downloading, editing, and deleting spreadsheet files attached to data entities. BlazeMeter can load test data from CSV files. To learn more about their creation, see [How to Load Test Data from Spreadsheets](skill-blazemeter-test-data://references/core-concepts.md).
 
 **Use when**: Managing CSV test data files or downloading, editing, and deleting spreadsheet files attached to data entities.
 
@@ -62,7 +62,7 @@ After creation, you can download, edit, or delete CSV files.
 
 ## How to Manage Data Parameters
 
-Manage test data parameters, including editing, previewing, copying, bulk operations, and parameter definition modifications. [Data Parameters](skill-blazemeter-test-data://references/core-concepts.md#what-are-data-parameters) are variable values in your tests, for example, the *number* of items to put in the shopping cart, which *username* you type, and similar. To learn how to create Data Parameters, see [Parameterize test data](skill-blazemeter-test-data://references/core-concepts.md#how-to-parameterize). After creation, you can preview, copy, edit, or delete them.
+Manage test data parameters, including editing, previewing, copying, bulk operations, and parameter definition modifications. [Data Parameters](skill-blazemeter-test-data://references/core-concepts.md) are variable values in your tests, for example, the *number* of items to put in the shopping cart, which *username* you type, and similar. To learn how to create Data Parameters, see [Parameterize test data](skill-blazemeter-test-data://references/core-concepts.md). After creation, you can preview, copy, edit, or delete them.
 
 **Use when**: Managing test data parameters or editing, previewing, copying, performing bulk operations, and modifying parameter definitions.
 
@@ -127,15 +127,15 @@ Hover the mouse over a Data Entity to access editor buttons:
 
 Each Data Entity has three tabs that let you drill deeper:
 
-- The **Data Parameters** tab lets you [edit data parameters](skill-blazemeter-test-data://references/management.md#how-to-manage-data-parameters)
-- The **Usage** tab lets you see [which tests and which virtual services are using this shared Data Entity](skill-blazemeter-test-data://references/management.md#how-to-find-usages)
-- The **Data Preview** tab lets you [preview test data](skill-blazemeter-test-data://references/management.md#how-to-preview) values
+- The **Data Parameters** tab lets you [edit data parameters](skill-blazemeter-test-data://references/management.md)
+- The **Usage** tab lets you see [which tests and which virtual services are using this shared Data Entity](skill-blazemeter-test-data://references/management.md)
+- The **Data Preview** tab lets you [preview test data](skill-blazemeter-test-data://references/management.md) values
 
 ---
 
 ## How to Configure CSV
 
-Configure CSV file handling settings, including delimiter configuration, header row handling, and quoted data support. When you [Load Test Data from Spreadsheets](skill-blazemeter-test-data://references/core-concepts.md#load-from-spreadsheets), you can configure the column delimiter character, the header line, and whether quoted cells exist in the CSV file.
+Configure CSV file handling settings, including delimiter configuration, header row handling, and quoted data support. When you [Load Test Data from Spreadsheets](skill-blazemeter-test-data://references/core-concepts.md), you can configure the column delimiter character, the header line, and whether quoted cells exist in the CSV file.
 
 **Use when**: Configuring CSV file handling settings or setting up delimiter configuration, header row handling, and quoted data support.
 
@@ -241,11 +241,11 @@ To control how many rows of test data are used:
 
 ## Share Entities Within Workspace
 
-Share data entities within a workspace, including saving to workspace, loading from workspace, and team collaboration on test data. In addition to [sharing spreadsheets](skill-blazemeter-test-data://references/management.md#share-spreadsheets-within-workspace), you can also share data entities with team members in the same Workspace.
+Share data entities within a workspace, including saving to workspace, loading from workspace, and team collaboration on test data. In addition to [sharing spreadsheets](skill-blazemeter-test-data://references/management.md), you can also share data entities with team members in the same Workspace.
 
 **Use when**: Sharing data entities within a workspace or saving to workspace, loading from workspace, and collaborating on test data with team members.
 
-To share a test's local data entity, save it to the workspace first. The saved data entity contains copies of all test parameters. Attached CSV files and spreadsheets from Shared Folders are *not* included in data entities saved to the workspace. To share and load these files as well, see [Export and import test data files](skill-blazemeter-test-data://references/management.md#import-export).
+To share a test's local data entity, save it to the workspace first. The saved data entity contains copies of all test parameters. Attached CSV files and spreadsheets from Shared Folders are *not* included in data entities saved to the workspace. To share and load these files as well, see [Export and import test data files](skill-blazemeter-test-data://references/management.md).
 
 **Steps:**
 
@@ -262,7 +262,7 @@ To share a test's local data entity, save it to the workspace first. The saved d
 
 ## Share Spreadsheets Within Workspace
 
-Share CSV spreadsheets within a workspace using shared folders, including folder creation, file upload, and attachment to tests. In addition to [sharing data entities](skill-blazemeter-test-data://references/management.md#share-entities-within-workspace), you can also share test data from spreadsheets in CSV format with your workspace.
+Share CSV spreadsheets within a workspace using shared folders, including folder creation, file upload, and attachment to tests. In addition to [sharing data entities](skill-blazemeter-test-data://references/management.md), you can also share test data from spreadsheets in CSV format with your workspace.
 
 **Use when**: Sharing CSV spreadsheets within a workspace or creating shared folders, uploading files, and attaching spreadsheets to tests.
 
@@ -301,7 +301,7 @@ After the Shared Folder and its contents are ready, team members can attach shar
 
 ### Remove Shared CSVs from a Test
 
-To stop using shared test data in a test, return to the **Shared Folders** window, and deselect the shared folder. The test data remains available for other users of this workspace. To learn more, see [Unshare test data](skill-blazemeter-test-data://references/management.md#unshare)
+To stop using shared test data in a test, return to the **Shared Folders** window, and deselect the shared folder. The test data remains available for other users of this workspace. To learn more, see [Unshare test data](skill-blazemeter-test-data://references/management.md)
 
 ---
 
@@ -371,7 +371,7 @@ After the import, you can remove test parameters that you don't need, and add ne
 
 Add new data entities to workspace, including entity creation, parameter definition, and initial configuration. In BlazeMeter, a Data Entity is a container for Test Data Parameters. You can add test data from various sources, such as CSV files or synthetic test data.
 
-**Important**: GUI Functional tests support one single [Data Entity](skill-blazemeter-test-data://references/core-concepts.md#what-are-data-entities) only. Performance tests support multiple Data Entities.
+**Important**: GUI Functional tests support one single [Data Entity](skill-blazemeter-test-data://references/core-concepts.md) only. Performance tests support multiple Data Entities.
 
 **Use when**: Adding new data entities to workspace or creating entities, defining parameters, and configuring initial settings.
 
@@ -419,7 +419,7 @@ randInt(1+ToNumber(${x}), ToNumber(${y})+100)
 
 ### Common Error Types
 
-- **Misspelled functions**: Check function names against the [Test Data Generator Functions](skill-blazemeter-test-data://references/generation.md#available-data-generator-functions) documentation
+- **Misspelled functions**: Check function names against the [Test Data Generator Functions](skill-blazemeter-test-data://references/generation.md) documentation
 - **Missing arguments**: Ensure all required function arguments are provided
 - **Missing mandatory values**: Fill in all required fields
 - **Inappropriate data types**: Verify that text is not entered where numbers are expected, and vice versa

@@ -1775,36 +1775,36 @@ For detailed information about advanced performance testing features, use the Bl
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `performance-create-test` (create performance test) ✅
-  - `performance-ai-log-analysis-report` (AI Log Analysis) ✅
-  - `performance-add-users-dynamically` (add users) ✅
-  - `performance-apm-integration` (APM) ✅
-  - `performance-create-browser-test` (browser test) ✅
-  - `performance-browser-tests-best-practices.htm` (browser test best practices) ✅
-  - `performance-convert-browser-perf-test-to-func-test.htm` (convert browser to functional) ✅
-  - `performance-create-k6-test.htm` (k6 test) ✅
-  - `performance-jmeter-dsl` (JMeter DSL) ✅
-  - `performance-create-jmeter-test` (JMeter test) ✅
-  - `performance-create-multi-test` (multi-test) ✅
-  - `performance-create-url-api-test` (URL/API test) ✅
-  - `performance-dedicated-ips` (dedicated IPs) ✅
-  - `performance-dns-override` (DNS override) ✅
-  - `performance-eux-monitoring` (EUX) ✅
-  - `performance-failure-criteria` (failure criteria) ✅
-  - `performance-mainframe-testing` (mainframe) ✅
-  - `performance-network-emulation` (network emulation) ✅
-  - `performance-shared-folders` (shared folders) ✅
-  - `performance-use-test-data-in-testing` (test data) ✅
-  - `performance-more-about` (more about) ✅
-  - `performance-check-list` (checklist) ✅
-  - `performance-testing-process` (testing process) ✅
-  - `performance-planning-load-tests` (introduction to performance testing) ✅
-  - `performance-functional-tests` (functional testing) ✅
-  - `performance-backend-testing-the-specifics` (backend testing) ✅
-  - `performance-build-your-script` (building your script) ✅
-  - `performance-define-test-scope` (define test scope) ✅
-  - `performance-planning-your-tests` (planning your tests) ✅
-  - `performance-prepare-for-your-load-test` (preparing for load test) ✅
-  - `performance-scripting-your-test` (scripting your test) ✅
+  - `performance-create-test` (create performance test)
+  - `performance-ai-log-analysis-report` (AI Log Analysis)
+  - `performance-add-users-dynamically` (add users)
+  - `performance-apm-integration` (APM)
+  - `performance-create-browser-test` (browser test)
+  - `performance-browser-tests-best-practices.htm` (browser test best practices)
+  - `performance-convert-browser-perf-test-to-func-test.htm` (convert browser to functional)
+  - `performance-create-k6-test.htm` (k6 test)
+  - `performance-jmeter-dsl` (JMeter DSL)
+  - `performance-create-jmeter-test` (JMeter test)
+  - `performance-create-multi-test` (multi-test)
+  - `performance-create-url-api-test` (URL/API test)
+  - `performance-dedicated-ips` (dedicated IPs)
+  - `performance-dns-override` (DNS override)
+  - `performance-eux-monitoring` (EUX)
+  - `performance-failure-criteria` (failure criteria)
+  - `performance-mainframe-testing` (mainframe)
+  - `performance-network-emulation` (network emulation)
+  - `performance-shared-folders` (shared folders)
+  - `performance-use-test-data-in-testing` (test data)
+  - `performance-more-about` (more about)
+  - `performance-check-list` (checklist)
+  - `performance-testing-process` (testing process)
+  - `performance-planning-load-tests` (introduction to performance testing)
+  - `performance-functional-tests` (functional testing)
+  - `performance-backend-testing-the-specifics` (backend testing)
+  - `performance-build-your-script` (building your script)
+  - `performance-define-test-scope` (define test scope)
+  - `performance-planning-your-tests` (planning your tests)
+  - `performance-prepare-for-your-load-test` (preparing for load test)
+  - `performance-scripting-your-test` (scripting your test)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["performance-ai-log-analysis-report", "performance-add-users-dynamically", "performance-apm-integration", "performance-create-browser-test", "performance-browser-tests-best-practices.htm", "performance-convert-browser-perf-test-to-func-test.htm", "performance-create-k6-test.htm", "performance-jmeter-dsl", "performance-create-jmeter-test", "performance-create-multi-test", "performance-create-url-api-test", "performance-dedicated-ips", "performance-dns-override", "performance-eux-monitoring", "performance-failure-criteria", "performance-mainframe-testing", "performance-network-emulation", "performance-shared-folders", "performance-use-test-data-in-testing", "performance-more-about", "performance-check-list", "performance-testing-process", "performance-planning-load-tests", "performance-functional-tests", "performance-backend-testing-the-specifics", "performance-build-your-script", "performance-define-test-scope", "performance-planning-your-tests", "performance-prepare-for-your-load-test", "performance-scripting-your-test"]}`
 

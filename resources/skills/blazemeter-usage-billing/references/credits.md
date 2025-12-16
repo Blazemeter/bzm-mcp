@@ -767,7 +767,7 @@ You can filter the usage reports by the following criteria:
 
 On the far right, the usage report also indicates the total - either the total number of tests, of calls, of hours, of transactions, or of users, respectively.
 
-For more specific information about **Virtual Services Transactions** and **Virtual Services Concurrent Usage** metrics, see [Virtual Services Analytics](skill-blazemeter-service-virtualization://references/analytics.md#transactional-analytics).
+For more specific information about **Virtual Services Transactions** and **Virtual Services Concurrent Usage** metrics, see [Virtual Services Analytics](skill-blazemeter-service-virtualization://references/analytics.md).
 
 ### How to Download Detailed Usage Reports
 
@@ -789,7 +789,7 @@ In the detailed report you will find the following information:
 - **Server Hours**: Displays the number of server hours consumed by provisioned engines or instances in a test
 - **Variable Unit Hours**: Displays the number of Variable Unit Hours consumed in a test
 - **Functional Test API calls**: Applies only to Functional API tests: The number of calls made in your test scenario
-- **Locations**: Indicates the geolocation of the load generators. For more information about locations, see [Load Distribution](skill-blazemeter-performance-testing://references/load-configuration.md#load-distribution)
+- **Locations**: Indicates the geolocation of the load generators. For more information about locations, see [Load Distribution](skill-blazemeter-performance-testing://references/load-configuration.md)
 - **Test Type**: Displays as: JMeter, Taurus, FunctionalGui, FunctionalAPI, or URL
 - **Execution Client Id**: Describes type of client that launched the test. Examples: GUI, API, Taurus, BE_CHROME (Chrome Extension), etc.
 - **Is Free Test**: Confirms whether credits were consumed
@@ -833,7 +833,7 @@ You can check membership under **Settings > Workspaces > Members**.
 
 ### Retrieve Usage Report Data with the BlazeMeter API
 
-Using API calls is useful if you want to automate downloading reports. For more information on how to handle the required authentication of your API calls, see [Authorization](skill-blazemeter-api-reference://references/authentication.md#api-authorization).
+Using API calls is useful if you want to automate downloading reports. For more information on how to handle the required authentication of your API calls, see [Authorization](skill-blazemeter-api-reference://references/authentication.md).
 
 To fetch aggregate usage report data in JSON, or detailed Usage Report in CSV format through our API, make calls modeled after the following examples.
 

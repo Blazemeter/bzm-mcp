@@ -350,10 +350,10 @@ For detailed information about JMeter configuration, use the BlazeMeter MCP help
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `performance-jmeter-properties` (properties) ✅
-  - `performance-jmeter-user-properties` (user properties) ✅
-  - `performance-live-remote-control-for-jmeter-properties` (live remote control) ✅
-  - `performance-jmeter-auto-correlation-rules` (auto correlation) ✅
-  - `performance-jmeter-calibration` (calibration) ✅
+  - `performance-jmeter-properties` (properties)
+  - `performance-jmeter-user-properties` (user properties)
+  - `performance-live-remote-control-for-jmeter-properties` (live remote control)
+  - `performance-jmeter-auto-correlation-rules` (auto correlation)
+  - `performance-jmeter-calibration` (calibration)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["performance-jmeter-properties", "performance-jmeter-user-properties", "performance-live-remote-control-for-jmeter-properties", "performance-jmeter-auto-correlation-rules", "performance-jmeter-calibration"]}`
 

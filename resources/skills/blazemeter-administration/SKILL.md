@@ -1,6 +1,6 @@
 ---
 name: blazemeter-administration
-description: Comprehensive guide for BlazeMeter Administration, including workspaces, projects, security, alerts, and team management. Use when working with administration for: (1) Managing workspaces and projects, (2) Configuring security settings (SAML SSO, 2FA, API keys), (3) Creating workspace alerts, (4) Managing private locations across workspaces, (5) Creating APM credentials, (6) Managing API Monitoring teams, (7) Configuring AI consent, or any other administration tasks.
+description: Comprehensive guide for BlazeMeter Administration, including workspaces, projects, security, alerts, and team management. Use when working with administration for (1) Managing workspaces and projects, (2) Configuring security settings (SAML SSO, 2FA, API keys), (3) Creating workspace alerts, (4) Managing private locations across workspaces, (5) Creating APM credentials, (6) Managing API Monitoring teams, (7) Configuring AI consent, or any other administration tasks.
 ---
 
 # BlazeMeter Administration

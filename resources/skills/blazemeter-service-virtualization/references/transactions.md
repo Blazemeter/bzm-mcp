@@ -10,17 +10,6 @@ The easiest way to add Transactions is uploading files in a supported format. Yo
 
 **Use when**: Adding transactions to the repository from files or manually or editing, cloning, configuring request matching examples, nested path formats, and live system endpoints.
 
-**This article contains:**
-- [Supported formats](skill-blazemeter-service-virtualization://references/transactions.md#supported-formats)
-- [Add transactions from a file](skill-blazemeter-service-virtualization://references/transactions.md#add-transactions-from-a-file)
-- [Edit transactions](skill-blazemeter-service-virtualization://references/transactions.md#edit-transactions)
-- [Clone transactions](skill-blazemeter-service-virtualization://references/transactions.md#clone-transactions)
-- [Add transactions manually](skill-blazemeter-service-virtualization://references/transactions.md#add-transactions-manually)
-- [Request matching examples](skill-blazemeter-service-virtualization://references/transactions.md#request-matching-examples) [URL](skill-blazemeter-service-virtualization://references/transactions.md#url), [Headers](skill-blazemeter-service-virtualization://references/transactions.md#headers), [Query Parameters](skill-blazemeter-service-virtualization://references/transactions.md#query-parameters), [Cookies](skill-blazemeter-service-virtualization://references/transactions.md#cookies), [Credentials](skill-blazemeter-service-virtualization://references/transactions.md#credentials), [Body](skill-blazemeter-service-virtualization://references/transactions.md#body)
-- [Nested path formats for request matchers](skill-blazemeter-service-virtualization://references/transactions.md#nested-path-formats-for-request-matchers)
-- [Return a response collection from BlazeMeter Test Data](skill-blazemeter-service-virtualization://references/transactions.md#return-a-response-collection-from-blazemeter-test-data)
-- [Live system endpoint](skill-blazemeter-service-virtualization://references/transactions.md#live-system-endpoint)
-
 ### Supported Formats
 
 The following file formats are supported:
@@ -1039,26 +1028,13 @@ For detailed information about transactions, use the BlazeMeter MCP help tools:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `mock-service-add-transactions` (add transactions) ✅
-  - `mock-service-add-parameter-options-and-dynamic-responses` (parameter options and dynamic responses) ✅
-  - `mock-service-add-processing-actions` (processing actions) ✅
-  - `mock-service-helper-wizards-request-matching-dynamic-response-creation` (helper wizards) ✅
-  - `mock-service-think-time-irregular-response-latency` (think time) ✅
-  - `mock-service-transaction-repository-transaction-types` (transaction repository) ✅
-  - `mock-service-validation-sandbox.htm` (validation sandbox) ✅
-  - `mock-service-sharing-transactions-wiremock` (Wiremock integration) ✅
+  - `mock-service-add-transactions` (add transactions)
+  - `mock-service-add-parameter-options-and-dynamic-responses` (parameter options and dynamic responses)
+  - `mock-service-add-processing-actions` (processing actions)
+  - `mock-service-helper-wizards-request-matching-dynamic-response-creation` (helper wizards)
+  - `mock-service-think-time-irregular-response-latency` (think time)
+  - `mock-service-transaction-repository-transaction-types` (transaction repository)
+  - `mock-service-validation-sandbox.htm` (validation sandbox)
+  - `mock-service-sharing-transactions-wiremock` (Wiremock integration)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["mock-service-add-transactions", "mock-service-add-parameter-options-and-dynamic-responses", "mock-service-add-processing-actions", "mock-service-helper-wizards-request-matching-dynamic-response-creation", "mock-service-think-time-irregular-response-latency", "mock-service-transaction-repository-transaction-types", "mock-service-validation-sandbox.htm", "mock-service-sharing-transactions-wiremock"]}`
-
-**Note**: The content in this file already covers the main aspects of `mock-service-add-transactions`, including:
-- Supported formats (Swagger, HAR, WSDL, RR Pairs, etc.)
-- Add transactions from a file (6 steps)
-- Edit transactions (8 steps)
-- Clone transactions (4 steps)
-- Add transactions manually (detailed steps for Request Matcher and Response tabs)
-- Request matching examples (URL, Headers, Query Parameters, Cookies, Credentials, Body)
-- Nested path formats for request matchers
-- Return a response collection from BlazeMeter Test Data
-- Live system endpoint (virtual service level and transaction level)
-- Parameter options and dynamic responses (helpers, examples, WireMock support)
-- Processing Actions (HTTP Calls, Webhooks, State Update with detailed configuration)
 

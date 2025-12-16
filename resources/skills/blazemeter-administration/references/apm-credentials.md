@@ -205,7 +205,7 @@ For detailed information, use the BlazeMeter MCP help tools:
 **Administration Manage APM Profiles**:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
-- **Help ID**: `administration-workspace-manage-profiles.htm` ✅
+- **Help ID**: `administration-workspace-manage-profiles.htm`
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["administration-workspace-manage-profiles.htm"]}`
 
 ### View Existing Profiles

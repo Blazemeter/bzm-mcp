@@ -636,16 +636,16 @@ For detailed information about Private Location management, use the BlazeMeter M
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `private-locations-vs-cloud` (cloud vs private location) ✅
-  - `private-locations-create` (create) ✅
-  - `private-locations-use` (use, includes unshare/delete for workspace managers) ✅
-  - `administration-manage-private-locations` (share/unshare/delete for account admins) ✅
-  - `private-locations-install-agent` (install agent) ✅
-  - `private-locations-regenerate-agent` (regenerate) ✅
-  - `private-locations-remove-agent` (remove) ✅
-  - `private-locations-enable-download-agent-log` (download logs) ✅
-  - `private-locations-where-to-find-agent-logs` (find logs) ✅
-  - `private-locations-where-to-find-harbor-id-and-ship-id` (Harbor/Ship ID) ✅
+  - `private-locations-vs-cloud` (cloud vs private location)
+  - `private-locations-create` (create)
+  - `private-locations-use` (use, includes unshare/delete for workspace managers)
+  - `administration-manage-private-locations` (share/unshare/delete for account admins)
+  - `private-locations-install-agent` (install agent)
+  - `private-locations-regenerate-agent` (regenerate)
+  - `private-locations-remove-agent` (remove)
+  - `private-locations-enable-download-agent-log` (download logs)
+  - `private-locations-where-to-find-agent-logs` (find logs)
+  - `private-locations-where-to-find-harbor-id-and-ship-id` (Harbor/Ship ID)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["private-locations-vs-cloud", "private-locations-create", "private-locations-use", "administration-manage-private-locations", "private-locations-install-agent", "private-locations-regenerate-agent", "private-locations-remove-agent", "private-locations-enable-download-agent-log", "private-locations-where-to-find-agent-logs", "private-locations-where-to-find-harbor-id-and-ship-id"]}`
 
 **Installation**:

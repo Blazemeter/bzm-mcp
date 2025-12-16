@@ -709,15 +709,15 @@ For detailed information about Layer7 API Management integration, use the BlazeM
 For detailed information about API Monitoring integrations, use the BlazeMeter MCP help tools:
 
 **Specific Integrations** (verified help_ids):
-- **Slack**: `api-monitoring-slack-integration` - ✅ Verified & Enriched
-- **PagerDuty**: `api-monitoring-pagerduty-integration` - ✅ Verified & Enriched
-- **Microsoft Teams**: `api-monitoring-microsoft-teams-integration` - ✅ Verified & Enriched
-- **VictorOps**: `api-monitoring-victorops-integration` - ✅ Verified & Enriched
-- **Grove**: `api-monitoring-grove-integration` - ✅ Verified & Enriched
-- **Zapier**: `api-monitoring-zapier-integration` - ✅ Verified & Enriched
-- **OpsGenie**: `api-monitoring-opsgenie-integration` - ✅ Verified & Enriched
-- **ServiceNow**: `api-monitoring-servicenow-integration` - ✅ Verified & Enriched
-- **Build/Deployment**: `api-monitoring-build-deployment-integration` - ✅ Verified
+- **Slack**: `api-monitoring-slack-integration` 
+- **PagerDuty**: `api-monitoring-pagerduty-integration`
+- **Microsoft Teams**: `api-monitoring-microsoft-teams-integration`
+- **VictorOps**: `api-monitoring-victorops-integration`
+- **Grove**: `api-monitoring-grove-integration`
+- **Zapier**: `api-monitoring-zapier-integration`
+- **OpsGenie**: `api-monitoring-opsgenie-integration`
+- **ServiceNow**: `api-monitoring-servicenow-integration`
+- **Build/Deployment**: `api-monitoring-build-deployment-integration`
 
 **Other Available Integrations** (help_ids follow similar naming pattern):
 - **Datadog**: `api-monitoring-datadog-integration`

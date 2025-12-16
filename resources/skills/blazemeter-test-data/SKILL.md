@@ -1,6 +1,6 @@
 ---
 name: blazemeter-test-data
-description: Comprehensive guide for BlazeMeter Test Data Management, including data entities, parameters, generation, orchestration, and management operations. Use when working with test data for: (1) Creating and managing data entities and parameters, (2) Generating synthetic test data with seed lists and functions, (3) Using test data in tests (CSV, Data Entities), (4) Managing test data (backup, import/export, sharing), (5) Using Test Data Orchestration and Profiler, (6) Working with Test Data Pro, or any other Test Data Management tasks.
+description: Comprehensive guide for BlazeMeter Test Data Management, including data entities, parameters, generation, orchestration, and management operations. Use when working with test data for (1) Creating and managing data entities and parameters, (2) Generating synthetic test data with seed lists and functions, (3) Using test data in tests (CSV, Data Entities), (4) Managing test data (backup, import/export, sharing), (5) Using Test Data Orchestration and Profiler, (6) Working with Test Data Pro, or any other Test Data Management tasks.
 ---
 
 # BlazeMeter Test Data Management

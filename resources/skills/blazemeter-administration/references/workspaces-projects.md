@@ -274,17 +274,17 @@ For detailed information, use the BlazeMeter MCP help tools:
 **Administration Managing an Account**:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
-- **Help ID**: `administration-managing-an-account` (managing an account) ✅
+- **Help ID**: `administration-managing-an-account` (managing an account)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["administration-managing-an-account"]}`
 
 **Workspaces and Projects Management**:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `administration-workspaces-and-projects` (workspaces and projects) ✅
-  - `administration-workspace-manage-profiles.htm` (manage APM profiles) ✅
-  - `administration-manage-group.htm` (manage groups) ✅
-  - `administration-manage-environment.htm` (manage environments) ✅
+  - `administration-workspaces-and-projects` (workspaces and projects)
+  - `administration-workspace-manage-profiles.htm` (manage APM profiles)
+  - `administration-manage-group.htm` (manage groups)
+  - `administration-manage-environment.htm` (manage environments)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["administration-workspaces-and-projects", "administration-workspace-manage-profiles.htm", "administration-manage-group.htm", "administration-manage-environment.htm"]}`
 
 ---

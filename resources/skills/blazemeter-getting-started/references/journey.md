@@ -1,7 +1,5 @@
 # Continuous Testing Journey
 
-## Continuous Testing Journey
-
 Understand the continuous testing journey in BlazeMeter, including best practices, workflows, and strategies for implementing continuous testing.
 
 **Use when**: Understanding the continuous testing journey, implementing continuous testing strategies, or learning best practices for continuous testing workflows.

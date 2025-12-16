@@ -1,6 +1,6 @@
 ---
 name: blazemeter-integrations
-description: Comprehensive guide for BlazeMeter Integrations, including APM tools, CI/CD pipelines, and development tools. Use when working with integrations for: (1) Integrating APM tools (AppDynamics, Datadog, New Relic, CloudWatch, DX APM, Dynatrace, Delphix), (2) Integrating CI/CD tools (Jenkins, GitHub Actions, GitLab CI/CD, Azure DevOps, AWS CodePipeline, Bamboo, TeamCity, CircleCI, Codeship), (3) Using development tools (Visual Studio Code Plugin, MCP Server), or any other integration tasks.
+description: Comprehensive guide for BlazeMeter Integrations, including APM tools, CI/CD pipelines, and development tools. Use when working with integrations for (1) Integrating APM tools (AppDynamics, Datadog, New Relic, CloudWatch, DX APM, Dynatrace, Delphix), (2) Integrating CI/CD tools (Jenkins, GitHub Actions, GitLab CI/CD, Azure DevOps, AWS CodePipeline, Bamboo, TeamCity, CircleCI, Codeship), (3) Using development tools (Visual Studio Code Plugin, MCP Server), or any other integration tasks.
 ---
 
 # BlazeMeter Integrations

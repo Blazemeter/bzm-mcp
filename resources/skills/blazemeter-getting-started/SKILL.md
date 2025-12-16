@@ -1,6 +1,6 @@
 ---
 name: blazemeter-getting-started
-description: Getting started guides for BlazeMeter, including onboarding, migration guides, continuous testing journey, glossary, and mobile testing. Use when getting started with BlazeMeter for: (1) Navigating BlazeMeter University onboarding, (2) Migrating from Runscope or JMeter, (3) Understanding the continuous testing journey, (4) Referencing BlazeMeter terminology, (5) Testing mobile sites and apps, or any other getting started tasks.
+description: Getting started guides for BlazeMeter, including onboarding, migration guides, continuous testing journey, glossary, and mobile testing. Use when getting started with BlazeMeter for (1) Navigating BlazeMeter University onboarding, (2) Migrating from Runscope or JMeter, (3) Understanding the continuous testing journey, (4) Referencing BlazeMeter terminology, (5) Testing mobile sites and apps, or any other getting started tasks.
 ---
 
 # BlazeMeter Getting Started

@@ -383,13 +383,13 @@ request.content_type = "image/jpeg"
 
 3. Click **Save & Run**.
 
-For more information on chaining requests, see [Dynamic Data and Request Chaining](skill-blazemeter-api-monitoring://references/advanced-features.md#dynamic-data-and-request-chaining).
+For more information on chaining requests, see [Dynamic Data and Request Chaining](skill-blazemeter-api-monitoring://references/advanced-features.md).
 
 ---
 
 ## Dynamic Data and Request Chaining
 
-Variables allow you to dynamically insert data into a request using [built-in functions](skill-blazemeter-api-monitoring://references/advanced-features.md#use-built-in-variables-and-functions) (timestamps, random strings, hashes), configuration data from [environments](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-managing-configuration-with-environments) and data extracted from a previous response in a test run. Data is inserted into requests using a simple template format.
+Variables allow you to dynamically insert data into a request using [built-in functions](skill-blazemeter-api-monitoring://references/advanced-features.md) (timestamps, random strings, hashes), configuration data from [environments](skill-blazemeter-api-monitoring://references/configuration.md) and data extracted from a previous response in a test run. Data is inserted into requests using a simple template format.
 
 **Use when**: Using variables to pass data between test steps, working with environment variables, built-in functions, extracting data from JSON/XML responses, or chaining requests together.
 
@@ -408,26 +408,26 @@ To create a variable, follow these steps:
 
 **Property** The property of the source data to retrieve. For HTTP headers this is the name of the header. For XML and JSON content, see below. This field is unused for Text Body and Status Code.
 
-**Variable Name** The name of the variable to assign the extracted value to. In subsequent requests you can retrieve the value of the variable by this name. See [Using Variables in Requests](skill-blazemeter-api-monitoring://references/advanced-features.md#use-variables-in-requests).
+**Variable Name** The name of the variable to assign the extracted value to. In subsequent requests you can retrieve the value of the variable by this name. See [Using Variables in Requests](skill-blazemeter-api-monitoring://references/advanced-features.md).
 
 You can extract data through the following methods:
 
-- **Extract data from JSON Body Content** Data from a JSON response body can be extracted by specifying the path of the target data using standard JavaScript notation. [View sample JSON expressions for data extraction](skill-blazemeter-api-monitoring://references/scripting.md#sample-json-expressions-for-data-extraction).
+- **Extract data from JSON Body Content** Data from a JSON response body can be extracted by specifying the path of the target data using standard JavaScript notation. [View sample JSON expressions for data extraction](skill-blazemeter-api-monitoring://references/scripting.md).
 - **Extract data from XML Body Content** Data from an XML response body can be extracted by specifying the path of the target data using [XPath](https://www.freeformatter.com/xpath-tester.html). In the 'Property' box of a variable definition that uses 'XML Body' as the source, enter an XPath expression to locate the data to extract and assign to the variable.
 - **Extract data from Text Body** Saves the entire text of the response to a variable.
-- **Extract data from Text Body using Post-response Scripts** You can specify the start and end boundaries of data to be extracted by running an extractor script through [Post-response Scripts](skill-blazemeter-api-monitoring://references/scripting.md#post-response-scripts).
+- **Extract data from Text Body using Post-response Scripts** You can specify the start and end boundaries of data to be extracted by running an extractor script through [Post-response Scripts](skill-blazemeter-api-monitoring://references/scripting.md).
 
 ### Environment Variables
 
-[Environments](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-managing-configuration-with-environments) allow you to manage configuration on a per-test or per-bucket level. Common values (base URLs, API tokens, etc.) that are shared across requests within a test, or tests within a bucket, should be stored in an Initial Variable or Initial Script within an environment. Once defined, the variable is available to all requests within the test.
+[Environments](skill-blazemeter-api-monitoring://references/configuration.md) allow you to manage configuration on a per-test or per-bucket level. Common values (base URLs, API tokens, etc.) that are shared across requests within a test, or tests within a bucket, should be stored in an Initial Variable or Initial Script within an environment. Once defined, the variable is available to all requests within the test.
 
 #### Initial Variables
 
-Initial Variables specify data available to all requests in a test, including the first request. This can be useful for storing values that are common to all requests (like API keys) or other data required to set up the test run. Each test run will use the initial variables specified by the selected environment. To override variables on a per-run basis, use a [Trigger URL with Custom Initial Variables](skill-blazemeter-api-monitoring://references/integrations.md#builddeployment-integration).
+Initial Variables specify data available to all requests in a test, including the first request. This can be useful for storing values that are common to all requests (like API keys) or other data required to set up the test run. Each test run will use the initial variables specified by the selected environment. To override variables on a per-run basis, use a [Trigger URL with Custom Initial Variables](skill-blazemeter-api-monitoring://references/integrations.md).
 
 #### Initial Script
 
-Initial Scripts are executed before the first request in a test is made, but after the Initial Variables have been evaluated. `variables.get()` and `variables.set()` can be used to read and write variable values to be used by requests in the test. See: [Scripts: Initial Script](skill-blazemeter-api-monitoring://references/scripting.md#initial-script) and [Evaluation Order of Initial Variables](skill-blazemeter-api-monitoring://references/advanced-features.md#evaluation-order-of-initial-variables).
+Initial Scripts are executed before the first request in a test is made, but after the Initial Variables have been evaluated. `variables.get()` and `variables.set()` can be used to read and write variable values to be used by requests in the test. See: [Scripts: Initial Script](skill-blazemeter-api-monitoring://references/scripting.md) and [Evaluation Order of Initial Variables](skill-blazemeter-api-monitoring://references/advanced-features.md).
 
 ### Use Built-in Variables and Functions
 
@@ -456,7 +456,7 @@ In addition to the variables you define yourself, you can use these built-in var
 | `{{runscope_bucket_name}}` | The name of the API Monitoring Bucket the executing test is contained within. | Jumping Rabbit |
 | `{{runscope_test_uuid}}` | The unique identifier for the API Monitoring test. | a8ea3ddd-73bb-435c-bc44-7c4bc8d99647 |
 | `{{runscope_test_name}}` | The name of the API Monitoring test. | Sample Test |
-| `{{runscope_region}}` | The region code indicating the [location](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-global-locations) in which this test run was initiated. | eu1 |
+| `{{runscope_region}}` | The region code indicating the [location](skill-blazemeter-api-monitoring://references/configuration.md) in which this test run was initiated. | eu1 |
 | `{{runscope_agent}}` | The unique identifier for the [agent](skill-blazemeter-private-locations://references/radar-agent.md) which is running the agent. Blank if run from a API Monitoring location. | 83a24630-323d-501a-74a1-a7e51485ca12 |
 
 Request an additional built-in variable or function by [contacting support](mailto:support-blazemeter@perforce.com?subject=Requesting built-in variable or function for API Monitoring).
@@ -479,7 +479,7 @@ If a variable is undefined when a request using that variable is executed, the t
 
 Variables can be set at various points in the setup of a test run. At each step of the setup, a variable value specified in an earlier step can be overridden. Variables defined via Trigger URLs, Initial Scripts and Initial Variables will be evaluated in the following order:
 
-1. Variables defined in **a shared environment** (if the selected environment for a test run [inherits](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-managing-configuration-with-environments) from one).
+1. Variables defined in **a shared environment** (if the selected environment for a test run [inherits](skill-blazemeter-api-monitoring://references/configuration.md) from one).
 2. Variables defined in an **individual test environment**.
 3. Variables set via an environment-specific or a bucket-wide **Trigger URL**.
 4. Variables set using `variables.set()` in a **shared environment's Initial Script**.

@@ -52,7 +52,7 @@ Use test data in BlazeMeter tests, including parameterizing test cases, storing 
 
 ### Overview
 
-Test steps often rely on [data parameters](skill-blazemeter-test-data://references/core-concepts.md#what-are-data-parameters), such as menu item names, usernames, or numeric values. You can either hard-code these values, or *parameterize* your test cases to use different variable values. You store these Data Parameters in Data Entities. BlazeMeter's test data integration helps you use shared test data consistently across all tests and virtual services.
+Test steps often rely on [data parameters](skill-blazemeter-test-data://references/core-concepts.md), such as menu item names, usernames, or numeric values. You can either hard-code these values, or *parameterize* your test cases to use different variable values. You store these Data Parameters in Data Entities. BlazeMeter's test data integration helps you use shared test data consistently across all tests and virtual services.
 
 ### Parameterizing Test Cases
 
@@ -107,7 +107,7 @@ For detailed information about sharing test data, use the BlazeMeter MCP help to
 
 ## How to Parameterize
 
-Parameterize test cases using data entities and parameters, including configuring parameter references and data-driven testing. Parameterization means replacing hard-coded values with Data Parameters that load data from other sources. BlazeMeter stores Data Parameters in [Data Entities](skill-blazemeter-test-data://references/management.md#how-to-add-entity).
+Parameterize test cases using data entities and parameters, including configuring parameter references and data-driven testing. Parameterization means replacing hard-coded values with Data Parameters that load data from other sources. BlazeMeter stores Data Parameters in [Data Entities](skill-blazemeter-test-data://references/management.md).
 
 **Use when**: Parameterizing test cases using data entities and parameters or configuring parameter references and data-driven testing.
 
@@ -115,7 +115,7 @@ Parameterize test cases using data entities and parameters, including configurin
 
 Parameterize your test cases to be able run the same test with different values:
 
-- **Is your test data a list of fixed values? Are there fixed dependencies between columns?** Collect your data in [spreadsheet columns](skill-blazemeter-test-data://references/core-concepts.md#load-from-spreadsheets) and attach the CSV file to the test
+- **Is your test data a list of fixed values? Are there fixed dependencies between columns?** Collect your data in [spreadsheet columns](skill-blazemeter-test-data://references/core-concepts.md) and attach the CSV file to the test
 - **Do you need varied, dynamic test data?** [Generate test data synthetically](skill-blazemeter-test-data://references/generation.md) that looks like real or random data, but you have full control over its form
 
 ### Parameterization Options
@@ -123,7 +123,7 @@ Parameterize your test cases to be able run the same test with different values:
 You have the following options to store values:
 
 - **Hard-coded values**: Static values directly in test scripts
-- [Load Test Data from Spreadsheets](skill-blazemeter-test-data://references/core-concepts.md#load-from-spreadsheets) (parameterization)
+- [Load Test Data from Spreadsheets](skill-blazemeter-test-data://references/core-concepts.md) (parameterization)
 - [Generate Synthetic Test Data](skill-blazemeter-test-data://references/generation.md) (parameterization)
 - Or any combination thereof
 
@@ -148,17 +148,17 @@ Use data parameters in test scripts, including parameter references, data iterat
 
 ### Overview
 
-[Data Parameters](skill-blazemeter-test-data://references/core-concepts.md#what-are-data-parameters) are variable values in your tests, for example, the *number* of items to put in the shopping cart, which *username* you type, and similar. To learn how to create Data Parameters, see [Parameterize test data](skill-blazemeter-test-data://references/core-concepts.md#how-to-parameterize). After creation, you insert them into tests.
+[Data Parameters](skill-blazemeter-test-data://references/core-concepts.md) are variable values in your tests, for example, the *number* of items to put in the shopping cart, which *username* you type, and similar. To learn how to create Data Parameters, see [Parameterize test data](skill-blazemeter-test-data://references/core-concepts.md). After creation, you insert them into tests.
 
 ### Steps to Use Parameters in Tests
 
 Follow these steps:
 
 1. Open a test and go to the **Configuration** tab
-2. Click **Test Data**. A pane with [data entities](skill-blazemeter-test-data://references/core-concepts.md#what-are-data-entities) opens on the right side
+2. Click **Test Data**. A pane with [data entities](skill-blazemeter-test-data://references/core-concepts.md) opens on the right side
 3. Click the **Plus** sign and create a parameter. To initialize the parameter, choose one of the following procedures:
    - [Generate Synthetic Test Data](skill-blazemeter-test-data://references/generation.md)
-   - [Load Test Data from Spreadsheets](skill-blazemeter-test-data://references/core-concepts.md#load-from-spreadsheets)
+   - [Load Test Data from Spreadsheets](skill-blazemeter-test-data://references/core-concepts.md)
    You have now defined a parameter value
 4. Click **Copy Parameter Name to Clipboard**. The clipboard now contains a string such as `${address}`
 5. Return to the test configuration and edit the appropriate test step. For a GUI Functional test, edit a test step in the Scriptless Editor. For a performance test, edit a HTTP Request field in JMeter
@@ -183,9 +183,9 @@ BlazeMeter now uses test data that is driven by your loaded Data Entities and re
 
 ## Load from Spreadsheets
 
-Test steps often rely on parameters, such as menu item names, usernames, or numeric values. You can either hard-code these values -- or use parameters with custom test data. BlazeMeter can load spreadsheet data either from files with comma separated values (CSV), or from [shared folders](skill-blazemeter-test-data://references/core-concepts.md#share) in your Workspace.
+Test steps often rely on parameters, such as menu item names, usernames, or numeric values. You can either hard-code these values -- or use parameters with custom test data. BlazeMeter can load spreadsheet data either from files with comma separated values (CSV), or from [shared folders](skill-blazemeter-test-data://references/core-concepts.md) in your Workspace.
 
-This article covers parameterizing test data using CSV data. Alternatively, you can also [parameterize test data in a Taurus YAML script](skill-blazemeter-test-data://references/core-concepts.md#using-test-data-in-taurus-performance-tests) or [Generate Synthetic Test Data](skill-blazemeter-test-data://references/generation.md).
+This article covers parameterizing test data using CSV data. Alternatively, you can also [parameterize test data in a Taurus YAML script](skill-blazemeter-test-data://references/core-concepts.md) or [Generate Synthetic Test Data](skill-blazemeter-test-data://references/generation.md).
 
 ---
 
@@ -200,10 +200,10 @@ Use test data in Taurus performance tests, including loading data from CSV files
 Same as other script types, Taurus scripts can load test data from external CSV files and from BlazeMeter Data Entities.
 
 As with all test types, BlazeMeter supports the following data sources to provide test data to a Performance test:
-- [Load Test Data from Spreadsheets](skill-blazemeter-test-data://references/core-concepts.md#load-from-spreadsheets)
-- [Generate Synthetic Test Data](skill-blazemeter-test-data://references/generation.md#generate-synthetic-test-data)
+- [Load Test Data from Spreadsheets](skill-blazemeter-test-data://references/core-concepts.md)
+- [Generate Synthetic Test Data](skill-blazemeter-test-data://references/generation.md)
 
-You can use one or combine multiple data sources in a Taurus test, as needed. To learn more about BlazeMeter's test data integration in general, see [What are Data Entities and Data Parameters?](skill-blazemeter-test-data://references/core-concepts.md#what-are-data-entities-and-data-parameters) and [How to Use Test Data](skill-blazemeter-test-data://references/core-concepts.md#how-to-use).
+You can use one or combine multiple data sources in a Taurus test, as needed. To learn more about BlazeMeter's test data integration in general, see [What are Data Entities and Data Parameters?](skill-blazemeter-test-data://references/core-concepts.md) and [How to Use Test Data](skill-blazemeter-test-data://references/core-concepts.md).
 
 ### Example Scenario
 
@@ -298,11 +298,11 @@ Previewing your test data is helpful when you are combining data from multiple f
 
 ### Related Tasks
 
-- [How to Use Test Data](skill-blazemeter-test-data://references/core-concepts.md#how-to-use)
-- [What are Data Entities and Data Parameters?](skill-blazemeter-test-data://references/core-concepts.md#what-are-data-entities-and-data-parameters)
-- [How to Share Test Data](skill-blazemeter-test-data://references/core-concepts.md#sharing-within-workspace)
-- [How to Switch Quickly Between Data Variants](skill-blazemeter-test-data://references/generation.md#variants)
-- [How to Control the Number of Rows Used - Test Data Iteration Settings](skill-blazemeter-test-data://references/management.md#test-data-settings)
+- [How to Use Test Data](skill-blazemeter-test-data://references/core-concepts.md)
+- [What are Data Entities and Data Parameters?](skill-blazemeter-test-data://references/core-concepts.md)
+- [How to Share Test Data](skill-blazemeter-test-data://references/core-concepts.md)
+- [How to Switch Quickly Between Data Variants](skill-blazemeter-test-data://references/generation.md)
+- [How to Control the Number of Rows Used - Test Data Iteration Settings](skill-blazemeter-test-data://references/management.md)
 
 ### Documentation References
 
@@ -319,10 +319,10 @@ For detailed information about using test data in Taurus performance tests, use 
 **Use when**: Loading test data from CSV spreadsheets or uploading spreadsheets, attaching to entities, and using spreadsheet data in tests.
 
 **This article covers the following topics:**
-1. [How to create or edit test data](skill-blazemeter-test-data://references/core-concepts.md#how-to-create-or-edit-test-data-using-the-in-tool-editor)
-2. [How to create and upload test data files](skill-blazemeter-test-data://references/core-concepts.md#how-to-create-and-upload-test-data-files)
-3. [How to use test data parameters](skill-blazemeter-test-data://references/core-concepts.md#how-to-use-test-data-parameters)
-4. [How to manage test data](skill-blazemeter-test-data://references/core-concepts.md#how-to-manage-test-data)
+1. [How to create or edit test data](skill-blazemeter-test-data://references/core-concepts.md)
+2. [How to create and upload test data files](skill-blazemeter-test-data://references/core-concepts.md)
+3. [How to use test data parameters](skill-blazemeter-test-data://references/core-concepts.md)
+4. [How to manage test data](skill-blazemeter-test-data://references/core-concepts.md)
 
 ### How to create or edit test data using the in-tool editor
 
@@ -330,7 +330,7 @@ For detailed information about using test data in Taurus performance tests, use 
 2. Click **Test Data**.
 3. Click the **Plus**button, and click **New CSV File (Data Table)**. The CSV Editor opens.
 
-Each column represents a parameter. The first row must contain parameter names. Each row below the first contains parameter values. The CSV editor supports editing, selecting, copying, and pasting text. If you loaded the CSV file from [shared folders](skill-blazemeter-test-data://references/core-concepts.md#share), you cannot edit the column headers (the parameter names).
+Each column represents a parameter. The first row must contain parameter names. Each row below the first contains parameter values. The CSV editor supports editing, selecting, copying, and pasting text. If you loaded the CSV file from [shared folders](skill-blazemeter-test-data://references/core-concepts.md), you cannot edit the column headers (the parameter names).
 
 The empty last row and last column are shown only so you can more easily add data. Empty last rows and columns are removed automatically when you save the test data.
 
@@ -360,7 +360,7 @@ Return to BlazeMeter to atach it to a test:
 1. Open a test and go to the **Configuration** tab.
 2. Click **Test Data** and then the **Plus** button.
 3. Click **Import CSV File**, and select the CSV file from your local machine to upload it.
-4. [Define the number of test data rows (iterations) to use.](skill-blazemeter-test-data://references/management.md#test-data-settings)
+4. [Define the number of test data rows (iterations) to use.](skill-blazemeter-test-data://references/management.md)
 
 In the following three-column example, the parameter names are *name*, *city*, *year*:
 
@@ -402,12 +402,12 @@ For detailed information about test data core concepts, use the BlazeMeter MCP h
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `test-data-what-are-data-entities-data-parameters` (core concepts) ✅
-  - `test-data-how-to-use` (how to use) ✅
-  - `test-data-how-to-use-parameters-in-tests` (use parameters in tests) ✅
-  - `test-data-load-from-spreadsheets` (load from spreadsheets) ✅
-  - `test-data-how-to-parameterize` (how to parameterize) ✅
-  - `test-data-share` (share test data) ✅
-  - `test-data-with-taurus-scripts` (using test data in Taurus performance tests) ✅
+  - `test-data-what-are-data-entities-data-parameters` (core concepts)
+  - `test-data-how-to-use` (how to use)
+  - `test-data-how-to-use-parameters-in-tests` (use parameters in tests)
+  - `test-data-load-from-spreadsheets` (load from spreadsheets)
+  - `test-data-how-to-parameterize` (how to parameterize)
+  - `test-data-share` (share test data)
+  - `test-data-with-taurus-scripts` (using test data in Taurus performance tests)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["test-data-what-are-data-entities-data-parameters", "test-data-how-to-use", "test-data-how-to-use-parameters-in-tests", "test-data-load-from-spreadsheets", "test-data-how-to-parameterize", "test-data-share", "test-data-with-taurus-scripts"]}`
 

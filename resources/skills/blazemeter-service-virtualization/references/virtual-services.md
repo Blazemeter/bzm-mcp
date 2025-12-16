@@ -1258,21 +1258,21 @@ For detailed information about virtual services, use the BlazeMeter MCP help too
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `mock-service-create-first` (create first) ✅
-  - `mock-service-create` (create service) ✅
-  - `mock-service-run` (run virtual service) ✅
-  - `mock-service-add-to-test` (add to test) ✅
-  - `mock-service-create-for-AWS-testing` (AWS testing tutorial) ✅
-  - `mock-service-create-for-testing-web-application` (web application tutorial) ✅
-  - `mock-service-create-for-third-party-login-services` (third party login tutorial) ✅
-  - `mock-service-on-private-locations` (private locations) ✅
-  - `mock-service-embed-in-taurus-script` (Taurus integration) ✅
-  - `mock-service-mq-concepts.htm` (messaging concepts) ✅
-  - `mock-service-mq-messaging.htm` (virtualize message queues) ✅
-  - `mock-service-mq-recording.htm` (virtualize message recordings) ✅
-  - `mock-service-mq-faq.htm` (messaging FAQ) ✅
-  - `mock-service-secrets.htm` (managing secrets) ✅
-  - `mock-service-template-create` (create template) ✅
+  - `mock-service-create-first` (create first)
+  - `mock-service-create` (create service)
+  - `mock-service-run` (run virtual service)
+  - `mock-service-add-to-test` (add to test)
+  - `mock-service-create-for-AWS-testing` (AWS testing tutorial)
+  - `mock-service-create-for-testing-web-application` (web application tutorial)
+  - `mock-service-create-for-third-party-login-services` (third party login tutorial)
+  - `mock-service-on-private-locations` (private locations)
+  - `mock-service-embed-in-taurus-script` (Taurus integration)
+  - `mock-service-mq-concepts.htm` (messaging concepts)
+  - `mock-service-mq-messaging.htm` (virtualize message queues)
+  - `mock-service-mq-recording.htm` (virtualize message recordings)
+  - `mock-service-mq-faq.htm` (messaging FAQ)
+  - `mock-service-secrets.htm` (managing secrets)
+  - `mock-service-template-create` (create template)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["mock-service-create-first", "mock-service-create", "mock-service-run", "mock-service-add-to-test", "mock-service-create-for-AWS-testing", "mock-service-create-for-testing-web-application", "mock-service-create-for-third-party-login-services", "mock-service-on-private-locations", "mock-service-embed-in-taurus-script", "mock-service-mq-concepts.htm", "mock-service-mq-messaging.htm", "mock-service-mq-recording.htm", "mock-service-mq-faq.htm", "mock-service-secrets.htm", "mock-service-template-create"]}`
 
 **Environment Variables**:
@@ -1285,8 +1285,8 @@ For detailed information about virtual services, use the BlazeMeter MCP help too
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `mock-service-test-data` (using test data) ✅
-  - `mock-service-test-data-sql-tables` (SQL queries) ✅
-  - `mock-service-test-data-loadrunner` (LoadRunner integration) ✅
+  - `mock-service-test-data` (using test data)
+  - `mock-service-test-data-sql-tables` (SQL queries)
+  - `mock-service-test-data-loadrunner` (LoadRunner integration)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["mock-service-test-data", "mock-service-test-data-sql-tables", "mock-service-test-data-loadrunner"]}`
 

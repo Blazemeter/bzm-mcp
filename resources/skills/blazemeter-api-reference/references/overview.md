@@ -29,18 +29,6 @@ For detailed documentation of various useful APIs and Swagger doc, see **help.bl
 
 ---
 
-## BlazeMeter API Overview
-
-BlazeMeter is a 100% JMeter-compatible, self-service web testing cloud. Performance tests and Functional tests are easily created and configured online. Once these tests are created, it is possible to run them using the BlazeMeter REST API. This means that instead of manually starting the tests, users simply create an automated script that will automatically run a predefined test via the API.
-
-BlazeMeter has a new, improved API for performing the same actions programmatically as you can with our UI. The API is RESTful and works with JSON messages over HTTP. It relies on the standard HTTP verbs including GET, POST, PUT, DELETE, and PATCH.
-
-**Use when**: Understanding BlazeMeter REST API structure or working with endpoints for Performance, Functional, Service Virtualization, API Monitoring, and Test Data Management.
-
-### Overview
-
-For detailed documentation of various useful APIs and Swagger doc, see **help.blazemeter.com/apidocs/**.
-
 ### API Endpoints
 
 BlazeMeter provides different API endpoints for different services:

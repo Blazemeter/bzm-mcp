@@ -1,6 +1,6 @@
 ---
 name: blazemeter-service-virtualization
-description: Comprehensive guide for BlazeMeter Service Virtualization, including virtual services, transactions, templates, and management. Use when working with Service Virtualization for: (1) Creating virtual services and transactions, (2) Managing services (clone, export/import, rename/delete), (3) Using templates and environment variables, (4) Adding processing actions to transactions, (5) Using test data with virtual services, (6) Understanding transactional analytics, or any other Service Virtualization tasks.
+description: Comprehensive guide for BlazeMeter Service Virtualization, including virtual services, transactions, templates, and management. Use when working with Service Virtualization for (1) Creating virtual services and transactions, (2) Managing services (clone, export/import, rename/delete), (3) Using templates and environment variables, (4) Adding processing actions to transactions, (5) Using test data with virtual services, (6) Understanding transactional analytics, or any other Service Virtualization tasks.
 ---
 
 # BlazeMeter Service Virtualization

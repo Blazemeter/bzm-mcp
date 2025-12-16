@@ -217,11 +217,11 @@ For detailed information about service management, use the BlazeMeter MCP help t
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**: 
-  - `mock-service-rename-move` (rename/move) ✅
-  - `mock-service-clone-service-with-transactions` (clone) ✅
-  - `mock-service-export-import-services-with-transactions` (export/import) ✅
-  - `mock-service-rename-or-delete-a-service` (rename/delete) ✅
-  - `mock-service-upgrade-outdated` (upgrade) ✅
+  - `mock-service-rename-move` (rename/move)
+  - `mock-service-clone-service-with-transactions` (clone)
+  - `mock-service-export-import-services-with-transactions` (export/import)
+  - `mock-service-rename-or-delete-a-service` (rename/delete)
+  - `mock-service-upgrade-outdated` (upgrade)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["mock-service-rename-move", "mock-service-clone-service-with-transactions", "mock-service-export-import-services-with-transactions", "mock-service-rename-or-delete-a-service", "mock-service-upgrade-outdated"]}`
 
 

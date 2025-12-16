@@ -1,7 +1,5 @@
 # Glossary
 
-## Glossary
-
 Reference glossary for BlazeMeter terminology, including definitions of key concepts like dynamic responses, parameters, and helpers.
 
 **Use when**: Referencing BlazeMeter terminology or understanding definitions of key concepts like dynamic responses, parameters, and helpers.

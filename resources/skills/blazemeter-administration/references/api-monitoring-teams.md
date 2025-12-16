@@ -48,9 +48,9 @@ As team owner you can transfer ownership of a team to another member at any time
 
 ### Manage Team Members
 
-As an admin or team owner, you can delete and manage the roles and permissions of your team members. See [Role-Based Access Control](skill-blazemeter-api-monitoring://references/management.md#role-based-access-control) for details.
+As an admin or team owner, you can delete and manage the roles and permissions of your team members. See [Role-Based Access Control](skill-blazemeter-api-monitoring://references/management.md) for details.
 
-Regular users can also delete and manage team members, provided they have the ["Manage Team Members" and "Modify Team Groups"](skill-blazemeter-api-monitoring://references/management.md#role-based-access-control) permissions enabled.
+Regular users can also delete and manage team members, provided they have the ["Manage Team Members" and "Modify Team Groups"](skill-blazemeter-api-monitoring://references/management.md) permissions enabled.
 
 ### Bucket Sharing
 

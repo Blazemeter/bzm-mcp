@@ -582,11 +582,11 @@ For detailed information about Taurus, use the BlazeMeter MCP help tools:
 - **Category**: `root_category`
 - **Subcategory**: `guide`
 - **Help ID**:
-  - `performance-create-taurus-test` (create test) ✅
-  - `performance-taurus-calibration` (calibration) ✅
-  - `performance-taurus-configure-engines` (configure engines) ✅
-  - `performance-shared-folders-taurus` (shared folders) ✅
-  - `performance-create-taurus-dedicated-IP` (dedicated IP) ✅
-  - `test-data-with-taurus-scripts` (test data) ✅
+  - `performance-create-taurus-test` (create test)
+  - `performance-taurus-calibration` (calibration)
+  - `performance-taurus-configure-engines` (configure engines)
+  - `performance-shared-folders-taurus` (shared folders)
+  - `performance-create-taurus-dedicated-IP` (dedicated IP)
+  - `test-data-with-taurus-scripts` (test data)
 - **Read help**: Use `blazemeter_help` with action `read_help_info`, args: `{"category_id": "root_category", "subcategory_id": "guide", "help_id_list": ["performance-create-taurus-test", "performance-taurus-calibration", "performance-taurus-configure-engines", "performance-shared-folders-taurus", "performance-create-taurus-dedicated-IP", "test-data-with-taurus-scripts"]}`
 
