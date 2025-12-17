@@ -39,27 +39,27 @@ Create virtual services in BlazeMeter using various methods, including creating 
 In BlazeMeter, you can create a virtual service from transactions, from a recording, or from a template.
 
 **Use one of the following ways to create Virtual Services:**
-- **From transactions**: [Create a new service from transactions](skill-blazemeter-service-virtualization://references/virtual-services.md#create-a-new-service-from-transactions) or [Create a virtual service from an existing service](skill-blazemeter-service-virtualization://references/virtual-services.md#create-a-virtual-service-from-an-existing-service)
-- **From recording**: [Create a virtual service using the BlazeMeter Proxy Recorder](skill-blazemeter-service-virtualization://references/virtual-services.md#create-virtual-services-using-the-blazemeter-proxy-recorder)
-- **From template**: [Create a virtual service from a virtual service template](skill-blazemeter-service-virtualization://references/virtual-services.md#create-a-virtual-service-from-a-virtual-service-template)
+- **From transactions**: [Create a new service from transactions](skill-blazemeter-service-virtualization://references/virtual-services.md) or [Create a virtual service from an existing service](skill-blazemeter-service-virtualization://references/virtual-services.md)
+- **From recording**: [Create a virtual service using the BlazeMeter Proxy Recorder](skill-blazemeter-service-virtualization://references/virtual-services.md)
+- **From template**: [Create a virtual service from a virtual service template](skill-blazemeter-service-virtualization://references/virtual-services.md)
 
 **After creating virtual services, set up transactions:**
-- [Complete the configuration of your virtual service](skill-blazemeter-service-virtualization://references/virtual-services.md#complete-the-configuration-of-your-virtual-service)
-- [Add transactions to the Service](skill-blazemeter-service-virtualization://references/virtual-services.md#add-transactions-to-the-service)
-- [Include/Exclude Transactions in a virtual service](skill-blazemeter-service-virtualization://references/virtual-services.md#includeexclude-transactions-in-a-virtual-service)
-- [Modify transactions in a running virtual service](skill-blazemeter-service-virtualization://references/virtual-services.md#modify-transactions-in-a-running-virtual-service)
-- [Define the priority of multiple matching transactions](skill-blazemeter-service-virtualization://references/virtual-services.md#define-priority-of-multiple-matching-transactions-in-a-virtual-service)
+- [Complete the configuration of your virtual service](skill-blazemeter-service-virtualization://references/virtual-services.md)
+- [Add transactions to the Service](skill-blazemeter-service-virtualization://references/virtual-services.md)
+- [Include/Exclude Transactions in a virtual service](skill-blazemeter-service-virtualization://references/virtual-services.md)
+- [Modify transactions in a running virtual service](skill-blazemeter-service-virtualization://references/virtual-services.md)
+- [Define the priority of multiple matching transactions](skill-blazemeter-service-virtualization://references/virtual-services.md)
 
 **After setting up transactions, configure optional properties:**
-- [Configure runtime properties](skill-blazemeter-service-virtualization://references/virtual-services.md#configure-runtime-properties)
-- [Group multiple virtual services under a single endpoint](skill-blazemeter-service-virtualization://references/virtual-services.md#group-multiple-virtual-services-under-a-single-endpoint)
+- [Configure runtime properties](skill-blazemeter-service-virtualization://references/virtual-services.md)
+- [Group multiple virtual services under a single endpoint](skill-blazemeter-service-virtualization://references/virtual-services.md)
 - [(Optional) Virtualize Message Queues](skill-blazemeter-service-virtualization://references/virtual-services.md)
 
 ### Create a New Service from Transactions
 
 In BlazeMeter, a "Service" is the representation of the underlying live service, and it serves as a container for Transactions. You first create a Service, and upload Transactions into the Service.
 
-Having at least one Service with transactions is a prerequisite for creating a virtual service. If you already have a Service, jump directly to [Create a Virtual Service from an Existing Service](skill-blazemeter-service-virtualization://references/virtual-services.md#create-a-virtual-service-from-an-existing-service).
+Having at least one Service with transactions is a prerequisite for creating a virtual service. If you already have a Service, jump directly to [Create a Virtual Service from an Existing Service](skill-blazemeter-service-virtualization://references/virtual-services.md).
 
 Follow these steps:
 
@@ -93,12 +93,12 @@ Follow these steps:
 
 1. Navigate to the **Service Virtualization** tab and click **Virtual Services**
 2. In the Virtual Services tab, click the **+** button to create a new virtual service, and select **Create from Recording**. The BlazeMeter Recorder page opens in a separate tab
-3. Follow the steps (starting with Step 3) in [Creating the Proxy Recorder](skill-blazemeter-recorders://references/proxy-recorder.md#creating-the-proxy-recorder) to create your proxy for recording
+3. Follow the steps (starting with Step 3) in [Creating the Proxy Recorder](skill-blazemeter-recorders://references/proxy-recorder.md) to create your proxy for recording
 4. Follow the steps for setting up recording based on your operating system:
-   - [Recording Using Android Devices](skill-blazemeter-recorders://references/proxy-recorder.md#configure-android-devices-for-proxy-recording)
-   - [Recording Using Apple Devices](skill-blazemeter-recorders://references/proxy-recorder.md#configure-apple-devices-for-proxy-recording)
-   - [Recording Using Firefox](skill-blazemeter-recorders://references/proxy-recorder.md#configure-firefox-for-proxy-recording)
-   - [Recording Using Chrome](skill-blazemeter-recorders://references/proxy-recorder.md#configure-chrome-for-proxy-recording)
+   - [Recording Using Android Devices](skill-blazemeter-recorders://references/proxy-recorder.md)
+   - [Recording Using Apple Devices](skill-blazemeter-recorders://references/proxy-recorder.md)
+   - [Recording Using Firefox](skill-blazemeter-recorders://references/proxy-recorder.md)
+   - [Recording Using Chrome](skill-blazemeter-recorders://references/proxy-recorder.md)
 5. Click the **Record** button and record the necessary interactions within your application
 6. Click **Pause** when finished
 7. Click Virtual Service to export the recording to a virtual service. This creates a virtual service under the selected Service with all of the recorded Transactions assigned to it
@@ -135,7 +135,7 @@ After you have [added transactions](skill-blazemeter-service-virtualization://re
    - Click the **Right Arrow** to move selected transactions from **Other Transactions in Your Catalog** column to the **Transactions in This Virtual Service** column
    - Select checkboxes in the **Transactions in This Virtual Service** column and click the **Left Arrow** to remove these transactions from the virtual service
    - Use the quick action to move selected transactions with a single click: Click the **Include this transaction in the Virtual Service** icon in the left column. To remove a transaction from the virtual service, click the corresponding **Remove this transaction from the Virtual Service** icon in the right column
-3. (Optional) In **Transactions in This Virtual Service** column, expand each transaction and define a **Priority** to control the matching order when a request matches multiple transactions. The transaction with the lowest priority number matches first. For details, see [Priority of Multiple Matching Transactions in a Virtual Service](skill-blazemeter-service-virtualization://references/virtual-services.md#define-priority-of-multiple-matching-transactions-in-a-virtual-service)
+3. (Optional) In **Transactions in This Virtual Service** column, expand each transaction and define a **Priority** to control the matching order when a request matches multiple transactions. The transaction with the lowest priority number matches first. For details, see [Priority of Multiple Matching Transactions in a Virtual Service](skill-blazemeter-service-virtualization://references/virtual-services.md)
 
 **On the Parameters tab:**
 
@@ -150,7 +150,7 @@ After you have [added transactions](skill-blazemeter-service-virtualization://re
 4. (Private Locations/Docker only) Select an **SSL Authentication**. To learn more, see [Running Virtual Services on Private Locations](skill-blazemeter-service-virtualization://references/virtual-services.md)
 5. Click **Save**. Your virtual service is saved and added to the list of available virtual services
 
-The virtual service is not active until you run it. Click **Run Virtual Service** to run it. For information about the next steps, see [Run a Virtual Service](skill-blazemeter-service-virtualization://references/virtual-services.md#run-a-virtual-service).
+The virtual service is not active until you run it. Click **Run Virtual Service** to run it. For information about the next steps, see [Run a Virtual Service](skill-blazemeter-service-virtualization://references/virtual-services.md).
 
 ---
 
@@ -246,7 +246,7 @@ If you want to generate a hostname for the HTTPS endpoint, add an entry to your 
 
 ## Run Virtual Services on Private Locations
 
-After you have [created a virtual service](skill-blazemeter-service-virtualization://references/virtual-services.md#create-a-virtual-service), you can configure it to run on a Private Location.
+After you have [created a virtual service](skill-blazemeter-service-virtualization://references/virtual-services.md), you can configure it to run on a Private Location.
 
 **Use when**: Running virtual services on Private Locations, configuring virtual services for Docker or Kubernetes deployments, or sharing Private Locations across workspaces.
 
@@ -347,7 +347,7 @@ Taurus includes a dependencies node that allows you to define dependencies; `moc
 To include a virtual service in a Taurus test, define the following nodes in your Taurus file:
 
 - **dependencies**: The root node and parent object for the inclusion of virtual services in a test definition file.
-- **service**: Child node of `dependencies`. Defines the Service or Services that contain assets that are dependencies for the test. Enter a [Service](skill-blazemeter-service-virtualization://references/introduction.md#the-role-of-services) name that exists in BlazeMeter Service Virtualization. You can define more than one Service as needed, but at least one is required.
+- **service**: Child node of `dependencies`. Defines the Service or Services that contain assets that are dependencies for the test. Enter a [Service](skill-blazemeter-service-virtualization://references/introduction.md) name that exists in BlazeMeter Service Virtualization. You can define more than one Service as needed, but at least one is required.
 - **mock service**: Child node of `service`. Defines the virtual service to use as the virtual endpoint for hosting the Transactions to test against. You can define more than one virtual service, but either one virtual service or one tag is required.
 - **mock service template**: (Optional) Child node of `service`. Defines the Template from which to load Transactions into the virtual service. The Template must exist in the defined Service. If you do not define a Template, the test takes the Transactions from specific Transaction definitions in the Taurus file.
 - **transactions**: (Optional) Child node of `service`. Defines the specific Transactions to include in the virtual service. If you define Transactions separately, they override the Transactions provided directly in the virtual service. The Transactions must be in the repository and exist within the defined service.
@@ -671,7 +671,7 @@ The Virtual Services Configuration is available for performance and functional t
 3. Click the **+** button and select **Add Virtual Service**
 4. Select a virtual service from the **Virtual Service Name** drop-down list. The virtual services are categorized by Service. Services represent the underlying live service. For example, for testing AWS integration in your application, the Service name might be AWS Service, and the virtual service might be a virtualization of one part of that service, such as AWS S3. These names are all controlled by the user who created the virtual services
 
-After you select the virtual service, its information appears on the same row. If the Status is **Stopped**, the virtual service is not running, and any tests run against that virtual service will fail. [Run the virtual service](skill-blazemeter-service-virtualization://references/virtual-services.md#run-a-virtual-service) from the Service Virtualization tab to be able to use it in a test. If the Status is **Running**, your virtual service is ready, and the endpoint for the virtual service is available.
+After you select the virtual service, its information appears on the same row. If the Status is **Stopped**, the virtual service is not running, and any tests run against that virtual service will fail. [Run the virtual service](skill-blazemeter-service-virtualization://references/virtual-services.md) from the Service Virtualization tab to be able to use it in a test. If the Status is **Running**, your virtual service is ready, and the endpoint for the virtual service is available.
 
 You can add multiple virtual services as needed. When you delete a virtual service from this pane, it only deletes it from that test, not from the product.
 

@@ -375,7 +375,7 @@ Understand supported SSL CA certificates for Radar Agent, including the Mozilla 
 - **Certificate Validation**: The Radar agent validates certificates against the Mozilla Included CA Certificate List
 - **Supported Certificates**: All certificates from the Mozilla Included CA Certificate List are supported
 
-For more information on configuring certificates, see [Configuring Radar Agent Certificates](skill-blazemeter-private-locations://references/radar-agent.md#configuring-radar-agent-certificates) in the Radar Agent documentation.
+For more information on configuring certificates, see [Configuring Radar Agent Certificates](skill-blazemeter-private-locations://references/radar-agent.md) in the Radar Agent documentation.
 
 ---
 

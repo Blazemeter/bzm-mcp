@@ -119,7 +119,7 @@ BlazeMeter supports Selenium 4.1.3 and 4.1.4 and higher. For 4.1.3, a *desired_c
 - **blazemeter.reportName** - you may name your report, which you'll then see in the Reports drop-down menu and on the dashboard.
 - **blazemeter.sessionName** - you may name the session, which will then appear in the drop-down menu in the upper-right corner of the test report.
 - **blazemeter.sessionTimeout** - default value is 300 seconds. If you expect a gap between commands in your test is more than 300 seconds, you may need to increase this value (to a maximum 1200 seconds).
-- **blazemeter.locationId** - you may use the [Location ID (aka Location Name)](skill-blazemeter-api-reference://references/overview.md#location-name) of one of the available BlazeMeter locations or your own [private location](skill-blazemeter-private-locations://references/introduction.md). To see the list of available locations, create a new GUI Functional Test in the UI, upload a YAML file, and review the options available that appear when you click the "Select test location" drop-down menu.
+- **blazemeter.locationId** - you may use the [Location ID (aka Location Name)](skill-blazemeter-api-reference://references/overview.md) of one of the available BlazeMeter locations or your own [private location](skill-blazemeter-private-locations://references/introduction.md). To see the list of available locations, create a new GUI Functional Test in the UI, upload a YAML file, and review the options available that appear when you click the "Select test location" drop-down menu.
 - **blazemeter.videoEnabled** - whether you want video enabled on your test report (true or false).
 
 #### Default Capabilities
@@ -136,7 +136,7 @@ In GUI functional testing, sometimes you may want to parameterize your test to u
 
 **Use when**: Parameterizing test data in a Taurus YAML script or using external CSV data instead of hard-coded values in GUI Functional Tests.
 
-This article covers parameterizing test data in a Taurus YAML script. Alternatively, you can also [Parameterize Test Data in Scriptless Tests](skill-blazemeter-test-data://references/core-concepts.md#load-from-spreadsheets).
+This article covers parameterizing test data in a Taurus YAML script. Alternatively, you can also [Parameterize Test Data in Scriptless Tests](skill-blazemeter-test-data://references/core-concepts.md).
 
 #### Process
 
@@ -163,12 +163,12 @@ A Data Entity is a container for Data Parameters. A Data Parameter is a dynamic 
 1. Go to the BlazeMeter **Functional** tab and open a GUI Functional Test configuration.
 2. Click **Test Data**. The Test Data pane opens on the right side.
 3. Click the **Plus** button to add one or more Data Entities. See the respective specific article for details:
-   - [Generate synthetic data parameters](skill-blazemeter-test-data://references/generation.md#generate-synthetic-data)
-   - [Load test data from a CSV file](skill-blazemeter-test-data://references/core-concepts.md#load-from-spreadsheets)
+   - [Generate synthetic data parameters](skill-blazemeter-test-data://references/generation.md)
+   - [Load test data from a CSV file](skill-blazemeter-test-data://references/core-concepts.md)
 
 #### Use Data in GUI Functional Tests
 
-After you have loaded or defined test data, you use it in your test. For more information, see [How to Use Test Data](skill-blazemeter-test-data://references/core-concepts.md#how-to-use).
+After you have loaded or defined test data, you use it in your test. For more information, see [How to Use Test Data](skill-blazemeter-test-data://references/core-concepts.md).
 
 1. Go to the BlazeMeter **Functional** tab and open your GUI Functional Test configuration that has test data parameters defined.
 2. Open the **Test Data** pane, go to each data parameter, and click **Copy parameter name to clipboard**.
@@ -178,7 +178,7 @@ After you have loaded or defined test data, you use it in your test. For more in
 
 When attaching test data, the number of rows in the CSV files determines the number of test iterations that will be executed. But in a GUI Functional test's configuration, you can also manually control how many rows of data are used, by opening the **Test Data** pane and clicking **Iterations**.
 
-For more information about Run Options, see [How to Control the Number of Rows Used - Test Data Iteration Settings](skill-blazemeter-test-data://references/management.md#test-data-settings).
+For more information about Run Options, see [How to Control the Number of Rows Used - Test Data Iteration Settings](skill-blazemeter-test-data://references/management.md).
 
 #### Preview Test Data
 
@@ -192,7 +192,7 @@ Previewing your test data is helpful when you are combining data from multiple f
 
 Open a GUI Functional Test and click **Test Data** to open the Test Data pane. Each GUI Functional test can currently have one data entity attached, which can contain a mix of CSV files and synthetic Test Parameters.
 
-Any team member can save their data entity to the Workspace to share it, and load saved entities into their tests. For more information about managing shared test data, see [How to Share Test Data](skill-blazemeter-test-data://references/management.md#sharing) and [How to Use Test Data](skill-blazemeter-test-data://references/core-concepts.md#how-to-use).
+Any team member can save their data entity to the Workspace to share it, and load saved entities into their tests. For more information about managing shared test data, see [How to Share Test Data](skill-blazemeter-test-data://references/management.md) and [How to Use Test Data](skill-blazemeter-test-data://references/core-concepts.md).
 
 ### What Are Test Suites and Test Cases?
 
@@ -214,9 +214,9 @@ You can create and edit GUI Functional Tests manually by dropping pre-defined Ac
 
 ### Overview
 
-[Record scriptless GUI Functional Tests](skill-blazemeter-recorders://references/chrome-extension.md#record) using the [BlazeMeter Recorder Extension](skill-blazemeter-recorders://references/chrome-extension.md#the-blazemeter-chrome-extension). Advanced users can also choose to use the integrated [Debugger](skill-blazemeter-functional-testing://references/debugging.md#debugging-scriptless-gui-functional-tests) to troubleshoot Scriptless tests.
+[Record scriptless GUI Functional Tests](skill-blazemeter-recorders://references/chrome-extension.md) using the [BlazeMeter Recorder Extension](skill-blazemeter-recorders://references/chrome-extension.md). Advanced users can also choose to use the integrated [Debugger](skill-blazemeter-functional-testing://references/debugging.md) to troubleshoot Scriptless tests.
 
-To edit Scriptless GUI Functional Tests, you need to understand the following concepts: [Objects](skill-blazemeter-functional-testing://references/action-library.md) (GUI elements such as buttons and fields), [Actions](skill-blazemeter-functional-testing://references/gui-tests.md#taurus-actions-scriptless) (such as click or select) and Groups.
+To edit Scriptless GUI Functional Tests, you need to understand the following concepts: [Objects](skill-blazemeter-functional-testing://references/action-library.md) (GUI elements such as buttons and fields), [Actions](skill-blazemeter-functional-testing://references/gui-tests.md) (such as click or select) and Groups.
 
 ### How to Create a Scriptless Test Manually
 
@@ -244,7 +244,7 @@ To edit Scriptless GUI Functional Tests, you need to understand the following co
 Objects are GUI elements in your system under test, such as text fields and buttons. When you start a new project, your Object list is empty. You manage Objects from the [Test Action Library](skill-blazemeter-functional-testing://references/action-library.md) tab. To create an Object, you must provide a unique way to locate the element in the DOM.
 
 You can create Objects by using any of the following methods:
-- Let the [BlazeMeter Chrome Extension](skill-blazemeter-recorders://references/chrome-extension.md#record) record and create Objects automatically
+- Let the [BlazeMeter Chrome Extension](skill-blazemeter-recorders://references/chrome-extension.md) record and create Objects automatically
 - Use the Object Picker to change an existing object
 - Create Objects manually from the test definition window
 
@@ -273,7 +273,7 @@ From the Test Action Library, you can edit only the name and description of Obje
 
 You create scenario steps out of Actions, Objects, and parameter values.
 
-The [Taurus Actions](skill-blazemeter-functional-testing://references/gui-tests.md#taurus-actions-scriptless) are a predefined set. You cannot create new Actions. Available Actions include assertions, clicking buttons, selecting dropdown items, entering text, pausing, submitting a form, opening URLs, and many more.
+The [Taurus Actions](skill-blazemeter-functional-testing://references/gui-tests.md) are a predefined set. You cannot create new Actions. Available Actions include assertions, clicking buttons, selecting dropdown items, entering text, pausing, submitting a form, opening URLs, and many more.
 
 For each scenario step, you can define a name, an Action, an Object, and values. In a test step such as clicking a button, or typing text into a form field, an Action is applied to an Object. Use the **Object** menu to search the project for existing Objects or to record new Objects, such as buttons.
 
@@ -337,7 +337,7 @@ If you as a Java developer prefer to use your own Selenium script instead of a Y
 
 ### Overview
 
-Here we will outline required modifications. For the purpose of this guide, all examples here will assume a Selenium script written in Java, though [Selenium scripts in Python](skill-blazemeter-functional-testing://references/gui-tests.md#create-from-python-ide) are also supported. BlazeMeter supports Selenium 4.1.3 and 4.1.4 or higher.
+Here we will outline required modifications. For the purpose of this guide, all examples here will assume a Selenium script written in Java, though [Selenium scripts in Python](skill-blazemeter-functional-testing://references/gui-tests.md) are also supported. BlazeMeter supports Selenium 4.1.3 and 4.1.4 or higher.
 
 To see a sample JUnit script with these features in action, please check out our [example script](https://github.com/Blazemeter/GUI-Functional-Test-Examples/tree/master/java/junit4) located in our [BlazeMeter GitHub repository](https://github.com/Blazemeter).
 
@@ -358,7 +358,7 @@ private final static String curl = String.format("https://%s/api/v4/grid/wd/hub"
 
 ### Step 2: Configure BlazeMeter Features
 
-You can specify a variety of settings that enable optional features or specify certain configurations. For a full list of what can be included in this dictionary, please see our [GUI Test "Desired Capabilities" Options](skill-blazemeter-functional-testing://references/gui-tests.md#desired-capabilities-options) reference guide.
+You can specify a variety of settings that enable optional features or specify certain configurations. For a full list of what can be included in this dictionary, please see our [GUI Test "Desired Capabilities" Options](skill-blazemeter-functional-testing://references/gui-tests.md) reference guide.
 
 For Selenium 4.1.3, `DesiredCapabilities()` is a Java object that stores key/value pairs for various browser properties. Use this object to specify the various GUI Functional Test features you want to enable for your script:
 
@@ -498,7 +498,7 @@ If you as a Python developer prefer to use your own Selenium script instead of a
 
 ### Overview
 
-Here we will outline required modifications. For the purpose of this guide, all examples here will assume a Selenium script written in Python, though [Selenium scripts in Java](skill-blazemeter-functional-testing://references/gui-tests.md#create-from-java-ide) are also supported. BlazeMeter supports Selenium 4.1.3 and 4.1.4 or higher.
+Here we will outline required modifications. For the purpose of this guide, all examples here will assume a Selenium script written in Python, though [Selenium scripts in Java](skill-blazemeter-functional-testing://references/gui-tests.md) are also supported. BlazeMeter supports Selenium 4.1.3 and 4.1.4 or higher.
 
 **Note**: Whereas this guide's purpose is to advise how to add BlazeMeter functionality to your own existing script, please be aware that BlazeMeter Support does not provide scripting assistance. You can find example python scripts [here](https://github.com/Blazemeter/GUI-Functional-Test-Examples).
 
@@ -515,7 +515,7 @@ blazegrid_url = 'https://{}:{}@{}/api/v4/grid/wd/hub'.format(API_KEY, API_SECRET
 
 ### Step 2: Configure BlazeMeter Features
 
-Specify the GUI Functional Test features you want to enable for your script. You can specify a variety of settings that enable optional features or specify certain configurations. For a full list of what can be included in this dictionary, please see our [GUI Test "Desired Capabilities" Options](skill-blazemeter-functional-testing://references/gui-tests.md#desired-capabilities-options) reference guide.
+Specify the GUI Functional Test features you want to enable for your script. You can specify a variety of settings that enable optional features or specify certain configurations. For a full list of what can be included in this dictionary, please see our [GUI Test "Desired Capabilities" Options](skill-blazemeter-functional-testing://references/gui-tests.md) reference guide.
 
 For Selenium 4.1.3:
 
@@ -729,7 +729,7 @@ Configure desired capabilities for GUI functional tests executed from IDEs, incl
 
 ## Custom JavaScript Actions
 
-The [Scriptless Scenario Editor](skill-blazemeter-functional-testing://references/gui-tests.md#overview) supports several [actions](skill-blazemeter-functional-testing://references/gui-tests.md#taurus-actions-scriptless) which you as a developer can use to execute custom JavaScript code snippets in your GUI Functional Tests:
+The [Scriptless Scenario Editor](skill-blazemeter-functional-testing://references/gui-tests.md) supports several [actions](skill-blazemeter-functional-testing://references/gui-tests.md) which you as a developer can use to execute custom JavaScript code snippets in your GUI Functional Tests:
 
 - **Assert Eval** action
 - **Script Eval** action
@@ -1032,7 +1032,7 @@ If you add the line `debugger;`, it triggers a breakpoint in the Chrome debugger
 
 **Running the JavaScript Snippet in a Scriptless Test**
 
-Now that you have written your custom code snippet and debugged it, you want to [use it in a Scriptless test](skill-blazemeter-functional-testing://references/gui-tests.md#taurus-actions-scriptless).
+Now that you have written your custom code snippet and debugged it, you want to [use it in a Scriptless test](skill-blazemeter-functional-testing://references/gui-tests.md).
 
 In this case you only care about *whether* the value is present, so you use an `Assert Eval` action. If you cared about *what* the value was, you could adjust your code and use a `Store Eval` action.
 
@@ -1091,15 +1091,15 @@ From the test configuration view of any API Functional Test or GUI Functional Te
 
 When you're executing an API Functional Test, you are forwarded to the test booting screen. Wait while the test is running.
 
-When the first results are ready, you are forwarded to the [GUI Functional Test Report](skill-blazemeter-functional-testing://references/gui-tests.md#gui-functional-test-report) or [API Functional Test Report](https://help.blazemeter.com/docs/guide/functional-api-test-report.html), respectively.
+When the first results are ready, you are forwarded to the [GUI Functional Test Report](skill-blazemeter-functional-testing://references/gui-tests.md) or [API Functional Test Report](https://help.blazemeter.com/docs/guide/functional-api-test-report.html), respectively.
 
 ### Stopping a Functional Test
 
-If you need to manually stop the test for any reason, refer to our guide on [Stopping a Test](skill-blazemeter-performance-testing://references/scenarios.md#stop-test).
+If you need to manually stop the test for any reason, refer to our guide on [Stopping a Test](skill-blazemeter-performance-testing://references/scenarios.md).
 
 ### Scheduling a Functional Test
 
-The process for scheduling a Functional test to run repeatedly is the same as for Performance tests. For detailed information, see [Scheduling a Performance Test](skill-blazemeter-performance-testing://references/scenarios.md#schedule-test).
+The process for scheduling a Functional test to run repeatedly is the same as for Performance tests. For detailed information, see [Scheduling a Performance Test](skill-blazemeter-performance-testing://references/scenarios.md).
 
 **To schedule a Functional test:**
 
@@ -1130,7 +1130,7 @@ Here you can enable, disable, or delete any schedule without having to navigate 
 
 ## GUI Functional Test Report
 
-Soon after a [GUI Functional Test](skill-blazemeter-functional-testing://references/gui-tests.md#overview) executes, the test report is available for review. This report is divided into "Summary" and "Details" tabs.
+Soon after a [GUI Functional Test](skill-blazemeter-functional-testing://references/gui-tests.md) executes, the test report is available for review. This report is divided into "Summary" and "Details" tabs.
 
 **Use when**: Reviewing GUI Functional Test reports, analyzing test execution results, or debugging test failures.
 
@@ -1159,7 +1159,7 @@ The Summary report is divided into two sections.
 - **Started** - The date and time the first command of the first session was executed
 - **Ended** - The date and time the last command of the last session was executed
 - **Locations** - The geographical zone and location where this test was run or if it was a private cloud
-- **Show Test Data** - (For tests with [test data](skill-blazemeter-test-data://references/core-concepts.md#how-to-use) only.) Review and download the test data that was used. Click the **Rerun** button here to run an individual test again with the same test data
+- **Show Test Data** - (For tests with [test data](skill-blazemeter-test-data://references/core-concepts.md) only.) Review and download the test data that was used. Click the **Rerun** button here to run an individual test again with the same test data
 
 Optionally, you can add your own notes in the "**Add Report Notes...**" field, then click the "Save" button to save them to that specific report.
 
@@ -1304,7 +1304,7 @@ For detailed information, use the BlazeMeter MCP help tools:
 
 ### Prerequisites
 
-To use secrets, you need to create them in your Workspace settings. For more information on how to create secrets in your workspace, see [Create and Manage Secrets](skill-blazemeter-administration://references/security.md#administration-create-and-manage-secrets).
+To use secrets, you need to create them in your Workspace settings. For more information on how to create secrets in your workspace, see [Create and Manage Secrets](skill-blazemeter-administration://references/security.md).
 
 ### Security Best Practices
 

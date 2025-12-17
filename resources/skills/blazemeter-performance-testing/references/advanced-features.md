@@ -19,7 +19,7 @@ After running a Performance test, BlazeMeter possibly alerts you to some errors.
 
 ### AI Consent
 
-BlazeMeter's AI-assisted features require explicit consent from the account owner before team members can use them. By default, AI features are disabled. For more information, see [AI Consent](skill-blazemeter-administration://references/security.md#ai-consent-management).
+BlazeMeter's AI-assisted features require explicit consent from the account owner before team members can use them. By default, AI features are disabled. For more information, see [AI Consent](skill-blazemeter-administration://references/security.md).
 
 ### Use AI to Analyze the Log
 
@@ -69,7 +69,7 @@ If necessary, select the category by which you want to filter the results:
 
 ## Add Users Dynamically
 
-Add additional tests to active Multi-Test runs on the fly to increase load or add new scenarios without stopping and restarting the test. Adding users dynamically is valuable in [Multi-Test](skill-blazemeter-performance-testing://references/advanced-features.md#create-multi-test) runs which assess the target server limits. While running a load test, you might notice that the target servers are handling the load quite well. As an alternative to shutting down and starting a new test with a different configuration, you can simply add additional tests to your active Multi-Test on the fly, adding more users or load. Once a test is added to the Multi-Test, its results will be aggregated with the rest of the Multi-Test results, forming a big picture analysis.
+Add additional tests to active Multi-Test runs on the fly to increase load or add new scenarios without stopping and restarting the test. Adding users dynamically is valuable in [Multi-Test](skill-blazemeter-performance-testing://references/advanced-features.md) runs which assess the target server limits. While running a load test, you might notice that the target servers are handling the load quite well. As an alternative to shutting down and starting a new test with a different configuration, you can simply add additional tests to your active Multi-Test on the fly, adding more users or load. Once a test is added to the Multi-Test, its results will be aggregated with the rest of the Multi-Test results, forming a big picture analysis.
 
 **Use when**: Adding additional tests to active Multi-Test runs on the fly, increasing load or adding new scenarios without stopping and restarting the test, or assessing target server limits during test execution.
 
@@ -81,7 +81,7 @@ You can add any test while the Multi-Test is running by simply starting the sing
 
 Follow these steps:
 
-1. Create a [Multi-Test](skill-blazemeter-performance-testing://references/advanced-features.md#create-multi-test) and run it
+1. Create a [Multi-Test](skill-blazemeter-performance-testing://references/advanced-features.md) and run it
 2. If you believe you could use some more load, or want to add another scenario to the Multi-Test, select and run your single test as usual. Click **Tests**, **Show all tests**. A list of all available tests appears on the left side panel
 3. Click the 'Play' button for the test you want to add
 4. In the pop-up window, expand the **Run this test as part of a master session?** drop-down list
@@ -316,9 +316,9 @@ The **Configuration** tab for the test opens.
 
 How you configure your test from here depends on what type of test you want to use. The options are:
 
-- If you uploaded a JMeter JMX script, see [Creating a JMeter Test](skill-blazemeter-performance-testing://references/advanced-features.md#create-jmeter-test)
+- If you uploaded a JMeter JMX script, see [Creating a JMeter Test](skill-blazemeter-performance-testing://references/advanced-features.md)
 - If you uploaded a Taurus YAML configuration file with your script, see [Creating a Taurus Test](skill-blazemeter-performance-testing://references/taurus.md)
-- If you want to create a Scriptless URL or API test, see [Creating a URL/API Performance Test](skill-blazemeter-performance-testing://references/advanced-features.md#create-urlapi-test)
+- If you want to create a Scriptless URL or API test, see [Creating a URL/API Performance Test](skill-blazemeter-performance-testing://references/advanced-features.md)
 - If you uploaded a script without including a YAML configuration file, fill out the configuration options in your test
 
 ### Load Testing Best Practices
@@ -326,16 +326,16 @@ How you configure your test from here depends on what type of test you want to u
 To learn more about advanced performance test configuration options, see:
 - [Scenario Definition](skill-blazemeter-performance-testing://references/scenarios.md)
 - [Load Configuration](skill-blazemeter-performance-testing://references/load-configuration.md)
-- [Load Distribution](skill-blazemeter-performance-testing://references/load-configuration.md#load-distribution)
+- [Load Distribution](skill-blazemeter-performance-testing://references/load-configuration.md)
 - [Virtual Services Configuration](skill-blazemeter-service-virtualization://references/virtual-services.md)
-- [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md#failure-criteria)
-- [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md#end-user-experience-monitoring)
-- [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md#apm-integration)
-- [JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md#jmeter-properties)
-- [DNS Override](skill-blazemeter-performance-testing://references/advanced-features.md#dns-override)
-- [Network Emulation](skill-blazemeter-performance-testing://references/advanced-features.md#network-emulation)
+- [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md)
+- [DNS Override](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [Network Emulation](skill-blazemeter-performance-testing://references/advanced-features.md)
 - [Duplicate, Delete or Move a Test](https://help.blazemeter.com/docs/guide/performance-duplicate-delete-move-test.html)
-- [Debug Test: Low-Scale Test Run, Enhanced Logging](skill-blazemeter-performance-testing://references/troubleshooting.md#debug-test-low-scale-test-run-and-enhanced-logging)
+- [Debug Test: Low-Scale Test Run, Enhanced Logging](skill-blazemeter-performance-testing://references/troubleshooting.md)
 - [Original Test Configuration Report](https://help.blazemeter.com/docs/guide/performance-original-test-configuration-report.html)
 - [Reporting Selectors for Scenario and Location](https://help.blazemeter.com/docs/guide/performance-filter-by-location-scenario.html)
 
@@ -380,19 +380,19 @@ Before running your test at load, you must calibrate your test according to the 
 
 ### Step 4: Run Your Test
 
-Click **Run Test**. You can also click **Debug Test** to validate your test configuration. For more information about debugging, see [Debug Test: Low-Scale Test Run and Enhanced Logging](skill-blazemeter-performance-testing://references/troubleshooting.md#debug-test-low-scale-test-run-and-enhanced-logging).
+Click **Run Test**. You can also click **Debug Test** to validate your test configuration. For more information about debugging, see [Debug Test: Low-Scale Test Run and Enhanced Logging](skill-blazemeter-performance-testing://references/troubleshooting.md).
 
-When your test begins, a report of test results shows, beginning with the [Summary Report](skill-blazemeter-performance-testing://references/reporting.md#summary-report).
+When your test begins, a report of test results shows, beginning with the [Summary Report](skill-blazemeter-performance-testing://references/reporting.md).
 
 ### Additional Test Options
 
 There are optional settings to further enhance testing. For more information, see:
-- [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md#failure-criteria)
-- [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md#end-user-experience-monitoring)
-- [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md#apm-integration)
-- [JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md#jmeter-properties)
-- [DNS Override](skill-blazemeter-performance-testing://references/advanced-features.md#dns-override)
-- [Network Emulation](skill-blazemeter-performance-testing://references/advanced-features.md#network-emulation)
+- [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md)
+- [DNS Override](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [Network Emulation](skill-blazemeter-performance-testing://references/advanced-features.md)
 - [JMeter Auto Correlation](https://help.blazemeter.com/docs/guide/performance-jmeter-auto-correlation-rules.html)
 - [Ignore Labels in Reports](https://help.blazemeter.com/docs/guide/performance-ignore-labels-in-reports.htm)
 
@@ -571,17 +571,17 @@ You can extract data from the response and store it in a variable for future use
 Follow these steps:
 
 1. Configure the load by specifying the total users, duration, and ramp up time. For more information, see [Load Configuration](skill-blazemeter-performance-testing://references/load-configuration.md)
-2. Configure the load distribution to decide where traffic will be coming from. For more information, see [Load Distribution](skill-blazemeter-performance-testing://references/load-configuration.md#load-distribution)
-3. Click **Run Test** to start the test or **Debug Test** to validate your test configuration. For more information about debugging, see [Debug Test: Low-Scale Test Run and Enhanced Logging](skill-blazemeter-performance-testing://references/troubleshooting.md#debug-test-low-scale-test-run-and-enhanced-logging)
+2. Configure the load distribution to decide where traffic will be coming from. For more information, see [Load Distribution](skill-blazemeter-performance-testing://references/load-configuration.md)
+3. Click **Run Test** to start the test or **Debug Test** to validate your test configuration. For more information about debugging, see [Debug Test: Low-Scale Test Run and Enhanced Logging](skill-blazemeter-performance-testing://references/troubleshooting.md)
 
 ### Additional Test Options
 
 In addition to the required settings above, there are optional settings to further enhance testing. For more information, see:
-- [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md#failure-criteria)
-- [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md#end-user-experience-monitoring)
-- [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md#apm-integration)
-- [DNS Override](skill-blazemeter-performance-testing://references/advanced-features.md#dns-override)
-- [Network Emulation](skill-blazemeter-performance-testing://references/advanced-features.md#network-emulation)
+- [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [DNS Override](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [Network Emulation](skill-blazemeter-performance-testing://references/advanced-features.md)
 - [Ignore Labels in Reports](https://help.blazemeter.com/docs/guide/performance-ignore-labels-in-reports.htm)
 - [Ignore Labels in Reports](https://help.blazemeter.com/docs/guide/performance-ignore-labels-in-reports.htm)
 
@@ -1011,14 +1011,14 @@ Follow these steps:
    - `jmeter-bzm-rte-1.0.2.jar`
    - Any other files used in your script (CSV, JARs, etc.)
 
-   For more information about how to upload files, see [Shared Folders](skill-blazemeter-performance-testing://references/advanced-features.md#shared-folders) and [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md#uploading-files)
+   For more information about how to upload files, see [Shared Folders](skill-blazemeter-performance-testing://references/advanced-features.md) and [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md)
 
 4. Define the load configuration for the test. For more information, see [Load Configuration](skill-blazemeter-performance-testing://references/load-configuration.md)
 5. Save the test and press the green **Run** button
 
 You have created a Mainframe load test and it is now running.
 
-BlazeMeter creates a detailed report that provides different KPIs that you can analyze and compare with previous tests. For more information about reporting services and features, see [Summary Report](skill-blazemeter-performance-testing://references/reporting.md#summary-report).
+BlazeMeter creates a detailed report that provides different KPIs that you can analyze and compare with previous tests. For more information about reporting services and features, see [Summary Report](skill-blazemeter-performance-testing://references/reporting.md).
 
 ---
 

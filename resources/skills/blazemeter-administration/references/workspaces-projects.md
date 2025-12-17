@@ -58,7 +58,7 @@ Use MCP tools to manage projects:
 
 ### Add Members to a Workspace
 
-New members can only be added from within the account that the workspace belongs to; members from outside the account cannot be added. For instructions on adding new users to your account, refer to [How to Invite Additional Users to a BlazeMeter Account](skill-blazemeter-administration://references/workspaces-projects.md#administration-managing-an-account).
+New members can only be added from within the account that the workspace belongs to; members from outside the account cannot be added. For instructions on adding new users to your account, refer to [How to Invite Additional Users to a BlazeMeter Account](skill-blazemeter-administration://references/workspaces-projects.md).
 
 To add members:
 
@@ -94,7 +94,7 @@ To create a new test in an existing project, either click **Create Test**, or se
 
 In this example, the project selected is *Guy's Awesome Project*, located within the Second Workspace. This means the new test will be added to *Guy's Awesome Project*, and members of the Second Workspace with the necessary permissions can view, edit, share, or delete the test.
 
-For more information about how to migrate a test between projects within the same workspace, see [Duplicate, Delete, or Move a Performance Test](skill-blazemeter-performance-testing://references/management.md) and [GUI Functional Testing - Overview](skill-blazemeter-functional-testing://references/gui-tests.md#overview).
+For more information about how to migrate a test between projects within the same workspace, see [Duplicate, Delete, or Move a Performance Test](skill-blazemeter-performance-testing://references/management.md) and [GUI Functional Testing - Overview](skill-blazemeter-functional-testing://references/gui-tests.md).
 
 ### Workspace Operations
 
@@ -340,7 +340,7 @@ As an account admin, you can enable BlazeMeter to detect the JMeter version used
 
 ### Display Response Body in Errors
 
-To display the response body of transactions that fail on the Errors tab in the test report, switch on this option. For more information, see [View the Response Body](skill-blazemeter-performance-testing://references/reporting.md#performance-errors-report).
+To display the response body of transactions that fail on the Errors tab in the test report, switch on this option. For more information, see [View the Response Body](skill-blazemeter-performance-testing://references/reporting.md).
 
 ### Account AI Consent
 
@@ -353,7 +353,7 @@ The Account AI Consent toggle key lets account owners control AI-related feature
 
 ### Anomaly Detection
 
-This feature identifies and displays performance anomalies across all test runs in the Timeline Report. For more information, see [View Anomalies](skill-blazemeter-performance-testing://references/reporting.md#performance-timeline-report).
+This feature identifies and displays performance anomalies across all test runs in the Timeline Report. For more information, see [View Anomalies](skill-blazemeter-performance-testing://references/reporting.md).
 
 ### In-App Messaging
 

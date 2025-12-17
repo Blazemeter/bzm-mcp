@@ -70,8 +70,8 @@ To use the virtual service, copy the provided **Endpoint** and use it in the pla
 A Service is an entity for categorizing Transactions and virtual services into a logical grouping. When you create a virtual service, you can only add Transactions that are a part of the same service. Therefore, it is important that you associate your Transactions with a service name that is meaningful.
 
 To learn more about Service Virtualization, Services, virtual services, and other key concepts, see:
-- [Introduction to Service Virtualization](skill-blazemeter-service-virtualization://references/introduction.md#introduction)
-- Managing services covers tasks such as [upgrading](skill-blazemeter-service-virtualization://references/management.md), [renaming or deleting](skill-blazemeter-service-virtualization://references/management.md#rename-or-delete-a-service), [cloning](skill-blazemeter-service-virtualization://references/management.md#clone-service-with-all-transactions), and [importing and exporting](skill-blazemeter-service-virtualization://references/management.md#export-and-import-services-with-all-transactions) services.
+- [Introduction to Service Virtualization](skill-blazemeter-service-virtualization://references/introduction.md)
+- Managing services covers tasks such as [upgrading](skill-blazemeter-service-virtualization://references/management.md), [renaming or deleting](skill-blazemeter-service-virtualization://references/management.md), [cloning](skill-blazemeter-service-virtualization://references/management.md), and [importing and exporting](skill-blazemeter-service-virtualization://references/management.md) services.
 
 ---
 
@@ -173,8 +173,8 @@ A Service is an entity for categorizing Transactions and virtual services into a
 
 To learn more about Service Virtualization, Services, virtual services, and other key concepts, see:
 
-- [Introduction to Service Virtualization](skill-blazemeter-service-virtualization://references/introduction.md#introduction-to-service-virtualization)
-- Managing services covers tasks such as [upgrading](skill-blazemeter-service-virtualization://references/management.md#upgrading-outdated-virtual-services), [renaming or deleting](skill-blazemeter-service-virtualization://references/management.md#rename-or-delete-a-service), [cloning](skill-blazemeter-service-virtualization://references/management.md#clone-service-with-all-transactions), and [importing and exporting](skill-blazemeter-service-virtualization://references/management.md#export-and-import-services-with-all-transactions) services.
+- [Introduction to Service Virtualization](skill-blazemeter-service-virtualization://references/introduction.md)
+- Managing services covers tasks such as [upgrading](skill-blazemeter-service-virtualization://references/management.md), [renaming or deleting](skill-blazemeter-service-virtualization://references/management.md), [cloning](skill-blazemeter-service-virtualization://references/management.md), and [importing and exporting](skill-blazemeter-service-virtualization://references/management.md) services.
 
 ### Documentation References
 

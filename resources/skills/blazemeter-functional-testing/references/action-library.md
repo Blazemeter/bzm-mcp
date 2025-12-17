@@ -72,7 +72,7 @@ The Delete button is only available for Objects and Group Actions that are not u
 
 ## Custom JavaScript Actions
 
-The [Scriptless Scenario Editor](skill-blazemeter-functional-testing://references/gui-tests.md#create-scriptless-test) supports several [actions](https://help.blazemeter.com/docs/guide/functional-taurus-actions-scriptless.html) which you as a developer can use to execute custom JavaScript code snippets in your GUI Functional Tests:
+The [Scriptless Scenario Editor](skill-blazemeter-functional-testing://references/gui-tests.md) supports several [actions](https://help.blazemeter.com/docs/guide/functional-taurus-actions-scriptless.html) which you as a developer can use to execute custom JavaScript code snippets in your GUI Functional Tests:
 
 - **Assert Eval** action
 - **Script Eval** action

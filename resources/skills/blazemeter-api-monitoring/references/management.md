@@ -108,7 +108,7 @@ Specifically for API Monitoring, the Trial plan comes with a number of paid and/
 | Trigger URLs | Available | Not available | Needs a qualifying plan |
 | Test revisions | Available | Not available | Needs a qualifying plan |
 | Client certificates | Available | Not available | Needs a qualifying plan |
-| On-premises Radar Agent | Available (19 locations) | Limited (8 locations) | For more information on available locations, see [Global Locations](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-global-locations) |
+| On-premises Radar Agent | Available (19 locations) | Limited (8 locations) | For more information on available locations, see [Global Locations](skill-blazemeter-api-monitoring://references/configuration.md) |
 | Detailed request/response timings | Available | Not available | Needs a qualifying plan |
 | Custom script libraries and snippets | Available | Not available | File library, scripts and snippets options will no longer be available |
 

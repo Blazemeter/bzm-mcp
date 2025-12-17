@@ -20,7 +20,7 @@ Follow these steps:
 - If your main test file shows **invalid**, or with a **missing scenario**, double-check your script and re-upload
 - If a test file other than your main file (for example, an additional JMX test fragments), is marked invalid, you can ignore the warning. It only means there may be a problem if that file was designated as your main test script
 
-For more information about uploading files and including files from Shared Folders, see [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md#uploading-files) and [Shared Folders](https://help.blazemeter.com/docs/guide/performance-shared-folders.html).
+For more information about uploading files and including files from Shared Folders, see [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md) and [Shared Folders](https://help.blazemeter.com/docs/guide/performance-shared-folders.html).
 
 ---
 
@@ -84,7 +84,7 @@ To split your CSV into unique files for each server, select the **Split CSV file
 
 This ensures that each engine receives a unique subset of CSV data, preventing data conflicts and ensuring proper test data distribution across multiple engines.
 
-For more information about using test data from a CSV file in your test, see [Using Test Data in JMeter Performance Tests](skill-blazemeter-performance-testing://references/advanced-features.md#test-data-in-testing) and [How to Split or Distribute CSV Files in Performance Tests](skill-blazemeter-performance-testing://references/scenarios.md#csv-split-distribute-engines).
+For more information about using test data from a CSV file in your test, see [Using Test Data in JMeter Performance Tests](skill-blazemeter-performance-testing://references/advanced-features.md) and [How to Split or Distribute CSV Files in Performance Tests](skill-blazemeter-performance-testing://references/scenarios.md).
 
 ---
 
@@ -96,7 +96,7 @@ For any test that you create, you have the option to duplicate, delete or move t
 
 ### Duplicate a Test
 
-**Prerequisite**: You created a performance test. For more information, see [Creating a Performance Test](skill-blazemeter-performance-testing://references/advanced-features.md#create-a-performance-test).
+**Prerequisite**: You created a performance test. For more information, see [Creating a Performance Test](skill-blazemeter-performance-testing://references/advanced-features.md).
 
 **Steps:**
 
@@ -118,7 +118,7 @@ For any test that you create, you have the option to duplicate, delete or move t
 
 ### Move a Test
 
-**Prerequisite**: You created a performance test. For more information, see [Creating a Performance Test](skill-blazemeter-performance-testing://references/advanced-features.md#create-a-performance-test).
+**Prerequisite**: You created a performance test. For more information, see [Creating a Performance Test](skill-blazemeter-performance-testing://references/advanced-features.md).
 
 **Steps:**
 
@@ -168,7 +168,7 @@ Follow these steps:
 5. Select the email options for sending test results.
 6. (Optional): Check the **Run test in the background** box if you do not want to see the startup status view. You will be returned to your previous view and the test runs in the background. Next to the **Reports** drop-down list, you can see a number of currently running tests.
 
-To abort the test, click the **Abort Test** button in the top right corner. For more information, see [Stopping a Test](skill-blazemeter-performance-testing://references/scenarios.md#stop-test).
+To abort the test, click the **Abort Test** button in the top right corner. For more information, see [Stopping a Test](skill-blazemeter-performance-testing://references/scenarios.md).
 
 ### Review the Boot Screen Summary
 
@@ -187,18 +187,18 @@ When you click the **Show Engines** button, you will see a detailed screen with 
 
 - Name of the test with the link to the test configuration for this test run.
 - The amount of time that has occurred since the start of the test run.
-- **Hide Engines**: Returns the screen to the summary view described [above](skill-blazemeter-performance-testing://references/scenarios.md#review-the-boot-screen-summary).
+- **Hide Engines**: Returns the screen to the summary view described [above](skill-blazemeter-performance-testing://references/scenarios.md).
 - **Force Start**: Force starts the test without waiting for the rest of the engines to be in **Ready** status.
 - **Start Test**: Starts the test. Appears when all engines are in **Ready** status.
 - **Abort Test**: Terminates the test, stopping all engines immediately upon confirmation.
 - **Table refresh is on**: Set the refresh rate of the table.
-- **Scenario** drop-down list: Filter the engines by scenario. The **Show only added scenarios** option shows only the scenarios you added to a test using [this feature](skill-blazemeter-performance-testing://references/advanced-features.md#add-users-dynamically).
+- **Scenario** drop-down list: Filter the engines by scenario. The **Show only added scenarios** option shows only the scenarios you added to a test using [this feature](skill-blazemeter-performance-testing://references/advanced-features.md).
 - **Location** drop-down list: Filter the engines by location.
-- **Cloud Provider** drop-down list: Filter the engines by the cloud provider (AWS, Google Cloud, Azure, and [Private Locations](skill-blazemeter-private-locations://references/management.md#use-private-location)).
-- **Status** drop-down list: Filter the engines by [status](skill-blazemeter-performance-testing://references/scenarios.md#review-the-detailed-boot-status-screen). The **Show only not Ready** option selects all options except for the Ready status. You will only see engines that are NOT in **Ready** status.
+- **Cloud Provider** drop-down list: Filter the engines by the cloud provider (AWS, Google Cloud, Azure, and [Private Locations](skill-blazemeter-private-locations://references/management.md)).
+- **Status** drop-down list: Filter the engines by [status](skill-blazemeter-performance-testing://references/scenarios.md). The **Show only not Ready** option selects all options except for the Ready status. You will only see engines that are NOT in **Ready** status.
 - **Search by Session ID**: Enter a session ID of one of the running engines to focus on just that engine.
 - **IP**: Filter the engines that use dedicated IPs or all engines.
-- **Show log**: Opens the system log for that specific machine. For more information, see [System Log](skill-blazemeter-performance-testing://references/scenarios.md#system-log).
+- **Show log**: Opens the system log for that specific machine. For more information, see [System Log](skill-blazemeter-performance-testing://references/scenarios.md).
 
 For each engine in your test, you can see the following information:
 
@@ -208,7 +208,7 @@ For each engine in your test, you can see the following information:
 - Script - The script this engine is starting with.
 - IP - The IP address of this engine.
 - Status - The status the engine is currently in.
-- Session Id - The [sessionId](skill-blazemeter-api-reference://references/identifiers.md#session-id) for this engine.
+- Session Id - The [sessionId](skill-blazemeter-api-reference://references/identifiers.md) for this engine.
 
 ### System Log
 
@@ -224,7 +224,7 @@ To be able to see the boxes, you must select location first.
 
 You can complete other tasks while the test is running in the background, such as viewing reports or configuring and running other tests.
 
-You can wait a few minutes until the test ends or you can stop the test yourself. If you need to manually stop the test for any reason, see [Stopping a Test](skill-blazemeter-performance-testing://references/scenarios.md#stop-test).
+You can wait a few minutes until the test ends or you can stop the test yourself. If you need to manually stop the test for any reason, see [Stopping a Test](skill-blazemeter-performance-testing://references/scenarios.md).
 
 ### Rerun Tests from Reports
 
@@ -274,7 +274,7 @@ Follow these steps:
 
 Or, you can click the "x" icon in the upper-right corner of the window to cancel and continue the test without interruption.
 
-If you manually terminated a test because it hung indefinitely, for more information, see our knowledge base article [tests that fail to start](skill-blazemeter-performance-testing://references/troubleshooting.md#test-wont-start).
+If you manually terminated a test because it hung indefinitely, for more information, see our knowledge base article [tests that fail to start](skill-blazemeter-performance-testing://references/troubleshooting.md).
 
 ---
 
@@ -317,11 +317,11 @@ To split your CSV data into unique subsets for each engine, select the **Split C
 
 For example: You run a 1000-concurrent-users test, on 5 engines. You have uploaded a CSV file containing 1000 unique user names to simulate a registration scenario. Enable the '**Split CSV files**' checkbox, and when the test is initiating, the CSV file will be split 5 ways and each unique subset will be directed to a different engine. Line one will go to engine one, line two to engine two, line six again to engine one, line seven to engine two, and so on.
 
-Note that Split CSV Files will not preserve the CSV header across engines. A best practice is to always omit the header row in the CSV file and to declare variable names in the [CSV Data Set Config](skill-blazemeter-performance-testing://references/advanced-features.md#test-data-in-testing) instead. This ensures that you can always find where variables are set by searching your JMX files.
+Note that Split CSV Files will not preserve the CSV header across engines. A best practice is to always omit the header row in the CSV file and to declare variable names in the [CSV Data Set Config](skill-blazemeter-performance-testing://references/advanced-features.md) instead. This ensures that you can always find where variables are set by searching your JMX files.
 
 ### Run a 'Multi Test' Simultaneously With a Single CSV File
 
-A Multi Test is a feature which enables you to run several tests simultaneously. For more information regarding the Multi Test, see [Creating a Multi-Test](skill-blazemeter-performance-testing://references/scenarios.md#create-multi-test).
+A Multi Test is a feature which enables you to run several tests simultaneously. For more information regarding the Multi Test, see [Creating a Multi-Test](skill-blazemeter-performance-testing://references/scenarios.md).
 
 If you wish to use one **CSV Data Set Config** for the entire Multi Test (unique data sets per engine, per test) then click **Data Files** and upload the CSV file when prompted. You will then be presented with a choice whether to split the CSV or not.
 
@@ -393,7 +393,7 @@ BlazeMeter default time zone is UTC+0. When using **CRON** as the frequency type
 
 Once you enter a crontab expression, the scheduler will automatically validate your expression, then repeat the expression in plain terms to verify that your expression has created the result you intended. Take care not to accidentally set the interval too small. Use the scheduler validation below your expression to verify your schedule. For example, you would not want to schedule a test to run every second, or every five minutes.
 
-**Note**: Whereas the **On Time** option is expressed in UTC+0, the **Your next 3 tests** verification message will display in the time zone of your choice, matching whatever the value of your [time zone override](skill-blazemeter-administration://references/workspaces-projects.md#administration-time-zone-override) is (if the override is enabled).
+**Note**: Whereas the **On Time** option is expressed in UTC+0, the **Your next 3 tests** verification message will display in the time zone of your choice, matching whatever the value of your [time zone override](skill-blazemeter-administration://references/workspaces-projects.md) is (if the override is enabled).
 
 A bonus feature to these three options above is that any selection made under one option carries over to the next during setup. For example, if you select **Weekly**, then select **Mon**, at **2:00am**, then switch from **Weekly** to **Advanced**, the crontab expression will automatically populate with your previous selection, expressed as:
 ```
@@ -451,11 +451,11 @@ This view only shows the schedules for tests belonging to the currently selected
 
 You can create your script manually in JMeter or automatically by recording your scenario in:
 
-- [BlazeMeter Chrome Extension](skill-blazemeter-recorders://references/chrome-extension.md#record)
-- [BlazeMeter Proxy Recorder](skill-blazemeter-recorders://references/proxy-recorder.md#create-proxy-recorder)
+- [BlazeMeter Chrome Extension](skill-blazemeter-recorders://references/chrome-extension.md)
+- [BlazeMeter Proxy Recorder](skill-blazemeter-recorders://references/proxy-recorder.md)
 - Apache JMeter HTTP(S) Test Script Recorder
 
-For additional guidance on how to create and test your script in JMeter, see Step 1 and Step 2 in the [Calibrating a BlazeMeter test](skill-blazemeter-performance-testing://references/jmeter-configuration.md#calibration) guide.
+For additional guidance on how to create and test your script in JMeter, see Step 1 and Step 2 in the [Calibrating a BlazeMeter test](skill-blazemeter-performance-testing://references/jmeter-configuration.md) guide.
 
 ### Step 2: Upload Your JMX and Test Assets
 
@@ -471,29 +471,29 @@ Follow these steps:
 - All the files in your account are downloaded to the remote servers at the beginning of each test.
 - Files from the original test configuration may be updated or deleted at any time. Doing so will not impact a test while it's running.
 
-You created a Scenario Definition. For more information, including what to do if your file fails validation, see [Scenario Definition](skill-blazemeter-performance-testing://references/scenarios.md#scenario-definition) and [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md#uploading-files).
+You created a Scenario Definition. For more information, including what to do if your file fails validation, see [Scenario Definition](skill-blazemeter-performance-testing://references/scenarios.md) and [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md).
 
 ### Step 3: Calibrate Your Test
 
-Before running your test at load, you must calibrate your test according to the [Calibrating a BlazeMeter test](skill-blazemeter-performance-testing://references/jmeter-configuration.md#calibration) guide. Configure your test options and set up overrides in preparation for running your JMeter Performance Test at full load.
+Before running your test at load, you must calibrate your test according to the [Calibrating a BlazeMeter test](skill-blazemeter-performance-testing://references/jmeter-configuration.md) guide. Configure your test options and set up overrides in preparation for running your JMeter Performance Test at full load.
 
 ### Step 4: Run Your Test
 
-Click **Run Test.** You can also click **Debug Test** to validate your test configuration. For more information about debugging, see [Debug Test: Low-Scale Test Run and Enhanced Logging](skill-blazemeter-performance-testing://references/troubleshooting.md#debug-test).
+Click **Run Test.** You can also click **Debug Test** to validate your test configuration. For more information about debugging, see [Debug Test: Low-Scale Test Run and Enhanced Logging](skill-blazemeter-performance-testing://references/troubleshooting.md).
 
-When your test begins, a report of test results shows, beginning with the [Summary Report](skill-blazemeter-performance-testing://references/reporting.md#summary-report).
+When your test begins, a report of test results shows, beginning with the [Summary Report](skill-blazemeter-performance-testing://references/reporting.md).
 
 ### Additional Test Options
 
 There are optional settings to further enhance testing. For more information, see:
 
-- [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md#failure-criteria)
-- [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md#eux-monitoring)
-- [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md#apm-integration)
-- [JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md#jmeter-properties)
-- [DNS Override](skill-blazemeter-performance-testing://references/advanced-features.md#dns-override)
-- [Network Emulation](skill-blazemeter-performance-testing://references/advanced-features.md#network-emulation)
-- [JMeter Auto Correlation](skill-blazemeter-performance-testing://references/jmeter-configuration.md#auto-correlation)
+- [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md)
+- [DNS Override](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [Network Emulation](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [JMeter Auto Correlation](skill-blazemeter-performance-testing://references/jmeter-configuration.md)
 - [Ignore Labels in Reports](https://help.blazemeter.com/docs/guide/performance-ignore-labels-in-reports.htm)
 
 ---
@@ -542,27 +542,27 @@ Click **+** to upload your script and any additional test files, or drag the fil
 
 For more information, see:
 
-- [Scenario Definition](skill-blazemeter-performance-testing://references/scenarios.md#scenario-definition)
-- [Uploading Files & Shared Folders](skill-blazemeter-performance-testing://references/scenarios.md#uploading-files)
+- [Scenario Definition](skill-blazemeter-performance-testing://references/scenarios.md)
+- [Uploading Files & Shared Folders](skill-blazemeter-performance-testing://references/scenarios.md)
 
 Under **Configuration Preview**, you will see the YAML/JSON code of the file that you uploaded.
 
-If you are running a JMeter test with Taurus and have uploaded a CSV file with your script, the option to **split CSV files** shows below the script preview. Check this box to enable the feature. For more information, see [Scenario Definition](skill-blazemeter-performance-testing://references/scenarios.md#scenario-definition).
+If you are running a JMeter test with Taurus and have uploaded a CSV file with your script, the option to **split CSV files** shows below the script preview. Check this box to enable the feature. For more information, see [Scenario Definition](skill-blazemeter-performance-testing://references/scenarios.md).
 
 There are additional options to add to your test configuration. For more information, see:
 
-- [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md#failure-criteria)
-- [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md#eux-monitoring)
-- [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md#apm-integration)
-- [DNS Override](skill-blazemeter-performance-testing://references/advanced-features.md#dns-override)
-- [Network Emulation](skill-blazemeter-performance-testing://references/advanced-features.md#network-emulation)
+- [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [DNS Override](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [Network Emulation](skill-blazemeter-performance-testing://references/advanced-features.md)
 
 You have set up your Taurus test.
 
 ### Run Taurus Tests in BlazeMeter
 
 1. Name your test.
-2. (Optional) Click **Debug Test** to validate your test configuration. For more information about debugging, see [Debug Test: Low-Scale Test Run and Enhanced Logging](skill-blazemeter-performance-testing://references/troubleshooting.md#debug-test).
+2. (Optional) Click **Debug Test** to validate your test configuration. For more information about debugging, see [Debug Test: Low-Scale Test Run and Enhanced Logging](skill-blazemeter-performance-testing://references/troubleshooting.md).
 3. Click **Run Test**.
 
 ### Run Taurus Tests on Your Local Machine (CLI)
@@ -629,7 +629,7 @@ The initial scenario window displays (from top-left to bottom-right):
 
 To expand the scenario summary to see additional details, click the right arrow (>) in the individual scenario summary. To remove a test, click the bin icon for the scenario.
 
-A miniature version of the [Load Configuration](skill-blazemeter-performance-testing://references/load-configuration.md) and the [Load Distribution](skill-blazemeter-performance-testing://references/load-configuration.md#load-distribution) screens appears. You can modify an individual test scenario but only when it runs as part of this multi-test.
+A miniature version of the [Load Configuration](skill-blazemeter-performance-testing://references/load-configuration.md) and the [Load Distribution](skill-blazemeter-performance-testing://references/load-configuration.md) screens appears. You can modify an individual test scenario but only when it runs as part of this multi-test.
 
 **Important Note:** Disabling overrides in Load Configuration will cause the values to be taken from the single test's original script, and not from that test's original configuration (if overrides are enabled).
 
@@ -657,7 +657,7 @@ Follow these steps:
 
 You can then return to your multi-test in progress, which is now running with the additional scenario.
 
-For more information, including how to add tests via the API, see [Adding Users Dynamically](skill-blazemeter-performance-testing://references/advanced-features.md#add-users-dynamically).
+For more information, including how to add tests via the API, see [Adding Users Dynamically](skill-blazemeter-performance-testing://references/advanced-features.md).
 
 ---
 
@@ -667,7 +667,7 @@ Creating a new URL/API Test in BlazeMeter is as simple as performing a single GE
 
 **Use when**: Creating URL/API performance tests, adding query parameters, headers, body, assertions, or extracting data from responses.
 
-To record complex scripts directly from your Google Chrome browser, use the [Chrome Extension](skill-blazemeter-recorders://references/chrome-extension.md#record) or [Proxy Recorder](skill-blazemeter-recorders://references/proxy-recorder.md#create-proxy-recorder).
+To record complex scripts directly from your Google Chrome browser, use the [Chrome Extension](skill-blazemeter-recorders://references/chrome-extension.md) or [Proxy Recorder](skill-blazemeter-recorders://references/proxy-recorder.md).
 
 ### Create a Test
 
@@ -683,7 +683,7 @@ Follow these steps:
 8. (Optional) To select a different request method, expand the drop-down list.
 9. (Optional) To duplicate or delete requests, click the dots menu.
 10. On the left panel, edit the test name.
-11. (Optional) Enter the test **Description** and add **Schedule**. For more information about schedule, see [Scheduling a Test](skill-blazemeter-performance-testing://references/scenarios.md#schedule-test).
+11. (Optional) Enter the test **Description** and add **Schedule**. For more information about schedule, see [Scheduling a Test](skill-blazemeter-performance-testing://references/scenarios.md).
 
 ### Add Details to a Test
 
@@ -761,8 +761,8 @@ Follow these steps:
 Follow these steps:
 
 1. Configure the load by specifying the total users, duration, and ramp up time. For more information, see [Load Configuration](skill-blazemeter-performance-testing://references/load-configuration.md).
-2. Configure the load distribution to decide where traffic will be coming from. For more information, see [Load Distribution](skill-blazemeter-performance-testing://references/load-configuration.md#load-distribution).
-3. Click **Run Test** to start the test or **Debug Test** to validate your test configuration. For more information about debugging, see [Debug Test](skill-blazemeter-performance-testing://references/troubleshooting.md#debug-test).
+2. Configure the load distribution to decide where traffic will be coming from. For more information, see [Load Distribution](skill-blazemeter-performance-testing://references/load-configuration.md).
+3. Click **Run Test** to start the test or **Debug Test** to validate your test configuration. For more information about debugging, see [Debug Test](skill-blazemeter-performance-testing://references/troubleshooting.md).
 
 ### Additional Test Options
 
@@ -770,11 +770,11 @@ In addition to the required settings above, there are optional settings to furth
 
 For more information, see:
 
-- [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md#failure-criteria)
-- [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md#eux-monitoring)
-- [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md#apm-integration)
-- [DNS Override](skill-blazemeter-performance-testing://references/advanced-features.md#dns-override)
-- [Network Emulation](skill-blazemeter-performance-testing://references/advanced-features.md#network-emulation)
+- [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [DNS Override](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [Network Emulation](skill-blazemeter-performance-testing://references/advanced-features.md)
 - [Ignore Labels in Reports](https://help.blazemeter.com/docs/guide/performance-ignore-labels-in-reports.htm)
 
 ---

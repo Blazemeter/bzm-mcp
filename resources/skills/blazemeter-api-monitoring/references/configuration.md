@@ -4,9 +4,9 @@
 
 API Monitoring helps you evaluate the performance of your API from the API consumer point of view, in addition to monitoring the uptime and correctness of your API.
 
-An **API test** is a group of one or more HTTP requests executed sequentially. For each step in the test, you can define [Assertions](skill-blazemeter-api-monitoring://references/scripting.md#validating-responses-with-assertions) to validate response data and [Variables](skill-blazemeter-api-monitoring://references/advanced-features.md#dynamic-data-and-request-chaining) to extract data to be used in subsequent requests. A test **Passes** if all the assertions pass. A test **Fails** if any assertion fails, or another error is encountered, such as a network connection problem.
+An **API test** is a group of one or more HTTP requests executed sequentially. For each step in the test, you can define [Assertions](skill-blazemeter-api-monitoring://references/scripting.md) to validate response data and [Variables](skill-blazemeter-api-monitoring://references/advanced-features.md) to extract data to be used in subsequent requests. A test **Passes** if all the assertions pass. A test **Fails** if any assertion fails, or another error is encountered, such as a network connection problem.
 
-You can run tests [from the cloud](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-global-locations) or from [behind your firewall](skill-blazemeter-private-locations://references/radar-agent.md) against any public or private API. To use tests for ongoing monitoring, configure a [schedule](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-scheduling-test-runs). After a test run completes, [notifications](skill-blazemeter-api-monitoring://references/notifications.md) can be sent via email, Webhook, [PagerDuty](skill-blazemeter-api-monitoring://references/integrations.md#pagerduty-integration), [Slack](skill-blazemeter-api-monitoring://references/integrations.md#slack-integration), and more.
+You can run tests [from the cloud](skill-blazemeter-api-monitoring://references/configuration.md) or from [behind your firewall](skill-blazemeter-private-locations://references/radar-agent.md) against any public or private API. To use tests for ongoing monitoring, configure a [schedule](skill-blazemeter-api-monitoring://references/configuration.md). After a test run completes, [notifications](skill-blazemeter-api-monitoring://references/notifications.md) can be sent via email, Webhook, [PagerDuty](skill-blazemeter-api-monitoring://references/integrations.md), [Slack](skill-blazemeter-api-monitoring://references/integrations.md), and more.
 
 **Use when**: Creating your first API Monitoring test, learning the basics of API Monitoring, or setting up initial test configuration.
 
@@ -44,13 +44,13 @@ Click **Save & Run** to start a new test run. The request is executed and when c
 
 ### Next Steps
 
-- [Use variables](skill-blazemeter-api-monitoring://references/advanced-features.md#dynamic-data-and-request-chaining) to insert dynamic data and pass state between requests.
-- Learn about the available [assertion sources and comparisons](skill-blazemeter-api-monitoring://references/scripting.md#validating-responses-with-assertions).
-- Manage configuration across realms with [environments](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-managing-configuration-with-environments).
+- [Use variables](skill-blazemeter-api-monitoring://references/advanced-features.md) to insert dynamic data and pass state between requests.
+- Learn about the available [assertion sources and comparisons](skill-blazemeter-api-monitoring://references/scripting.md).
+- Manage configuration across realms with [environments](skill-blazemeter-api-monitoring://references/configuration.md).
 - Run API monitoring tests from a private location. You can use [Radar agent](skill-blazemeter-private-locations://references/radar-agent.md) to bridge BlazeMeter API Monitoring to private APIs not available over the public internet. Note that Radar agent is a wholly separate installation from [Private Location agents](skill-blazemeter-private-locations://references/introduction.md), and is specific only to BlazeMeter's API monitoring function.
-- [Schedule your tests](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-scheduling-test-runs) to run automatically or run them as [part of your build and deployment process](skill-blazemeter-api-monitoring://references/integrations.md#builddeployment-integration).
+- [Schedule your tests](skill-blazemeter-api-monitoring://references/configuration.md) to run automatically or run them as [part of your build and deployment process](skill-blazemeter-api-monitoring://references/integrations.md).
 - [Receive email, Webhook, Slack, or PagerDuty notifications](skill-blazemeter-api-monitoring://references/notifications.md) when test runs complete (or when they fail).
-- [Enable multiple locations](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-global-locations) to monitor your APIs from around the globe.
+- [Enable multiple locations](skill-blazemeter-api-monitoring://references/configuration.md) to monitor your APIs from around the globe.
 
 ### Documentation References
 
@@ -192,7 +192,7 @@ Enable this option to force HTTP/2 over cleartext for URLs with the HTTP scheme 
 
 ### Advanced Diagnostics
 
-Enable this option to add a new **Diagnostics** tab to your Results > Response section. Can be used to diagnose network issues. See [Enable and View Advanced Diagnostics](skill-blazemeter-api-monitoring://references/configuration.md#enable-and-view-advanced-diagnostics) for more information.
+Enable this option to add a new **Diagnostics** tab to your Results > Response section. Can be used to diagnose network issues. See [Enable and View Advanced Diagnostics](skill-blazemeter-api-monitoring://references/configuration.md) for more information.
 
 ---
 
@@ -324,8 +324,8 @@ Select this option to use your local client certificates for authentication.
 Custom client certificates can be stored to be used by requests within a test.
 
 You can create:
-- A PEM-encoded, password protected certificate file that you upload. See [Upload Certificate Files](skill-blazemeter-api-monitoring://references/configuration.md#upload-certificate-files).
-- A PEM-formatted, non password protected certificate that you paste into the text area. See [Add Certificate Contents via Text](skill-blazemeter-api-monitoring://references/configuration.md#add-certificate-contents-via-text).
+- A PEM-encoded, password protected certificate file that you upload. See [Upload Certificate Files](skill-blazemeter-api-monitoring://references/configuration.md).
+- A PEM-formatted, non password protected certificate that you paste into the text area. See [Add Certificate Contents via Text](skill-blazemeter-api-monitoring://references/configuration.md).
 
 Client Certificate support requires a qualifying plan. [Contact sales to get started](mailto:sales-blazemeter@perforce.com).
 
@@ -520,7 +520,7 @@ API tests consist of a series of steps, most often HTTP requests. In addition to
 
 ### Overview
 
-The **Editor** is where you'll define the steps (HTTP requests, pauses, etc.) and execution order that make up a test. For each request in a test, you can specify the HTTP request data, [assertions](skill-blazemeter-api-monitoring://references/scripting.md#validating-responses-with-assertions), [variables](skill-blazemeter-api-monitoring://references/advanced-features.md#dynamic-data-and-request-chaining) and [scripts](skill-blazemeter-api-monitoring://references/scripting.md#script-engine-overview) by clicking on a request.
+The **Editor** is where you'll define the steps (HTTP requests, pauses, etc.) and execution order that make up a test. For each request in a test, you can specify the HTTP request data, [assertions](skill-blazemeter-api-monitoring://references/scripting.md), [variables](skill-blazemeter-api-monitoring://references/advanced-features.md) and [scripts](skill-blazemeter-api-monitoring://references/scripting.md) by clicking on a request.
 
 ### Test Step Types
 
@@ -640,24 +640,24 @@ You can import the downloaded file into any team's bucket to create a new test w
 
 The following import formats are supported:
 
-- [API Monitoring Export Format](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-export-format)
-- [SmartBear Ready! API / SoapUI](skill-blazemeter-api-monitoring://references/configuration.md#soapui-import)
-- [Swagger 2.0 (JSON, YAML)](skill-blazemeter-api-monitoring://references/configuration.md#swagger-import)
-- [OpenAPI Specification 3.x (JSON, YAML)](skill-blazemeter-api-monitoring://references/configuration.md#openapi-import)
-- [AWS API Gateway](skill-blazemeter-api-monitoring://references/integrations.md#aws-api-gateway-integration)
-- [Postman](skill-blazemeter-api-monitoring://references/configuration.md#postman-import)
-- [Fiddler & Charles Proxy (via HAR Export)](skill-blazemeter-api-monitoring://references/configuration.md#har-import)
-- [HTTP Archive (HAR) 1.1 and 1.2](skill-blazemeter-api-monitoring://references/configuration.md#har-import)
-- [VCR Cassettes](skill-blazemeter-api-monitoring://references/configuration.md#vcr-import)
-- [Paw](skill-blazemeter-api-monitoring://references/configuration.md#paw-import)
+- [API Monitoring Export Format](skill-blazemeter-api-monitoring://references/configuration.md)
+- [SmartBear Ready! API / SoapUI](skill-blazemeter-api-monitoring://references/configuration.md)
+- [Swagger 2.0 (JSON, YAML)](skill-blazemeter-api-monitoring://references/configuration.md)
+- [OpenAPI Specification 3.x (JSON, YAML)](skill-blazemeter-api-monitoring://references/configuration.md)
+- [AWS API Gateway](skill-blazemeter-api-monitoring://references/integrations.md)
+- [Postman](skill-blazemeter-api-monitoring://references/configuration.md)
+- [Fiddler & Charles Proxy (via HAR Export)](skill-blazemeter-api-monitoring://references/configuration.md)
+- [HTTP Archive (HAR) 1.1 and 1.2](skill-blazemeter-api-monitoring://references/configuration.md)
+- [VCR Cassettes](skill-blazemeter-api-monitoring://references/configuration.md)
+- [Paw](skill-blazemeter-api-monitoring://references/configuration.md)
 
 #### API Monitoring Export Format
 
-You can import API Monitoring test steps that have been previously exported to our [API Monitoring Export Format](skill-blazemeter-api-monitoring://references/configuration.md#exporting-api-tests). Importing and exporting API tests is useful for sharing tests between teams or accounts. Imported tests must have at least one test step, and fewer than 100 steps.
+You can import API Monitoring test steps that have been previously exported to our [API Monitoring Export Format](skill-blazemeter-api-monitoring://references/configuration.md). Importing and exporting API tests is useful for sharing tests between teams or accounts. Imported tests must have at least one test step, and fewer than 100 steps.
 
 #### SmartBear Ready! API / SoapUI
 
-From within Ready! API (under Projects), export your test suite as a Swagger 2.0 JSON file (right click on suite, Export Swagger) and use the BlazeMeter API Monitoring [Swagger importer](skill-blazemeter-api-monitoring://references/configuration.md#swagger-import) to create tests from the export.
+From within Ready! API (under Projects), export your test suite as a Swagger 2.0 JSON file (right click on suite, Export Swagger) and use the BlazeMeter API Monitoring [Swagger importer](skill-blazemeter-api-monitoring://references/configuration.md) to create tests from the export.
 
 #### Swagger 2.0 API Definitions (JSON, YAML)
 

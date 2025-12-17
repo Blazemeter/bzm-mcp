@@ -182,7 +182,7 @@ For detailed information, use the BlazeMeter MCP help tools:
 
 Secrets are objects that contain sensitive data, such as passwords, tokens, credit card numbers, or any other data that shouldn't be exposed. By using secrets, you do not have to hard code any sensitive data into your test scripts. When you run a test, whenever an enabled secret appears in reports or logs during and after run time, the value of the secret is replaced with asterisks (*).
 
-Once you create your secrets, you can use them in your Performance tests. For more information on adding secrets to your test scripts, see [Secrets](skill-blazemeter-performance-testing://references/advanced-features.md#performance-advanced-secrets) in Advanced Test Options.
+Once you create your secrets, you can use them in your Performance tests. For more information on adding secrets to your test scripts, see [Secrets](skill-blazemeter-performance-testing://references/advanced-features.md) in Advanced Test Options.
 
 **Use when**: Creating and managing secrets for storing sensitive data securely, or when you need to avoid hard-coding passwords, tokens, or other sensitive information in test scripts.
 
@@ -249,9 +249,9 @@ Workspace members with the correct permissions can edit or delete a secret by cl
 
 Now that you have configured your secrets, you can create Performance tests, GUI Functional tests, and use secrets with your virtual services. For more information on using secrets:
 
-- **For Performance tests**: See [Manage Secrets for Performance Tests](skill-blazemeter-performance-testing://references/advanced-features.md#performance-advanced-secrets)
-- **For GUI Functional tests**: See [Manage Secrets for GUI Functional Tests](skill-blazemeter-functional-testing://references/gui-tests.md#functional-secrets)
-- **For Service Virtualization**: See [Manage Secrets for Service Virtualization](skill-blazemeter-service-virtualization://references/virtual-services.md#mock-service-secrets)
+- **For Performance tests**: See [Manage Secrets for Performance Tests](skill-blazemeter-performance-testing://references/advanced-features.md)
+- **For GUI Functional tests**: See [Manage Secrets for GUI Functional Tests](skill-blazemeter-functional-testing://references/gui-tests.md)
+- **For Service Virtualization**: See [Manage Secrets for Service Virtualization](skill-blazemeter-service-virtualization://references/virtual-services.md)
 
 ---
 

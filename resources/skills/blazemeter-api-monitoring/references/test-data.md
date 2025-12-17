@@ -143,7 +143,7 @@ To view an individual iteration/data line result:
 
 ## Using Test Data in API Monitoring
 
-You can use [CSV files](skill-blazemeter-api-monitoring://references/test-data.md#using-test-data-csv) or Test Data from [Data Entities](skill-blazemeter-api-monitoring://references/test-data.md#using-test-data-entities) to drive API Monitoring tests. This is useful for testing various input combinations using a single test to increase the test coverage of your API.
+You can use [CSV files](skill-blazemeter-api-monitoring://references/test-data.md) or Test Data from [Data Entities](skill-blazemeter-api-monitoring://references/test-data.md) to drive API Monitoring tests. This is useful for testing various input combinations using a single test to increase the test coverage of your API.
 
 **Use when**: Using CSV files or Data Entities to drive API Monitoring tests, implementing data-driven testing, or testing various input combinations using a single test.
 

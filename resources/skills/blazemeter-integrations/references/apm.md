@@ -45,7 +45,7 @@ Not only are you able to view your application monitoring data alongside your us
 ### Prerequisites
 
 - You are assigned either a manager or a tester role.
-- If you are using AppDynamics' on-premise solution, the BlazeMeter account to be integrated with AppDynamics requires a [BlazeMeter private agent](skill-blazemeter-private-locations://references/introduction.md#overview) to be installed with network access to the AppDynamics console. The private agent will communicate with AppDynamics' console to retrieve the list of available applications and metrics and then transmit the data you choose to our back-end during tests.
+- If you are using AppDynamics' on-premise solution, the BlazeMeter account to be integrated with AppDynamics requires a [BlazeMeter private agent](skill-blazemeter-private-locations://references/introduction.md) to be installed with network access to the AppDynamics console. The private agent will communicate with AppDynamics' console to retrieve the list of available applications and metrics and then transmit the data you choose to our back-end during tests.
 - If you are using AppDynamics cloud console, BlazeMeter uses its own servers to communicate with AppDynamics, and therefore no on-premise agents are required.
 
 ### Adding AppDynamics Credentials
@@ -153,19 +153,19 @@ To use this integration, you first need to create a key associated with a build 
    - **API Key**: Authentication key granting BlazeMeter access to Datadog's API for data transmission and retrieval. API keys are unique to your organization. An API key is required by the Datadog Agent to submit metrics and events to Datadog. For more information, see [Datadog documentation](https://docs.datadoghq.com/).
 
    **Advanced Configuration:**
-   - **Harbor ID**: The private location to use to run the APM functionality (for information where to get this value, see [Where can I find the Harbor ID and Ship ID?](skill-blazemeter-private-locations://references/management.md#where-to-find-harbor-id-and-ship-id)). If you're using Datadog in the cloud, you don't need to provide the Harbour ID. The integration will work seamlessly without it.
+   - **Harbor ID**: The private location to use to run the APM functionality (for information where to get this value, see [Where can I find the Harbor ID and Ship ID?](skill-blazemeter-private-locations://references/management.md)). If you're using Datadog in the cloud, you don't need to provide the Harbour ID. The integration will work seamlessly without it.
 
 4. You have completed the Datadog key step in the setup wizard. You can click **Next** to proceed to the **Select Metrics** step in the wizard.
 
 ### Display Datadog Metrics in BlazeMeter
 
-Choose the **Display Datadog info in BM** integration mode to pull APM metrics from Datadog according to your profile setup to view in the BlazeMeter [Timeline Report](skill-blazemeter-performance-testing://references/reporting.md#timeline-report).
+Choose the **Display Datadog info in BM** integration mode to pull APM metrics from Datadog according to your profile setup to view in the BlazeMeter [Timeline Report](skill-blazemeter-performance-testing://references/reporting.md).
 
 **Prerequisites**: A Datadog key is configured (see [Configure a Datadog Key](#configure-a-datadog-key)).
 
 **Steps:**
 
-1. In the Datadog integration setup wizard, after completing the Datadog key step, click **Next**. The **Select Metrics** screen opens. Here you can select your metrics and construct your profile. You specify your entity type and the metrics to include in the [Timeline Report](skill-blazemeter-performance-testing://references/reporting.md#timeline-report).
+1. In the Datadog integration setup wizard, after completing the Datadog key step, click **Next**. The **Select Metrics** screen opens. Here you can select your metrics and construct your profile. You specify your entity type and the metrics to include in the [Timeline Report](skill-blazemeter-performance-testing://references/reporting.md).
 2. Select the **Datadog info in BM** option.
 3. From the dropdown, select a reserved tag key for example, **Hosts**, and an associated entity.
 4. From the **Select Entity** dropdown, select one or more metrics, and click **Next**. This action lets you preview what your profile will monitor.
@@ -174,7 +174,7 @@ Choose the **Display Datadog info in BM** integration mode to pull APM metrics f
 
 Your test is now integrated with Datadog.
 
-To view the test metrics from Datadog, go to the [Timeline Report](skill-blazemeter-performance-testing://references/reporting.md#timeline-report), scroll to the bottom of the available KPIs, and then expand the Datadog section. You will then see all the metrics you selected listed there. You can click the checkboxes to add them to your report.
+To view the test metrics from Datadog, go to the [Timeline Report](skill-blazemeter-performance-testing://references/reporting.md), scroll to the bottom of the available KPIs, and then expand the Datadog section. You will then see all the metrics you selected listed there. You can click the checkboxes to add them to your report.
 
 ### Display BlazeMeter Metrics in Datadog
 
@@ -304,7 +304,7 @@ The Workspace manager can set up credentials (Delphix key) as part of the worksp
    - **Key Name**: Give the key a name that helps your team members recognize which credentials to choose.
    - **Data Control Tower URL**: The full URL to access your Delphix environment. Do not include a trailing slash!
    - **Token**: The Delphix authentication key granting BlazeMeter access to the Delphix API.
-   - **Harbor ID**: The Agent ID of the BlazeMeter Private Location to use to communicate with the Delphix server. For information where to get this value, see [Where can I find the Harbor ID and Ship ID?](skill-blazemeter-private-locations://references/management.md#where-to-find-harbor-id-and-ship-id).
+   - **Harbor ID**: The Agent ID of the BlazeMeter Private Location to use to communicate with the Delphix server. For information where to get this value, see [Where can I find the Harbor ID and Ship ID?](skill-blazemeter-private-locations://references/management.md).
 5. Confirm the dialog.
 
 ### Managing Delphix Keys
@@ -330,7 +330,7 @@ After the manager has set up the Private Location, you can use Delphix profiles 
 
 1. Log on to BlazeMeter and open your Performance test.
 2. Edit the test configuration, scroll down to Integrations, and select **Delphix**. The Delphix Integration dialog opens.
-3. Select a Delphix Key (or [create one](skill-blazemeter-integrations://references/apm.md#create-a-delphix-key)) and click **Next**.
+3. Select a Delphix Key (or [create one](skill-blazemeter-integrations://references/apm.md)) and click **Next**.
 4. Build a profile:
    - Select a virtual database.
    - Select one Entity: **Database**, **Snapshot**, or **Bookmark**.
@@ -654,7 +654,7 @@ BlazeMeter adds relevant headers to the test script. The following information i
 
 Use this option to:
 - Add headers to outbound traffic from BlazeMeter to DX APM containing the test name, test step (label), geographic region, test engine IP, and network emulation settings.
-- Make DX APM metrics available for overlay on the BlazeMeter [Timeline Report](skill-blazemeter-performance-testing://references/reporting.md#timeline-report).
+- Make DX APM metrics available for overlay on the BlazeMeter [Timeline Report](skill-blazemeter-performance-testing://references/reporting.md).
 
 **Prerequisites:**
 - An API token has been generated from DX APM. For more information, see [the product documentation](https://techdocs.broadcom.com/).

@@ -394,7 +394,7 @@ That would make the agent use `proxy.example.com` for all requests, except for t
 
 ## High Availability/Failover Capability
 
-Set up high availability and failover for Radar Agent by running multiple instances with the same configuration for load balancing and redundancy. In case you have a high number of tests running on the same Radar agent, or you want to have some failover capability besides using an [utility like nohup or screen](skill-blazemeter-private-locations://references/radar-agent.md#run-as-service-or-daemon), you can run multiple instances of the same agent.
+Set up high availability and failover for Radar Agent by running multiple instances with the same configuration for load balancing and redundancy. In case you have a high number of tests running on the same Radar agent, or you want to have some failover capability besides using an [utility like nohup or screen](skill-blazemeter-private-locations://references/radar-agent.md), you can run multiple instances of the same agent.
 
 **Use when**: Setting up high availability and failover for Radar Agent or running multiple instances with the same configuration for load balancing and redundancy.
 
@@ -503,7 +503,7 @@ To set up auto-restart of your Radar agent:
 
 1. Download the [radar agent binary](https://help.blazemeter.com/docs/guide/private-locations-radar-agent-overview.html)
 2. Unzip the binary file
-3. Create a configuration file with all the required token, team ID and other configs. For more information and example, see [Radar Agent Overview](skill-blazemeter-private-locations://references/radar-agent.md#overview)
+3. Create a configuration file with all the required token, team ID and other configs. For more information and example, see [Radar Agent Overview](skill-blazemeter-private-locations://references/radar-agent.md)
 4. Create a service file in `/etc/systemd/system/` with a name like **radar-agent.service**
 5. Include the following content in the service file. Include the path to the config file (`/root/myconf.conf`):
    ```
@@ -587,7 +587,7 @@ We recommend the following best practices when configuring trusted certificates:
 3. **Use custom CA bundle**: Alternatively, use the `cafile` option when running the Radar agent to supply a custom CA bundle. API Monitoring periodically updates leaf/child certificate for api.runscope.com or *.runscope.com. If you are providing the Radar agent with a custom CA bundle file, ensure to include the ISRG Root X1 trusted root certificate and not just the leaf/child certificate. Do this to avoid service interruption or failure when the certificates are refreshed
 4. **Download CA bundle if needed**: If you are unsure if your system or OS has trusted certificate authorities configured properly and you do not have a custom CA bundle file, allow the Radar agent to download a trusted CA bundle from [https://mkcert.org/generate](https://mkcert.org/generate). This method requires network or firewall access to the mkcert.org domain
 
-For more information on configuration options, see the configuration file reference in [Radar Agent Overview](skill-blazemeter-private-locations://references/radar-agent.md#overview).
+For more information on configuration options, see the configuration file reference in [Radar Agent Overview](skill-blazemeter-private-locations://references/radar-agent.md).
 
 ---
 

@@ -81,8 +81,8 @@ As a workspace manager or an administrator, you can export all transactions unde
 **Use when**: Exporting and importing services with all transactions as ZIP files or exporting from one workspace and importing to another, and backing up services.
 
 **This article covers the following topics:**
-- [Export All Transactions in a Service as ZIP File](skill-blazemeter-service-virtualization://references/management.md#export-all-transactions-in-a-service-as-zip-file)
-- [Import Transactions from the Exported ZIP File](skill-blazemeter-service-virtualization://references/management.md#import-transactions-from-the-exported-zip-file)
+- [Export All Transactions in a Service as ZIP File](skill-blazemeter-service-virtualization://references/management.md)
+- [Import Transactions from the Exported ZIP File](skill-blazemeter-service-virtualization://references/management.md)
 
 ### Export All Transactions in a Service as ZIP file
 

@@ -19,11 +19,11 @@ Follow these steps:
 
 ### Change JMeter Properties mid-test with Remote Control
 
-You can change JMeter Properties during a test with the Remote Control button in the live reporting screen. For more information, see [Live Remote Control for JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md#live-remote-control-for-jmeter-properties).
+You can change JMeter Properties during a test with the Remote Control button in the live reporting screen. For more information, see [Live Remote Control for JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md).
 
 ### Upload a Custom user.properties File
 
-Alternatively, you can upload an existing user.properties file containing JMeter Properties to your BlazeMeter test configuration. Make sure there are local file path references to the user.properties file, then BlazeMeter will automatically pick it up when the test executes. For more information, see [Upload a Custom user.properties File](skill-blazemeter-performance-testing://references/jmeter-configuration.md#jmeter-user-properties).
+Alternatively, you can upload an existing user.properties file containing JMeter Properties to your BlazeMeter test configuration. Make sure there are local file path references to the user.properties file, then BlazeMeter will automatically pick it up when the test executes. For more information, see [Upload a Custom user.properties File](skill-blazemeter-performance-testing://references/jmeter-configuration.md).
 
 ---
 
@@ -35,7 +35,7 @@ Upload custom user.properties files to configure JMeter behavior, including pars
 
 ### Upload a Custom user.properties File
 
-You can upload your own user.properties file to your BlazeMeter test configuration. Make sure there are local file path references to the user.properties file, then BlazeMeter will automatically pick it up when the test executes. For more information about how to attach the file to the test, see [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md#uploading-files).
+You can upload your own user.properties file to your BlazeMeter test configuration. Make sure there are local file path references to the user.properties file, then BlazeMeter will automatically pick it up when the test executes. For more information about how to attach the file to the test, see [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md).
 
 ### Which Features Does a user.properties File Control?
 
@@ -88,33 +88,33 @@ You can customize these JMeter Properties in the user.properties file for your n
 
 ## Live Remote Control for JMeter Properties
 
-While [you can set JMeter properties directly in BlazeMeter](skill-blazemeter-performance-testing://references/jmeter-configuration.md#jmeter-properties), you may also want to change the behavior of your test while the test is running. BlazeMeter allows you to remotely change the value of any JMeter property in real-time, using the **Remote Control** feature.
+While [you can set JMeter properties directly in BlazeMeter](skill-blazemeter-performance-testing://references/jmeter-configuration.md), you may also want to change the behavior of your test while the test is running. BlazeMeter allows you to remotely change the value of any JMeter property in real-time, using the **Remote Control** feature.
 
 **Use when**: Changing JMeter properties in real-time during test execution or using Remote Control feature for dynamic test configuration.
 
-- [Update JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md#update-jmeter-properties)
-- [Advanced Features](skill-blazemeter-performance-testing://references/jmeter-configuration.md#advanced-features) [Remote Control for Multi-Tests](skill-blazemeter-performance-testing://references/jmeter-configuration.md#remote-control-for-multi-tests) [Filter JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md#filter-jmeter-properties) [Add New JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md#add-new-jmeter-properties)
-- [Other Live Features](skill-blazemeter-performance-testing://references/jmeter-configuration.md#other-live-features)
+- [Update JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md)
+- [Advanced Features](skill-blazemeter-performance-testing://references/jmeter-configuration.md) [Remote Control for Multi-Tests](skill-blazemeter-performance-testing://references/jmeter-configuration.md) [Filter JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md) [Add New JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md)
+- [Other Live Features](skill-blazemeter-performance-testing://references/jmeter-configuration.md)
 
 ### Update JMeter Properties
 
 Follow these steps:
 
-1. Add one or more properties to the [JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md#jmeter-properties) section of your test configuration.
+1. Add one or more properties to the [JMeter Properties](skill-blazemeter-performance-testing://references/jmeter-configuration.md) section of your test configuration.
 2. Start your test.
 3. When the test report appears, click the **Run Time Control** button at the top-right and click **Remote Control**. The button is only available while the test is running and will disappear after the test completes.
-4. The **Remote Control Live** window appears, listing all JMeter properties available for updating. This by default includes all scenarios in all locations. For more details, see [Advanced Features](skill-blazemeter-performance-testing://references/jmeter-configuration.md#advanced-features).
+4. The **Remote Control Live** window appears, listing all JMeter properties available for updating. This by default includes all scenarios in all locations. For more details, see [Advanced Features](skill-blazemeter-performance-testing://references/jmeter-configuration.md).
 5. Enter a new value for each property you want to update and click **Send** to update the property on all engines.
 
 ### Advanced Features
 
 #### Remote Control for Multi-Tests
 
-Remote Control works for both single tests and multi-tests. If a test has multiple scenarios, the default option for the **Remote Control Live** window is to show all properties for all scenarios. This is especially useful for a [multi-test](skill-blazemeter-performance-testing://references/scenarios.md#create-multi-test) in which various single tests have different properties to adjust.
+Remote Control works for both single tests and multi-tests. If a test has multiple scenarios, the default option for the **Remote Control Live** window is to show all properties for all scenarios. This is especially useful for a [multi-test](skill-blazemeter-performance-testing://references/scenarios.md) in which various single tests have different properties to adjust.
 
 #### Filter JMeter Properties
 
-For tests / [multi-tests](skill-blazemeter-performance-testing://references/scenarios.md#create-multi-test) with multiple scenarios, you can filter the **Remote Control Live** window to show JMeter properties that only relate to a specific scenario and/or location. Use the Scenario and/or Location filters in the top-right corner of the test report before clicking the **Remote Control** button.
+For tests / [multi-tests](skill-blazemeter-performance-testing://references/scenarios.md) with multiple scenarios, you can filter the **Remote Control Live** window to show JMeter properties that only relate to a specific scenario and/or location. Use the Scenario and/or Location filters in the top-right corner of the test report before clicking the **Remote Control** button.
 
 #### Add New JMeter Properties
 
@@ -132,8 +132,8 @@ Follow these steps:
 
 There are more options you can adjust while running a test beyond JMeter properties. See the following guides for some more options you can adjust mid-test:
 
-- If you want to modify your Requests Per Second (RPS) on the fly, see the **Changing RPS Limits 'On The Fly'** section of the [Load Configuration](skill-blazemeter-performance-testing://references/load-configuration.md#limit-requests-per-second-rps) guide.
-- When executing a [multi-test](skill-blazemeter-performance-testing://references/scenarios.md#create-multi-test), you can add users dynamically to adjust the load while the test is in progress. For more information, see [Adding Users Dynamically](skill-blazemeter-performance-testing://references/advanced-features.md#add-users-dynamically).
+- If you want to modify your Requests Per Second (RPS) on the fly, see the **Changing RPS Limits 'On The Fly'** section of the [Load Configuration](skill-blazemeter-performance-testing://references/load-configuration.md) guide.
+- When executing a [multi-test](skill-blazemeter-performance-testing://references/scenarios.md), you can add users dynamically to adjust the load while the test is in progress. For more information, see [Adding Users Dynamically](skill-blazemeter-performance-testing://references/advanced-features.md).
 
 ---
 
@@ -233,18 +233,18 @@ After you stop the recording, click **Recording Controller** in the left menu to
 
 You may find that when you run a Performance test on BlazeMeter with a low number of threads (users), the test executes successfully, but once you begin scaling up to a higher load, the test fails or returns unexpected errors. This is often a sign that your test is in need of calibration, which must be performed to ensure a test will reliably run at higher loads.
 
-This article offers some advice for calibrating a JMeter test for getting the best results in BlazeMeter. Using a Taurus YAML with your test? If so, then please follow our [Calibrating a Taurus Test guide](skill-blazemeter-performance-testing://references/taurus.md#taurus-calibration).
+This article offers some advice for calibrating a JMeter test for getting the best results in BlazeMeter. Using a Taurus YAML with your test? If so, then please follow our [Calibrating a Taurus Test guide](skill-blazemeter-performance-testing://references/taurus.md).
 
 **Use when**: Calibrating JMeter tests for higher loads, ensuring tests run reliably at scale, or troubleshooting test failures when scaling up.
 
 ### Overview
 
-1. [Create Your Script](skill-blazemeter-performance-testing://references/jmeter-configuration.md#step-1-create-your-script)
-2. [Test Locally with JMeter](skill-blazemeter-performance-testing://references/jmeter-configuration.md#step-2-test-locally-with-jmeter)
-3. [Run a Debug Test](skill-blazemeter-performance-testing://references/jmeter-configuration.md#step-3-run-a-debug-test)
-4. [Determine Users per Engine](skill-blazemeter-performance-testing://references/jmeter-configuration.md#step-4-determine-users-per-engine)
-5. [Configure Your Full Load Test](skill-blazemeter-performance-testing://references/jmeter-configuration.md#step-5-configure-your-full-load-test)
-6. [Use a Multi-Test for Multiple Scenarios](skill-blazemeter-performance-testing://references/jmeter-configuration.md#step-6-use-a-multi-test-for-multiple-scenarios)
+1. [Create Your Script](skill-blazemeter-performance-testing://references/jmeter-configuration.md)
+2. [Test Locally with JMeter](skill-blazemeter-performance-testing://references/jmeter-configuration.md)
+3. [Run a Debug Test](skill-blazemeter-performance-testing://references/jmeter-configuration.md)
+4. [Determine Users per Engine](skill-blazemeter-performance-testing://references/jmeter-configuration.md)
+5. [Configure Your Full Load Test](skill-blazemeter-performance-testing://references/jmeter-configuration.md)
+6. [Use a Multi-Test for Multiple Scenarios](skill-blazemeter-performance-testing://references/jmeter-configuration.md)
 
 ### Step 1: Create Your Script
 
@@ -276,26 +276,26 @@ Once your script is ready:
 1. Clean it up by removing any Debug/Dummy Samplers and deleting your script listeners.
 2. If you use Listeners (such as "Save Responses to a file") or a CSV Data Set Config, make sure you don't use any paths; use only the filename (as if it was in the same folder as your script).
 3. If you're using your own proprietary JAR file(s), upload them.
-4. If your script uses more than one thread group, be aware of how BlazeMeter divides users among multiple thread groups, as detailed in our explanation of [Total Users](skill-blazemeter-performance-testing://references/load-configuration.md#select-total-users).
-5. If your script uses special thread groups, be aware of how BlazeMeter handles such thread groups. Our guide of how [Ultimate Thread Groups](skill-blazemeter-performance-testing://references/scenarios.md#configure-ultimate-thread-group-scenario) are handled provides these details.
+4. If your script uses more than one thread group, be aware of how BlazeMeter divides users among multiple thread groups, as detailed in our explanation of [Total Users](skill-blazemeter-performance-testing://references/load-configuration.md).
+5. If your script uses special thread groups, be aware of how BlazeMeter handles such thread groups. Our guide of how [Ultimate Thread Groups](skill-blazemeter-performance-testing://references/scenarios.md) are handled provides these details.
 
 ### Step 3: Run a Debug Test
 
-Start with a [Debug Test](skill-blazemeter-performance-testing://references/troubleshooting.md#debug-test-low-scale-test-run-and-enhanced-logging), which makes a logical copy of your test and runs it at a lower scale. The test will run with 10 threads and for a maximum of 5 minutes or 100 iterations, whichever occurs first.
+Start with a [Debug Test](skill-blazemeter-performance-testing://references/troubleshooting.md), which makes a logical copy of your test and runs it at a lower scale. The test will run with 10 threads and for a maximum of 5 minutes or 100 iterations, whichever occurs first.
 
 This Debug configuration allows you to test your script and backend and ensure everything works well.
 
 Here are some common issues you might come across:
 
 1. Your firewall may block BlazeMeter's engines from reaching your application server. For more information, see [Load Testing Behind Your Corporate Firewall](https://www.blazemeter.com/blog/top-three-options-running-performance-tests-behind-your-corporate-firewall).
-2. Make sure all of your test files (CSVs, JARs, JSON, user.properties, etc.) are uploaded to the test. For more information, see [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md#uploading-files) & [Shared Folders](skill-blazemeter-performance-testing://references/advanced-features.md#shared-folders).
+2. Make sure all of your test files (CSVs, JARs, JSON, user.properties, etc.) are uploaded to the test. For more information, see [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md) & [Shared Folders](skill-blazemeter-performance-testing://references/advanced-features.md).
 3. Make sure you didn't use any paths with your file names.
 
-If you're still having trouble, look at the [Errors Report](skill-blazemeter-performance-testing://references/reporting.md#errors-report) and [Logs Report](skill-blazemeter-performance-testing://references/reporting.md#logs-report) for errors. This will allow you to get enough data to analyze the results and ensure the script was executed as you expected.
+If you're still having trouble, look at the [Errors Report](skill-blazemeter-performance-testing://references/reporting.md) and [Logs Report](skill-blazemeter-performance-testing://references/reporting.md) for errors. This will allow you to get enough data to analyze the results and ensure the script was executed as you expected.
 
-You should also check the [Engine Health Report](skill-blazemeter-performance-testing://references/reporting.md#engine-health-report) to see how much memory and CPU was used, which is key to the next step.
+You should also check the [Engine Health Report](skill-blazemeter-performance-testing://references/reporting.md) to see how much memory and CPU was used, which is key to the next step.
 
-Lastly, keep an eye out for common issues that may result in your test [running locally but not on BlazeMeter](skill-blazemeter-performance-testing://references/troubleshooting.md#jmeter-test-works-locally-but-not-in-blazemeter) or your [test not starting at all](skill-blazemeter-performance-testing://references/troubleshooting.md#test-wont-start-troubleshooting).
+Lastly, keep an eye out for common issues that may result in your test [running locally but not on BlazeMeter](skill-blazemeter-performance-testing://references/troubleshooting.md) or your [test not starting at all](skill-blazemeter-performance-testing://references/troubleshooting.md).
 
 ### Step 4: Determine Users per Engine
 
@@ -307,7 +307,7 @@ Set your test configuration to:
 - Duration: 50 minutes
 - Use 1 engine.
 
-Run the test and monitor your test's engine via the [Engine Health Report](skill-blazemeter-performance-testing://references/reporting.md#engine-health-report).
+Run the test and monitor your test's engine via the [Engine Health Report](skill-blazemeter-performance-testing://references/reporting.md).
 
 If your engine didn't reach either a 75% CPU utilization or 85% memory usage (one time peaks can be ignored), then:
 - Change the number of threads to 700 and run the test again.
@@ -327,18 +327,18 @@ Let's assume these values (as an example):
 - One engine can have 500 users
 - We aim to test for 10K users
 
-This means to achieve our goal, our test needs 20 engines (10,000 \ 500). Those 20 engines can either be all in one geographic location, or spread across multiple locations. For more information, see [Load Distribution](skill-blazemeter-performance-testing://references/load-configuration.md#load-distribution).
+This means to achieve our goal, our test needs 20 engines (10,000 \ 500). Those 20 engines can either be all in one geographic location, or spread across multiple locations. For more information, see [Load Distribution](skill-blazemeter-performance-testing://references/load-configuration.md).
 
 ### Step 6: Use a Multi-Test for Multiple Scenarios
 
-This step is optional and only applies if your test includes multiple scenarios, in which case you should set up your test as a Multi-Test via the web UI. (For a detailed walkthrough, refer to our guide on [Multi-Tests](skill-blazemeter-performance-testing://references/scenarios.md#create-multi-test).)
+This step is optional and only applies if your test includes multiple scenarios, in which case you should set up your test as a Multi-Test via the web UI. (For a detailed walkthrough, refer to our guide on [Multi-Tests](skill-blazemeter-performance-testing://references/scenarios.md).)
 
 1. Create a new Multi-Test.
 2. Add each single test.
-3. You can change the configuration of each scenario as detailed in the Modify the Scenarios section of our [Multi-Test](skill-blazemeter-performance-testing://references/scenarios.md#create-multi-test) guide.
-4. Click **Run Test** to launch all of your scenarios. Additional options are covered in the Run the Multi-Test section of our [Multi-Test](skill-blazemeter-performance-testing://references/scenarios.md#create-multi-test) guide.
+3. You can change the configuration of each scenario as detailed in the Modify the Scenarios section of our [Multi-Test](skill-blazemeter-performance-testing://references/scenarios.md) guide.
+4. Click **Run Test** to launch all of your scenarios. Additional options are covered in the Run the Multi-Test section of our [Multi-Test](skill-blazemeter-performance-testing://references/scenarios.md) guide.
 
-The aggregated report of your Multi Test will start generating results in a few minutes, which also can be filtered for each individual scenario. For more information about how to use these filters, refer to our [Reporting Selectors for Scenario and Location](skill-blazemeter-performance-testing://references/reporting.md#filter-by-location-scenario) guide.
+The aggregated report of your Multi Test will start generating results in a few minutes, which also can be filtered for each individual scenario. For more information about how to use these filters, refer to our [Reporting Selectors for Scenario and Location](skill-blazemeter-performance-testing://references/reporting.md) guide.
 
 ---
 

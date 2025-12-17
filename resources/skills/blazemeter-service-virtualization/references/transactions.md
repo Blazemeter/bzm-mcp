@@ -4,7 +4,7 @@
 
 Transactions describe the behavior of a Service. The Transaction Repository supports HTTP(s) stateless transactions. SOAP over HTTP(s) Transactions are supported as long as you provide the required headers.
 
-In a Transaction, you provide criteria by which a request matches URLs, headers, query parameters, cookies, credentials, or request body, and then a response that the virtual service returns when a match is detected. The Request criteria can be a fully formed request, like a valid GET call, or a regular expression that returns a match for multiple potential requests. To learn more about matching and strategies for creating requests, see [Request Matching Examples](skill-blazemeter-service-virtualization://references/transactions.md#request-matching-examples).
+In a Transaction, you provide criteria by which a request matches URLs, headers, query parameters, cookies, credentials, or request body, and then a response that the virtual service returns when a match is detected. The Request criteria can be a fully formed request, like a valid GET call, or a regular expression that returns a match for multiple potential requests. To learn more about matching and strategies for creating requests, see [Request Matching Examples](skill-blazemeter-service-virtualization://references/transactions.md).
 
 The easiest way to add Transactions is uploading files in a supported format. You can also manually add and edit Transactions, or record them.
 
@@ -18,13 +18,13 @@ The following file formats are supported:
 - **HAR files**
 - **RR Pairs** - Upload RR pairs as a zip file with one or more pairs. File formats must follow the *name*-req and *name*-rsp format, where the name string is the same across pairs. For example: `login-req.txt` and `login-rsp.txt`
 - **WSDL** (WSDL or zip for multiple files) - To import multiple WSDL files in a zip format, ensure that the main file in the zip is called `index.wsdl`
-- **Exported Transactions JSON file** - Created from the export operation from the **Service** drop-down list. To learn more, see [Export Service with all Transactions](skill-blazemeter-service-virtualization://references/management.md#export-import-services-with-transactions)
+- **Exported Transactions JSON file** - Created from the export operation from the **Service** drop-down list. To learn more, see [Export Service with all Transactions](skill-blazemeter-service-virtualization://references/management.md)
 - **JSON file** created from the BlazeMeter Proxy Recorder
 - **WireMock and Mocklab definitions** in JSON format
 
 ### Add Transactions from a File
 
-You can add Transactions from a variety of sources. You can edit those Transactions after you import them to tune the matching criteria. To learn more about the Request and Response fields, see [Adding Transactions Manually](skill-blazemeter-service-virtualization://references/transactions.md#add-transactions-manually).
+You can add Transactions from a variety of sources. You can edit those Transactions after you import them to tune the matching criteria. To learn more about the Request and Response fields, see [Adding Transactions Manually](skill-blazemeter-service-virtualization://references/transactions.md).
 
 Follow these steps:
 
@@ -44,10 +44,10 @@ When you import files into the transaction repository, the Transactions in the f
 1. In the main menu, navigate to the **Service Virtualization** tab and click **Virtual Services**.
 2. Click the Open Details button to expand a virtual service. You can see a list of transactions in your catalog and in the particular virtual service.
 3. Click the **Edit Transaction** button next to the transaction that you want to edit. You can edit the transaction in your catalog, as well as in this virtual service.
-4. (Optional) If you want to preserve the existing Transaction, you can clone it. See [Clone Transactions](skill-blazemeter-service-virtualization://references/transactions.md#clone-transactions).
+4. (Optional) If you want to preserve the existing Transaction, you can clone it. See [Clone Transactions](skill-blazemeter-service-virtualization://references/transactions.md).
 5. Update **Name**, **Service**, and **Description** as needed.
 6. If you want to assign one or more tags to these transactions, type the tag name(s) in the **Tags** field and press **Enter**. To enter multiple tags, press **Enter** after each tag name.
-7. In the **Request Matcher** tab, make changes to the existing request data. For example, you can change a direct URL into a regular expression that will match multiple similar requests. Or you can add parameters or other additional matching criteria to a request. To learn more about modifying request data, see [Request Matching Examples](skill-blazemeter-service-virtualization://references/transactions.md#request-matching-examples).
+7. In the **Request Matcher** tab, make changes to the existing request data. For example, you can change a direct URL into a regular expression that will match multiple similar requests. Or you can add parameters or other additional matching criteria to a request. To learn more about modifying request data, see [Request Matching Examples](skill-blazemeter-service-virtualization://references/transactions.md).
 8. Click **Save**. The updated Transaction is saved and available for adding into a virtual service or Template.
 
 ### Clone Transactions
@@ -79,8 +79,8 @@ You can manually add Transactions to the repository to account for Transactions 
 
 1. Select the type of Transaction you want to add. The following transaction types are supported: GET, POST, PUT, DELETE, PATCH, OPTIONS, TRACE, HEAD, CONNECT, ANY.
 2. Select the proper option on the right of the URL field: Select **Equals** if you are entering a specific URL in the field that you only want to match when that specific request URL is received. Select **Matches regex** if you are entering a URL with regular expression elements that you want to match when the request URL fulfills the regex matching criteria.
-3. Enter the URL or regular expression in the **URL** field. If you are editing an imported Transaction, you can change the URL to a regular expression to make the Transaction match against a broader set of requests. For help with URL matching, see [Request Matching Examples](skill-blazemeter-service-virtualization://references/transactions.md#request-matching-examples).
-4. Click **Add** in each of the following tabs to add the details of your Transaction if you want to match against any of these entities in your request: For detailed help and examples, see [Request Matching Examples](skill-blazemeter-service-virtualization://references/transactions.md#request-matching-examples).
+3. Enter the URL or regular expression in the **URL** field. If you are editing an imported Transaction, you can change the URL to a regular expression to make the Transaction match against a broader set of requests. For help with URL matching, see [Request Matching Examples](skill-blazemeter-service-virtualization://references/transactions.md).
+4. Click **Add** in each of the following tabs to add the details of your Transaction if you want to match against any of these entities in your request: For detailed help and examples, see [Request Matching Examples](skill-blazemeter-service-virtualization://references/transactions.md).
    - **Headers** - As a best practice, avoid using the "host" header in any request matching criteria, as it can adversely affect transaction matching.
    - **Query Parameters**
    - **Cookies**
@@ -96,10 +96,10 @@ You can manually add Transactions to the repository to account for Transactions 
    - **Operator**: Select a comparison operator for the condition: equals, equals (case insensitive), contains text, matches regex, does not match regex, equals to JSON, matches JSON Path, equals to XML, matches XPath, matches XPath from CDATA, greater than, less than.
    - **Value**: Enter the comparison value.
 3. Enter the full response body in the **Body** field.
-4. (Optional) Add **Response Headers**. Use the **Edit Wizard** to define [dynamic response values](skill-blazemeter-service-virtualization://references/transactions.md#add-parameter-options-and-dynamic-responses).
+4. (Optional) Add **Response Headers**. Use the **Edit Wizard** to define [dynamic response values](skill-blazemeter-service-virtualization://references/transactions.md).
 5. (Optional) Provide **Proxy URL** values.
-6. (Optional) Specify a **Think Time** to simulate realistic delays. To learn more, see [Simulating Irregular Response Latencies (Think Time)](skill-blazemeter-service-virtualization://references/transactions.md#think-time).
-7. (Optional) Under **Redirect to Live System**, define the URL of your **Live System Endpoint**. All requests that match *this transaction* are conditionally redirected to the specified live system. To learn more about these use cases, see [Live System Endpoint](skill-blazemeter-service-virtualization://references/transactions.md#live-system-endpoint).
+6. (Optional) Specify a **Think Time** to simulate realistic delays. To learn more, see [Simulating Irregular Response Latencies (Think Time)](skill-blazemeter-service-virtualization://references/transactions.md).
+7. (Optional) Under **Redirect to Live System**, define the URL of your **Live System Endpoint**. All requests that match *this transaction* are conditionally redirected to the specified live system. To learn more about these use cases, see [Live System Endpoint](skill-blazemeter-service-virtualization://references/transactions.md).
 8. (Optional) Under **SSL Authentication**, Select an **SSL Authentication**: No Authentication, 1-way SSL, 2-way SSL. Select an existing **Keystore** or upload a new one. Provide the **Keystore Password** and the password used to access individual keys in the keystore. (Optional) To define how to identify during SSL/TLS communication using an alias for a `private key entry` defined in your keystore, select the **Alias** and provide an **Alias Password**.
 9. Click **Save**. The Transaction is added to the transaction repository.
 
@@ -228,7 +228,7 @@ Helper wizards for XPath and JSON Path help you generate XPaths and JSON Paths f
 
 **Use when**: Generating XPaths and JSON Paths for request matchers or creating dynamic values in responses without manual syntax entry.
 
-For general information about how to match requests and define responses, see [Adding Transactions](skill-blazemeter-service-virtualization://references/transactions.md#add-transactions).
+For general information about how to match requests and define responses, see [Adding Transactions](skill-blazemeter-service-virtualization://references/transactions.md).
 
 ### Add a Request Matcher Helper to an Existing Transaction
 
@@ -622,7 +622,7 @@ Add Processing Actions (Webhooks, HTTP Calls, State Update) to transactions for 
 
 When do you use processing actions? For example, instead of polling the status of a job submitted to your web service, you want it to report its progress back to a client, once per second, so the client can display a progress bar to the user. The web service sends asynchronous requests to a callback URL of your choice. To simulate similar behaviors in a BlazeMeter virtual service, you configure *Processing Actions*.
 
-- Processing Actions can reference values returned in responses of external services. To learn more, see the [Supported Helper Functions](skill-blazemeter-service-virtualization://references/transactions.md#supported-helper-functions) section
+- Processing Actions can reference values returned in responses of external services. To learn more, see the [Supported Helper Functions](skill-blazemeter-service-virtualization://references/transactions.md) section
 - Processing Actions are optional. If defined, they are triggered after the request is matched, and before the response is sent. The webhook trigger additionally starts a timer
 - The supported Processing Actions are Webhook, HTTP Call, and State Update
 - You can use the response of a HTTP Call processing action in another processing action (HTTP Call, Webhook, State Update) or as a part of the **Redirect to Live** at the transaction level
@@ -941,7 +941,7 @@ You can directly upload in-code definitions of virtual endpoints to the Transact
 
 This is another way that developers using Wiremock can share the artifacts they created in code with other team members, who can use and augment them in the UI as virtual services.
 
-To learn more about the apiKey and apiSecret variables, see [BlazeMeter API Keys](skill-blazemeter-api-reference://references/authentication.md#api-keys).
+To learn more about the apiKey and apiSecret variables, see [BlazeMeter API Keys](skill-blazemeter-api-reference://references/authentication.md).
 
 **Wiremock code samples:**
 ```java
@@ -979,7 +979,7 @@ When you use this method, the Transactions included in the test are automaticall
 
 For Transactions that already exist in the Repository, you can reference them directly from the code in your mocking tools. This lets developers use Transaction definitions that other team members created in their code.
 
-To learn more about the apiKey and apiSecret variables, see [BlazeMeter API Keys](skill-blazemeter-api-reference://references/authentication.md#api-keys).
+To learn more about the apiKey and apiSecret variables, see [BlazeMeter API Keys](skill-blazemeter-api-reference://references/authentication.md).
 
 **Wiremock Code Samples:**
 ```java
