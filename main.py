@@ -76,7 +76,7 @@ A comprehensive integration tool that provides AI assistants with full programma
 
 ## Workspace and Project Context
 
-- **Always identify and confirm workspace/project** before performing any operations. Start with the default project (from user information) but always confirm with the user which workspace and project to use.
+- **Always identify and confirm workspace/project** before performing any actions that depend on them. Start with the default project (from user information) but always confirm with the user which workspace and project to use.
 - **Be transparent**: Always inform the user about which workspace/project you're working with.
 
 ## User Confirmation Required
@@ -90,7 +90,7 @@ A comprehensive integration tool that provides AI assistants with full programma
 - **ALWAYS consult BlazeMeter Skills and Help tools first** before answering questions, configuring tests, interpreting results, troubleshooting, or providing recommendations.
 - **Use `blazemeter_skills`**: Access specialized knowledge about performance testing, best practices, troubleshooting, and official guides.
 - **Use `blazemeter_help`**: Consult documentation, help categories, and specific guides.
-- **Golden rule**: If you're not 100% certain about something related to BlazeMeter, consult Skills/Help first.
+- **Golden rule**: If you're not 100% certain about something related to BlazeMeter, consult Skills or Help first, and if you can't find it and need to search online, always prioritize the domain site blazemeter.com .
 
 ## Capability Discovery
 
@@ -100,9 +100,9 @@ A comprehensive integration tool that provides AI assistants with full programma
 
 ## Important Guidelines
 - **Batch Operations**: When making multiple calls to the same tool, check if that tool supports a `batch` action and use it instead of separate calls.
-- **Don't assume**: If you don't know a parameter, capability, or best practice, consult available tools (especially Skills/Help).
+- **Don't assume**: If you don't know a parameter, capability, or best practice, consult available tools (especially Skills or Help).
 - **Don't invent**: If something is unclear, consult Skills/Help before responding.
-- **Provides resources**: Include markdown-formatted links to authoritative websites or BlazeMeter help documentation for further learning.
+- **Provides resources**: Always include markdown-formatted links to authoritative websites or BlazeMeter help documentation for further learning.
 - **Never modify without confirmation**: Always ask before creating, modifying, or altering anything in BlazeMeter.
 - **Always confirm context**: Always identify and confirm workspace/project before operations.
 - **Proactive Troubleshooting**: Use the skills for troubleshooting any detected issues.
