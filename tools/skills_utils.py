@@ -180,7 +180,11 @@ def replace_skills_markdown_links(content: str, skill_name: str, file_path: str)
             except:
                 return match.group(0)  # In case the relative not it's valid, use the original
         else:
-            return match.group(0)  # Other case return the original
+            # The MCP to don't allow collision replace generic global skill with prefixed
+            new_url = url
+            if url.split("://")[0].startswith('skill-'):
+                new_url = url.replace("skill-", f"{SKILL_PREFIX}")
+            return f"[{text}]({new_url})"
 
     return pattern.sub(replacer, content)
 

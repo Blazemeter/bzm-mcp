@@ -207,6 +207,8 @@ def register(mcp, token: Optional[BzmToken]):
         name=f"{TOOLS_PREFIX}_help",
         description="""
 Operations on documentation and help information.
+**Note**: If you need to call this action multiple times (even with different parameters), 
+use the `batch` action instead of making separate calls.
 Actions:
 - list_help_categories: List all category_ids and for each of them list their subcategory_ids.
 - list_help_category_content: List all help_id list related with a category_id and subcategory_id.
@@ -218,8 +220,12 @@ Actions:
         category_id (str): The category id.
         subcategory_id (str): The sub-category id.
         help_id_list (List[str]): The help id list to read.
+- batch: Execute multiple actions in one call.
+    args(dict): Dictionary with the following required parameters:
+        batch_calls (List[Dict]): List of Actions dictionaries (excluding the action batch), each with 'action' (str) and 'args' (Dict).
 Hints:
 - Always generates the url attributes as a link in markdown format (like command_url).
+- **CRITICAL**: For multiple actions, always use the 'batch' action.
 """
     )
     async def help_main(
@@ -241,6 +247,37 @@ Hints:
                     return await help_manager.read_help_info(args.get("category_id", "home"),
                                                              args.get("subcategory_id", ""),
                                                              args.get("help_id_list", []))
+                case "batch":
+                    # Make sure this initialization doesn't run in parallel
+                    if HelpManager.help_tree is None:
+                        await help_manager._load_help_tree()
+
+                    batch_calls = args.get("batch_calls", [])
+                    if not isinstance(batch_calls, list) or not batch_calls:
+                        return BaseResult(
+                            error="batch_calls must be a non-empty list of dicts with 'action' and 'args'")
+
+                    async def process_call(call: Dict[str, Any]) -> BaseResult | List[BaseResult]:
+                        sub_action = call.get("action", "")
+                        sub_args = call.get("args", {})
+                        try:
+                            # Recursively call the skills function itself
+                            return await help_main(sub_action, sub_args, ctx)
+                        except httpx.HTTPStatusError as e:
+                            return BaseResult(error=f"HTTP error in sub-action {sub_action}: {traceback.format_exc()}")
+                        except Exception as e:
+                            return BaseResult(
+                                error=f"Error in sub-action {sub_action}: {traceback.format_exc()}\n{SUPPORT_MESSAGE}")
+
+                    # Parallel execution with asyncio.gather
+                    results = await asyncio.gather(*[process_call(call) for call in batch_calls],
+                                                   return_exceptions=True)
+                    # Handle any exceptions returned
+                    processed_results = [
+                        r if not isinstance(r, Exception) else BaseResult(error=f"Unhandled exception: {str(r)}")
+                        for r in results
+                    ]
+                    return BaseResult(result=processed_results)
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in help manager tool"

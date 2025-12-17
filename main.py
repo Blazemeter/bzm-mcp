@@ -21,7 +21,7 @@ def init_logging(level_name: str) -> None:
     logging.basicConfig(
         level=level,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        stream=sys.stdout,
+        stream=sys.stderr,
         force=True,
     )
 
@@ -62,6 +62,7 @@ A comprehensive integration tool that provides AI assistants with full programma
 - **If you have the information needed to call a tool action with its arguments, do so.**
 - **Read action always gets more information** about a particular item than the list action. List only displays minimal information.
 - **Read the current user information at startup** to learn the username, default account, workspace and project, and other important information.
+- **Links anchors**: Never invent or add anchors to links if they do not originally have them.
 
 ## Hierarchy and Dependencies
 
@@ -98,7 +99,7 @@ A comprehensive integration tool that provides AI assistants with full programma
 - **Adapt to new capabilities**: Tools may have new capabilities; explore and use them.
 
 ## Important Guidelines
-
+- **Batch Operations**: When making multiple calls to the same tool, check if that tool supports a `batch` action and use it instead of separate calls.
 - **Don't assume**: If you don't know a parameter, capability, or best practice, consult available tools (especially Skills/Help).
 - **Don't invent**: If something is unclear, consult Skills/Help before responding.
 - **Provides resources**: Include markdown-formatted links to authoritative websites or BlazeMeter help documentation for further learning.
@@ -134,9 +135,9 @@ def main():
     )
 
     args = parser.parse_args()
-    init_logging(args.log_level)
 
     if args.mcp:
+        init_logging(args.log_level)
         run(log_level=args.log_level.upper())
     else:
 
