@@ -138,17 +138,17 @@ Additionally, you may choose to send emails when a test returns to a successful 
 **Configuration:**
 - Configure individual test email notifications from the **Email Notifications** page of any test
 - For bucket-level test notifications, navigate to **Bucket Settings > Email Notifications**, accessible from the bucket's dashboard
-- For more information, see the **Configure Email Notifications** sections on the [Managing Configuration with Environments](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-managing-configuration-with-environments) page
+- For more information, see the **Configure Email Notifications** sections on the [Managing Configuration with Environments](skill-blazemeter-api-monitoring://references/configuration.md) page
 
 ### Setting up Multiple Notification Configurations
 
-Using [Environments](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-managing-configuration-with-environments), you can configure notification settings that only alert specific groups within your team, depending on the test or shared environment used to run your test.
+Using [Environments](skill-blazemeter-api-monitoring://references/configuration.md), you can configure notification settings that only alert specific groups within your team, depending on the test or shared environment used to run your test.
 
 ### Webhook Notifications
 
 You can specify callback URLs to be requested upon the completion of every test. From the **Notifications** page in the test editor enter the URL you would like to be notified at. All test runs, regardless of outcome, will trigger a webhook notification. To notify multiple URLs, enter one per line.
 
-If you want more flexibility to customize your webhook notifications, check out our [Advanced Webhooks integration](skill-blazemeter-api-monitoring://references/advanced-features.md#advanced-webhooks).
+If you want more flexibility to customize your webhook notifications, check out our [Advanced Webhooks integration](skill-blazemeter-api-monitoring://references/advanced-features.md).
 
 #### Webhook Request Data
 
@@ -226,14 +226,14 @@ If you want more flexibility to customize your webhook notifications, check out 
 | `bucket_key` | The key of the bucket the test belongs to |
 | `test_url` | The URL for viewing and editing this test in the BlazeMeter API Monitoring dashboard |
 | `test_run_url` | The URL for the test result detail page in the BlazeMeter API Monitoring dashboard |
-| `trigger_url` | The [Trigger URL](skill-blazemeter-api-monitoring://references/integrations.md#builddeployment-integration) for this test. Typically used to retry a test run |
+| `trigger_url` | The [Trigger URL](skill-blazemeter-api-monitoring://references/integrations.md) for this test. Typically used to retry a test run |
 | `result` | The result of the test run, either `pass` or `fail` |
 | `started_at` | The UNIX timestamp for the start of the test run |
 | `finished_at` | The UNIX timestamp for the completion of the test run |
 | `agent` | The agent used to execute this test run, or `null` if a default BlazeMeter API Monitoring location was used |
 | `agent_expired` | The status of the agent for this test run. This is `true` if the agent is expired, and `null` if the agent is available or if a default BlazeMeter API Monitoring location was used |
-| `region` | The [region code for the location](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-global-locations) the test was run from, or `null` if an agent was used |
-| `region_name` | The full [region name and location](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-global-locations) the test was run from, or `null` if an agent was used |
+| `region` | The [region code for the location](skill-blazemeter-api-monitoring://references/configuration.md) the test was run from, or `null` if an agent was used |
+| `region_name` | The full [region name and location](skill-blazemeter-api-monitoring://references/configuration.md) the test was run from, or `null` if an agent was used |
 | `initial_variables` | A dictionary of the test run's initial variables. This is the variable state after the initial scripts and variables have been processed (bucket-wide and test-specific) prior to the execution of the first request |
 | `requests` | A list of the HTTP requests that were executed in this test run with the method, URL and assertion, variable and script success/failure counts |
 
@@ -285,19 +285,19 @@ After selecting the members of your team to notify, you can choose to be notifie
 
 Additionally, you may choose to send emails when a test returns to a successful state.
 
-Configure individual test email notifications from the **Email Notifications** page of any test. For more information, see the **Configure Email Notifications** sections on the [Managing Configuration with Environments](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-managing-configuration-with-environments) page.
+Configure individual test email notifications from the **Email Notifications** page of any test. For more information, see the **Configure Email Notifications** sections on the [Managing Configuration with Environments](skill-blazemeter-api-monitoring://references/configuration.md) page.
 
 For bucket-level test notifications, navigate to **Bucket Settings > Email Notifications**, accessible from the bucket's dashboard.
 
 ### Setting up multiple notification configurations
 
-Using [Environments](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-managing-configuration-with-environments), you can configure notification settings that only alert specific groups within your team, depending on the test or shared environment used to run your test.
+Using [Environments](skill-blazemeter-api-monitoring://references/configuration.md), you can configure notification settings that only alert specific groups within your team, depending on the test or shared environment used to run your test.
 
 ### Webhook Notifications
 
 You can specify callback URLs to be requested upon the completion of every test. From the **Notifications** page in the test editor enter the URL you would like to be notified at. All test runs, regardless of outcome, will trigger a webhook notification. To notify multiple URLs, enter one per line.
 
-If you want more flexibility to customize your webhook notifications, check out our [Advanced Webhooks](skill-blazemeter-api-monitoring://references/notifications.md#advanced-webhooks) integration.
+If you want more flexibility to customize your webhook notifications, check out our [Advanced Webhooks](skill-blazemeter-api-monitoring://references/notifications.md) integration.
 
 ---
 
@@ -403,14 +403,14 @@ Your advanced webhooks integration is now ready to be used. Do not forget to ena
 | `bucket_key` | The key of the bucket the test belongs to. |
 | `test_url` | The URL for this viewing and editing this test in the API Monitoring dashboard. |
 | `test_run_url` | The URL for the test result detail page in the API Monitoring dashboard. |
-| `trigger_url` | The [Trigger URL](skill-blazemeter-api-monitoring://references/integrations.md#builddeployment-integration) for this test. Typically used to retry a test run. |
+| `trigger_url` | The [Trigger URL](skill-blazemeter-api-monitoring://references/integrations.md) for this test. Typically used to retry a test run. |
 | `result` | The result of the test run, either `pass` or `fail`. |
 | `started_at` | The UNIX timestamp for the start of the test run. |
 | `finished_at` | The UNIX timestamp for the completion of the test run. |
 | `agent` | The agent used to execute this test run, or `null` if a default API Monitoring location was used. |
 | `agent_expired` | The status of the agent for this test run. This is `true` if the agent is expired, and `null` if the agent is available or if a default API Monitoring location was used. |
-| `region` | The [region code for the location](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-global-locations) the test was run from, or `null` if an agent was used. |
-| `region_name` | The full [region name and location](skill-blazemeter-api-monitoring://references/configuration.md#api-monitoring-global-locations) the test was run from, or `null` if an agent was used. |
+| `region` | The [region code for the location](skill-blazemeter-api-monitoring://references/configuration.md) the test was run from, or `null` if an agent was used. |
+| `region_name` | The full [region name and location](skill-blazemeter-api-monitoring://references/configuration.md) the test was run from, or `null` if an agent was used. |
 | `initial_variables` | A dictionary of the test runs initial variables. This is the variable state after the initial scripts and variables have been processed (bucket-wide and test-specific) prior to the execution of the first request. |
 | `requests` | A list of the HTTP requests that were executed in this test run with the method, URL and assertion, variable and script success/failure counts. |
 

@@ -45,19 +45,19 @@ Click **+** to upload your script and any additional test files, or drag the fil
 **Important**: The Taurus `included-configs` setting is not supported in the BlazeMeter cloud. If your YAML references a secondary YAML via `included-configs` for additional configuration settings, merge all settings into one YAML before uploading your test.
 
 For more information, see:
-- [Scenario Definition](skill-blazemeter-performance-testing://references/scenarios.md#scenario-definition)
-- [Uploading Files & Shared Folders](skill-blazemeter-performance-testing://references/advanced-features.md#shared-folders)
+- [Scenario Definition](skill-blazemeter-performance-testing://references/scenarios.md)
+- [Uploading Files & Shared Folders](skill-blazemeter-performance-testing://references/advanced-features.md)
 
 Under **Configuration Preview**, you will see the YAML/JSON code of the file that you uploaded.
 
-If you are running a JMeter test with Taurus and have uploaded a CSV file with your script, the option to **split CSV files** shows below the script preview. Check this box to enable the feature. For more information, see [Scenario Definition](skill-blazemeter-performance-testing://references/scenarios.md#scenario-definition).
+If you are running a JMeter test with Taurus and have uploaded a CSV file with your script, the option to **split CSV files** shows below the script preview. Check this box to enable the feature. For more information, see [Scenario Definition](skill-blazemeter-performance-testing://references/scenarios.md).
 
 There are additional options to add to your test configuration. For more information, see:
 - [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md)
-- [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md#eux-monitoring)
-- [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md#apm-integration)
-- [DNS Override](skill-blazemeter-performance-testing://references/advanced-features.md#dns-override)
-- [Network Emulation](skill-blazemeter-performance-testing://references/advanced-features.md#network-emulation)
+- [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [DNS Override](skill-blazemeter-performance-testing://references/advanced-features.md)
+- [Network Emulation](skill-blazemeter-performance-testing://references/advanced-features.md)
 
 You have set up your Taurus test.
 
@@ -77,28 +77,28 @@ An alternative method is to call Taurus from the command line on your local mach
 
 You may find that when you run a Performance test with a low number of threads (users), the test executes successfully, but once you begin scaling up to a higher load, the test fails or returns unexpected errors. This is often a sign that your test is in need of calibration, which must be performed to ensure a test will reliably run at higher loads.
 
-This article offers some advice for calibrating a [Taurus](https://gettaurus.org/?utm_source=BM&utm_medium=kb&utm_campaign=calibrating-a-taurus-test) test for getting the best results in BlazeMeter. Taurus is an open-source test automation framework, which enables running 20+ open source testing tools, easily. For more information, see [Creating a Taurus Test](skill-blazemeter-performance-testing://references/taurus.md#create-taurus-test).
+This article offers some advice for calibrating a [Taurus](https://gettaurus.org/?utm_source=BM&utm_medium=kb&utm_campaign=calibrating-a-taurus-test) test for getting the best results in BlazeMeter. Taurus is an open-source test automation framework, which enables running 20+ open source testing tools, easily. For more information, see [Creating a Taurus Test](skill-blazemeter-performance-testing://references/taurus.md).
 
-If you're instead running a JMeter test without a Taurus YAML, please refer to our [Calibrating a JMeter Test](skill-blazemeter-performance-testing://references/jmeter-configuration.md#calibrating-a-jmeter-test) guide.
+If you're instead running a JMeter test without a Taurus YAML, please refer to our [Calibrating a JMeter Test](skill-blazemeter-performance-testing://references/jmeter-configuration.md) guide.
 
 **Use when**: Calibrating Taurus performance tests for optimal engine utilization, determining users per engine, configuring full load tests, or when tests work at low load but fail at higher loads.
 
 ### Overview
 
-1. [Create Your Script](skill-blazemeter-performance-testing://references/taurus.md#step-1-create-your-script)
-2. [Test Locally with Taurus](skill-blazemeter-performance-testing://references/taurus.md#step-2-test-locally-with-taurus)
-3. [Create a BlazeMeter Test](skill-blazemeter-performance-testing://references/taurus.md#step-3-create-a-blazemeter-test)
-4. [Run a Debug Test](skill-blazemeter-performance-testing://references/taurus.md#step-4-run-a-debug-test)
-5. [Determine Users per Engine](skill-blazemeter-performance-testing://references/taurus.md#step-5-determine-users-per-engine)
-6. [Configure Your Full Load Test](skill-blazemeter-performance-testing://references/taurus.md#step-6-configure-your-full-load-test)
-7. [Use a Multi-Test for Multiple Scenarios](skill-blazemeter-performance-testing://references/taurus.md#step-7-use-a-multi-test-for-multiple-scenarios)
+1. [Create Your Script](skill-blazemeter-performance-testing://references/taurus.md)
+2. [Test Locally with Taurus](skill-blazemeter-performance-testing://references/taurus.md)
+3. [Create a BlazeMeter Test](skill-blazemeter-performance-testing://references/taurus.md)
+4. [Run a Debug Test](skill-blazemeter-performance-testing://references/taurus.md)
+5. [Determine Users per Engine](skill-blazemeter-performance-testing://references/taurus.md)
+6. [Configure Your Full Load Test](skill-blazemeter-performance-testing://references/taurus.md)
+7. [Use a Multi-Test for Multiple Scenarios](skill-blazemeter-performance-testing://references/taurus.md)
 
 ### Step 1: Create Your Script
 
 There are various ways to create your script, which include:
 - Creating a new [JMeter](http://jmeter.apache.org) script via a Taurus YAML file. For details on how to do so, please refer to the Taurus article [Creating a JMeter Script Using YAML](https://gettaurus.org/kb/Basic1/#Creating-a-JMeter-Script-Using-YAML?utm_source=BM&utm_medium=kb&utm_campaign=calibrating-a-taurus-test).
 - Creating a new YAML configuration file that references an existing script (such as a script from JMeter, [Selenium](https://www.seleniumhq.org/), or [Gatling](https://gatling.io/)). There is a list of articles about [Learning Taurus](https://gettaurus.org/kb/Index/?utm_source=BM&utm_medium=kb&utm_campaign=calibrating-a-taurus-test) that provide details on each option, such as [How to Run an Existing JMeter Script](https://gettaurus.org/kb/Basic1/#How-to-Run-an-Existing-JMeter-Script?utm_source=BM&utm_medium=kb&utm_campaign=calibrating-a-taurus-test).
-- Using the [BlazeMeter Proxy Recorder](skill-blazemeter-recorders://references/proxy-recorder.md#create-proxy-recorder) or [BlazeMeter Chrome Extension](skill-blazemeter-recorders://references/chrome-extension.md#record) to record your script.
+- Using the [BlazeMeter Proxy Recorder](skill-blazemeter-recorders://references/proxy-recorder.md) or [BlazeMeter Chrome Extension](skill-blazemeter-recorders://references/chrome-extension.md) to record your script.
 
 If you generate a JMeter script from a recording, keep in mind that:
 
@@ -143,26 +143,26 @@ After the script has run successfully using one thread, raise it to 0-20 threads
 
 Now that your test is running successfully locally, you're ready to test it in the cloud! There are two ways you can run your Taurus test via BlazeMeter:
 
-- You can upload your test to BlazeMeter as described in our article [Creating a New Taurus Test](skill-blazemeter-performance-testing://references/taurus.md#create-taurus-test).
+- You can upload your test to BlazeMeter as described in our article [Creating a New Taurus Test](skill-blazemeter-performance-testing://references/taurus.md).
 - You can edit the YAML script to automatically run in the BlazeMeter cloud, as detailed in [Scaling With Cloud Provisioning](https://gettaurus.org/kb/Basic1/#Scaling-With-Cloud-Provisioning?utm_source=BM&utm_medium=kb&utm_campaign=calibrating-a-taurus-test) on the Taurus site.
 
 ### Step 4: Run a Debug Test
 
-Start with a [Debug Test](skill-blazemeter-performance-testing://references/troubleshooting.md#debug-test-low-scale-test-run-and-enhanced-logging), which makes a logical copy of your test and runs it at a lower scale. The test will run with 10 threads and for a maximum of 5 minutes or 100 iterations, whichever occurs first.
+Start with a [Debug Test](skill-blazemeter-performance-testing://references/troubleshooting.md), which makes a logical copy of your test and runs it at a lower scale. The test will run with 10 threads and for a maximum of 5 minutes or 100 iterations, whichever occurs first.
 
 This Debug configuration allows you to test your script and backend and ensure everything works well.
 
 Here are some common issues you might come across:
 
 1. Your firewall may block BlazeMeter's engines from reaching your application server. For more information, see [Load Testing Behind Your Corporate Firewall](https://www.blazemeter.com/blog/top-three-options-running-performance-tests-behind-your-corporate-firewall).
-2. Make sure all of your test files (CSVs, JARs, JSON, user.properties, etc.) are uploaded to the test. For more information, see [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md#uploading-files) & [Shared Folders](skill-blazemeter-performance-testing://references/taurus.md#shared-folders-with-taurus).
+2. Make sure all of your test files (CSVs, JARs, JSON, user.properties, etc.) are uploaded to the test. For more information, see [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md) & [Shared Folders](skill-blazemeter-performance-testing://references/taurus.md).
 3. Make sure you didn't use any paths with your file names.
 
-If you're still having trouble, look at the [Errors Report](skill-blazemeter-performance-testing://references/reporting.md#errors-report) and [Logs Report](skill-blazemeter-performance-testing://references/reporting.md#logs-report) for errors. This will allow you to get enough data to analyze the results and ensure the script was executed as you expected.
+If you're still having trouble, look at the [Errors Report](skill-blazemeter-performance-testing://references/reporting.md) and [Logs Report](skill-blazemeter-performance-testing://references/reporting.md) for errors. This will allow you to get enough data to analyze the results and ensure the script was executed as you expected.
 
-You should also check the [Engine Health Report](skill-blazemeter-performance-testing://references/reporting.md#engine-health-report) to see how much memory and CPU was used, which is key to the next step.
+You should also check the [Engine Health Report](skill-blazemeter-performance-testing://references/reporting.md) to see how much memory and CPU was used, which is key to the next step.
 
-Lastly, keep an eye out for common issues that may result in your test [running locally but not on BlazeMeter](skill-blazemeter-performance-testing://references/troubleshooting.md#jmeter-test-works-locally-but-not-in-blazemeter) or your [test not starting at all](skill-blazemeter-performance-testing://references/troubleshooting.md#test-wont-start-troubleshooting).
+Lastly, keep an eye out for common issues that may result in your test [running locally but not on BlazeMeter](skill-blazemeter-performance-testing://references/troubleshooting.md) or your [test not starting at all](skill-blazemeter-performance-testing://references/troubleshooting.md).
 
 ### Step 5: Determine Users per Engine
 
@@ -175,7 +175,7 @@ Set your test configuration to:
 - Do not use any local engines
 - Use 1 cloud engine
 
-Run the test and monitor your test's engine via the [Engine Health Report](skill-blazemeter-performance-testing://references/reporting.md#engine-health-report).
+Run the test and monitor your test's engine via the [Engine Health Report](skill-blazemeter-performance-testing://references/reporting.md).
 
 ```yaml
 execution:
@@ -210,7 +210,7 @@ With your calibration testing complete, you're now ready to run your real test! 
 - Configure the actual amount of users you require.
 - Set the number of engines you need for handling the load.
 
-Ensure you keep the users per engine the same as your final successful result in your calibration tests from [Step 3](skill-blazemeter-performance-testing://references/taurus.md#step-3-create-a-blazemeter-test).
+Ensure you keep the users per engine the same as your final successful result in your calibration tests from [Step 3](skill-blazemeter-performance-testing://references/taurus.md).
 
 Consider the following example, where we run a 1,000-user test using five engines:
 
@@ -236,14 +236,14 @@ Once you're ready, press the "Run Test" button!
 
 ### Step 7: Use a Multi-Test for Multiple Scenarios
 
-This step is optional and only applies if your test includes multiple scenarios, in which case you should set up your test as a Multi-Test via the web UI. (For a detailed walkthrough, refer to our guide on [Multi-Tests](skill-blazemeter-performance-testing://references/scenarios.md#create-multi-test).)
+This step is optional and only applies if your test includes multiple scenarios, in which case you should set up your test as a Multi-Test via the web UI. (For a detailed walkthrough, refer to our guide on [Multi-Tests](skill-blazemeter-performance-testing://references/scenarios.md).)
 
 1. Create a new Multi-Test.
 2. Add each single test.
-3. You can change the configuration of each scenario as detailed in the Modify the Scenarios section of our [Multi-Test](skill-blazemeter-performance-testing://references/scenarios.md#create-multi-test) guide.
-4. Click "Run Test" to launch all of your scenarios. Additional options are covered in the Run the Multi-Test section of our [Multi-Test](skill-blazemeter-performance-testing://references/scenarios.md#create-multi-test) guide.
+3. You can change the configuration of each scenario as detailed in the Modify the Scenarios section of our [Multi-Test](skill-blazemeter-performance-testing://references/scenarios.md) guide.
+4. Click "Run Test" to launch all of your scenarios. Additional options are covered in the Run the Multi-Test section of our [Multi-Test](skill-blazemeter-performance-testing://references/scenarios.md) guide.
 
-The aggregated report of your Multi Test will start generating results in a few minutes, which also can be filtered for each individual scenario. For more information about how to use these filters, refer to our [Reporting Selectors for Scenario and Location](skill-blazemeter-performance-testing://references/reporting.md#filter-by-location-scenario) guide.
+The aggregated report of your Multi Test will start generating results in a few minutes, which also can be filtered for each individual scenario. For more information about how to use these filters, refer to our [Reporting Selectors for Scenario and Location](skill-blazemeter-performance-testing://references/reporting.md) guide.
 
 ---
 
@@ -324,7 +324,7 @@ For detailed information about configuring engines for Taurus tests, use the Bla
 
 ## Shared Folders with Taurus
 
-Like other types of BlazeMeter tests, Taurus tests support the use of [shared folders](skill-blazemeter-performance-testing://references/advanced-features.md#shared-folders). For Taurus tests specifically, to ensure that all files are included correctly, perform the following steps:
+Like other types of BlazeMeter tests, Taurus tests support the use of [shared folders](skill-blazemeter-performance-testing://references/advanced-features.md). For Taurus tests specifically, to ensure that all files are included correctly, perform the following steps:
 
 **Use when**: Using shared folders with Taurus tests, managing and reusing files across multiple tests with YAML configuration and script file organization, or organizing Taurus YAML and script files in shared folders.
 
@@ -344,7 +344,7 @@ The option to run your Taurus test with Dedicated IPs is available in the YAML c
 
 **Use when**: Creating Taurus tests with dedicated IP addresses, connecting from behind corporate firewalls with static IP requirements, or configuring dedicated IPs in Taurus YAML files.
 
-Your BlazeMeter account must have the "[Dedicated IPs](skill-blazemeter-performance-testing://references/advanced-features.md#dedicated-ips)" feature enabled. Then you can configure dedicated IP addresses in your YAML config file as follows:
+Your BlazeMeter account must have the "[Dedicated IPs](skill-blazemeter-performance-testing://references/advanced-features.md)" feature enabled. Then you can configure dedicated IP addresses in your YAML config file as follows:
 
 ```
 modules:

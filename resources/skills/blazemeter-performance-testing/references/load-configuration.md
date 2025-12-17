@@ -33,8 +33,8 @@ To disable all overrides, ensure all toggles are set to the left (gray).
 
 Overrides can only be disabled under the following conditions:
 - You have a paid BlazeMeter account
-- Your script is a [JMeter](skill-blazemeter-performance-testing://references/advanced-features.md#create-jmeter-test) script
-- If your script is not a JMeter script, overrides will be disabled only if you upload a [Taurus](skill-blazemeter-performance-testing://references/taurus.md#create-taurus-test) YAML configuration file with your script and set the YAML file as the main test file, which will automatically disable UI overrides
+- Your script is a [JMeter](skill-blazemeter-performance-testing://references/advanced-features.md) script
+- If your script is not a JMeter script, overrides will be disabled only if you upload a [Taurus](skill-blazemeter-performance-testing://references/taurus.md) YAML configuration file with your script and set the YAML file as the main test file, which will automatically disable UI overrides
 
 ### Select Total Users
 
@@ -156,7 +156,7 @@ You can change the number of concurrent virtual users during load testing to enh
 
 ## Load Distribution
 
-BlazeMeter is a cloud-based service which lets you [choose the geographical location](skill-blazemeter-performance-testing://references/load-configuration.md#locations-you-can-generate-load-from) that you wish to run the load from.
+BlazeMeter is a cloud-based service which lets you [choose the geographical location](skill-blazemeter-performance-testing://references/load-configuration.md) that you wish to run the load from.
 
 When you think of load testing, it is understood that you would have more than one user hitting the website. To get the best realistic results from your load test, you should mimic the actual real time environment where the end users would be using your website. Typically, your users are located throughout the world. You can load test your application in the same way.
 
@@ -168,12 +168,12 @@ You can also change the default ratio of users to engines or set the engine coun
 
 **Use when**: Configuring load distribution across multiple geographic locations, setting up traffic weighting and engine-to-user ratios, or testing from specific geographic regions to simulate real-world user patterns.
 
-- [Select a Location](skill-blazemeter-performance-testing://references/load-configuration.md#select-a-location)
-- [Select Multiple Locations](skill-blazemeter-performance-testing://references/load-configuration.md#select-multiple-locations)
-- [Advantages of Generating Load from Multiple Geographic Locations](skill-blazemeter-performance-testing://references/load-configuration.md#advantages-of-generating-load-from-multiple-geographic-locations)
-- [How the Engine to Users Ratio Works](skill-blazemeter-performance-testing://references/load-configuration.md#how-the-engine-to-users-ratio-works) [Change the Ratio of Users to Engines](skill-blazemeter-performance-testing://references/load-configuration.md#change-the-ratio-of-users-to-engines) [Set the Number of Engines When Total Users is Toggled Off](skill-blazemeter-performance-testing://references/load-configuration.md#set-the-number-of-engines-when-total-users-is-toggled-off)
-- [How to Set a Load Origin Location in your BlazeMeter Load Test](skill-blazemeter-performance-testing://references/load-configuration.md#how-to-set-a-load-origin-location-in-your-blazemeter-load-test) [Best Practice for Selecting Load Origin Location in your BlazeMeter Tests](skill-blazemeter-performance-testing://references/load-configuration.md#best-practice-for-selecting-load-origin-location-in-your-blazemeter-tests)
-- [Locations You Can Generate Load From](skill-blazemeter-performance-testing://references/load-configuration.md#locations-you-can-generate-load-from)
+- [Select a Location](skill-blazemeter-performance-testing://references/load-configuration.md)
+- [Select Multiple Locations](skill-blazemeter-performance-testing://references/load-configuration.md)
+- [Advantages of Generating Load from Multiple Geographic Locations](skill-blazemeter-performance-testing://references/load-configuration.md)
+- [How the Engine to Users Ratio Works](skill-blazemeter-performance-testing://references/load-configuration.md) [Change the Ratio of Users to Engines](skill-blazemeter-performance-testing://references/load-configuration.md) [Set the Number of Engines When Total Users is Toggled Off](skill-blazemeter-performance-testing://references/load-configuration.md)
+- [How to Set a Load Origin Location in your BlazeMeter Load Test](skill-blazemeter-performance-testing://references/load-configuration.md) [Best Practice for Selecting Load Origin Location in your BlazeMeter Tests](skill-blazemeter-performance-testing://references/load-configuration.md)
+- [Locations You Can Generate Load From](skill-blazemeter-performance-testing://references/load-configuration.md)
 
 ### Select a Location
 
@@ -189,7 +189,7 @@ You can distribute your test Virtual Users load to multiple cloud locations. By 
 
 Follow these steps:
 
-1. To add another location, click the **+ Add Location** button. To delete a location, click the bin icon. Each time you click the **+ Add Location** button, a new line will be added and the % of traffic will be re-calculated to evenly distribute the users. There is a limit of ten locations per single test. After adding a 10th engine, the **+ Add Location** button will be grayed out. If your test requires more than ten locations, consider setting up a [multi-test](skill-blazemeter-performance-testing://references/scenarios.md#create-multi-test) instead.
+1. To add another location, click the **+ Add Location** button. To delete a location, click the bin icon. Each time you click the **+ Add Location** button, a new line will be added and the % of traffic will be re-calculated to evenly distribute the users. There is a limit of ten locations per single test. After adding a 10th engine, the **+ Add Location** button will be grayed out. If your test requires more than ten locations, consider setting up a [multi-test](skill-blazemeter-performance-testing://references/scenarios.md) instead.
 2. (Optional) To use multiple locations with a custom-weighted (unequal) distribution, make your edits in the **% of Traffic** field. While you are editing, a message will display that reminds you that your numbers must add up to 100%. To go back to equal distribution, click **evenly divide the traffic**.
 
 ### Advantages of Generating Load from Multiple Geographic Locations
@@ -223,7 +223,7 @@ Follow these steps:
 
 ### Set the Number of Engines When Total Users is Toggled Off
 
-If you have **Total Users** toggled off in your [Load Configuration](skill-blazemeter-performance-testing://references/load-configuration.md#load-configuration), you will need to set the number of engines for BlazeMeter to run your test on. The default is one but you can increase the number to the maximum allowed by your plan.
+If you have **Total Users** toggled off in your [Load Configuration](skill-blazemeter-performance-testing://references/load-configuration.md), you will need to set the number of engines for BlazeMeter to run your test on. The default is one but you can increase the number to the maximum allowed by your plan.
 
 Follow these steps:
 
@@ -237,7 +237,7 @@ To change your plan limit, click **Get More** to be taken to your Account Billin
 
 ### How to Set a Load Origin Location in your BlazeMeter Load Test
 
-You can choose the specific geographic location from which you wish to run your load. This selection can be modified before each run, that way you can run the same test several times and each time choose a different location in the world. For more information, see [Locations You Can Generate Load From](skill-blazemeter-performance-testing://references/load-configuration.md#locations-you-can-generate-load-from).
+You can choose the specific geographic location from which you wish to run your load. This selection can be modified before each run, that way you can run the same test several times and each time choose a different location in the world. For more information, see [Locations You Can Generate Load From](skill-blazemeter-performance-testing://references/load-configuration.md).
 
 ### Best Practice for Selecting Load Origin Location in your BlazeMeter Tests
 
@@ -315,7 +315,7 @@ We currently provide the following locations:
 - Brazil South (Sao Paulo)
 
 **Jump to next section:**
-- [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md#failure-criteria)
+- [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md)
 
 ---
 

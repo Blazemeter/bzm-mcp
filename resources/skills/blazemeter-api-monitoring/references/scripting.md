@@ -449,7 +449,7 @@ To ensure the performance and security of your tests, custom script libraries ha
 - When scripts are processed, built-in variables, functions and libraries are loaded first, followed by custom libraries
 - You may overwrite built-in functionality in your custom libraries and scripts, but doing so is unsupported and may cause unexpected results
 
-For more information, see [Script Engine Technical Details and Limitations](skill-blazemeter-api-monitoring://references/scripting.md#script-engine-overview).
+For more information, see [Script Engine Technical Details and Limitations](skill-blazemeter-api-monitoring://references/scripting.md).
 
 ### Enabling Custom Libraries in Environments
 
@@ -466,8 +466,8 @@ We maintain a [GitHub repository](https://github.com/Runscope/script-libraries) 
 
 ### Related Topics
 
-- [Script Snippets](skill-blazemeter-api-monitoring://references/scripting.md#reusable-snippets)
-- [Script Engine Overview](skill-blazemeter-api-monitoring://references/scripting.md#script-engine-overview)
+- [Script Snippets](skill-blazemeter-api-monitoring://references/scripting.md)
+- [Script Engine Overview](skill-blazemeter-api-monitoring://references/scripting.md)
 
 ---
 
@@ -625,7 +625,7 @@ Data from a JSON response body can be extracted by specifying the path of the da
 - `data.status` - Extract the status field
 - `data.items.length` - Extract the length of the items array
 
-For more examples, see [Sample JSON Expressions for Data Extraction](skill-blazemeter-api-monitoring://references/scripting.md#sample-json-expressions-for-data-extraction) section below.
+For more examples, see [Sample JSON Expressions for Data Extraction](skill-blazemeter-api-monitoring://references/scripting.md) section below.
 
 ### Asserting Against Data from XML Body Content
 
@@ -674,7 +674,7 @@ When an assertion is processed, the **Actual Value** consists of the data locate
 
 ## Sample JSON Expressions for Data Extraction
 
-When using [variables](skill-blazemeter-api-monitoring://references/advanced-features.md#dynamic-data-and-request-chaining) or [assertions](skill-blazemeter-api-monitoring://references/scripting.md#validating-responses-with-assertions) that extract data from JSON bodies, you'll need to specify a JSON object expression to locate the data to extract. Here are some examples.
+When using [variables](skill-blazemeter-api-monitoring://references/advanced-features.md) or [assertions](skill-blazemeter-api-monitoring://references/scripting.md) that extract data from JSON bodies, you'll need to specify a JSON object expression to locate the data to extract. Here are some examples.
 
 **Use when**: Extracting data from JSON response bodies, using JSON expressions in variables or assertions, or working with nested JSON structures and arrays.
 

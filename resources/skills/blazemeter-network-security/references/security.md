@@ -248,18 +248,18 @@ Your email will be reviewed promptly. We request that you not publicly disclose 
 
 ## API Monitoring IP Addresses and Allowlisting
 
-Due to the elastic nature of the BlazeMeter API Monitoring infrastructure, we do not publish lists of IP addresses for allowlists. Between the [regions](skill-blazemeter-api-monitoring://references/configuration.md#global-locations) that we use and depending on the load, you could see a wide variety of source IPs at any given time.
+Due to the elastic nature of the BlazeMeter API Monitoring infrastructure, we do not publish lists of IP addresses for allowlists. Between the [regions](skill-blazemeter-api-monitoring://references/configuration.md) that we use and depending on the load, you could see a wide variety of source IPs at any given time.
 
 **Use when**: Configuring allowlists for API Monitoring tests, understanding IP address ranges, or using Radar Agent for known source IP addresses.
 
 ### Overview
 
-You can get a known source IP address for requests in your tests by using the [Radar Agent](skill-blazemeter-private-locations://references/radar-agent.md#overview) on a host you control. The agent also allows you to send test requests from within your own infrastructure. Once running the agent acts just like any of the cloud locations and can be enabled within a test or shared [environment](skill-blazemeter-api-monitoring://references/configuration.md#managing-environments).
+You can get a known source IP address for requests in your tests by using the [Radar Agent](skill-blazemeter-private-locations://references/radar-agent.md) on a host you control. The agent also allows you to send test requests from within your own infrastructure. Once running the agent acts just like any of the cloud locations and can be enabled within a test or shared [environment](skill-blazemeter-api-monitoring://references/configuration.md).
 
 ### Additional Resources
 
-- [Allowlisting BlazeMeter](skill-blazemeter-network-security://references/allowlisting.md#allowlisting-blazemeter)
-- [Radar Agent Documentation](skill-blazemeter-private-locations://references/radar-agent.md#overview)
+- [Allowlisting BlazeMeter](skill-blazemeter-network-security://references/allowlisting.md)
+- [Radar Agent Documentation](skill-blazemeter-private-locations://references/radar-agent.md)
 
 ### Documentation References
 

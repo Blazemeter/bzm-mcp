@@ -8,12 +8,12 @@ Install, uninstall, and regenerate BlazeMeter's on-premise agent on your server/
 
 ### Overview
 
-First, make sure your server/instance meets the minimum requirements as described in [Private Location System Requirements](skill-blazemeter-private-locations://references/installation.md#system-requirements).
+First, make sure your server/instance meets the minimum requirements as described in [Private Location System Requirements](skill-blazemeter-private-locations://references/installation.md).
 
 Continue with one of the following options:
-- [Installing a BlazeMeter Agent for Docker](skill-blazemeter-private-locations://references/installation.md#install-agent-for-docker)
-- [Installing a BlazeMeter Agent for Kubernetes](skill-blazemeter-private-locations://references/installation.md#install-agent-for-kubernetes)
-- [Installing a BlazeMeter Agent using Helm Charts](skill-blazemeter-private-locations://references/installation.md#install-agent-helm-chart)
+- [Installing a BlazeMeter Agent for Docker](skill-blazemeter-private-locations://references/installation.md)
+- [Installing a BlazeMeter Agent for Kubernetes](skill-blazemeter-private-locations://references/installation.md)
+- [Installing a BlazeMeter Agent using Helm Charts](skill-blazemeter-private-locations://references/installation.md)
 
 ---
 
@@ -25,7 +25,7 @@ Install BlazeMeter agents for Docker installations, including pulling images, co
 
 ### Installation Steps
 
-**Prerequisites:** Before proceeding with installation, ensure that your server/instance meets the minimum requirements. For more information, see [Private Location System Requirements](skill-blazemeter-private-locations://references/installation.md#system-requirements).
+**Prerequisites:** Before proceeding with installation, ensure that your server/instance meets the minimum requirements. For more information, see [Private Location System Requirements](skill-blazemeter-private-locations://references/installation.md).
 
 1. Log into your BlazeMeter account and click Settings in the top right corner.
 2. Go to **Workspaces**, **Private Locations** and choose the Private Location where you want to create the Agent.
@@ -93,7 +93,7 @@ The following steps walk you through the **automatic** method. For the manual me
 
 **Follow these steps:**
 
-1. Verify that your server/instance [meets the minimum requirements](skill-blazemeter-private-locations://references/installation.md#system-requirements)
+1. Verify that your server/instance [meets the minimum requirements](skill-blazemeter-private-locations://references/installation.md)
 2. Log into your BlazeMeter account and click **Settings** in the top right corner.
 3. To choose to the Private Location where you want to create the Agent, go to **Workspaces**, **Private Locations**.
 4. For our Kubernetes implementation, ensure that your Private Location support a *Shared* Run Type instead of *Dedicated*. See [Creating a Private Location](https://help.blazemeter.com/docs/guide/private-locations-create.html) for details.
@@ -305,7 +305,7 @@ For example, let's say the generated URL is `mockservice232297-8080-<YOURNAMESPA
 
 You can now reach the virtual service endpoint at `mockservice232297-8080-<YOURNAMESPACE>.mydomain.local`
 
-Now that you have an Agent installed, continue reading how you [use your new Private Location](skill-blazemeter-private-locations://references/management.md#use).
+Now that you have an Agent installed, continue reading how you [use your new Private Location](skill-blazemeter-private-locations://references/management.md).
 
 ---
 
@@ -320,7 +320,7 @@ Install BlazeMeter agents using Helm Chart, including chart installation, config
 - A BlazeMeter account
 - A Kubernetes cluster. The same installation instructions apply for a variety of clusters, for example, EKS, GKE, AKS
 - Latest [Helm](https://helm.sh/) installed
-- Before proceeding with the installation, ensure that your Kubernetes cluster meets the minimum requirements. For more information, see [Private Location System Requirements](skill-blazemeter-private-locations://references/installation.md#system-requirements)
+- Before proceeding with the installation, ensure that your Kubernetes cluster meets the minimum requirements. For more information, see [Private Location System Requirements](skill-blazemeter-private-locations://references/installation.md)
 
 ### Obtain Location ID, Agent ID, and Auth Token from BlazeMeter
 
@@ -329,9 +329,9 @@ For this installation, identify your Private Location ID (formerly Harbour_ID), 
 **Get through BlazeMeter web UI:**
 
 1. Log in to BlazeMeter with Workspace Admin permissions
-2. [Create a Private Location](skill-blazemeter-private-locations://references/management.md#create)
+2. [Create a Private Location](skill-blazemeter-private-locations://references/management.md)
 3. After the Private Location has been created in BlazeMeter, copy the Private Location ID
-4. Start following the procedure how to [Create an Agent](skill-blazemeter-private-locations://references/installation.md#install-agent-for-kubernetes). Give the agent a name. (Optional) Enter the IP address of the agent. Click **Create**. Go to the **Helm chart** tab. *Do not run* any generated dock command. Instead, copy the following values into a text file:
+4. Start following the procedure how to [Create an Agent](skill-blazemeter-private-locations://references/installation.md). Give the agent a name. (Optional) Enter the IP address of the agent. Click **Create**. Go to the **Helm chart** tab. *Do not run* any generated dock command. Instead, copy the following values into a text file:
    - HARBOR_ID — your Private Location ID
    - SHIP_ID — your Agent ID
    - AUTH_TOKEN — your API authentication token

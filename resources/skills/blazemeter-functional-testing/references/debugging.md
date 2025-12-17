@@ -93,7 +93,7 @@ You can interactively edit variable values while the local debugger is running. 
 
 ### Debugging Using the Local Debug Option on the BlazeMeter Platform
 
-For the official documentation of this feature, see [Debugging Scriptless GUI Functional Tests](skill-blazemeter-functional-testing://references/debugging.md#debugging-scriptless-gui-functional-tests).
+For the official documentation of this feature, see [Debugging Scriptless GUI Functional Tests](skill-blazemeter-functional-testing://references/debugging.md).
 
 The local debugger is a great option for debugging a test on the BlazeMeter platform. It will run the Scriptless test locally on your machine. Once you have a test created or imported, the Debug option is available. Toggle the Debug switch at the top of the test Configuration page to turn on the debugger.
 

@@ -520,8 +520,8 @@ You can convert LoadRunner scripts to BlazeMeter.
 1. Go to [https://shiftleft.blazemeter.com](https://shiftleft.blazemeter.com/?utm_source=blog&utm_medium=BM_blog&utm_campaign=convert-loadrunner-to-open-source-jmeter-in-minutes) and upload the ZIP file.
 2. Open the test in BlazeMeter and download the zip file that contains all converted assets.
 3. Configure your tests from the converted ZIP file, either:
-   - Extract the JMX and [create a JMeter test](skill-blazemeter-performance-testing://references/scenarios.md#create-jmeter-test); OR
-   - Extract the YML and [create a Taurus test](skill-blazemeter-performance-testing://references/scenarios.md#create-taurus-test).
+   - Extract the JMX and [create a JMeter test](skill-blazemeter-performance-testing://references/scenarios.md); OR
+   - Extract the YML and [create a Taurus test](skill-blazemeter-performance-testing://references/scenarios.md).
 4. In BlazeMeter, the "Test History" tab displays various details such as the Test execution engine is used, the number of Concurrent Users/Threads, and the available Locations and providers (AWS, Google, Azure) from where the tests can be executed.
 5. Launch the test for the default duration of 20 mins.
 

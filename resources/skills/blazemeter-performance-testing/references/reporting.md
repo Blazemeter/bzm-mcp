@@ -188,7 +188,7 @@ Compare performance test reports to identify differences, including timeline com
 **Steps:**
 
 1. Open one of the reports that you want to compare and click the button to the right of the test report name to open a sub-menu
-2. Click the **Compare Report** option. You can also compare a report to a baseline. For more information, see [Baseline Comparison](skill-blazemeter-performance-testing://references/reporting.md#compare-reports). The **Add Test Runs to Compare** prompt window appears with the selected report
+2. Click the **Compare Report** option. You can also compare a report to a baseline. For more information, see [Baseline Comparison](skill-blazemeter-performance-testing://references/reporting.md). The **Add Test Runs to Compare** prompt window appears with the selected report
 3. Select the project, the test and the test runs to compare. You can compare up to 10 test runs. Each time a new test report is added for tests that share a common name, all of the previous selected tests will appear in the **Select test runs to compare** field
 4. Click **Compare**
 
@@ -481,7 +481,7 @@ Follow these steps:
 - **Engine Health Report**: Displays performance indicators received from the test engines. Engine Health indicates whether the test infrastructure itself could be the cause of bottlenecks or the errors which are appearing in other reports
 - **Errors Report**: Displays all errors received during the test run, categorized by labels (pages) and error types
 - **Logs Report**: Displays the logs of each engine used during the test run. You can display and filter engines and logs, and then select multiple logs for download
-- **Original Test Configuration Report**: Displays how your test was configured at the time the test covered by the report ran. This tab is especially useful if you have updated the test configuration since the report was run, as the details here will reflect the configuration prior to those updates. For more information, see [Original Test Configuration Report](skill-blazemeter-performance-testing://references/reporting.md#original-test-configuration-report)
+- **Original Test Configuration Report**: Displays how your test was configured at the time the test covered by the report ran. This tab is especially useful if you have updated the test configuration since the report was run, as the details here will reflect the configuration prior to those updates. For more information, see [Original Test Configuration Report](skill-blazemeter-performance-testing://references/reporting.md)
 
 ### Quick Search for Reports
 
@@ -500,11 +500,11 @@ The side bar with Reports shows on the left. The reports are sorted by execution
 In the header area of performance test reports, you can perform various actions to interact with the report and access different features. Some common actions include:
 
 - **Navigate** — You can navigate between different sections or tabs of the report, such as Timeline, Request Stats, Engine Health, Errors, and Summary
-- [Filtering Report Data](skill-blazemeter-performance-testing://references/reporting.md#filter-report-data) — You can adjust the filter to manage the data displayed in the report
-- [Set a Report as a Baseline](skill-blazemeter-performance-testing://references/reporting.md#compare-reports) — You can select or set a baseline for comparison purposes. This helps you compare the current test run with a previous one to identify performance improvements or regressions
-- [Sharing Reports](skill-blazemeter-performance-testing://references/reporting.md#share-reports)
-- [Comparing Reports](skill-blazemeter-performance-testing://references/reporting.md#compare-reports)
-- [Generate an Executive Summary (Printable Report)](skill-blazemeter-performance-testing://references/reporting.md#summary-report)
+- [Filtering Report Data](skill-blazemeter-performance-testing://references/reporting.md) — You can adjust the filter to manage the data displayed in the report
+- [Set a Report as a Baseline](skill-blazemeter-performance-testing://references/reporting.md) — You can select or set a baseline for comparison purposes. This helps you compare the current test run with a previous one to identify performance improvements or regressions
+- [Sharing Reports](skill-blazemeter-performance-testing://references/reporting.md)
+- [Comparing Reports](skill-blazemeter-performance-testing://references/reporting.md)
+- [Generate an Executive Summary (Printable Report)](skill-blazemeter-performance-testing://references/reporting.md)
 
 ---
 
@@ -523,7 +523,7 @@ Follow these steps:
 
 ### Summary Panel
 
-The summary panel at the top of the report shows key statistics of the test compared with the baseline. For more information about baseline, see [Baseline Comparison](skill-blazemeter-performance-testing://references/reporting.md#compare-reports).
+The summary panel at the top of the report shows key statistics of the test compared with the baseline. For more information about baseline, see [Baseline Comparison](skill-blazemeter-performance-testing://references/reporting.md).
 
 - **Max Users**: The maximum number of concurrent users generated at any given point in the test run is determined according to one-second intervals. First, the maximum number of concurrent users per second is calculated. Then the maximum number of users per minute is calculated by performing a Max Users calculation on all the values per second. Max Users is **NOT** the number of Total Users, only the total of users who ran simultaneously at any given moment. As a result, Max Users may not match your Total Users, which may be significantly higher.
 
@@ -561,7 +561,7 @@ You can directly generate a customizable and printable version of a report using
 
 The **Executive Summary** is a test report summary you can send to managers or other team members.
 
-This report includes all the components of the performance report, with the filters and view preferences applied by users (see [Filtering Report Data](skill-blazemeter-performance-testing://references/reporting.md#filter-report-data)).
+This report includes all the components of the performance report, with the filters and view preferences applied by users (see [Filtering Report Data](skill-blazemeter-performance-testing://references/reporting.md)).
 
 **Examples**: The **Timeline** component in the **Executive Summary** displays the labels and KPIs selected in the **Timeline** tab, the selected time range, graph resolution and additional customized charts. The **Request Stats** component in the **Executive Summary** includes the data as displayed on the **Request Stats** tab, including filters on labels, baseline comparison data, filtered by time, and so on.
 
@@ -584,7 +584,7 @@ You can generate a printable version of a report using the **Executive Summary (
 **Follow these steps:**
 
 1. Click the three dots next to your test report and select **Executive Summary (Classic)**. A new page with the test report displays
-2. (Optional) To customize your report logo, click the edit icon on the logo area. If you have customized your account logo in the [Account Settings](skill-blazemeter-administration://references/workspaces-projects.md#administration-managing-an-account), your custom logo will display
+2. (Optional) To customize your report logo, click the edit icon on the logo area. If you have customized your account logo in the [Account Settings](skill-blazemeter-administration://references/workspaces-projects.md), your custom logo will display
 3. (Optional) At the top of the report, you can write your own summary and conclusions
 
 The printable executive summary includes:
@@ -605,7 +605,7 @@ The Timeline report shows various types of KPIs within one graph so you can easi
 
 ### Explanation of the KPIs
 
-- **ANOMALIES - RESPONSE TIME**: Shows unexpected or irregular patterns in the time it takes for the application under test to respond to user requests or actions. See [View Anomalies](skill-blazemeter-performance-testing://references/reporting.md#view-anomalies)
+- **ANOMALIES - RESPONSE TIME**: Shows unexpected or irregular patterns in the time it takes for the application under test to respond to user requests or actions. See [View Anomalies](skill-blazemeter-performance-testing://references/reporting.md)
 - **VIRTUAL USERS**: Shows how many virtual users are currently active
 - **HITS (Hits per second)**: The number of HTTP/s requests per second that are generated by the test
 - **RESPONSE TIME**: The amount of time from the first byte sent to the server to the last byte received on the client side
@@ -653,7 +653,7 @@ To clear your selection, click **Unselect All**. To restore the default settings
 
 ### View KPIs from APM Integrations
 
-KPIs from [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md#apm-integration) profiles that you included in your test configuration will appear at the bottom of the list, after the built-in KPIs.
+KPIs from [APM Integration](skill-blazemeter-performance-testing://references/advanced-features.md) profiles that you included in your test configuration will appear at the bottom of the list, after the built-in KPIs.
 
 ### Download Timeline Report KPI Data
 
@@ -682,7 +682,7 @@ The above API call includes the following options:
 - **{{masterId}}**: The master ID of the report you want to see the data from
 - **{{label}}**: The label ID of the label you're interested in
 
-Use of the BlazeMeter API requires authentication per the instructions found in the article [Authorization](skill-blazemeter-api-reference://references/authentication.md#api-authorization).
+Use of the BlazeMeter API requires authentication per the instructions found in the article [Authorization](skill-blazemeter-api-reference://references/authentication.md).
 
 ### Sliding Windows
 
@@ -697,7 +697,7 @@ To enable sliding windows, create a test, enable failure criteria, and select th
 
 You can set the **1-min slide window eval** option for all failure criteria simultaneously so that all failure criteria can stop a test.
 
-For more information, see [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md#failure-criteria).
+For more information, see [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md).
 
 **How it works**: Sliding windows evaluate performance against failure criteria in real time, checking at regular intervals during the test duration. For instance, if a failure criterion is set, such as an average response time exceeding 500 ms, BlazeMeter continuously checks the performance of the preceding minute.
 
@@ -736,7 +736,7 @@ If BlazeMeter cannot determine a specific label (for example, due to overlapping
 3. The **Errors** tab opens with errors grouped by label. Label "A" is expanded by default, displaying all errors associated with this label.
 
 **Jump to next section:**
-- [Request Stats Report](skill-blazemeter-performance-testing://references/reporting.md#request-stats-report)
+- [Request Stats Report](skill-blazemeter-performance-testing://references/reporting.md)
 
 ### View Anomalies
 
@@ -761,7 +761,7 @@ If **Scenario**, **Location**, or **Transaction** filters are applied, anomalies
 
 Anomalies are detected and displayed for multi-test reports, ensuring comprehensive analysis across various tests.
 
-Account owners can determine whether anomaly detection is available. For more information, see [Manage Environments](skill-blazemeter-administration://references/workspaces-projects.md#administration-manage-environment).
+Account owners can determine whether anomaly detection is available. For more information, see [Manage Environments](skill-blazemeter-administration://references/workspaces-projects.md).
 
 **Steps:**
 
@@ -788,7 +788,7 @@ Follow these steps:
 1. In the **Performance** tab, select **Reports**. The most recent reports are shown on top.
 2. Click **Show all reports** and select a report to view its details.
 3. Click the **Errors** tab. You can see all errors received during the test run.
-4. (Optional) Move the timeline sliders or [Filter by Date and Time](skill-blazemeter-performance-testing://references/reporting.md#filter-report-data) to narrow down the time. The results for your selected time period will show in the results table.
+4. (Optional) Move the timeline sliders or [Filter by Date and Time](skill-blazemeter-performance-testing://references/reporting.md) to narrow down the time. The results for your selected time period will show in the results table.
 5. Group errors by: Label, Response Code, or Assertion Name.
 
 ### Types of Errors
@@ -827,7 +827,7 @@ Admins and account owners can enable or disable this feature on the account sett
 5. (Optional) Click **Copy to clipboard** to copy the response body.
 
 **Jump to next section:**
-- [AI Log Analysis Report](skill-blazemeter-performance-testing://references/reporting.md#ai-log-analysis-report)
+- [AI Log Analysis Report](skill-blazemeter-performance-testing://references/reporting.md)
 
 ---
 
@@ -844,8 +844,8 @@ Follow these steps:
 1. On the **Performance** tab, select **Reports**. The most recent reports are shown on top.
 2. Click **Show all reports** and select a report to view its details.
 3. Click the **Request Stats** tab.
-4. (Optional) To specify the time period of the report, move the timeline sliders or [Filter by Date and Time](skill-blazemeter-performance-testing://references/reporting.md#filter-report-data). The results for your selected time period are displayed in the results table.
-5. (Optional) To define a test run as a baseline for comparison, turn on the **Show Baseline Comparison** toggle and specify the baseline. You can compare subsequent test runs to the baseline. For more information, see [Baseline Comparison](skill-blazemeter-performance-testing://references/reporting.md#compare-reports).
+4. (Optional) To specify the time period of the report, move the timeline sliders or [Filter by Date and Time](skill-blazemeter-performance-testing://references/reporting.md). The results for your selected time period are displayed in the results table.
+5. (Optional) To define a test run as a baseline for comparison, turn on the **Show Baseline Comparison** toggle and specify the baseline. You can compare subsequent test runs to the baseline. For more information, see [Baseline Comparison](skill-blazemeter-performance-testing://references/reporting.md).
 6. To filter statistics based on labels, in the **Filter By Label** list, click all labels that you want to display. If you select **ALL**, values for all requests made during the test are displayed. If you used your own JMeter script, this table displays the labels you used in your script.
 7. Click **Apply**.
 8. (Optional) To specify the KPIs to be displayed in the table, click **Edit Columns**. Examine the list of available KPIs. Drag and drop the columns you want to display into the desired order.
@@ -945,7 +945,7 @@ Imagine you are running a performance test and notice that the error percentage 
 The selected label is expanded by default.
 
 **Jump to next section:**
-[Engine Health Report](skill-blazemeter-performance-testing://references/reporting.md#engine-health-report)
+[Engine Health Report](skill-blazemeter-performance-testing://references/reporting.md)
 
 ---
 
@@ -1196,7 +1196,7 @@ The Engine Health report displays performance indicators received from the test 
 
 **Use when**: Viewing engine health metrics, monitoring CPU and memory levels, troubleshooting high resource utilization, or determining optimal users per engine.
 
-The Engine Health report indicates whether the test infrastructure itself could be the cause of bottlenecks or the errors which are appearing in other reports. Engine Health is also a great resource when deciding how many virtual users (VUs) each engine can support. The ideal ratio depends on the complexity and memory footprint of your script(s). You can read about the process for planning and calibration of test execution to optimally utilize available resources in the help topic, [Calibrating a BlazeMeter test](skill-blazemeter-performance-testing://references/jmeter-configuration.md#calibrating-a-jmeter-test).
+The Engine Health report indicates whether the test infrastructure itself could be the cause of bottlenecks or the errors which are appearing in other reports. Engine Health is also a great resource when deciding how many virtual users (VUs) each engine can support. The ideal ratio depends on the complexity and memory footprint of your script(s). You can read about the process for planning and calibration of test execution to optimally utilize available resources in the help topic, [Calibrating a BlazeMeter test](skill-blazemeter-performance-testing://references/jmeter-configuration.md).
 
 When running performance tests, it is important to monitor the resource utilization. If one or more engines show high resource utilization, it could impact the test results.
 
@@ -1362,7 +1362,7 @@ Follow these steps:
 
 Subsequent tests are compared against the baseline with these failure criteria. If performance degrades compared to the baseline, the test will fail automatically.
 
-For more information about how to fail tests against the baseline when running from Taurus and for baseline-based Taurus failure criteria in BlazeMeter UI, see [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md#failure-criteria).
+For more information about how to fail tests against the baseline when running from Taurus and for baseline-based Taurus failure criteria in BlazeMeter UI, see [Failure Criteria](skill-blazemeter-performance-testing://references/advanced-features.md).
 
 For customers on accounts with **unlimited data retention**, baselines will not be archived. [View plans](https://www.blazemeter.com/pricing/#pricing-details) or contact your account manager for more information.
 
@@ -1387,7 +1387,7 @@ BlazeMeter uses statistical models to implement anomaly detection.
 - Detecting anomalies early in the testing process helps in resolving potential issues before they impact the user experience, ensuring smooth and reliable application performance
 - Continuous monitoring for anomalies helps maintain optimal performance by identifying and addressing bottlenecks and other performance-related issues promptly
 
-BlazeMeter integrates anomaly detection into its continuous testing platform in the [Timeline Report](skill-blazemeter-performance-testing://references/reporting.md#timeline-report).
+BlazeMeter integrates anomaly detection into its continuous testing platform in the [Timeline Report](skill-blazemeter-performance-testing://references/reporting.md).
 
 ### How BlazeMeter Detects Anomalies
 

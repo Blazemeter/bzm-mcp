@@ -14,13 +14,13 @@ Alternatively, you may have observed that your test hangs indefinitely at the st
 
 ### First Steps
 
-When this happens, the first thing to do is to click the Logs tab to review your [Logs Report](skill-blazemeter-performance-testing://references/reporting.md#logs-report). Download the *artifacts.zip* and review the logs included in it.
+When this happens, the first thing to do is to click the Logs tab to review your [Logs Report](skill-blazemeter-performance-testing://references/reporting.md). Download the *artifacts.zip* and review the logs included in it.
 
 The most common causes of a startup hang or failure fall under these categories:
 
-- [Missing Files](skill-blazemeter-performance-testing://references/troubleshooting.md#missing-files)
-- [Misconfigured Test](skill-blazemeter-performance-testing://references/troubleshooting.md#misconfigured-test)
-- [Private Locations Failure](skill-blazemeter-performance-testing://references/troubleshooting.md#private-locations-failure)
+- [Missing Files](skill-blazemeter-performance-testing://references/troubleshooting.md)
+- [Misconfigured Test](skill-blazemeter-performance-testing://references/troubleshooting.md)
+- [Private Locations Failure](skill-blazemeter-performance-testing://references/troubleshooting.md)
 
 ### Missing Files
 
@@ -33,21 +33,21 @@ java.lang.IllegalArgumentException: File your_file_name.csv must exist and be re
 
 This means one of the following:
 
-- **You may not have uploaded all files required** to run your test script in BlazeMeter. If your test script requires any additional files (CSVs, JARs, etc.), then refer to our guides on [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md#uploading-files) and [Shared Folders](skill-blazemeter-performance-testing://references/advanced-features.md#shared-folders).
-- **You may have uploaded a required file, but your test script still refers to it using a local file path**. For example, a CSV Data Set Config element may still refer to a CSV file using a local path. This is likewise explained in our guide on guides on [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md#uploading-files) and [Shared Folders](skill-blazemeter-performance-testing://references/advanced-features.md#shared-folders).
+- **You may not have uploaded all files required** to run your test script in BlazeMeter. If your test script requires any additional files (CSVs, JARs, etc.), then refer to our guides on [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md) and [Shared Folders](skill-blazemeter-performance-testing://references/advanced-features.md).
+- **You may have uploaded a required file, but your test script still refers to it using a local file path**. For example, a CSV Data Set Config element may still refer to a CSV file using a local path. This is likewise explained in our guide on guides on [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md) and [Shared Folders](skill-blazemeter-performance-testing://references/advanced-features.md).
 - **You may have uploaded a required file, but the filename referenced in your script is in a different case than the filename of the one uploaded**. BlazeMeter engines run on Linux, which treats filenames as case-sensitive, so *Your_File_Name.csv* is a different file from *your_file_name.csv* or *Your_File_name.csv*. Make sure your filename references are consistent with the case used in your uploaded filename.
 
 ### Misconfigured Test
 
-- **You may have accidentally designated the wrong file as your main test file**. In the following example, we have a [Taurus](skill-blazemeter-performance-testing://references/scenarios.md#create-taurus-test) YAML file pointing to a Gatling script file, and the YAML is correctly designated as the main file: However, if you accidentally click the other file, the arrow will move to it, changing it to the main file: The second scenario will fail to start since BlazeMeter requires a YAML in order to execute the Gatling script, yet in this configuration, BlazeMeter will ignore the YAML file entirely. To fix it, just click the YAML again to reinstate it as the main test file.
-- **You may have tried to run a test that requires more engines than your plan allows for**. For example, if you are on a [Basic Plan](https://www.blazemeter.com/pricing) which only allows for two engines (load generators), but attempt to start a test configured to utilize four engines, the test may hang on startup since it is trying to spin up two additional engines that are not available under the terms of the subscription plan. If you have enabled [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md#eux-monitoring), please be aware that this feature requires running on an additional engine of its own. For example, a one-engine test with EUX Monitoring enabled requires two engines in total.
+- **You may have accidentally designated the wrong file as your main test file**. In the following example, we have a [Taurus](skill-blazemeter-performance-testing://references/scenarios.md) YAML file pointing to a Gatling script file, and the YAML is correctly designated as the main file: However, if you accidentally click the other file, the arrow will move to it, changing it to the main file: The second scenario will fail to start since BlazeMeter requires a YAML in order to execute the Gatling script, yet in this configuration, BlazeMeter will ignore the YAML file entirely. To fix it, just click the YAML again to reinstate it as the main test file.
+- **You may have tried to run a test that requires more engines than your plan allows for**. For example, if you are on a [Basic Plan](https://www.blazemeter.com/pricing) which only allows for two engines (load generators), but attempt to start a test configured to utilize four engines, the test may hang on startup since it is trying to spin up two additional engines that are not available under the terms of the subscription plan. If you have enabled [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md), please be aware that this feature requires running on an additional engine of its own. For example, a one-engine test with EUX Monitoring enabled requires two engines in total.
 
 ### Private Locations Failure
 
-If you're executing your test via a [Private Location](skill-blazemeter-private-locations://references/introduction.md#overview) instead of a cloud engine, then the problem may not be with your test, but with your agent.
+If you're executing your test via a [Private Location](skill-blazemeter-private-locations://references/introduction.md) instead of a cloud engine, then the problem may not be with your test, but with your agent.
 
-- **The most common problems with agents include connection issues or the agent running out of disk space**, both of which can be addressed by ensuring all [System Requirements](skill-blazemeter-private-locations://references/installation.md#system-requirements) are met and testing for any [connection issues between the agent and BlazeMeter](skill-blazemeter-private-locations://references/troubleshooting.md#connection-errors).
-- Make sure to [review your agent's logs](skill-blazemeter-private-locations://references/management.md#agent-log) and [verify all image tags](skill-blazemeter-private-locations://references/troubleshooting.md) appears as they should.
+- **The most common problems with agents include connection issues or the agent running out of disk space**, both of which can be addressed by ensuring all [System Requirements](skill-blazemeter-private-locations://references/installation.md) are met and testing for any [connection issues between the agent and BlazeMeter](skill-blazemeter-private-locations://references/troubleshooting.md).
+- Make sure to [review your agent's logs](skill-blazemeter-private-locations://references/management.md) and [verify all image tags](skill-blazemeter-private-locations://references/troubleshooting.md) appears as they should.
 
 ---
 
@@ -146,11 +146,11 @@ This is primarily because each "user" in a Selenium test runs through its own in
 
 ### Recommendations for Running Selenium Tests on BlazeMeter
 
-For running Selenium tests on BlazeMeter, we recommend using [Taurus](skill-blazemeter-performance-testing://references/taurus.md#create-taurus-test) and starting with a maximum of 5 [users per engine](skill-blazemeter-performance-testing://references/taurus.md#taurus-calibration), then adjust accordingly as resources allow (which you can monitor via the Engine Health tab of your test report). Additional guidance on how to properly calibrate a test for best performance can be found in [Calibrating a Taurus Test](skill-blazemeter-performance-testing://references/taurus.md#taurus-calibration).
+For running Selenium tests on BlazeMeter, we recommend using [Taurus](skill-blazemeter-performance-testing://references/taurus.md) and starting with a maximum of 5 [users per engine](skill-blazemeter-performance-testing://references/taurus.md), then adjust accordingly as resources allow (which you can monitor via the Engine Health tab of your test report). Additional guidance on how to properly calibrate a test for best performance can be found in [Calibrating a Taurus Test](skill-blazemeter-performance-testing://references/taurus.md).
 
 ### Multi-Test Approach for Higher Loads
 
-There is a way around the recommended five-user maximum, however: You can execute a [multi-test](skill-blazemeter-performance-testing://references/scenarios.md#performance-create-multi-test) in which each single test runs no more than five users each. You can add the single test multiple times to the multi-test. For example, if you wanted to test a fifteen-user load, you could create a multi-test that includes three instances of the single five-user test.
+There is a way around the recommended five-user maximum, however: You can execute a [multi-test](skill-blazemeter-performance-testing://references/scenarios.md) in which each single test runs no more than five users each. You can add the single test multiple times to the multi-test. For example, if you wanted to test a fifteen-user load, you could create a multi-test that includes three instances of the single five-user test.
 
 ---
 
@@ -162,33 +162,33 @@ There are various reasons why a test script that works on your local machine wil
 
 ### First Steps
 
-The first and the foremost thing you should do is check the errors found in your test's [Errors Report](skill-blazemeter-performance-testing://references/reporting.md#errors-report), then download and review the logs from your test's [Logs Report](skill-blazemeter-performance-testing://references/reporting.md#logs-report).
+The first and the foremost thing you should do is check the errors found in your test's [Errors Report](skill-blazemeter-performance-testing://references/reporting.md), then download and review the logs from your test's [Logs Report](skill-blazemeter-performance-testing://references/reporting.md).
 
 The most common causes for this problem fall under these categories:
 
-- [Missing File(s)](skill-blazemeter-performance-testing://references/troubleshooting.md#missing-files-jmeter)
-- [Network Issues](skill-blazemeter-performance-testing://references/troubleshooting.md#network-issues-jmeter)
-- [Load/Performance Issues](skill-blazemeter-performance-testing://references/troubleshooting.md#load-performance-issues-jmeter)
+- [Missing File(s)](skill-blazemeter-performance-testing://references/troubleshooting.md)
+- [Network Issues](skill-blazemeter-performance-testing://references/troubleshooting.md)
+- [Load/Performance Issues](skill-blazemeter-performance-testing://references/troubleshooting.md)
 
 ### Missing Files
 
-- **You may not have uploaded all files required** to run your test script in BlazeMeter. If your test script requires any additional files (CSVs, JARs, etc.), then refer to our guides on [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md#uploading-files) and [Shared Folders](skill-blazemeter-performance-testing://references/advanced-features.md#shared-folders).
+- **You may not have uploaded all files required** to run your test script in BlazeMeter. If your test script requires any additional files (CSVs, JARs, etc.), then refer to our guides on [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md) and [Shared Folders](skill-blazemeter-performance-testing://references/advanced-features.md).
 - **If you submit your test from CLI** (e.g. using the -cloud option), make sure your yml includes a *files:* section and list all files that are referenced in your script so they will be uploaded to the test. See section "Specifying Additional Resource Files" in [this article](http://gettaurus.org/docs/Cloud/) for details on how to do this.
-- **You may have uploaded a required file, but your test script still refers to it using a local file path**. (For example, a CSV Data Set Config element may still refer to a CSV file using a local path.) This is likewise explained in our guides on [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md#uploading-files) and [Shared Folders](skill-blazemeter-performance-testing://references/advanced-features.md#shared-folders).
+- **You may have uploaded a required file, but your test script still refers to it using a local file path**. (For example, a CSV Data Set Config element may still refer to a CSV file using a local path.) This is likewise explained in our guides on [Uploading Files](skill-blazemeter-performance-testing://references/scenarios.md) and [Shared Folders](skill-blazemeter-performance-testing://references/advanced-features.md).
 - **You may have uploaded a required file, but the filename referenced in your script is in a different case than the filename of the one uploaded**. BlazeMeter engines run on Linux, which treats filenames as case-sensitive, so *Your_File_Name.csv* is a different file from *your_file_name.csv* or *Your_File_name.csv*.
-- **You may have used a JMeter plugin but did not upload the plugin's JAR files**. BlazeMeter automatically includes most standard JMeter plugins, but some plugins must be uploaded with the test. Check the [logs report](skill-blazemeter-performance-testing://references/reporting.md#logs-report) for any references to missing plugins.
+- **You may have used a JMeter plugin but did not upload the plugin's JAR files**. BlazeMeter automatically includes most standard JMeter plugins, but some plugins must be uploaded with the test. Check the [logs report](skill-blazemeter-performance-testing://references/reporting.md) for any references to missing plugins.
 
 ### Network Issues
 
-- **Your application server may only be accessible inside your local network**. If you see errors in your [Errors Report](skill-blazemeter-performance-testing://references/reporting.md#errors-report) such as "connection refused", "socket closed", "connection timed out", "unknown host", 404 error codes, or similar errors, this means that even though your local machine (behind your internal network's firewall) can reach your application server, BlazeMeter's engines (outside of your firewall) cannot. Review our options for [Load Testing Behind Your Firewall](https://www.blazemeter.com/blog/top-three-options-running-performance-tests-behind-your-corporate-firewall).
+- **Your application server may only be accessible inside your local network**. If you see errors in your [Errors Report](skill-blazemeter-performance-testing://references/reporting.md) such as "connection refused", "socket closed", "connection timed out", "unknown host", 404 error codes, or similar errors, this means that even though your local machine (behind your internal network's firewall) can reach your application server, BlazeMeter's engines (outside of your firewall) cannot. Review our options for [Load Testing Behind Your Firewall](https://www.blazemeter.com/blog/top-three-options-running-performance-tests-behind-your-corporate-firewall).
 - **If your application server returns connection errors** as mentioned in the above bullet, but BlazeMeter was able to establish some connections prior to the errors, then this is also indicative of a problem with either your application server or network. Unlike the above scenario, it may not necessarily be a firewall issue, but an issue with your server or network struggling with the load or frequency of connections, or some other internal server/network issue that results in only partial connectivity during the test.
 - **You may be trying to test one of the [Websites Forbidden to Test Using BlazeMeter](https://help.blazemeter.com/docs/answers/answers-forbidden-domains.html).
 
 ### Load/Performance Issues
 
-- **You may have been running your local test as a small-load test** (executing only a few threads/users), but the test you configured in BlazeMeter is a significantly higher-load test. If this is the case, depending on the type of test you're attempting to run, review our guide on [Calibrating a JMeter Test](skill-blazemeter-performance-testing://references/jmeter-configuration.md#jmeter-calibration) or [Calibrating a Taurus Test](skill-blazemeter-performance-testing://references/taurus.md#taurus-calibration).
+- **You may have been running your local test as a small-load test** (executing only a few threads/users), but the test you configured in BlazeMeter is a significantly higher-load test. If this is the case, depending on the type of test you're attempting to run, review our guide on [Calibrating a JMeter Test](skill-blazemeter-performance-testing://references/jmeter-configuration.md) or [Calibrating a Taurus Test](skill-blazemeter-performance-testing://references/taurus.md).
 - **Please be aware that a local test run cannot be compared to a cloud run** because your local machine will have a very different allocation of CPU/memory/etc. than a cloud VPC.
-- **If you're running a Selenium test**, be aware of our limitations on [using Selenium for load testing](skill-blazemeter-performance-testing://references/troubleshooting.md#selenium-vs-jmeter-load-testing).
+- **If you're running a Selenium test**, be aware of our limitations on [using Selenium for load testing](skill-blazemeter-performance-testing://references/troubleshooting.md).
 
 ---
 
@@ -228,7 +228,7 @@ Follow these steps:
 
 A low-scale test run is created. Use the test run to validate your configuration.
 
-If you encounter the following error when starting a debug test, `Bad Request: Multiple scenarios are not supported in Debug mode.` see [Debug Tests Fails with "Multiple scenarios are not supported"](skill-blazemeter-performance-testing://references/troubleshooting.md#debug-test-multiple-scenarios) for more details.
+If you encounter the following error when starting a debug test, `Bad Request: Multiple scenarios are not supported in Debug mode.` see [Debug Tests Fails with "Multiple scenarios are not supported"](skill-blazemeter-performance-testing://references/troubleshooting.md) for more details.
 
 ### View Results of Debug Test Runs
 
@@ -252,7 +252,7 @@ The **Debug Test** runs do not appear in test trends, the **Reports** drop-down 
 
 **Symptom:**
 
-When attempting to execute a [Debug Test](skill-blazemeter-performance-testing://references/troubleshooting.md#debug-test-low-scale-test-run-and-enhanced-logging), you are met with this pop-up error message:
+When attempting to execute a [Debug Test](skill-blazemeter-performance-testing://references/troubleshooting.md), you are met with this pop-up error message:
 
 *Bad Request: Multiple scenarios are not supported in debug run*
 
@@ -267,7 +267,7 @@ A 'Debug Test' only supports running with one engine. When executing a test, eac
 There are two ways in which your test may try to run more than one scenario:
 
 - **If executing your test via a Taurus YAML configuration file**, you may have defined more than one scenario under the **execution:** section. Remove additional scenarios so that the YAML only executes one scenario.
-- **You may have enabled [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md#eux-monitoring)**. If so, this feature requires an additional engine, as the End User Experience (EUX) test is considered its own scenario apart from your main test scenario. This feature is not supported for Debug Tests, so make sure to disable it before running it in debug mode.
+- **You may have enabled [End User Experience Monitoring](skill-blazemeter-performance-testing://references/advanced-features.md)**. If so, this feature requires an additional engine, as the End User Experience (EUX) test is considered its own scenario apart from your main test scenario. This feature is not supported for Debug Tests, so make sure to disable it before running it in debug mode.
 
 ---
 
