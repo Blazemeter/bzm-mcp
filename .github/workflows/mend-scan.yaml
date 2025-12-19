@@ -1,0 +1,53 @@
+name: Mend (WhiteSource) Scan
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  mend-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Checkout config file
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ secrets.BLAZE_UTILS_REPO }}
+        ref: master
+        path: whitesourceScanFile
+        sparse-checkout: |
+          whiteSource/wss-unified-agent-with-policies.config
+        token: ${{ secrets.BLAZE_UTILS_TOKEN }}
+    
+    - name: Setup Java (required for WhiteSource agent)
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    - name: Download WhiteSource Unified Agent
+      shell: bash
+      run: |
+        curl -LJO https://github.com/whitesource/unified-agent-distribution/raw/master/standAlone/wss_agent.sh
+        chmod +x wss_agent.sh
+        ls -ltr
+    
+    - name: Run WhiteSource Scan
+      shell: bash
+      env:
+        WHITESOURCE_TOKEN: ${{ secrets.WHITESOURCE_API_KEY }}
+      run: |
+        ./wss_agent.sh \
+          -apiKey ${WHITESOURCE_TOKEN} \
+          -project bzm-mcp \
+          -scanComment "${{ github.ref_name }}" \
+          -projectPerFolder False \
+          -gradle.aggregateModules True \
+          -product BlazeMeter \
+          -c whitesourceScanFile/whiteSource/wss-unified-agent-with-policies.config \
+          -wss.url https://saas-eu.whitesourcesoftware.com/agent
+
