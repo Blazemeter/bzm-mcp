@@ -69,11 +69,12 @@ class HelpManager(Manager):
             help_content = []
             for url, content in help_chunk_response.result.items():
                 help_item = {"title": content.get("t", [""])[0],
-                             "help_id": url.replace("/content/", "").replace(".html", ""),
+                             "help_id": url.replace("/content/", "").removesuffix(".html"),
                              "help_tree_id": content.get("i", [""])[0]
                              }
-                # Exclude '___' and all the 'signup'
-                if help_item.get("help_id") == "___" or help_item.get("help_id").startswith("signup"):
+                # Exclude '___', release-notes and all the 'signup'
+                if help_item.get("help_id") == "___" or help_item.get("help_id").startswith(
+                        "/guide/release-notes") or help_item.get("help_id").startswith("signup"):
                     continue
                 help_content.append(help_item)
             return help_content
@@ -112,7 +113,7 @@ class HelpManager(Manager):
                     "sub_nodes": help_tree_index_flat[tree_id]["n"]
                 }
         if '' in help_tree.keys():
-            help_tree['root_category'] = help_tree.pop('') # Assign a name to the root category
+            help_tree['root_category'] = help_tree.pop('')  # Assign a name to the root category
         HelpManager.help_tree = help_tree
 
     async def list_help_categories(self) -> BaseResult:
@@ -155,10 +156,14 @@ class HelpManager(Manager):
         for help_id in help_id_list:
 
             help_base_url = HELP_BASE_CONTENT_URL
-            help_url = f"{help_base_url}/" # BlazeMeter don't use category_id
+            help_url = f"{help_base_url}/"  # BlazeMeter don't use category_id
             if subcategory_id != "self":
                 help_url += f"{subcategory_id}/"
-            help_url += f"{help_id}.html" # BlazeMeter use HTML not HTM
+
+            if not help_id.endswith(".htm"):  # only if it's not a htm extension
+                help_url += f"{help_id}.html"  # Restore the html extension
+            else:
+                help_url += f"{help_id}"
 
             help_object = {
                 "help_id": help_id,
@@ -168,20 +173,23 @@ class HelpManager(Manager):
                                             result_formatter_params={"base_url": help_url})
 
                 # Expand or "Argument" the content ending with ""
-                if result.result.get("help_content", "").endswith("In this section:"):
-                    index_id = f"{category_id}:{subcategory_id}:{help_id}"
-                    sub_nodes_items = []
-                    if index_id in HelpManager.help_items_index:
-                        node_id = HelpManager.help_items_index[index_id]
-                        sub_nodes = HelpManager.help_index_nodes[node_id]["sub_nodes"]
-                        for sub_node in sub_nodes:
-                            if sub_node in HelpManager.help_index_nodes:
-                                sub_nodes_items.append(HelpManager.help_index_nodes[sub_node])
-                    help_object["sub_nodes"] = sub_nodes_items
+                if result.result is not None:
+                    if result.result.get("help_content", "").endswith("In this section:"):
+                        index_id = f"{category_id}:{subcategory_id}:{help_id}"
+                        sub_nodes_items = []
+                        if index_id in HelpManager.help_items_index:
+                            node_id = HelpManager.help_items_index[index_id]
+                            sub_nodes = HelpManager.help_index_nodes[node_id]["sub_nodes"]
+                            for sub_node in sub_nodes:
+                                if sub_node in HelpManager.help_index_nodes:
+                                    sub_nodes_items.append(HelpManager.help_index_nodes[sub_node])
+                        help_object["sub_nodes"] = sub_nodes_items
 
-                help_object["help_result"] = result.result
+                    help_object["help_result"] = result.result
+                else:
+                    help_object["help_result"] = f"URL:{help_url}, Error:{result.error}"
             except httpx.HTTPStatusError as e:
-                help_object["help_result"] = f"Error:{e.response.text}"
+                help_object["help_result"] = f"URL:{help_url}, Error:{e.response.text}"
 
             results.append(help_object)
 
@@ -199,6 +207,8 @@ def register(mcp, token: Optional[BzmToken]):
         name=f"{TOOLS_PREFIX}_help",
         description="""
 Operations on documentation and help information.
+**Note**: If you need to call this action multiple times (even with different parameters), 
+use the `batch` action instead of making separate calls.
 Actions:
 - list_help_categories: List all category_ids and for each of them list their subcategory_ids.
 - list_help_category_content: List all help_id list related with a category_id and subcategory_id.
@@ -210,8 +220,12 @@ Actions:
         category_id (str): The category id.
         subcategory_id (str): The sub-category id.
         help_id_list (List[str]): The help id list to read.
+- batch: Execute multiple actions in one call.
+    args(dict): Dictionary with the following required parameters:
+        batch_calls (List[Dict]): List of Actions dictionaries (excluding the action batch), each with 'action' (str) and 'args' (Dict).
 Hints:
 - Always generates the url attributes as a link in markdown format (like command_url).
+- **CRITICAL**: For multiple actions, always use the 'batch' action.
 """
     )
     async def help_main(
@@ -233,6 +247,37 @@ Hints:
                     return await help_manager.read_help_info(args.get("category_id", "home"),
                                                              args.get("subcategory_id", ""),
                                                              args.get("help_id_list", []))
+                case "batch":
+                    # Make sure this initialization doesn't run in parallel
+                    if HelpManager.help_tree is None:
+                        await help_manager._load_help_tree()
+
+                    batch_calls = args.get("batch_calls", [])
+                    if not isinstance(batch_calls, list) or not batch_calls:
+                        return BaseResult(
+                            error="batch_calls must be a non-empty list of dicts with 'action' and 'args'")
+
+                    async def process_call(call: Dict[str, Any]) -> BaseResult | List[BaseResult]:
+                        sub_action = call.get("action", "")
+                        sub_args = call.get("args", {})
+                        try:
+                            # Recursively call the skills function itself
+                            return await help_main(sub_action, sub_args, ctx)
+                        except httpx.HTTPStatusError as e:
+                            return BaseResult(error=f"HTTP error in sub-action {sub_action}: {traceback.format_exc()}")
+                        except Exception as e:
+                            return BaseResult(
+                                error=f"Error in sub-action {sub_action}: {traceback.format_exc()}\n{SUPPORT_MESSAGE}")
+
+                    # Parallel execution with asyncio.gather
+                    results = await asyncio.gather(*[process_call(call) for call in batch_calls],
+                                                   return_exceptions=True)
+                    # Handle any exceptions returned
+                    processed_results = [
+                        r if not isinstance(r, Exception) else BaseResult(error=f"Unhandled exception: {str(r)}")
+                        for r in results
+                    ]
+                    return BaseResult(result=processed_results)
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in help manager tool"

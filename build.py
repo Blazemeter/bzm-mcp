@@ -2,6 +2,7 @@
 """Build script for creating PyInstaller binary."""
 import os
 import platform
+import shutil
 import tomllib
 from datetime import date
 from pathlib import Path
@@ -9,6 +10,12 @@ from pathlib import Path
 import PyInstaller.__main__
 
 sep = os.pathsep
+
+def clean_build():
+    build_dir = Path('build')
+    if build_dir.exists():
+        shutil.rmtree(build_dir)
+
 
 def build_version_file():
     pyproject = Path(__file__).parent / "pyproject.toml"
@@ -58,6 +65,9 @@ VSVersionInfo(
 
 def build():
     """Build the binary using PyInstaller."""
+
+    clean_build() # Clean the build folder if exist, start with a clean build
+
     system = platform.system().lower()
     suffix = '.exe' if system == 'windows' else ''
     arch = platform.machine().lower()
@@ -80,12 +90,14 @@ def build():
         '--onefile',
         '--version-file=version_info.txt',
         f'--add-data=pyproject.toml{sep}.',
+        f'--add-data=resources{sep}resources',
         f'--name={name}',
         f'--icon={icon}',
         '--clean',
         '--noconfirm',
     ])
 
+    clean_build() # Clean the build, pyinstaller doesn't delete it
 
 if __name__ == "__main__":
     build_version_file()

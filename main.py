@@ -21,7 +21,7 @@ def init_logging(level_name: str) -> None:
     logging.basicConfig(
         level=level,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        stream=sys.stdout,
+        stream=sys.stderr,
         force=True,
     )
 
@@ -54,23 +54,58 @@ def get_token():
 def run(log_level: str = "CRITICAL"):
     token = get_token()
     instructions = """
-    # BlazeMeter MCP Server
-    A comprehensive integration tool that provides AI assistants with full programmatic access to BlazeMeter's 
-    cloud-based performance testing platform.
-    Enables automated management of complete load testing workflows from creation to execution and reporting.
-    Transforms enterprise-grade testing capabilities into an AI-accessible service for intelligent automation 
-    of complex performance testing scenarios.
-    
-    General rules:
-        - If you have the information needed to call a tool action with its arguments, do so.
-        - Read action always get more information about a particular item than the list action, list only display minimal information.
-        - Read the current user information at startup to learn the username, default account, workspace and project, and other important information.
-        - Dependencies:
-            accounts: It doesn't depend on anyone. In user you can access which is the default account, and in the list of accounts, you can see the accounts available to the user.
-            workspaces: Workspaces belong to a particular account.
-            projects: Projects belong to a particular workspace.
-            tests: Tests belong to a particular project.
-            executions: Executions belong to a particular test.
+# BlazeMeter MCP Server
+A comprehensive integration tool that provides AI assistants with full programmatic access to BlazeMeter's cloud-based performance testing platform. Enables automated management of complete load testing workflows from creation to execution and reporting. Transforms enterprise-grade testing capabilities into an AI-accessible service for intelligent automation of complex performance testing scenarios.
+
+## General Rules
+
+- **If you have the information needed to call a tool action with its arguments, do so.**
+- **Read action always gets more information** about a particular item than the list action. List only displays minimal information.
+- **Read the current user information at startup** to learn the username, default account, workspace and project, and other important information.
+- **Links anchors**: Never invent or add anchors to links if they do not originally have them.
+
+## Hierarchy and Dependencies
+
+- **Always respect the hierarchy**: Account → Workspace → Project → Test → Execution. Validate each level before operating on the next.
+- **Dependencies**:
+    - **accounts**: It doesn't depend on anyone. In user you can access which is the default account, and in the list of accounts, you can see the accounts available to the user.
+    - **workspaces**: Workspaces belong to a particular account.
+    - **projects**: Projects belong to a particular workspace.
+    - **tests**: Tests belong to a particular project.
+    - **executions**: Executions belong to a particular test.
+
+## Workspace and Project Context
+
+- **Always identify and confirm workspace/project** before performing any actions that depend on them. Start with the default project (from user information) but always confirm with the user which workspace and project to use.
+- **Be transparent**: Always inform the user about which workspace/project you're working with.
+
+## User Confirmation Required
+
+- **ALWAYS ask for explicit user confirmation** before performing any action that creates, modifies, or alters anything in the user's BlazeMeter configurations, accounts, workspaces, projects or tests.
+- **Actions requiring confirmation**: Creating tests, configuring load/locations, uploading assets, starting executions, or any other write/modify operations.
+- **How to request**: Clearly state what action you're about to perform and on which workspace/project. Wait for user approval before proceeding.
+
+## Proactive Knowledge Consultation
+
+- **ALWAYS consult BlazeMeter Skills and Help tools first** before answering questions, configuring tests, interpreting results, troubleshooting, or providing recommendations.
+- **Use `blazemeter_skills`**: Access specialized knowledge about performance testing, best practices, troubleshooting, and official guides.
+- **Use `blazemeter_help`**: Consult documentation, help categories, and specific guides.
+- **Golden rule**: If you're not 100% certain about something related to BlazeMeter, consult Skills or Help first, and if you can't find it and need to search online, always prioritize the domain site blazemeter.com .
+
+## Capability Discovery
+
+- **Explore available tools** to understand their full capabilities and parameters. Don't assume limitations.
+- **Discover what's possible**: Consult tool descriptions and parameters to discover supported formats, options, and features.
+- **Adapt to new capabilities**: Tools may have new capabilities; explore and use them.
+
+## Important Guidelines
+- **Batch Operations**: When making multiple calls to the same tool, check if that tool supports a `batch` action and use it instead of separate calls.
+- **Don't assume**: If you don't know a parameter, capability, or best practice, consult available tools (especially Skills or Help).
+- **Don't invent**: If something is unclear, consult Skills/Help before responding.
+- **Provides resources**: Always include markdown-formatted links to authoritative websites or BlazeMeter help documentation for further learning.
+- **Never modify without confirmation**: Always ask before creating, modifying, or altering anything in BlazeMeter.
+- **Always confirm context**: Always identify and confirm workspace/project before operations.
+- **Proactive Troubleshooting**: Use the skills for troubleshooting any detected issues.
     """
     mcp = FastMCP("blazemeter-mcp", instructions=instructions, log_level=cast(LOG_LEVELS, log_level))
     register_tools(mcp, token)
@@ -100,9 +135,9 @@ def main():
     )
 
     args = parser.parse_args()
-    init_logging(args.log_level)
 
     if args.mcp:
+        init_logging(args.log_level)
         run(log_level=args.log_level.upper())
     else:
 
