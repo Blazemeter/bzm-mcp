@@ -10,6 +10,7 @@ from mcp.server.fastmcp import FastMCP
 from config.token import BzmToken, BzmTokenError
 from config.version import __version__, __executable__
 from server import register_tools
+from tools.utils import ConfirmMode, register_confirm_mode
 
 BLAZEMETER_API_KEY_FILE_PATH = os.getenv('BLAZEMETER_API_KEY')
 
@@ -51,7 +52,7 @@ def get_token():
     return token
 
 
-def run(log_level: str = "CRITICAL"):
+def run(log_level: str = "CRITICAL", confirm_mode: ConfirmMode = ConfirmMode.DELETE):
     token = get_token()
     instructions = """
 # BlazeMeter MCP Server
@@ -108,6 +109,7 @@ A comprehensive integration tool that provides AI assistants with full programma
 - **Proactive Troubleshooting**: Use the skills for troubleshooting any detected issues.
     """
     mcp = FastMCP("blazemeter-mcp", instructions=instructions, log_level=cast(LOG_LEVELS, log_level))
+    register_confirm_mode(confirm_mode)
     register_tools(mcp, token)
     mcp.run(transport="stdio")
 
@@ -134,11 +136,24 @@ def main():
         help="Logging level (default: CRITICAL = critical errors only)"
     )
 
+    parser.add_argument(
+        "--confirm",
+        type=ConfirmMode,
+        choices=list(ConfirmMode),
+        default=ConfirmMode.DELETE,
+        help=(
+            "Confirmation mode:\n"
+            "  DELETE  - Confirm delete operations only (default)\n"
+            "  CUD     - Confirm create, update and delete operations\n"
+            "  DISABLE - Disable confirmation"
+        )
+    )
+
     args = parser.parse_args()
 
     if args.mcp:
         init_logging(args.log_level)
-        run(log_level=args.log_level.upper())
+        run(log_level=args.log_level.upper(), confirm_mode=args.confirm)
     else:
 
         logo_ascii = (

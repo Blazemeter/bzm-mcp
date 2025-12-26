@@ -17,7 +17,7 @@ from models.manager import Manager
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
 from tools import bridge
-from tools.utils import api_request
+from tools.utils import api_request, require_confirmation, Operations
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,7 @@ class TestManager(Manager):
             else:
                 return test_result
 
+    @require_confirmation(operation=Operations.CREATE)
     async def create(self, test_name: str, project_id: int) -> BaseResult:
 
         # Check if it's valid or allowed
@@ -70,6 +71,25 @@ class TestManager(Manager):
             result_formatter=format_tests,
             json=test_body
         )
+
+    @require_confirmation(operation=Operations.DELETE)
+    async def delete(self, test_id: int) -> BaseResult:
+        test_result = await self.read(test_id)
+        if test_result.error:
+            return test_result
+        else:
+            test_deleted_result =  await api_request(
+                self.token,
+                "DELETE",
+                f"{TESTS_ENDPOINT}/{test_id}"
+            )
+            if test_deleted_result.error:
+                return test_deleted_result
+            else:
+                # The Delete operation returns null content
+                # Text is incorporated to give context to the AI of the successful operation.
+                test_deleted_result.result = [f"Test {test_id} Deleted Successfully"]
+                return test_deleted_result
 
     @staticmethod
     def _validate_files(file_paths: List[str], valid_files: List[str], invalid_files: List[str]):
@@ -99,6 +119,7 @@ class TestManager(Manager):
                     "result": result
                 })
 
+    @require_confirmation(operation=Operations.CREATE)
     async def upload_assets(self, test_id: int, file_paths: List[str], main_script: Optional[str] = None) -> Dict[
         str, Any]:
 
@@ -309,6 +330,7 @@ class TestManager(Manager):
 
         return test_data_override
 
+    @require_confirmation(operation=Operations.UPDATE)
     async def configure(self, performance_test: PerformanceTestObject) -> BaseResult:
         if not performance_test.is_valid():
             raise ValueError("PerformanceTestObject must have a valid test_id")
@@ -355,6 +377,9 @@ def register(mcp, token: Optional[BzmToken]):
             args(dict): Dictionary with the following required parameters:
                 test_name (str): The required name of the test to create.
                 project_id (int): The id of the project to list tests from.
+        - delete: Delete a test.
+            args(dict): Dictionary with the following required parameters:
+                test_id (int): The only required parameter. The id of the test to be deleted.
         - list: List all tests. 
             args(dict): Dictionary with the following required parameters:
                 project_id (int): The id of the project to list tests from.
@@ -390,6 +415,8 @@ def register(mcp, token: Optional[BzmToken]):
                     return await test_manager.read(args["test_id"])
                 case "create":
                     return await test_manager.create(args["test_name"], args["project_id"])
+                case "delete":
+                    return await test_manager.delete(args["test_id"])
                 case "list":
                     return await test_manager.list(args["project_id"], args.get("limit", 50), args.get("offset", 0))
                 case "configure_load":

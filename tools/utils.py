@@ -1,15 +1,18 @@
 """
 Simple utilities for BlazeMeter MCP tools.
 """
+import functools
 import os
 import platform
 import sys
 from datetime import datetime
+from enum import Enum
+from typing import Optional, Callable, Awaitable
 from importlib import resources
 from pathlib import Path
-from typing import Optional, Callable
 
 import httpx
+from pydantic import BaseModel
 
 from config.blazemeter import BZM_API_BASE_URL
 from config.token import BzmToken
@@ -29,6 +32,22 @@ timeout = httpx.Timeout(
     write=15.0,
     pool=60.0
 )
+
+
+class ConfirmMode(Enum):
+    DELETE = "DELETE"  # Delete only
+    CUD = "CUD"  # Create, Update, Delete
+    DISABLE = "NONE"  # No confirmation
+
+
+_confirm_mode = ConfirmMode.DELETE
+
+
+class Operations(Enum):
+    CREATE = "C"  # Create
+    READ = "R"  # Read
+    UPDATE = "U"  # Update
+    DELETE = "D"  # Delete
 
 
 async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
@@ -52,8 +71,13 @@ async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
         try:
             resp = await client.request(method, endpoint, headers=headers, **kwargs)
             resp.raise_for_status()
-            response_dict = resp.json()
-            result = response_dict.get("result", [])
+            content_type = resp.headers.get("content-type", "")
+            if "application/json" in content_type.lower():
+                response_dict = resp.json()
+                result = response_dict.get("result", [])
+            else:
+                response_dict = {}
+                result = resp.text
             default_total = 0
             if not isinstance(result, list):  # Generalize result always as a list
                 result = [result]
@@ -122,3 +146,53 @@ def get_resources_path():
             base_path = os.path.dirname(os.path.abspath(__file__))
         resources_path = Path(base_path) / 'resources'
     return resources_path
+
+
+class Confirmation(BaseModel):
+    pass  # Empty model with no fields for simple accept/cancel without UI elements
+
+
+def register_confirm_mode(confirm_mode_value: ConfirmMode):
+    global _confirm_mode
+    _confirm_mode = confirm_mode_value
+
+
+def get_confirm_mode() -> ConfirmMode:
+    global _confirm_mode
+    return _confirm_mode
+
+
+def operation_need_confirmation(operation: Operations) -> bool:
+    confirm_mode = get_confirm_mode()
+    if confirm_mode == ConfirmMode.DELETE and operation in [Operations.DELETE]:
+        return True
+    elif confirm_mode == ConfirmMode.CUD and operation in [Operations.CREATE, Operations.UPDATE, Operations.DELETE]:
+        return True
+    else:
+        return False
+
+
+def require_confirmation(operation: Operations = Operations.READ,
+                         message="This action requires manual confirmation to continue"):
+    confirmation_schema = Confirmation
+
+    def decorator(func: Callable[..., Awaitable]):
+        @functools.wraps(func)
+        async def wrapper(self, *args, **kwargs):
+            need_confirmation = operation_need_confirmation(operation)
+            confirmed = True  # Run operation by default
+            if need_confirmation:
+                try:
+                    result = await self.ctx.elicit(message=message, schema=confirmation_schema)
+                    confirmed = (result.action == "accept" and result.data)
+                except Exception:
+                    # Some MCP clients haven't implemented elicitation, falls back to default confirmed=True
+                    pass
+            if confirmed:
+                return await func(self, *args, **kwargs)
+            else:
+                return BaseResult(result=["Action manually cancelled by the user."])
+
+        return wrapper
+
+    return decorator
