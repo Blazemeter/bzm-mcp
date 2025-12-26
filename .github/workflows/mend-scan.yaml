@@ -12,7 +12,14 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+
+    - name: Setup uv 
+      uses: astral-sh/setup-uv@v4
+
+    - name: Export toml as requirements
+      shell: bash
+      run: uv pip compile pyproject.toml -o requirements.txt
+
     - name: Checkout config file
       uses: actions/checkout@v4
       with:
