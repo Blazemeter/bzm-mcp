@@ -182,8 +182,12 @@ def require_confirmation(operation: Operations = Operations.READ,
             need_confirmation = operation_need_confirmation(operation)
             confirmed = True  # Run operation by default
             if need_confirmation:
-                result = await self.ctx.elicit(message=message, schema=confirmation_schema)
-                confirmed = (result.action == "accept" and result.data)
+                try:
+                    result = await self.ctx.elicit(message=message, schema=confirmation_schema)
+                    confirmed = (result.action == "accept" and result.data)
+                except Exception:
+                    # Some MCP clients haven't implemented elicitation, falls back to default confirmed=True
+                    pass
             if confirmed:
                 return await func(self, *args, **kwargs)
             else:
