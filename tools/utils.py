@@ -1,22 +1,28 @@
 """
 Simple utilities for BlazeMeter MCP tools.
 """
+import functools
+import os
 import platform
+import sys
 from datetime import datetime
-
-from typing import Optional, Callable
+from enum import Enum
+from typing import Optional, Callable, Awaitable
+from importlib import resources
+from pathlib import Path
 
 import httpx
+from pydantic import BaseModel
 
 from config.blazemeter import BZM_API_BASE_URL
 from config.token import BzmToken
 from config.version import __version__
 from models.result import BaseResult, HttpBaseResult
 
-so = platform.system()       # "Windows", "Linux", "Darwin"
-version = platform.version() # kernel / build version
-release = platform.release() # ex. "10", "5.15.0-76-generic"
-machine = platform.machine() # ex. "x86_64", "AMD64", "arm64"
+so = platform.system()  # "Windows", "Linux", "Darwin"
+version = platform.version()  # kernel / build version
+release = platform.release()  # ex. "10", "5.15.0-76-generic"
+machine = platform.machine()  # ex. "x86_64", "AMD64", "arm64"
 
 ua_part = f"{so} {release}; {machine}"
 user_agent = f"bzm-mcp/{__version__} ({ua_part})"
@@ -26,6 +32,23 @@ timeout = httpx.Timeout(
     write=15.0,
     pool=60.0
 )
+
+
+class ConfirmMode(Enum):
+    DELETE = "DELETE"  # Delete only
+    CUD = "CUD"  # Create, Update, Delete
+    DISABLE = "NONE"  # No confirmation
+
+
+_confirm_mode = ConfirmMode.DELETE
+
+
+class Operations(Enum):
+    CREATE = "C"  # Create
+    READ = "R"  # Read
+    UPDATE = "U"  # Update
+    DELETE = "D"  # Delete
+
 
 async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
                       result_formatter: Callable = None,
@@ -48,8 +71,13 @@ async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
         try:
             resp = await client.request(method, endpoint, headers=headers, **kwargs)
             resp.raise_for_status()
-            response_dict = resp.json()
-            result = response_dict.get("result", [])
+            content_type = resp.headers.get("content-type", "")
+            if "application/json" in content_type.lower():
+                response_dict = resp.json()
+                result = response_dict.get("result", [])
+            else:
+                response_dict = {}
+                result = resp.text
             default_total = 0
             if not isinstance(result, list):  # Generalize result always as a list
                 result = [result]
@@ -99,8 +127,72 @@ async def http_request(method: str, endpoint: str,
                 )
             raise
 
+
 def get_date_time_iso(timestamp: int) -> Optional[str]:
     if timestamp is None:
         return None
     else:
         return datetime.fromtimestamp(timestamp).isoformat()
+
+
+def get_resources_path():
+    try:
+        resources_path = resources.files("resources")
+    except ModuleNotFoundError:
+        # Fallback for development or if not installed as package
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(os.path.abspath(__file__))
+        resources_path = Path(base_path) / 'resources'
+    return resources_path
+
+
+class Confirmation(BaseModel):
+    pass  # Empty model with no fields for simple accept/cancel without UI elements
+
+
+def register_confirm_mode(confirm_mode_value: ConfirmMode):
+    global _confirm_mode
+    _confirm_mode = confirm_mode_value
+
+
+def get_confirm_mode() -> ConfirmMode:
+    global _confirm_mode
+    return _confirm_mode
+
+
+def operation_need_confirmation(operation: Operations) -> bool:
+    confirm_mode = get_confirm_mode()
+    if confirm_mode == ConfirmMode.DELETE and operation in [Operations.DELETE]:
+        return True
+    elif confirm_mode == ConfirmMode.CUD and operation in [Operations.CREATE, Operations.UPDATE, Operations.DELETE]:
+        return True
+    else:
+        return False
+
+
+def require_confirmation(operation: Operations = Operations.READ,
+                         message="This action requires manual confirmation to continue"):
+    confirmation_schema = Confirmation
+
+    def decorator(func: Callable[..., Awaitable]):
+        @functools.wraps(func)
+        async def wrapper(self, *args, **kwargs):
+            need_confirmation = operation_need_confirmation(operation)
+            confirmed = True  # Run operation by default
+            if need_confirmation:
+                try:
+                    result = await self.ctx.elicit(message=message, schema=confirmation_schema)
+                    confirmed = (result.action == "accept" and result.data)
+                except Exception:
+                    # Some MCP clients haven't implemented elicitation, falls back to default confirmed=True
+                    pass
+            if confirmed:
+                return await func(self, *args, **kwargs)
+            else:
+                return BaseResult(result=["Action manually cancelled by the user."])
+
+        return wrapper
+
+    return decorator
