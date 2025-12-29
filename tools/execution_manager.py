@@ -96,12 +96,22 @@ class ExecutionManager(Manager):
                     " are met.\n"
                     "fail: Failed - A test is deemed to fail if one or more of the Failure Criteria defined for the test"
                     " are met,\n"
-                    "unset: Not Set - A test that has no Failure Criteria defined. Do not report as failed.\n"
+                    "unset: Not Set - A test that has no Failure Criteria defined."
+                    " IMPORTANT - The test outcome is indeterminate because no pass/fail criteria are defined, so it must"
+                    " be reported as unset.\n"
                     "abort: Aborted - A test that is terminated using the Abort Test command available during the"
                     " booting phase.\n"
                     "error: Error - A test with one or more execution errors that causes the test to end with no data.\n"
                     "noData: No Data - deprecated. Legacy reports with execution errors that ended with no data will"
                     " remain in No Data status.\n"
+                    "\n"
+                    "IMPORTANT - Detecting Test Completion:\n"
+                    "To determine if a test execution has completed, check the 'ended' field in the execution response:\n"
+                    "- If 'ended' is null: The test is still running or has not finished.\n"
+                    "- If 'ended' is not null: The test has completed (has a timestamp indicating when it finished).\n"
+                    "\n"
+                    "Always verify that the 'ended' field is not null before retrieving final reports to ensure the test"
+                    " has fully completed and all data is available.\n"
         }
 
         return BaseResult(

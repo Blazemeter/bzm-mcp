@@ -3,6 +3,7 @@ import re
 from urllib.parse import urljoin
 
 import lxml.html
+from lxml import etree
 
 
 def clean_text(text, preserve_newlines=False):
@@ -96,6 +97,11 @@ def process_inline_elements(element, base_url=None, as_html=False):
         parts.append(element.text)
 
     for child in element:
+
+        # Skip comments
+        if isinstance(child, etree._Comment):
+            continue
+
         tag = child.tag.lower()
 
         if tag == 'a':
@@ -159,11 +165,16 @@ def element_to_markdown(element, base_url=None, level=0):
     code_block_lang = ['javascript', 'java', 'python', 'ruby', 'go', 'php', 'c#', 'csharp', 'typescript',
                        'bash', 'shell', 'sql', 'json', 'xml', 'yaml', 'css', 'html']
 
-    tag = element.tag.lower()
+    if isinstance(element, etree._Comment):
+        tag = "comment"
+    else:
+        tag = element.tag.lower()
+
     result = []
 
-    # Headers
-    if tag in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+    if tag in ['comment']:
+        pass  # Skip element
+    elif tag in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:  # Headers
         level_num = int(tag[1])
         text = clean_text(element.text_content())
         if text:
