@@ -26,3 +26,8 @@ include = ["tools", "config", "models", "formatters", "resources"]
 
 [tool.setuptools.package-data]
 "resources" = ["**/*"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
