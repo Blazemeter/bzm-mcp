@@ -529,6 +529,7 @@ class BlazeMeterCostCalculator:
             test_configuration=config
         )
 
+
 def calculate_test_cost(
         config_dict: Dict
 ) -> Dict:
@@ -603,52 +604,3 @@ def calculate_test_cost(
             "test_type": result.test_configuration.test_type.value
         }
     }
-
-
-if __name__ == "__main__":
-    # Example usage
-    print("BlazeMeter Test Cost Calculator")
-    print("=" * 50)
-
-    # Example 1: Performance test with VUH
-    print("\nExample 1: Performance Test (VUH)")
-    result = calculate_test_cost({
-        'allowance_type': "virtualUserHours",
-        'concurrency': 100,
-        'duration_minutes': 90,
-        'test_type': "performance"
-    })
-    print(f"Cost: {result['cost']} {result['cost_type']}")
-    print(f"Details: {result['calculation_details']}")
-
-    # Example 2: Browser Performance test
-    print("\nExample 2: Browser Performance Test (VUH)")
-    result = calculate_test_cost({
-        'allowance_type': "virtualUserHours",
-        'concurrency': 10,
-        'duration_minutes': 60,
-        'test_type': "browser_performance"
-    })
-    print(f"Cost: {result['cost']} {result['cost_type']}")
-    print(f"Details: {result['calculation_details']}")
-
-    # Example 3: GUI Functional test
-    print("\nExample 3: GUI Functional Test (VUH)")
-    result = calculate_test_cost({
-        'allowance_type': "virtualUserHours",
-        'browser_sessions': 4,
-        'duration_minutes': 30,
-        'test_type': "gui_functional"
-    })
-    print(f"Cost: {result['cost']} {result['cost_type']}")
-    print(f"Details: {result['calculation_details']}")
-
-    # Example 4: API Monitoring test (VU)
-    print("\nExample 4: API Monitoring Test (VU)")
-    result = calculate_test_cost({
-        'allowance_type': "credits",
-        'api_calls': 5000,
-        'test_type': "api_monitoring"
-    })
-    print(f"Cost: {result['cost']} {result['cost_type']}")
-    print(f"Details: {result['calculation_details']}")
