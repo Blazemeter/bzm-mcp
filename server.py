@@ -2,6 +2,7 @@ from typing import Optional
 
 from config.token import BzmToken
 from tools.account_manager import register as register_account_manager
+from tools.billing_manager import register as register_billing_manager
 from tools.execution_manager import register as register_execution_manager
 from tools.help_manager import register as register_help_manager
 from tools.project_manager import register as register_project_manager
@@ -25,5 +26,6 @@ def register_tools(mcp, token: Optional[BzmToken]):
     register_test_manager(mcp, token)
     register_execution_manager(mcp, token)
     register_account_manager(mcp, token)
+    register_billing_manager(mcp, token)
     register_help_manager(mcp, token)
     register_skills_manager(mcp, token)
