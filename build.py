@@ -3,6 +3,7 @@
 import os
 import platform
 import shutil
+import subprocess
 import tomllib
 from datetime import date
 from pathlib import Path
@@ -114,6 +115,8 @@ def build():
     
     if system == "macos":
         create_app_bundle(name, arch, dist_dir=Path("dist"))
+    elif system == "linux":
+        create_sha256_checksum(name, dist_dir=Path("dist"))
 
 
 def create_app_directory_structure(app_path: Path) -> Path:
@@ -186,6 +189,23 @@ def create_app_bundle(binary_name: str, arch: str, dist_dir: Path):
 
     binary_path.unlink()
     print(f"Created {app_name} in {dist_dir}")
+
+
+def create_sha256_checksum(binary_name: str, dist_dir: Path):
+    binary_path = dist_dir / binary_name
+    checksum_path = dist_dir / f"{binary_name}.sha256"
+    
+    if not binary_path.exists():
+        raise FileNotFoundError(f"Binary not found: {binary_path}")
+    
+    with open(checksum_path, "w") as f:
+        subprocess.run(
+            ["sha256sum", str(binary_path)],
+            stdout=f,
+            check=True,
+        )
+    
+    print(f"Created {checksum_path.name} in {dist_dir}")
 
 
 if __name__ == "__main__":
