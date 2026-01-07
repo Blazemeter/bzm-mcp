@@ -23,16 +23,17 @@ def get_executable():
 
 def get_bundle_executable():
     executable_path = os.path.realpath(get_executable())
-
-    translocated_path = executable_path
-    result = subprocess.check_output(
-        ['/usr/bin/security', 'translocate-original-path', translocated_path],
-        stderr=subprocess.STDOUT
-    )
-    original_path = result.decode('utf-8').split('\n')[-2].strip()
-    tmp = ','.join(result.decode('utf-8').split('\n'))
-    return os.path.realpath(os.path.join(original_path, "..", "..", ".."))
-
+    if sys.platform == "darwin":
+        translocated_path = executable_path
+        result = subprocess.check_output(
+            ['/usr/bin/security', 'translocate-original-path', translocated_path],
+            stderr=subprocess.STDOUT
+        )
+        original_path = result.decode('utf-8').split('\n')[-2].strip()
+        tmp = ','.join(result.decode('utf-8').split('\n'))
+        return os.path.realpath(os.path.join(original_path, "..", "..", ".."))
+    else:
+        return executable_path
 
 __version__ = get_version()
 __executable__ = get_executable()
