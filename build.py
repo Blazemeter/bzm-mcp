@@ -3,7 +3,6 @@
 import os
 import platform
 import shutil
-import subprocess
 import tomllib
 from datetime import date
 from pathlib import Path
@@ -112,7 +111,7 @@ def build():
 
     run_pyinstaller(name, icon)
     clean_build()
-
+    
     if system == "macos":
         create_app_bundle(name, dist_dir=Path("dist"))
 
@@ -172,24 +171,6 @@ def create_info_plist(plist_path: Path):
         f.write(info_plist_content)
 
 
-def zip_app_bundle(app_name: str, dist_dir: Path):
-    zip_name = f"{app_name}.zip"
-    zip_path = dist_dir / zip_name
-
-    if zip_path.exists():
-        zip_path.unlink()
-
-    subprocess.run(
-        ["zip", "-r", zip_name, app_name],
-        cwd=dist_dir,
-        check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-
-    print(f"Created {zip_name} in {dist_dir}")
-
-
 def create_app_bundle(binary_name: str, dist_dir: Path):
     app_name = "bzm-mcp.app"
     app_path = dist_dir / app_name
@@ -203,8 +184,8 @@ def create_app_bundle(binary_name: str, dist_dir: Path):
     create_launcher_script(macos_path / "launcher.sh")
     create_info_plist(contents_path / "Info.plist")
 
-    zip_app_bundle(app_name, dist_dir)
-    print(f"App bundle structure: {app_path}")
+    binary_path.unlink()
+    print(f"Created {app_name} in {dist_dir}")
 
 
 if __name__ == "__main__":
