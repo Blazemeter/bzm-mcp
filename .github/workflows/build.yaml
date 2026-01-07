@@ -118,13 +118,23 @@ jobs:
         fi
         if [ -d "artifacts/bzm-mcp-macos-arm64" ]; then
           cp artifacts/bzm-mcp-macos-arm64/* dist/
-          chmod +x dist/bzm-mcp-macos-arm64
-          echo "Copied macOS ARM64 binary"
+          # Handle both .app.zip and binary files
+          if [ -f "dist/BlazeMeter MCP.app.zip" ]; then
+            echo "Found macOS ARM64 .app.zip"
+          else
+            chmod +x dist/bzm-mcp-macos-arm64 2>/dev/null || true
+            echo "Copied macOS ARM64 binary"
+          fi
         fi
         if [ -d "artifacts/bzm-mcp-macos-amd64" ]; then
           cp artifacts/bzm-mcp-macos-amd64/* dist/
-          chmod +x dist/bzm-mcp-macos-amd64
-          echo "Copied macOS AMD64 binary"
+          # Handle both .app.zip and binary files
+          if [ -f "dist/BlazeMeter MCP.app.zip" ]; then
+            echo "Found macOS AMD64 .app.zip"
+          else
+            chmod +x dist/bzm-mcp-macos-amd64 2>/dev/null || true
+            echo "Copied macOS AMD64 binary"
+          fi
         fi
 
         echo "Final dist/ contents:"
