@@ -113,7 +113,7 @@ def build():
     clean_build()
     
     if system == "macos":
-        create_app_bundle(name, dist_dir=Path("dist"))
+        create_app_bundle(name, arch, dist_dir=Path("dist"))
 
 
 def create_app_directory_structure(app_path: Path) -> Path:
@@ -171,8 +171,8 @@ def create_info_plist(plist_path: Path):
         f.write(info_plist_content)
 
 
-def create_app_bundle(binary_name: str, dist_dir: Path):
-    app_name = "bzm-mcp.app"
+def create_app_bundle(binary_name: str, arch: str, dist_dir: Path):
+    app_name = f"bzm-mcp-{arch}.app"
     app_path = dist_dir / app_name
     contents_path = app_path / "Contents"
 
