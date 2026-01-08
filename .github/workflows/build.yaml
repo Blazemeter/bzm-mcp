@@ -117,7 +117,7 @@ jobs:
           echo "Copied Windows AMD64 binary"
         fi
         if [ -d "artifacts/bzm-mcp-macos-arm64" ]; then
-          cp artifacts/bzm-mcp-macos-arm64/* dist/
+          cp -r artifacts/bzm-mcp-macos-arm64/* dist/
           if [ -d "dist/bzm-mcp-arm64.app" ]; then
             echo "Found macOS ARM64 .app bundle"
           else
@@ -126,7 +126,7 @@ jobs:
           fi
         fi
         if [ -d "artifacts/bzm-mcp-macos-amd64" ]; then
-          cp artifacts/bzm-mcp-macos-amd64/* dist/
+          cp -r artifacts/bzm-mcp-macos-amd64/* dist/
           if [ -d "dist/bzm-mcp-amd64.app" ]; then
             echo "Found macOS AMD64 .app bundle"
           else
