@@ -183,7 +183,7 @@ class HelpManager(Manager):
             try:
                 result = await http_request("GET", endpoint=help_url, result_formatter=format_help_info,
                                             result_formatter_params={"base_url": help_url})
-                # Expand or "Argument" the content ending with ""
+                # Expand or "Augment" the content ending with ""
                 if result.result is not None:
                     if result.result.get("help_content", "").endswith("In this section:"):
                         help_object["sub_nodes"] = HelpManager.get_sub_nodes(category_id, subcategory_id, help_id)
