@@ -8,7 +8,7 @@ from typing import Literal, cast
 from mcp.server.fastmcp import FastMCP
 
 from config.token import BzmToken, BzmTokenError
-from config.version import __version__, __executable__
+from config.version import __version__, __executable__, __bundle__
 from server import register_tools
 from tools.utils import ConfirmMode, register_confirm_mode
 
@@ -34,7 +34,10 @@ def get_token():
     is_docker = os.getenv('MCP_DOCKER', 'false').lower() == 'true'
     token = None
 
-    local_api_key_file = os.path.join(os.path.dirname(__executable__), "api-key.json")
+    if sys.platform == "darwin" and __bundle__.endswith(".app"):
+        local_api_key_file = os.path.join(os.path.dirname(__bundle__), "api-key.json")
+    else:
+        local_api_key_file = os.path.join(os.path.dirname(__executable__), "api-key.json")
     if not BLAZEMETER_API_KEY_FILE_PATH and os.path.exists(local_api_key_file):
         BLAZEMETER_API_KEY_FILE_PATH = local_api_key_file
 
@@ -166,10 +169,13 @@ def main():
             f" BlazeMeter MCP Server v{__version__} \n"
         )
         print(logo_ascii)
-
+        if sys.platform == "darwin" and __bundle__.endswith(".app"):
+            command_path = os.path.join(__bundle__, "Contents", "MacOS", "bzm-mcp")
+        else:
+            command_path = __executable__
         config_dict = {
             "BlazeMeter MCP": {
-                "command": f"{__executable__}",
+                "command": command_path,
                 "args": ["--mcp"],
             }
         }
@@ -195,6 +201,7 @@ def main():
         print(" https://github.com/Blazemeter/bzm-mcp/")
         print(" ")
         input("Press Enter to exit...")
+
 
 if __name__ == "__main__":
     main()
