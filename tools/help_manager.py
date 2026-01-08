@@ -164,7 +164,7 @@ class HelpManager(Manager):
     async def get_help_object(category_id: str, subcategory_id: str, help_id: str) -> Any:
         help_cache_key = f"{category_id}:{subcategory_id}:{help_id}"
         help_base_url = HELP_BASE_CONTENT_URL
-        help_url = f"{help_base_url}/"  # BlazeMeter don't use category_id
+        help_url = f"{help_base_url}/"  # BlazeMeter doesn't use category_id
         if subcategory_id != "self":
             help_url += f"{subcategory_id}/"
 
