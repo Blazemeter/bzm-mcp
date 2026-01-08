@@ -30,7 +30,7 @@ def get_bundle_executable():
             stderr=subprocess.STDOUT
         )
         original_path = result.decode('utf-8').split('\n')[-2].strip()
-        tmp = ','.join(result.decode('utf-8').split('\n'))
+
         return os.path.realpath(os.path.join(original_path, "..", "..", ".."))
     else:
         return executable_path
