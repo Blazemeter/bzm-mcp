@@ -22,6 +22,7 @@ class HelpManager(Manager):
     help_tree = None  # Static to share between different instance of HelpManager
     help_items_index = {}
     help_index_nodes = {}
+    help_content_cache = {}
 
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
@@ -147,6 +148,56 @@ class HelpManager(Manager):
             result=results,
         )
 
+    @staticmethod
+    def get_sub_nodes(category_id: str, subcategory_id: str, help_id: str) -> Any:
+        index_id = f"{category_id}:{subcategory_id}:{help_id}"
+        sub_nodes_items = []
+        if index_id in HelpManager.help_items_index:
+            node_id = HelpManager.help_items_index[index_id]
+            sub_nodes = HelpManager.help_index_nodes[node_id]["sub_nodes"]
+            for sub_node in sub_nodes:
+                if sub_node in HelpManager.help_index_nodes:
+                    sub_nodes_items.append(HelpManager.help_index_nodes[sub_node])
+        return sub_nodes_items
+
+    @staticmethod
+    async def get_help_object(category_id: str, subcategory_id: str, help_id: str) -> Any:
+        help_cache_key = f"{category_id}:{subcategory_id}:{help_id}"
+        help_base_url = HELP_BASE_CONTENT_URL
+        help_url = f"{help_base_url}/"  # BlazeMeter doesn't use category_id
+        if subcategory_id != "self":
+            help_url += f"{subcategory_id}/"
+
+        if not help_id.endswith(".htm"):  # only if it's not a htm extension
+            help_url += f"{help_id}.html"  # Restore the html extension
+        else:
+            help_url += f"{help_id}"
+
+        help_object = {}
+        # If it's cached, it returns the cached version.
+        if help_cache_key in HelpManager.help_content_cache:
+            help_object = HelpManager.help_content_cache[help_cache_key]
+            help_object["help_cached"] = True
+        else:
+            help_object["help_cached"] = False
+            try:
+                result = await http_request("GET", endpoint=help_url, result_formatter=format_help_info,
+                                            result_formatter_params={"base_url": help_url})
+                # Expand or "Augment" the content ending with ""
+                if result.result is not None:
+                    if result.result.get("help_content", "").endswith("In this section:"):
+                        help_object["sub_nodes"] = HelpManager.get_sub_nodes(category_id, subcategory_id, help_id)
+                    help_object["help_result"] = result.result
+                    # Store on cache
+                    HelpManager.help_content_cache[help_cache_key] = help_object
+                else:
+                    help_object["help_result"] = f"URL:{help_url}, Error:{result.error}"
+            except httpx.HTTPStatusError as e:
+                help_object["help_result"] = f"URL:{help_url}, Error:{e.response.text}"
+        help_object["help_id"] = help_id
+
+        return help_object
+
     async def read_help_info(self, category_id: str, subcategory_id: str, help_id_list: List[str]) -> BaseResult:
         if HelpManager.help_tree is None:
             await self._load_help_tree()
@@ -154,43 +205,7 @@ class HelpManager(Manager):
         if subcategory_id == "":
             subcategory_id = "self"
         for help_id in help_id_list:
-
-            help_base_url = HELP_BASE_CONTENT_URL
-            help_url = f"{help_base_url}/"  # BlazeMeter don't use category_id
-            if subcategory_id != "self":
-                help_url += f"{subcategory_id}/"
-
-            if not help_id.endswith(".htm"):  # only if it's not a htm extension
-                help_url += f"{help_id}.html"  # Restore the html extension
-            else:
-                help_url += f"{help_id}"
-
-            help_object = {
-                "help_id": help_id,
-            }
-            try:
-                result = await http_request("GET", endpoint=help_url, result_formatter=format_help_info,
-                                            result_formatter_params={"base_url": help_url})
-
-                # Expand or "Argument" the content ending with ""
-                if result.result is not None:
-                    if result.result.get("help_content", "").endswith("In this section:"):
-                        index_id = f"{category_id}:{subcategory_id}:{help_id}"
-                        sub_nodes_items = []
-                        if index_id in HelpManager.help_items_index:
-                            node_id = HelpManager.help_items_index[index_id]
-                            sub_nodes = HelpManager.help_index_nodes[node_id]["sub_nodes"]
-                            for sub_node in sub_nodes:
-                                if sub_node in HelpManager.help_index_nodes:
-                                    sub_nodes_items.append(HelpManager.help_index_nodes[sub_node])
-                        help_object["sub_nodes"] = sub_nodes_items
-
-                    help_object["help_result"] = result.result
-                else:
-                    help_object["help_result"] = f"URL:{help_url}, Error:{result.error}"
-            except httpx.HTTPStatusError as e:
-                help_object["help_result"] = f"URL:{help_url}, Error:{e.response.text}"
-
+            help_object = await HelpManager.get_help_object(category_id, subcategory_id, help_id)
             results.append(help_object)
 
         return BaseResult(
