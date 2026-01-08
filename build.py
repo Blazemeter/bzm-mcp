@@ -200,7 +200,8 @@ def create_sha256_checksum(binary_name: str, dist_dir: Path):
     
     with open(checksum_path, "w") as f:
         subprocess.run(
-            ["sha256sum", str(binary_path)],
+            ["sha256sum", binary_name],
+            cwd=dist_dir,
             stdout=f,
             check=True,
         )
