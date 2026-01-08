@@ -38,7 +38,6 @@ def get_token():
         local_api_key_file = os.path.join(os.path.dirname(__bundle__), "api-key.json")
     else:
         local_api_key_file = os.path.join(os.path.dirname(__executable__), "api-key.json")
-        print(f"Local API key file: {local_api_key_file}")
     if not BLAZEMETER_API_KEY_FILE_PATH and os.path.exists(local_api_key_file):
         BLAZEMETER_API_KEY_FILE_PATH = local_api_key_file
 

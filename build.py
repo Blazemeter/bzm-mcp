@@ -85,7 +85,7 @@ def get_binary_name(system: str, arch: str) -> str:
 
 
 def get_icon_file(system: str) -> str:
-    return 'app.ics' if system == 'macos' else 'app.ico'
+    return 'app.icns' if system == 'macos' else 'app.ico'
 
 
 def run_pyinstaller(name: str, icon: str):
