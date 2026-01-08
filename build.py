@@ -142,7 +142,7 @@ BIN="$BIN_DIR/bzm-mcp"
 if [ -t 1 ]; then
   exec "$BIN" "$@"
 else
-  open -a Terminal "$BIN" 
+  open -a Terminal "$BIN"
 fi
 """
     with open(launcher_path, "w", encoding="utf-8") as f:
