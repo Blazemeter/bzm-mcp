@@ -114,7 +114,37 @@ def build():
     clean_build()
     
     if system == "macos":
-        create_app_bundle(name, arch, dist_dir=Path("dist"))
+        dist_dir = Path("dist")
+        binary_path = dist_dir / name
+        
+        # Buscar archivo de entitlements en ubicaciones comunes
+        entitlements = Path("/Users/abstracta/dist/arm/entitlements.plist")
+        
+        # Paso 1: Firmar el binario
+        sign_binary(binary_path, entitlements=entitlements)
+        
+        # Paso 2: Comprimir el binario en bzm-mcp.zip
+        binary_zip_path = dist_dir / "bzm-mcp.zip"
+        create_zip(binary_path, binary_zip_path)
+        
+        # Paso 3: Notarizar el .zip del binario
+        notarize_zip(binary_zip_path)
+        
+        # Paso 4: Crear el .app (ya estaba automatizado)
+        app_name = f"bzm-mcp-{arch}.app"
+        create_app_bundle(name, arch, dist_dir)
+        
+        # Firmar el .app bundle completo
+        app_path = dist_dir / app_name
+        sign_binary(app_path, entitlements=entitlements)
+        
+        # Paso 5: Comprimir el .app en un .zip
+        app_zip_path = dist_dir / f"{app_name}.zip"
+        create_zip(app_path, app_zip_path)
+        
+        # Paso 6: Notarizar el .zip del .app
+        notarize_zip(app_zip_path)
+        
     elif system == "linux":
         create_sha256_checksum(name, dist_dir=Path("dist"))
 
@@ -207,6 +237,148 @@ def create_sha256_checksum(binary_name: str, dist_dir: Path):
         )
     
     print(f"Created {checksum_path.name} in {dist_dir}")
+
+
+def sign_binary(binary_path: Path, identity: str = None, entitlements: Path = None):
+    """Firma un binario usando codesign.
+    
+    La identidad puede proporcionarse como parámetro o mediante variable de entorno:
+    - CODESIGN_IDENTITY: Identidad completa (ej: "Developer ID Application: Your Name (TEAM_ID)")
+    
+    Si no se proporciona, usará la identidad predeterminada del keychain.
+    """
+    if not binary_path.exists():
+        raise FileNotFoundError(f"Binary not found: {binary_path}")
+    
+    # Obtener identidad de variable de entorno si no se proporciona como parámetro
+    identity = identity or os.getenv("CODESIGN_IDENTITY", "-")
+    
+    # Construir el comando de firma (mismo orden que el comando manual)
+    cmd = ["codesign", "--sign", identity]
+    
+    # Agregar entitlements si se proporciona y existe
+    if entitlements and entitlements.exists():
+        cmd.extend(["--entitlements", str(entitlements)])
+    
+    # Agregar opciones de hardened runtime y timestamp (misma sintaxis que comando manual)
+    cmd.extend(["--options", "runtime", "--timestamp"])
+    
+    # Agregar force y verbose
+    cmd.extend(["--force", "--verbose"])
+    
+    # Si es un .app bundle, usar --deep para firmar recursivamente
+    if str(binary_path).endswith(".app"):
+        cmd.append("--deep")
+    
+    cmd.append(str(binary_path))
+    
+    print(f"Signing {binary_path.name}...")
+    subprocess.run(cmd, check=True)
+    print(f"Successfully signed {binary_path.name}")
+
+
+def create_zip(source_path: Path, zip_path: Path):
+    """Comprime un archivo o directorio en un .zip."""
+    if not source_path.exists():
+        raise FileNotFoundError(f"Source not found: {source_path}")
+    
+    # Asegurar que el directorio padre del zip existe
+    zip_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    print(f"Creating {zip_path.name}...")
+    # Si el zip está en el mismo directorio que el source, usar nombre relativo
+    if source_path.parent == zip_path.parent:
+        subprocess.run(
+            ["zip", "-r", zip_path.name, source_path.name],
+            cwd=source_path.parent,
+            check=True,
+        )
+    else:
+        # Si están en directorios diferentes, usar rutas absolutas
+        subprocess.run(
+            ["zip", "-r", str(zip_path), str(source_path)],
+            check=True,
+        )
+    print(f"Successfully created {zip_path.name}")
+
+
+def notarize_zip(zip_path: Path, apple_id: str = None, team_id: str = None, password: str = None, keychain_profile: str = None):
+    """Notariza un archivo .zip usando xcrun notarytool.
+    
+    Las credenciales pueden proporcionarse como parámetros o mediante variables de entorno:
+    - APPLE_ID: Apple ID para notarización
+    - APPLE_TEAM_ID: Team ID (opcional)
+    - APPLE_PASSWORD: Contraseña de aplicación (opcional, solo si no se usa keychain profile)
+    - APPLE_KEYCHAIN_PROFILE: Nombre del perfil del keychain (opcional)
+    """
+    if not zip_path.exists():
+        raise FileNotFoundError(f"Zip file not found: {zip_path}")
+    
+    print(f"Notarizing {zip_path.name}...")
+    
+    # Obtener credenciales de variables de entorno si no se proporcionan como parámetros
+    apple_id = apple_id or os.getenv("APPLE_ID")
+    team_id = team_id or os.getenv("APPLE_TEAM_ID")
+    password = password or os.getenv("APPLE_PASSWORD")
+    keychain_profile = keychain_profile or os.getenv("APPLE_KEYCHAIN_PROFILE")
+    
+    # Construir el comando de notarización
+    cmd = ["xcrun", "notarytool", "submit", str(zip_path)]
+    
+    # Si se proporcionan credenciales explícitas, usarlas
+    if apple_id and password:
+        cmd.extend(["--apple-id", apple_id])
+        if team_id:
+            cmd.extend(["--team-id", team_id])
+        cmd.extend(["--password", password])
+        cmd.append("--wait")
+    elif keychain_profile:
+        # Usar el perfil del keychain especificado
+        cmd.extend(["--keychain-profile", keychain_profile])
+        cmd.append("--wait")
+    else:
+        # Intentar detectar perfiles disponibles
+        try:
+            result = subprocess.run(
+                ["xcrun", "notarytool", "store-credentials", "--list"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            profiles = [line.strip() for line in result.stdout.split('\n') if line.strip() and not line.startswith('Profile')]
+            if profiles:
+                # Usar el primer perfil disponible
+                profile = profiles[0].split()[0] if profiles else None
+                if profile:
+                    print(f"Using keychain profile: {profile}")
+                    cmd.extend(["--keychain-profile", profile])
+                    cmd.append("--wait")
+                else:
+                    print("Warning: No keychain profiles found. Skipping notarization.")
+                    print("To set up notarization, run: xcrun notarytool store-credentials <profile-name>")
+                    return
+            else:
+                print("Warning: No keychain profiles found. Skipping notarization.")
+                print("To set up notarization, run: xcrun notarytool store-credentials <profile-name>")
+                return
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("Warning: Could not detect keychain profiles. Skipping notarization.")
+            print("To set up notarization, run: xcrun notarytool store-credentials <profile-name>")
+            return
+    
+    try:
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        print(f"Successfully notarized {zip_path.name}")
+        if result.stdout:
+            print(result.stdout)
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: Notarization may have failed for {zip_path.name}")
+        if e.stderr:
+            print(f"Error output: {e.stderr}")
+        if e.stdout:
+            print(f"Output: {e.stdout}")
+        # No fallar el build si la notarización falla (puede requerir configuración manual)
+        print("Continuing build process...")
 
 
 if __name__ == "__main__":
