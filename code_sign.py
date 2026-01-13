@@ -245,16 +245,62 @@ def extract_zip(zip_path: Path, extract_dir: Path):
     """Extrae un archivo .zip a un directorio."""
     print(f"Extracting {zip_path.name} to {extract_dir}...")
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        # Extraer todos los archivos
         zip_ref.extractall(extract_dir)
-        # Restaurar permisos de ejecución para binarios después de extraer
+        
+        # Restaurar permisos de ejecución para todos los binarios después de extraer
         for member in zip_ref.infolist():
-            # Buscar binarios ejecutables (bzm-mcp)
-            if 'bzm-mcp' in member.filename and not member.filename.endswith('/'):
+            if not member.filename.endswith('/') and not member.is_dir():
                 extracted_path = extract_dir / member.filename
                 if extracted_path.exists() and extracted_path.is_file():
-                    # Restaurar permisos de ejecución (755)
-                    os.chmod(extracted_path, 0o755)
+                    # Restaurar permisos originales si están disponibles en el zip
+                    if member.external_attr:
+                        # Los permisos están en los bits superiores de external_attr
+                        unix_permissions = (member.external_attr >> 16) & 0o777
+                        if unix_permissions:
+                            os.chmod(extracted_path, unix_permissions)
+                        else:
+                            # Si no hay permisos en el zip, detectar si es binario
+                            _restore_binary_permissions(extracted_path)
+                    else:
+                        # Si no hay external_attr, intentar detectar si es binario
+                        _restore_binary_permissions(extracted_path)
+        
+        # Buscar recursivamente todos los binarios en .app bundles y restaurar permisos
+        for root, dirs, files in os.walk(extract_dir):
+            # Saltar el directorio __MACOSX
+            if '__MACOSX' in root:
+                continue
+            for file in files:
+                file_path = Path(root) / file
+                if file_path.is_file():
+                    # Verificar si está en un directorio MacOS (dentro de .app)
+                    if 'Contents/MacOS' in str(file_path) or file_path.parent.name == 'MacOS':
+                        _restore_binary_permissions(file_path)
+    
     print(f"Extracted to {extract_dir}")
+
+
+def _restore_binary_permissions(file_path: Path):
+    """Restaura permisos de ejecución para un archivo si es un binario."""
+    # Verificar si es un binario ejecutable (no script, no plist, etc.)
+    if not file_path.name.endswith(('.sh', '.plist', '.txt', '.md', '.py', '.pyc')):
+        # Verificar si el archivo es realmente un binario leyendo el header
+        try:
+            with open(file_path, 'rb') as f:
+                header = f.read(4)
+                # Verificar si es un binario Mach-O o ELF
+                is_binary_file = (header.startswith(b'\xcf\xfa\xed\xfe') or  # Mach-O 64-bit
+                                 header.startswith(b'\xce\xfa\xed\xfe') or  # Mach-O 32-bit
+                                 header.startswith(b'\x7fELF') or            # ELF
+                                 header.startswith(b'MZ'))                   # PE/Windows
+                if is_binary_file:
+                    # Restaurar permisos de ejecución (755) para mantener formato binario
+                    os.chmod(file_path, 0o755)
+        except:
+            # Si no podemos leer el archivo, verificar si está en MacOS (probablemente binario)
+            if 'MacOS' in str(file_path.parent):
+                os.chmod(file_path, 0o755)
 
 
 def find_binaries(directory: Path):
@@ -402,10 +448,28 @@ def process_zip(input_zip: Path, output_dir: Path = None, entitlements: Path = N
             macos_dir = output_app / "Contents" / "MacOS"
             if macos_dir.exists():
                 for item in macos_dir.iterdir():
-                    if item.is_file() and os.access(item, os.X_OK):
-                        # Asegurar permisos de ejecución (755) para mantener formato binario
-                        os.chmod(item, 0o755)
-                        print(f"Preserved binary format and permissions for {item.name}")
+                    if item.is_file():
+                        # Verificar si es un binario (no script, no plist, etc.)
+                        is_binary = not item.name.endswith(('.sh', '.plist', '.txt', '.md', '.py'))
+                        if is_binary:
+                            # Verificar si el archivo es realmente un binario leyendo el header
+                            try:
+                                with open(item, 'rb') as f:
+                                    header = f.read(4)
+                                    # Verificar si es un binario Mach-O o ELF
+                                    is_binary_file = (header.startswith(b'\xcf\xfa\xed\xfe') or  # Mach-O 64-bit
+                                                     header.startswith(b'\xce\xfa\xed\xfe') or  # Mach-O 32-bit
+                                                     header.startswith(b'\x7fELF') or            # ELF
+                                                     header.startswith(b'MZ'))                   # PE/Windows
+                                    if is_binary_file:
+                                        # Restaurar permisos de ejecución (755) para mantener formato binario
+                                        os.chmod(item, 0o755)
+                                        print(f"Preserved binary format and permissions for {item.name}")
+                            except:
+                                # Si no podemos leer el archivo, asumir que es binario si no es script
+                                if not item.name.endswith('.sh'):
+                                    os.chmod(item, 0o755)
+                                    print(f"Preserved binary format and permissions for {item.name}")
             
             output_apps.append(output_app)
             print(f"Copied {app.name} to {output_dir}")
