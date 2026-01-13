@@ -348,8 +348,8 @@ def process_zip(input_zip: Path, output_dir: Path = None, entitlements: Path = N
     # Crear directorio temporal para extraer
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
-        extract_dir = temp_path
-        extract_dir.mkdir()
+        extract_dir = temp_path / "extracted"
+        extract_dir.mkdir(exist_ok=True)
         
         # Extraer el .zip
         extract_zip(input_zip, extract_dir)
