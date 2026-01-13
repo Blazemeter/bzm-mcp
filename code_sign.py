@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Script para firmar y notarizar binarios o .app desde un archivo .zip."""
+"""Script to sign and notarize binaries or .app bundles from a .zip file."""
 import argparse
 import os
 import platform
@@ -15,7 +15,7 @@ import zipfile
 
 
 def find_developer_id():
-    """Busca un Developer ID Application certificate en el keychain."""
+    """Search for a Developer ID Application certificate in the keychain."""
     try:
         result = subprocess.run(
             ["security", "find-identity", "-v", "-p", "codesigning"],
@@ -25,11 +25,11 @@ def find_developer_id():
         )
         for line in result.stdout.split('\n'):
             if 'Developer ID Application' in line:
-                # El formato es: "   1) ABC123... \"Developer ID Application: Name (TEAM_ID)\""
-                # Buscar el contenido completo entre comillas que contiene "Developer ID Application"
+                # The format is: "   1) ABC123... \"Developer ID Application: Name (TEAM_ID)\""
+                # Search for the complete content between quotes that contains "Developer ID Application"
                 identity_match = re.search(r'"([^"]*Developer ID Application[^"]*)"', line)
                 if identity_match:
-                    # group(1) contiene el texto dentro de las comillas
+                    # group(1) contains the text inside the quotes
                     return identity_match.group(1)
     except (subprocess.CalledProcessError, FileNotFoundError):
         pass
@@ -37,21 +37,21 @@ def find_developer_id():
 
 
 def sign_binary(binary_path: Path, identity: str = None, entitlements: Path = None):
-    """Firma un binario usando codesign.
+    """Sign a binary using codesign.
     
-    La identidad puede proporcionarse como parámetro o mediante variable de entorno:
-    - CODESIGN_IDENTITY: Identidad completa (ej: "Developer ID Application: Your Name (TEAM_ID)")
+    The identity can be provided as a parameter or via environment variable:
+    - CODESIGN_IDENTITY: Full identity (e.g.: "Developer ID Application: Your Name (TEAM_ID)")
     
-    Si no se proporciona, intentará encontrar un Developer ID Application en el keychain.
-    Si no se encuentra, usará la identidad predeterminada del keychain.
+    If not provided, it will try to find a Developer ID Application in the keychain.
+    If not found, it will use the default keychain identity.
     """
     if not binary_path.exists():
         raise FileNotFoundError(f"Binary not found: {binary_path}")
     
-    # Obtener identidad de variable de entorno si no se proporciona como parámetro
+    # Get identity from environment variable if not provided as parameter
     identity = identity or os.getenv("CODESIGN_IDENTITY")
     
-    # Si aún no hay identidad, intentar encontrar un Developer ID
+    # If still no identity, try to find a Developer ID
     if not identity:
         developer_id = find_developer_id()
         if developer_id:
@@ -61,20 +61,20 @@ def sign_binary(binary_path: Path, identity: str = None, entitlements: Path = No
             print("Warning: No Developer ID found. Using default keychain identity.")
             identity = "-"
     
-    # Construir el comando de firma (mismo orden que el comando manual)
+    # Build the signing command (same order as manual command)
     cmd = ["codesign", "--sign", identity]
     
-    # Agregar entitlements si se proporciona y existe
+    # Add entitlements if provided and exists
     if entitlements and entitlements.exists():
         cmd.extend(["--entitlements", str(entitlements)])
     
-    # Agregar opciones de hardened runtime y timestamp (misma sintaxis que comando manual)
+    # Add hardened runtime and timestamp options (same syntax as manual command)
     cmd.extend(["--options", "runtime", "--timestamp"])
     
-    # Agregar force y verbose
+    # Add force and verbose
     cmd.extend(["--force", "--verbose"])
     
-    # Si es un .app bundle, usar --deep para firmar recursivamente
+    # If it's a .app bundle, use --deep to sign recursively
     if str(binary_path).endswith(".app"):
         cmd.append("--deep")
     
@@ -86,20 +86,20 @@ def sign_binary(binary_path: Path, identity: str = None, entitlements: Path = No
 
 
 def create_zip(source_path: Path, zip_path: Path):
-    """Comprime un archivo o directorio en un .zip."""
+    """Compress a file or directory into a .zip."""
     if not source_path.exists():
         raise FileNotFoundError(f"Source not found: {source_path}")
     
-    # Asegurar que el directorio padre del zip existe
+    # Ensure the zip parent directory exists
     zip_path.parent.mkdir(parents=True, exist_ok=True)
     
     print(f"Creating {zip_path.name}...")
-    # Siempre trabajar desde el directorio del source para evitar incluir rutas completas
-    # Esto asegura que el zip solo contenga el nombre del archivo/directorio sin la ruta completa
+    # Always work from the source directory to avoid including full paths
+    # This ensures the zip only contains the file/directory name without the full path
     source_name = source_path.name
     source_parent = source_path.parent
     
-    # Cambiar al directorio del source y crear el zip con nombre relativo
+    # Change to the source directory and create the zip with relative name
     subprocess.run(
         ["zip", "-r", str(zip_path), source_name],
         cwd=source_parent,
@@ -109,32 +109,32 @@ def create_zip(source_path: Path, zip_path: Path):
 
 
 def notarize_zip(zip_path: Path, apple_id: str = None, team_id: str = None, password: str = None, keychain_profile: str = None):
-    """Notariza un archivo .zip usando xcrun notarytool.
+    """Notarize a .zip file using xcrun notarytool.
     
-    Las credenciales pueden proporcionarse como parámetros o mediante variables de entorno:
-    - APPLE_ID: Apple ID para notarización
-    - APPLE_TEAM_ID: Team ID (opcional)
-    - APPLE_PASSWORD: Contraseña de aplicación (opcional, solo si no se usa keychain profile)
-    - APPLE_KEYCHAIN_PROFILE: Nombre del perfil del keychain (opcional)
+    Credentials can be provided as parameters or via environment variables:
+    - APPLE_ID: Apple ID for notarization
+    - APPLE_TEAM_ID: Team ID (optional)
+    - APPLE_PASSWORD: Application password (optional, only if keychain profile is not used)
+    - APPLE_KEYCHAIN_PROFILE: Keychain profile name (optional)
     
     Returns:
-        bool: True si la notarización fue exitosa, False en caso contrario
+        bool: True if notarization was successful, False otherwise
     """
     if not zip_path.exists():
         raise FileNotFoundError(f"Zip file not found: {zip_path}")
     
     print(f"Notarizing {zip_path.name}...")
     
-    # Obtener credenciales de variables de entorno si no se proporcionan como parámetros
+    # Get credentials from environment variables if not provided as parameters
     apple_id = apple_id or os.getenv("APPLE_ID")
     team_id = team_id or os.getenv("APPLE_TEAM_ID")
     password = password or os.getenv("APPLE_PASSWORD")
     keychain_profile = keychain_profile or os.getenv("APPLE_KEYCHAIN_PROFILE")
     
-    # Construir el comando de notarización
+    # Build the notarization command
     cmd = ["xcrun", "notarytool", "submit", str(zip_path)]
     
-    # Si se proporcionan credenciales explícitas, usarlas
+    # If explicit credentials are provided, use them
     if apple_id and password:
         cmd.extend(["--apple-id", apple_id])
         if team_id:
@@ -142,11 +142,11 @@ def notarize_zip(zip_path: Path, apple_id: str = None, team_id: str = None, pass
         cmd.extend(["--password", password])
         cmd.append("--wait")
     elif keychain_profile:
-        # Usar el perfil del keychain especificado
+        # Use the specified keychain profile
         cmd.extend(["--keychain-profile", keychain_profile])
         cmd.append("--wait")
     else:
-        # Usar el perfil por defecto "bzm-mcp-notary" directamente
+        # Use the default profile "bzm-mcp-notary" directly
         default_profile = "bzm-mcp-notary"
         print(f"Using keychain profile: {default_profile}")
         cmd.extend(["--keychain-profile", default_profile])
@@ -156,7 +156,7 @@ def notarize_zip(zip_path: Path, apple_id: str = None, team_id: str = None, pass
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
         output = result.stdout or ""
         
-        # Verificar el estado de la notarización en la salida
+        # Check the notarization status in the output
         if "status: Accepted" in output or '"status":"Accepted"' in output:
             print(f"Successfully notarized {zip_path.name}")
             if result.stdout:
@@ -166,7 +166,7 @@ def notarize_zip(zip_path: Path, apple_id: str = None, team_id: str = None, pass
             print(f"Error: Notarization failed for {zip_path.name} - Status: Invalid")
             if result.stdout:
                 print(result.stdout)
-            # Intentar obtener más información sobre el error
+            # Try to get more information about the error
             if "id:" in output:
                 id_match = re.search(r'id:\s*([a-f0-9-]+)', output)
                 if id_match:
@@ -187,7 +187,7 @@ def notarize_zip(zip_path: Path, apple_id: str = None, team_id: str = None, pass
                         print("Could not fetch notarization log. Check Apple Developer portal for details.")
             return False
         else:
-            # Si no podemos determinar el estado, asumir éxito si el comando terminó sin error
+            # If we can't determine the status, assume success if the command finished without error
             print(f"Notarization completed for {zip_path.name} (status unclear)")
             if result.stdout:
                 print(result.stdout)
@@ -202,13 +202,13 @@ def notarize_zip(zip_path: Path, apple_id: str = None, team_id: str = None, pass
 
 
 def staple_app(app_path: Path):
-    """Engrapa (staple) el ticket de notarización a un .app bundle.
+    """Staple the notarization ticket to a .app bundle.
     
     Args:
-        app_path: Ruta al .app bundle a engrapar
+        app_path: Path to the .app bundle to staple
         
     Returns:
-        bool: True si el staple fue exitoso, False en caso contrario
+        bool: True if the staple was successful, False otherwise
     """
     if not app_path.exists():
         raise FileNotFoundError(f"App bundle not found: {app_path}")
@@ -235,46 +235,46 @@ def staple_app(app_path: Path):
 
 
 def download_file(url: str, dest_path: Path):
-    """Descarga un archivo desde una URL."""
+    """Download a file from a URL."""
     print(f"Downloading {url}...")
     urllib.request.urlretrieve(url, dest_path)
     print(f"Downloaded to {dest_path}")
 
 
 def extract_zip(zip_path: Path, extract_dir: Path):
-    """Extrae un archivo .zip a un directorio."""
+    """Extract a .zip file to a directory."""
     print(f"Extracting {zip_path.name} to {extract_dir}...")
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-        # Extraer todos los archivos
+        # Extract all files
         zip_ref.extractall(extract_dir)
         
-        # Restaurar permisos de ejecución para todos los binarios después de extraer
+        # Restore execution permissions for all binaries after extraction
         for member in zip_ref.infolist():
             if not member.filename.endswith('/') and not member.is_dir():
                 extracted_path = extract_dir / member.filename
                 if extracted_path.exists() and extracted_path.is_file():
-                    # Restaurar permisos originales si están disponibles en el zip
+                    # Restore original permissions if available in the zip
                     if member.external_attr:
-                        # Los permisos están en los bits superiores de external_attr
+                        # Permissions are in the upper bits of external_attr
                         unix_permissions = (member.external_attr >> 16) & 0o777
                         if unix_permissions:
                             os.chmod(extracted_path, unix_permissions)
                         else:
-                            # Si no hay permisos en el zip, detectar si es binario
+                            # If no permissions in zip, detect if binary
                             _restore_binary_permissions(extracted_path)
                     else:
-                        # Si no hay external_attr, intentar detectar si es binario
+                        # If no external_attr, try to detect if binary
                         _restore_binary_permissions(extracted_path)
         
-        # Buscar recursivamente todos los binarios en .app bundles y restaurar permisos
+        # Recursively search for all binaries in .app bundles and restore permissions
         for root, dirs, files in os.walk(extract_dir):
-            # Saltar el directorio __MACOSX
+            # Skip the __MACOSX directory
             if '__MACOSX' in root:
                 continue
             for file in files:
                 file_path = Path(root) / file
                 if file_path.is_file():
-                    # Verificar si está en un directorio MacOS (dentro de .app)
+                    # Check if it's in a MacOS directory (inside .app)
                     if 'Contents/MacOS' in str(file_path) or file_path.parent.name == 'MacOS':
                         _restore_binary_permissions(file_path)
     
@@ -282,55 +282,55 @@ def extract_zip(zip_path: Path, extract_dir: Path):
 
 
 def _restore_binary_permissions(file_path: Path):
-    """Restaura permisos de ejecución para un archivo si es un binario."""
-    # Verificar si es un binario ejecutable (no script, no plist, etc.)
+    """Restore execution permissions for a file if it's a binary."""
+    # Check if it's an executable binary (not script, not plist, etc.)
     if not file_path.name.endswith(('.sh', '.plist', '.txt', '.md', '.py', '.pyc')):
-        # Verificar si el archivo es realmente un binario leyendo el header
+        # Check if the file is actually a binary by reading the header
         try:
             with open(file_path, 'rb') as f:
                 header = f.read(4)
-                # Verificar si es un binario Mach-O o ELF
+                # Check if it's a Mach-O or ELF binary
                 is_binary_file = (header.startswith(b'\xcf\xfa\xed\xfe') or  # Mach-O 64-bit
                                  header.startswith(b'\xce\xfa\xed\xfe') or  # Mach-O 32-bit
                                  header.startswith(b'\x7fELF') or            # ELF
                                  header.startswith(b'MZ'))                   # PE/Windows
                 if is_binary_file:
-                    # Restaurar permisos de ejecución (755) para mantener formato binario
+                    # Restore execution permissions (755) to maintain binary format
                     os.chmod(file_path, 0o755)
         except:
-            # Si no podemos leer el archivo, verificar si está en MacOS (probablemente binario)
+            # If we can't read the file, check if it's in MacOS (probably binary)
             if 'MacOS' in str(file_path.parent):
                 os.chmod(file_path, 0o755)
 
 
 def find_binaries(directory: Path):
-    """Encuentra binarios o .app bundles en un directorio."""
+    """Find binaries or .app bundles in a directory."""
     binaries = []
     apps = []
     
     for root, dirs, files in os.walk(directory):
         root_path = Path(root)
         
-        # Saltar el directorio __MACOSX (metadatos de macOS en archivos zip)
+        # Skip the __MACOSX directory (macOS metadata in zip files)
         if '__MACOSX' in root_path.parts:
             continue
         
-        # Buscar .app bundles
+        # Search for .app bundles
         for item in root_path.iterdir():
             if item.is_dir() and item.suffix == ".app":
-                # Asegurarse de que no está dentro de __MACOSX
+                # Make sure it's not inside __MACOSX
                 if '__MACOSX' not in item.parts:
                     apps.append(item)
         
-        # Buscar binarios ejecutables (sin extensión o con extensiones comunes)
+        # Search for executable binaries (without extension or with common extensions)
         for file in files:
             file_path = root_path / file
             if file_path.is_file():
-                # Verificar si es ejecutable
+                # Check if it's executable
                 if os.access(file_path, os.X_OK):
-                    # Excluir archivos de sistema y scripts
+                    # Exclude system files and scripts
                     if not file.startswith('.') and file not in ['launcher.sh', 'Info.plist']:
-                        # Buscar binarios comunes de PyInstaller
+                        # Search for common PyInstaller binaries
                         if 'bzm-mcp' in file.lower() or file.endswith(('.bin', '')):
                             binaries.append(file_path)
     
@@ -338,11 +338,11 @@ def find_binaries(directory: Path):
 
 
 def find_entitlements_file(search_dir: Path = None):
-    """Busca un archivo de entitlements en ubicaciones comunes."""
+    """Search for an entitlements file in common locations."""
     if search_dir is None:
         search_dir = Path.cwd()
     
-    # Obtener el directorio home del usuario
+    # Get the user's home directory
     home_dir = Path.home()
     
     possible_entitlements = [
@@ -352,7 +352,7 @@ def find_entitlements_file(search_dir: Path = None):
         Path("dist") / "arm" / "entitlements.plist",
         home_dir / "dist" / "amd" / "entitlements.plist",
         home_dir / "dist" / "arm" / "entitlements.plist",
-        # Ruta específica usada en build.py
+        # Specific path used in build.py
         Path("/Users/abstracta/dist/arm/entitlements.plist"),
         Path("/Users/abstracta/dist/amd/entitlements.plist"),
     ]
@@ -366,14 +366,14 @@ def find_entitlements_file(search_dir: Path = None):
 
 def process_zip(input_zip: Path, output_dir: Path = None, entitlements: Path = None, 
                 notarize: bool = True, identity: str = None):
-    """Procesa un archivo .zip: extrae, firma y vuelve a comprimir.
+    """Process a .zip file: extract, sign, and recompress.
     
     Args:
-        input_zip: Ruta al archivo .zip de entrada
-        output_dir: Directorio donde guardar los archivos firmados (por defecto: mismo directorio que input_zip)
-        entitlements: Ruta al archivo de entitlements (opcional, se buscará automáticamente si no se proporciona)
-        notarize: Si True, notariza los archivos .zip resultantes
-        identity: Identidad de firma (opcional, se usa CODESIGN_IDENTITY si no se proporciona)
+        input_zip: Path to the input .zip file
+        output_dir: Directory where to save signed files (default: same directory as input_zip)
+        entitlements: Path to entitlements file (optional, will be searched automatically if not provided)
+        notarize: If True, notarizes the resulting .zip files
+        identity: Signing identity (optional, uses CODESIGN_IDENTITY if not provided)
     """
     if not input_zip.exists():
         raise FileNotFoundError(f"Input zip file not found: {input_zip}")
@@ -383,7 +383,7 @@ def process_zip(input_zip: Path, output_dir: Path = None, entitlements: Path = N
     else:
         output_dir.mkdir(parents=True, exist_ok=True)
     
-    # Buscar entitlements si no se proporciona
+    # Search for entitlements if not provided
     if entitlements is None:
         entitlements = find_entitlements_file()
         if entitlements:
@@ -391,16 +391,16 @@ def process_zip(input_zip: Path, output_dir: Path = None, entitlements: Path = N
         else:
             print("Warning: No entitlements file found. Signing without entitlements.")
     
-    # Crear directorio temporal para extraer
+    # Create temporary directory to extract
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         extract_dir = temp_path / "extracted"
         extract_dir.mkdir(exist_ok=True)
         
-        # Extraer el .zip
+        # Extract the .zip
         extract_zip(input_zip, extract_dir)
         
-        # Buscar binarios y .app bundles
+        # Search for binaries and .app bundles
         binaries, apps = find_binaries(extract_dir)
         
         if not binaries and not apps:
@@ -409,19 +409,19 @@ def process_zip(input_zip: Path, output_dir: Path = None, entitlements: Path = N
         
         print(f"Found {len(binaries)} binary(ies) and {len(apps)} .app bundle(s)")
         
-        # Firmar binarios
+        # Sign binaries
         for binary in binaries:
             sign_binary(binary, identity=identity, entitlements=entitlements)
         
-        # Firmar binarios dentro de .app bundles primero
+        # Sign binaries inside .app bundles first
         for app in apps:
-            # Buscar el binario bzm-mcp dentro del .app
+            # Search for the bzm-mcp binary inside the .app
             app_binary = app / "Contents" / "MacOS" / "bzm-mcp"
             if app_binary.exists():
                 print(f"Found binary inside {app.name}: {app_binary.name}")
                 sign_binary(app_binary, identity=identity, entitlements=entitlements)
             else:
-                # Buscar cualquier binario ejecutable en MacOS
+                # Search for any executable binary in MacOS
                 macos_dir = app / "Contents" / "MacOS"
                 if macos_dir.exists():
                     for item in macos_dir.iterdir():
@@ -430,43 +430,43 @@ def process_zip(input_zip: Path, output_dir: Path = None, entitlements: Path = N
                             sign_binary(item, identity=identity, entitlements=entitlements)
                             break
         
-        # Firmar .app bundles completos (después de firmar los binarios internos)
+        # Sign complete .app bundles (after signing internal binaries)
         for app in apps:
             sign_binary(app, identity=identity, entitlements=entitlements)
         
-        # Copiar .app bundles al directorio de salida
+        # Copy .app bundles to output directory
         output_apps = []
         for app in apps:
             output_app = output_dir / app.name
             print(f"Copying {app.name} to output directory...")
             if output_app.exists():
                 shutil.rmtree(output_app)
-            # Usar copytree que preserva metadatos
+            # Use copytree that preserves metadata
             shutil.copytree(app, output_app, copy_function=shutil.copy2)
             
-            # Asegurar que todos los binarios ejecutables mantengan sus permisos
+            # Ensure all executable binaries maintain their permissions
             macos_dir = output_app / "Contents" / "MacOS"
             if macos_dir.exists():
                 for item in macos_dir.iterdir():
                     if item.is_file():
-                        # Verificar si es un binario (no script, no plist, etc.)
+                        # Check if it's a binary (not script, not plist, etc.)
                         is_binary = not item.name.endswith(('.sh', '.plist', '.txt', '.md', '.py'))
                         if is_binary:
-                            # Verificar si el archivo es realmente un binario leyendo el header
+                            # Check if the file is actually a binary by reading the header
                             try:
                                 with open(item, 'rb') as f:
                                     header = f.read(4)
-                                    # Verificar si es un binario Mach-O o ELF
+                                    # Check if it's a Mach-O or ELF binary
                                     is_binary_file = (header.startswith(b'\xcf\xfa\xed\xfe') or  # Mach-O 64-bit
                                                      header.startswith(b'\xce\xfa\xed\xfe') or  # Mach-O 32-bit
                                                      header.startswith(b'\x7fELF') or            # ELF
                                                      header.startswith(b'MZ'))                   # PE/Windows
                                     if is_binary_file:
-                                        # Restaurar permisos de ejecución (755) para mantener formato binario
+                                        # Restore execution permissions (755) to maintain binary format
                                         os.chmod(item, 0o755)
                                         print(f"Preserved binary format and permissions for {item.name}")
                             except:
-                                # Si no podemos leer el archivo, asumir que es binario si no es script
+                                # If we can't read the file, assume it's binary if not script
                                 if not item.name.endswith('.sh'):
                                     os.chmod(item, 0o755)
                                     print(f"Preserved binary format and permissions for {item.name}")
@@ -474,10 +474,10 @@ def process_zip(input_zip: Path, output_dir: Path = None, entitlements: Path = N
             output_apps.append(output_app)
             print(f"Copied {app.name} to {output_dir}")
         
-        # Crear nuevos .zip files firmados
+        # Create new signed .zip files
         signed_zips = []
         
-        # Si hay un solo binario o .app, crear un .zip con ese nombre
+        # If there's a single binary or .app, create a .zip with that name
         if len(binaries) == 1 and len(apps) == 0:
             binary = binaries[0]
             output_zip = output_dir / f"{binary.name}.zip"
@@ -489,22 +489,22 @@ def process_zip(input_zip: Path, output_dir: Path = None, entitlements: Path = N
             create_zip(app, output_zip)
             signed_zips.append(output_zip)
         else:
-            # Si hay múltiples, crear un .zip con el contenido completo
+            # If there are multiple, create a .zip with the complete content
             output_zip = output_dir / f"{input_zip.stem}_signed.zip"
             create_zip(extract_dir, output_zip)
             signed_zips.append(output_zip)
         
-        # Notarizar si se solicita
+        # Notarize if requested
         notarization_successful = False
         if notarize:
             for zip_file in signed_zips:
                 if notarize_zip(zip_file):
                     notarization_successful = True
         
-        # Hacer staple de los .app bundles si la notarización fue exitosa
+        # Staple .app bundles if notarization was successful
         if notarization_successful and output_apps:
             print("\nWaiting a few seconds for notarization ticket to be available...")
-            time.sleep(5)  # Esperar un poco para que el ticket esté disponible
+            time.sleep(5)  # Wait a bit for the ticket to be available
             
             for output_app in output_apps:
                 staple_app(output_app)
@@ -518,69 +518,69 @@ def process_zip(input_zip: Path, output_dir: Path = None, entitlements: Path = N
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Firma y notariza binarios o .app desde un archivo .zip",
+        description="Sign and notarize binaries or .app bundles from a .zip file",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Ejemplos:
-  # Firmar un .zip local
+Examples:
+  # Sign a local .zip
   python code_sign.py input.zip
   
-  # Firmar un .zip descargado desde URL
+  # Sign a .zip downloaded from URL
   python code_sign.py https://example.com/bzm-mcp.zip
   
-  # Firmar sin notarizar
+  # Sign without notarizing
   python code_sign.py input.zip --no-notarize
   
-  # Especificar entitlements y output
+  # Specify entitlements and output
   python code_sign.py input.zip --entitlements entitlements.plist --output ./signed/
   
-Variables de entorno:
-  CODESIGN_IDENTITY: Identidad de firma (ej: "Developer ID Application: Your Name (TEAM_ID)")
-  APPLE_KEYCHAIN_PROFILE: Perfil del keychain para notarización
-  APPLE_ID: Apple ID para notarización
-  APPLE_TEAM_ID: Team ID para notarización
-  APPLE_PASSWORD: Contraseña de aplicación para notarización
+Environment variables:
+  CODESIGN_IDENTITY: Signing identity (e.g.: "Developer ID Application: Your Name (TEAM_ID)")
+  APPLE_KEYCHAIN_PROFILE: Keychain profile for notarization
+  APPLE_ID: Apple ID for notarization
+  APPLE_TEAM_ID: Team ID for notarization
+  APPLE_PASSWORD: Application password for notarization
         """
     )
     
     parser.add_argument(
         "input",
-        help="Ruta al archivo .zip o URL para descargar"
+        help="Path to .zip file or URL to download"
     )
     
     parser.add_argument(
         "--output", "-o",
         type=Path,
-        help="Directorio de salida para los archivos firmados (por defecto: mismo directorio que input)"
+        help="Output directory for signed files (default: same directory as input)"
     )
     
     parser.add_argument(
         "--entitlements", "-e",
         type=Path,
-        help="Ruta al archivo de entitlements (se buscará automáticamente si no se proporciona)"
+        help="Path to entitlements file (will be searched automatically if not provided)"
     )
     
     parser.add_argument(
         "--no-notarize",
         action="store_true",
-        help="No notarizar los archivos .zip resultantes"
+        help="Do not notarize the resulting .zip files"
     )
     
     parser.add_argument(
         "--identity", "-i",
-        help="Identidad de firma (sobrescribe CODESIGN_IDENTITY)"
+        help="Signing identity (overrides CODESIGN_IDENTITY)"
     )
     
     args = parser.parse_args()
     
-    # Verificar que estamos en macOS
+    # Verify we are on macOS
     if platform.system() != "Darwin":
         print("Error: This script only works on macOS")
         sys.exit(1)
     
     input_path = Path(args.input)
     
-    # Si es una URL, descargar primero
+    # If it's a URL, download first
     if args.input.startswith(("http://", "https://")):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".zip") as tmp_file:
             tmp_path = Path(tmp_file.name)
@@ -603,7 +603,7 @@ Variables de entorno:
         print(f"Error: {e}")
         sys.exit(1)
     finally:
-        # Limpiar archivo temporal si fue descargado
+        # Clean up temporary file if it was downloaded
         if args.input.startswith(("http://", "https://")) and input_path.exists():
             input_path.unlink()
 

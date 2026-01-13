@@ -240,33 +240,33 @@ def create_sha256_checksum(binary_name: str, dist_dir: Path):
 
 
 def sign_binary(binary_path: Path, identity: str = None, entitlements: Path = None):
-    """Firma un binario usando codesign.
+    """Sign a binary using codesign.
     
-    La identidad puede proporcionarse como parámetro o mediante variable de entorno:
-    - CODESIGN_IDENTITY: Identidad completa (ej: "Developer ID Application: Your Name (TEAM_ID)")
+    The identity can be provided as a parameter or via environment variable:
+    - CODESIGN_IDENTITY: Full identity (e.g.: "Developer ID Application: Your Name (TEAM_ID)")
     
-    Si no se proporciona, usará la identidad predeterminada del keychain.
+    If not provided, it will use the default keychain identity.
     """
     if not binary_path.exists():
         raise FileNotFoundError(f"Binary not found: {binary_path}")
     
-    # Obtener identidad de variable de entorno si no se proporciona como parámetro
+    # Get identity from environment variable if not provided as parameter
     identity = identity or os.getenv("CODESIGN_IDENTITY", "-")
     
-    # Construir el comando de firma (mismo orden que el comando manual)
+    # Build the signing command (same order as manual command)
     cmd = ["codesign", "--sign", identity]
     
-    # Agregar entitlements si se proporciona y existe
+    # Add entitlements if provided and exists
     if entitlements and entitlements.exists():
         cmd.extend(["--entitlements", str(entitlements)])
     
-    # Agregar opciones de hardened runtime y timestamp (misma sintaxis que comando manual)
+    # Add hardened runtime and timestamp options (same syntax as manual command)
     cmd.extend(["--options", "runtime", "--timestamp"])
     
-    # Agregar force y verbose
+    # Add force and verbose
     cmd.extend(["--force", "--verbose"])
     
-    # Si es un .app bundle, usar --deep para firmar recursivamente
+    # If it's a .app bundle, use --deep to sign recursively
     if str(binary_path).endswith(".app"):
         cmd.append("--deep")
     
@@ -278,15 +278,15 @@ def sign_binary(binary_path: Path, identity: str = None, entitlements: Path = No
 
 
 def create_zip(source_path: Path, zip_path: Path):
-    """Comprime un archivo o directorio en un .zip."""
+    """Compress a file or directory into a .zip."""
     if not source_path.exists():
         raise FileNotFoundError(f"Source not found: {source_path}")
     
-    # Asegurar que el directorio padre del zip existe
+    # Ensure the zip parent directory exists
     zip_path.parent.mkdir(parents=True, exist_ok=True)
     
     print(f"Creating {zip_path.name}...")
-    # Si el zip está en el mismo directorio que el source, usar nombre relativo
+    # If the zip is in the same directory as the source, use relative name
     if source_path.parent == zip_path.parent:
         subprocess.run(
             ["zip", "-r", zip_path.name, source_path.name],
@@ -294,7 +294,7 @@ def create_zip(source_path: Path, zip_path: Path):
             check=True,
         )
     else:
-        # Si están en directorios diferentes, usar rutas absolutas
+        # If they are in different directories, use absolute paths
         subprocess.run(
             ["zip", "-r", str(zip_path), str(source_path)],
             check=True,
@@ -303,29 +303,29 @@ def create_zip(source_path: Path, zip_path: Path):
 
 
 def notarize_zip(zip_path: Path, apple_id: str = None, team_id: str = None, password: str = None, keychain_profile: str = None):
-    """Notariza un archivo .zip usando xcrun notarytool.
+    """Notarize a .zip file using xcrun notarytool.
     
-    Las credenciales pueden proporcionarse como parámetros o mediante variables de entorno:
-    - APPLE_ID: Apple ID para notarización
-    - APPLE_TEAM_ID: Team ID (opcional)
-    - APPLE_PASSWORD: Contraseña de aplicación (opcional, solo si no se usa keychain profile)
-    - APPLE_KEYCHAIN_PROFILE: Nombre del perfil del keychain (opcional)
+    Credentials can be provided as parameters or via environment variables:
+    - APPLE_ID: Apple ID for notarization
+    - APPLE_TEAM_ID: Team ID (optional)
+    - APPLE_PASSWORD: Application password (optional, only if keychain profile is not used)
+    - APPLE_KEYCHAIN_PROFILE: Keychain profile name (optional)
     """
     if not zip_path.exists():
         raise FileNotFoundError(f"Zip file not found: {zip_path}")
     
     print(f"Notarizing {zip_path.name}...")
     
-    # Obtener credenciales de variables de entorno si no se proporcionan como parámetros
+    # Get credentials from environment variables if not provided as parameters
     apple_id = apple_id or os.getenv("APPLE_ID")
     team_id = team_id or os.getenv("APPLE_TEAM_ID")
     password = password or os.getenv("APPLE_PASSWORD")
     keychain_profile = keychain_profile or os.getenv("APPLE_KEYCHAIN_PROFILE")
     
-    # Construir el comando de notarización
+    # Build the notarization command
     cmd = ["xcrun", "notarytool", "submit", str(zip_path)]
     
-    # Si se proporcionan credenciales explícitas, usarlas
+    # If explicit credentials are provided, use them
     if apple_id and password:
         cmd.extend(["--apple-id", apple_id])
         if team_id:
@@ -333,11 +333,11 @@ def notarize_zip(zip_path: Path, apple_id: str = None, team_id: str = None, pass
         cmd.extend(["--password", password])
         cmd.append("--wait")
     elif keychain_profile:
-        # Usar el perfil del keychain especificado
+        # Use the specified keychain profile
         cmd.extend(["--keychain-profile", keychain_profile])
         cmd.append("--wait")
     else:
-        # Intentar detectar perfiles disponibles
+        # Try to detect available profiles
         try:
             result = subprocess.run(
                 ["xcrun", "notarytool", "store-credentials", "--list"],
@@ -347,7 +347,7 @@ def notarize_zip(zip_path: Path, apple_id: str = None, team_id: str = None, pass
             )
             profiles = [line.strip() for line in result.stdout.split('\n') if line.strip() and not line.startswith('Profile')]
             if profiles:
-                # Usar el primer perfil disponible
+                # Use the first available profile
                 profile = profiles[0].split()[0] if profiles else None
                 if profile:
                     print(f"Using keychain profile: {profile}")
@@ -377,7 +377,7 @@ def notarize_zip(zip_path: Path, apple_id: str = None, team_id: str = None, pass
             print(f"Error output: {e.stderr}")
         if e.stdout:
             print(f"Output: {e.stdout}")
-        # No fallar el build si la notarización falla (puede requerir configuración manual)
+        # Don't fail the build if notarization fails (may require manual configuration)
         print("Continuing build process...")
 
 
