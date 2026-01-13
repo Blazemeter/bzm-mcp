@@ -5,12 +5,18 @@ import platform
 import shutil
 import subprocess
 import tomllib
+import argparse
 from datetime import date
 from pathlib import Path
 
 import PyInstaller.__main__
 
 sep = os.pathsep
+
+parser = argparse.ArgumentParser(description='Build script for creating PyInstaller binary.')
+parser.add_argument('--sign', action='store_true', help='Sign the binary.')
+parser.add_argument('--entitlements', type=Path, help='Path to entitlements file.')
+args = parser.parse_args()
 
 
 def clean_build():
@@ -114,37 +120,43 @@ def build():
     clean_build()
     
     if system == "macos":
-        dist_dir = Path("dist")
-        binary_path = dist_dir / name
         
-        # Buscar archivo de entitlements en ubicaciones comunes
-        entitlements = Path("/Users/abstracta/dist/arm/entitlements.plist")
-        
-        # Paso 1: Firmar el binario
-        sign_binary(binary_path, entitlements=entitlements)
-        
-        # Paso 2: Comprimir el binario en bzm-mcp.zip
-        binary_zip_path = dist_dir / "bzm-mcp.zip"
-        create_zip(binary_path, binary_zip_path)
-        
-        # Paso 3: Notarizar el .zip del binario
-        notarize_zip(binary_zip_path)
-        
-        # Paso 4: Crear el .app (ya estaba automatizado)
-        app_name = f"bzm-mcp-{arch}.app"
-        create_app_bundle(name, arch, dist_dir)
-        
-        # Firmar el .app bundle completo
-        app_path = dist_dir / app_name
-        sign_binary(app_path, entitlements=entitlements)
-        
-        # Paso 5: Comprimir el .app en un .zip
-        app_zip_path = dist_dir / f"{app_name}.zip"
-        create_zip(app_path, app_zip_path)
-        
-        # Paso 6: Notarizar el .zip del .app
-        notarize_zip(app_zip_path)
-        
+        if args.sign:
+            dist_dir = Path("dist")
+            binary_path = dist_dir / name
+            
+            # Get entitlements file from argument or search in common locations
+            entitlements = args.entitlements
+            if entitlements is None:
+                print("Warning: No entitlements file found. Signing without entitlements.")
+            
+            # Step 1: Sign the binary
+            sign_binary(binary_path, entitlements=entitlements)
+            
+            # Step 2: Compress the binary into bzm-mcp.zip
+            binary_zip_path = dist_dir / "bzm-mcp.zip"
+            create_zip(binary_path, binary_zip_path)
+            
+            # Step 3: Notarize the binary .zip
+            notarize_zip(binary_zip_path)
+            
+            # Step 4: Create the .app (already automated)
+            app_name = f"bzm-mcp-macos-{arch}.app"
+            create_app_bundle(name, arch, dist_dir)
+            
+            # Sign the complete .app bundle
+            app_path = dist_dir / app_name
+            sign_binary(app_path, entitlements=entitlements)
+            
+            # Step 5: Compress the .app into a .zip
+            app_zip_path = dist_dir / f"{app_name}.zip"
+            create_zip(app_path, app_zip_path)
+            
+            # Step 6: Notarize the .app .zip
+            notarize_zip(app_zip_path)
+        else:
+            create_app_bundle(name, arch, dist_dir)
+            
     elif system == "linux":
         create_sha256_checksum(name, dist_dir=Path("dist"))
 
