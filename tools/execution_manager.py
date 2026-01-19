@@ -1,24 +1,18 @@
+import asyncio
 import traceback
-from typing import Optional, Dict, Any, List, Union
+from typing import Optional, Dict, Any
 
 import httpx
 from mcp.server.fastmcp import Context
-from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX, EXECUTIONS_ENDPOINT, SUPPORT_MESSAGE
 from config.token import BzmToken
 from formatters.execution import format_executions, format_executions_detailed, format_executions_status
-from models.execution import TestExecutionDetailed
 from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
 from tools.report_manager import ReportManager
-from tools.utils import api_request
-
-
-class ExecutionResult(BaseResult):
-    result: Optional[List[Union[TestExecutionDetailed]]] = Field(description="Test Executions Status List",
-                                                                 default=None)
+from tools.utils import api_request, timeout, user_agent
 
 
 class ExecutionManager(Manager):
@@ -26,20 +20,80 @@ class ExecutionManager(Manager):
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
 
+    async def _request_log_analyzer_api(self, method: str, execution_id: int, json_body: Optional[Dict[str, Any]] = None) -> BaseResult:
+        if not self.token:
+            return BaseResult(
+                error="No API token. Set BLAZEMETER_API_KEY env var with file path or API_KEY_ID and API_KEY_SECRET secrets."
+            )
+        
+        url = f"https://log-analyzer.blazemeter.com/analyzer/{execution_id}"
+        headers = {
+            "Authorization": self.token.as_basic_auth(),
+            "User-Agent": user_agent,
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+        
+        try:
+            async with httpx.AsyncClient(http2=True, timeout=timeout) as client:
+                resp = await self._make_analyzer_http_request(client, method, url, headers, json_body)
+                resp.raise_for_status()
+                return self._parse_analyzer_response(resp)
+        except httpx.HTTPStatusError as e:
+            return self._handle_analyzer_http_error(e, execution_id)
+        except Exception as e:
+            return BaseResult(error=f"Error calling Log Analyzer API: {str(e)}")
+
+    async def _make_analyzer_http_request(self, client: httpx.AsyncClient, method: str, url: str, headers: Dict[str, str], json_body: Optional[Dict[str, Any]]) -> httpx.Response:
+        if method == "GET":
+            return await client.get(url, headers=headers)
+        elif method == "POST":
+            return await client.post(url, headers=headers, json=json_body or {})
+        else:
+            return await client.request(method, url, headers=headers, json=json_body)
+
+    def _parse_analyzer_response(self, resp: httpx.Response) -> BaseResult:
+        content_type = resp.headers.get("content-type", "")
+        
+        if "application/json" in content_type.lower():
+            response_dict = resp.json()
+            result = response_dict
+        else:
+            response_dict = {}
+            result = resp.text
+        
+        if not isinstance(result, list):
+            result = [result]
+        
+        return BaseResult(
+            result=result,
+            error=response_dict.get("error", None) if isinstance(response_dict, dict) else None
+        )
+
+    def _handle_analyzer_http_error(self, e: httpx.HTTPStatusError, execution_id: int) -> BaseResult:
+        status_code = e.response.status_code
+        if status_code == 401:
+            return BaseResult(error="Unauthorized: Invalid API credentials for Log Analyzer API.")
+        elif status_code == 403:
+            return BaseResult(error="Forbidden: Access denied to Log Analyzer API.")
+        elif status_code == 404:
+            return BaseResult(error=f"Not Found: Analysis for execution {execution_id} not found.")
+        else:
+            try:
+                error_body = e.response.json()
+                error_msg = error_body.get("error", {}).get("message", str(e))
+                return BaseResult(error=f"HTTP {status_code}: {error_msg}")
+            except:
+                return BaseResult(error=f"HTTP {status_code}: {e.response.text[:200]}")
+
     async def start(self, test_id: int, delayed_start_ready: bool = True,
                     is_debug_run: bool = False) -> BaseResult:
-
-        # Check if it's valid or allowed
         test_result = await bridge.read_test(self.token, self.ctx, test_id)
         if test_result.error:
             return test_result
 
-        parameters = {
-            "delayedStart": delayed_start_ready
-        }
-        start_body = {
-            "isDebugRun": is_debug_run,
-        }
+        parameters = {"delayedStart": delayed_start_ready}
+        start_body = {"isDebugRun": is_debug_run}
         return await api_request(
             self.token,
             "POST",
@@ -50,7 +104,6 @@ class ExecutionManager(Manager):
         )
 
     async def read(self, execution_id: int) -> BaseResult:
-
         execution_response = await api_request(
             self.token,
             "GET",
@@ -63,18 +116,26 @@ class ExecutionManager(Manager):
 
         execution_element = execution_response.result[0]
 
-        # Check if it's valid or allowed
         project_result = await bridge.read_project(self.token, self.ctx, execution_element.project_id)
         if project_result.error:
             return project_result
 
-        # Get status information and append that to execution element
-        # https://help.blazemeter.com/apidocs/performance/masters_tracking_test_status.htm
-        parameters = {
-            "level ": 200,  # INFO
-            "events": False  # Evaluate the use in the future
+        status_response = await self._fetch_execution_status(execution_id)
+        if status_response.error:
+            return status_response
+
+        execution_element.execution_status_detailed = status_response.result[0]
+
+        result = {
+            "result": execution_element,
+            "context": self._get_execution_status_context()
         }
-        status_response = await api_request(
+
+        return BaseResult(result=[result])
+
+    async def _fetch_execution_status(self, execution_id: int) -> BaseResult:
+        parameters = {"level ": 200, "events": False}
+        return await api_request(
             self.token,
             "GET",
             f"{EXECUTIONS_ENDPOINT}/{execution_id}/status",
@@ -82,45 +143,27 @@ class ExecutionManager(Manager):
             params=parameters
         )
 
-        if status_response.error:
-            return status_response
-
-        # Append the status information
-        execution_element.execution_status_detailed = status_response.result[0]
-
-        result = {
-            "result": execution_element,
-            "context": "The execution_status is main attribute that indicates if the test passed or failed.\n"
-                    "The possible values are:\n"
-                    "pass: Passed - A test is deemed to pass if none of the Failure Criteria defined for the test"
-                    " are met.\n"
-                    "fail: Failed - A test is deemed to fail if one or more of the Failure Criteria defined for the test"
-                    " are met,\n"
-                    "unset: Not Set - A test that has no Failure Criteria defined."
-                    " IMPORTANT - The test outcome is indeterminate because no pass/fail criteria are defined, so it must"
-                    " be reported as unset.\n"
-                    "abort: Aborted - A test that is terminated using the Abort Test command available during the"
-                    " booting phase.\n"
-                    "error: Error - A test with one or more execution errors that causes the test to end with no data.\n"
-                    "noData: No Data - deprecated. Legacy reports with execution errors that ended with no data will"
-                    " remain in No Data status.\n"
-                    "\n"
-                    "IMPORTANT - Detecting Test Completion:\n"
-                    "To determine if a test execution has completed, check the 'ended' field in the execution response:\n"
-                    "- If 'ended' is null: The test is still running or has not finished.\n"
-                    "- If 'ended' is not null: The test has completed (has a timestamp indicating when it finished).\n"
-                    "\n"
-                    "Always verify that the 'ended' field is not null before retrieving final reports to ensure the test"
-                    " has fully completed and all data is available.\n"
-        }
-
-        return BaseResult(
-            result=[result],
+    @staticmethod
+    def _get_execution_status_context() -> str:
+        return (
+            "The execution_status is main attribute that indicates if the test passed or failed.\n"
+            "The possible values are:\n"
+            "pass: Passed - A test is deemed to pass if none of the Failure Criteria defined for the test are met.\n"
+            "fail: Failed - A test is deemed to fail if one or more of the Failure Criteria defined for the test are met.\n"
+            "unset: Not Set - A test that has no Failure Criteria defined. IMPORTANT - The test outcome is indeterminate because no pass/fail criteria are defined, so it must be reported as unset.\n"
+            "abort: Aborted - A test that is terminated using the Abort Test command available during the booting phase.\n"
+            "error: Error - A test with one or more execution errors that causes the test to end with no data.\n"
+            "noData: No Data - deprecated. Legacy reports with execution errors that ended with no data will remain in No Data status.\n"
+            "\n"
+            "IMPORTANT - Detecting Test Completion:\n"
+            "To determine if a test execution has completed, check the 'ended' field in the execution response:\n"
+            "- If 'ended' is null: The test is still running or has not finished.\n"
+            "- If 'ended' is not null: The test has completed (has a timestamp indicating when it finished).\n"
+            "\n"
+            "Always verify that the 'ended' field is not null before retrieving final reports to ensure the test has fully completed and all data is available.\n"
         )
 
     async def list(self, test_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
-
-        # Check if it's valid or allowed
         test_result = await bridge.read_test(self.token, self.ctx, test_id)
         if test_result.error:
             return test_result
@@ -139,6 +182,155 @@ class ExecutionManager(Manager):
             result_formatter=format_executions,
             params=parameters
         )
+
+    async def ai_analysis(self, execution_id: int) -> BaseResult:
+        execution_response = await self.read(execution_id)
+        if execution_response.error:
+            return execution_response
+
+        execution_element = self._extract_execution_element(execution_response, execution_id)
+        if isinstance(execution_element, BaseResult):
+            return execution_element
+
+        if not self._is_execution_started(execution_element):
+            return BaseResult(
+                error=f"Execution {execution_id} has not been started yet. Please start the execution first before requesting AI analysis."
+            )
+
+        analyzer_response = await self._get_or_trigger_analysis(execution_id)
+        if analyzer_response.error:
+            return analyzer_response
+
+        analysis_state = self._parse_analysis_state(analyzer_response)
+        if isinstance(analysis_state, BaseResult):
+            return analysis_state
+
+        return self._build_analysis_result(execution_id, analysis_state)
+
+    def _extract_execution_element(self, execution_response: BaseResult, execution_id: int):
+        if not execution_response.result or len(execution_response.result) == 0:
+            return BaseResult(error=f"Execution {execution_id} not found")
+        
+        result_dict = execution_response.result[0]
+        execution_element = result_dict.get("result")
+        if not execution_element:
+            return BaseResult(error=f"Execution {execution_id} not found")
+        
+        return execution_element
+
+    @staticmethod
+    def _is_execution_started(execution_element) -> bool:
+        return execution_element.created is not None
+
+    async def _get_or_trigger_analysis(self, execution_id: int) -> BaseResult:
+        analyzer_response = await self._request_log_analyzer_api("GET", execution_id)
+        
+        if self._should_trigger_new_analysis(analyzer_response):
+            post_response = await self._request_log_analyzer_api("POST", execution_id)
+            if post_response.error:
+                return post_response
+            
+            await asyncio.sleep(2)
+            analyzer_response = await self._request_log_analyzer_api("GET", execution_id)
+
+        return analyzer_response
+
+    @staticmethod
+    def _should_trigger_new_analysis(analyzer_response: BaseResult) -> bool:
+        if analyzer_response.error:
+            return True
+        
+        if not analyzer_response.result or len(analyzer_response.result) == 0:
+            return False
+        
+        analyzer_data = analyzer_response.result[0]
+        return isinstance(analyzer_data, dict) and analyzer_data.get("status") == "not_started"
+
+    def _parse_analysis_state(self, analyzer_response: BaseResult):
+        analyzer_data = self._extract_analyzer_data(analyzer_response)
+        
+        if not analyzer_data:
+            return {
+                "is_ready": False,
+                "status_message": "Analysis status is not available yet",
+                "analysis_results": None
+            }
+
+        error = analyzer_data.get("error")
+        if error:
+            return BaseResult(error=f"Analysis error: {error}")
+
+        return self._determine_analysis_readiness(analyzer_data)
+
+    @staticmethod
+    def _extract_analyzer_data(analyzer_response: BaseResult):
+        if analyzer_response.result and len(analyzer_response.result) > 0:
+            analyzer_data = analyzer_response.result[0]
+            if isinstance(analyzer_data, dict):
+                return analyzer_data
+        return None
+
+    @staticmethod
+    def _determine_analysis_readiness(analyzer_data: Dict[str, Any]) -> Dict[str, Any]:
+        status = analyzer_data.get("status", "")
+        progress = analyzer_data.get("progress", 0)
+        results = analyzer_data.get("result", [])
+
+        if status == "finished" and results:
+            return {
+                "is_ready": True,
+                "status_message": f"Analysis complete with {len(results)} result(s)",
+                "analysis_results": results
+            }
+        elif status in ["not_started", "running"] or (status == "finished" and not results):
+            progress_str = f" ({progress}%)" if progress else ""
+            return {
+                "is_ready": False,
+                "status_message": f"Analysis {status}{progress_str}",
+                "analysis_results": None
+            }
+        else:
+            return {
+                "is_ready": True,
+                "status_message": f"Analysis {status}",
+                "analysis_results": None
+            }
+
+    def _build_analysis_result(self, execution_id: int, analysis_state: Dict[str, Any]) -> BaseResult:
+        is_ready = analysis_state["is_ready"]
+        status_message = analysis_state["status_message"]
+        analysis_results = analysis_state["analysis_results"]
+
+        context_message = self._get_analysis_context_message(is_ready, status_message)
+
+        result = {
+            "result": {
+                "execution_id": execution_id,
+                "analysis_status": "ready" if is_ready else "processing",
+                "analysis_message": status_message,
+                "is_ready": is_ready,
+                "analysis_results": analysis_results if is_ready else None
+            },
+            "context": context_message
+        }
+
+        return BaseResult(result=[result])
+
+    @staticmethod
+    def _get_analysis_context_message(is_ready: bool, status_message: str) -> str:
+        if is_ready:
+            return (
+                "AI analysis is ready. The analysis results are available above.\n"
+                "You can now proceed with reviewing the analysis results.\n"
+                "If you need to check the execution status or reports, use the 'read' action."
+            )
+        else:
+            return (
+                "AI analysis is currently being processed and is not ready yet.\n"
+                f"Status: {status_message}\n"
+                "Please wait a moment and check again using the 'ai_analysis' action.\n"
+                "The analysis will be available once processing is complete."
+            )
 
 
 def register(mcp, token: Optional[BzmToken]):
@@ -170,6 +362,11 @@ def register(mcp, token: Optional[BzmToken]):
         - read_all_reports: get all reports (summary, error, and request statistics) for a given execution ID.
             args(dict): Dictionary with the following required parameters:
                 execution_id (int): The execution ID to get all reports for.
+        - ai_analysis: Trigger AI analysis for an execution and get dynamic responses based on polling results.
+            args(dict): Dictionary with the following required parameters:
+                execution_id (int): The execution ID (masterId) to trigger AI analysis for.
+            The action will check if the execution is running or finished, then either retrieve existing analysis status
+            or create a new analysis entry. It provides dynamic responses indicating whether the analysis is ready or still processing.
         """
     )
     async def execution(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
@@ -202,6 +399,8 @@ def register(mcp, token: Optional[BzmToken]):
                             "request_stats": await report_manager.read_request_stats(args["execution_id"])
                         }]
                     )
+                case "ai_analysis":
+                    return await test_manager.ai_analysis(args["execution_id"])
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in test execution manager tool"
