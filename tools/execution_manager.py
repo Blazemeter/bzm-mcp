@@ -57,14 +57,12 @@ class ExecutionManager(Manager):
             return BaseResult(result=[resp.text], error=None)
         
         response_dict = resp.json()
+        if not isinstance(response_dict, dict):
+            return BaseResult(result=[response_dict], error=None)
         
-        if isinstance(response_dict, dict) and "data" in response_dict:
-            analyzer_data = response_dict["data"]
-            error = analyzer_data.get("error") if isinstance(analyzer_data, dict) else None
-            return BaseResult(result=[analyzer_data], error=error)
-        
-        error = response_dict.get("error") if isinstance(response_dict, dict) else None
-        return BaseResult(result=[response_dict], error=error)
+        analyzer_data = response_dict.get("data", response_dict)
+        error = analyzer_data.get("error") if isinstance(analyzer_data, dict) else None
+        return BaseResult(result=[analyzer_data], error=error)
 
     def _handle_analyzer_http_error(self, e: httpx.HTTPStatusError, execution_id: int) -> BaseResult:
         status_code = e.response.status_code
@@ -205,14 +203,18 @@ class ExecutionManager(Manager):
 
     def _extract_execution_element(self, execution_response: BaseResult, execution_id: int):
         if not execution_response.result:
-            return BaseResult(error=f"Execution {execution_id} not found")
+            return self._execution_not_found_error(execution_id)
         
         result_dict = execution_response.result[0]
         execution_element = result_dict.get("result")
         if not execution_element:
-            return BaseResult(error=f"Execution {execution_id} not found")
+            return self._execution_not_found_error(execution_id)
         
         return execution_element
+
+    @staticmethod
+    def _execution_not_found_error(execution_id: int) -> BaseResult:
+        return BaseResult(error=f"Execution {execution_id} not found")
 
     @staticmethod
     def _is_execution_started(execution_element) -> bool:
@@ -410,9 +412,9 @@ def register(mcp, token: Optional[BzmToken]):
                     stats_result = await report_manager.read_request_stats(args["execution_id"])
                     return BaseResult(
                         result=[{
-                            "summary": summary_result.result if summary_result.result else None,
-                            "error": error_result.result if error_result.result else None,
-                            "request_stats": stats_result.result if stats_result.result else None
+                            "summary": summary_result.result or None,
+                            "error": error_result.result or None,
+                            "request_stats": stats_result.result or None
                         }]
                     )
                 case "ai_analysis":
