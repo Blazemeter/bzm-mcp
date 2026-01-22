@@ -47,28 +47,25 @@ class ExecutionManager(Manager):
     async def _make_analyzer_http_request(self, client: httpx.AsyncClient, method: str, url: str, headers: Dict[str, str], json_body: Optional[Dict[str, Any]]) -> httpx.Response:
         if method == "GET":
             return await client.get(url, headers=headers)
-        elif method == "POST":
+        if method == "POST":
             return await client.post(url, headers=headers, json=json_body or {})
-        else:
-            return await client.request(method, url, headers=headers, json=json_body)
+        return await client.request(method, url, headers=headers, json=json_body)
 
     def _parse_analyzer_response(self, resp: httpx.Response) -> BaseResult:
         content_type = resp.headers.get("content-type", "")
         
-        if "application/json" in content_type.lower():
-            response_dict = resp.json()
-            result = response_dict
-        else:
-            response_dict = {}
-            result = resp.text
+        if "application/json" not in content_type.lower():
+            return BaseResult(result=[resp.text], error=None)
         
-        if not isinstance(result, list):
-            result = [result]
+        response_dict = resp.json()
         
-        return BaseResult(
-            result=result,
-            error=response_dict.get("error", None) if isinstance(response_dict, dict) else None
-        )
+        if isinstance(response_dict, dict) and "data" in response_dict:
+            analyzer_data = response_dict["data"]
+            error = analyzer_data.get("error") if isinstance(analyzer_data, dict) else None
+            return BaseResult(result=[analyzer_data], error=error)
+        
+        error = response_dict.get("error") if isinstance(response_dict, dict) else None
+        return BaseResult(result=[response_dict], error=error)
 
     def _handle_analyzer_http_error(self, e: httpx.HTTPStatusError, execution_id: int) -> BaseResult:
         status_code = e.response.status_code
@@ -208,7 +205,7 @@ class ExecutionManager(Manager):
         return self._build_analysis_result(execution_id, analysis_state)
 
     def _extract_execution_element(self, execution_response: BaseResult, execution_id: int):
-        if not execution_response.result or len(execution_response.result) == 0:
+        if not execution_response.result:
             return BaseResult(error=f"Execution {execution_id} not found")
         
         result_dict = execution_response.result[0]
@@ -240,7 +237,7 @@ class ExecutionManager(Manager):
         if analyzer_response.error:
             return True
         
-        if not analyzer_response.result or len(analyzer_response.result) == 0:
+        if not analyzer_response.result:
             return False
         
         analyzer_data = analyzer_response.result[0]
@@ -260,60 +257,83 @@ class ExecutionManager(Manager):
         if error:
             return BaseResult(error=f"Analysis error: {error}")
 
-        return self._determine_analysis_readiness(analyzer_data)
+        readiness = self._determine_analysis_readiness(analyzer_data)
+        
+        if not readiness.get("status_message") or not readiness["status_message"].strip():
+            readiness["status_message"] = "Analysis status unknown"
+        
+        return readiness
 
     @staticmethod
-    def _extract_analyzer_data(analyzer_response: BaseResult):
-        if analyzer_response.result and len(analyzer_response.result) > 0:
-            analyzer_data = analyzer_response.result[0]
-            if isinstance(analyzer_data, dict):
-                return analyzer_data
-        return None
+    def _extract_analyzer_data(analyzer_response: BaseResult) -> Optional[Dict[str, Any]]:
+        if not analyzer_response.result:
+            return None
+        
+        analyzer_data = analyzer_response.result[0]
+        if not isinstance(analyzer_data, dict):
+            return None
+        
+        return analyzer_data
+
+    @staticmethod
+    def _normalize_results(results: Any) -> list:
+        if results is None:
+            return []
+        if isinstance(results, list):
+            return results
+        return [results] if results else []
+
+    @staticmethod
+    def _build_analysis_response(is_ready: bool, status_message: str, analysis_results: Any) -> Dict[str, Any]:
+        return {
+            "is_ready": is_ready,
+            "status_message": status_message,
+            "analysis_results": analysis_results
+        }
 
     @staticmethod
     def _determine_analysis_readiness(analyzer_data: Dict[str, Any]) -> Dict[str, Any]:
-        status = analyzer_data.get("status", "")
+        status = analyzer_data.get("status", "").strip().lower()
         progress = analyzer_data.get("progress", 0)
-        results = analyzer_data.get("result", [])
-
-        if status == "finished" and results:
-            return {
-                "is_ready": True,
-                "status_message": f"Analysis complete with {len(results)} result(s)",
-                "analysis_results": results
-            }
-        elif status in ["not_started", "running"] or (status == "finished" and not results):
+        
+        result_field = analyzer_data.get("result")
+        results = ExecutionManager._normalize_results(result_field)
+        
+        if status == "finished":
+            if results:
+                return ExecutionManager._build_analysis_response(
+                    True, f"Analysis complete with {len(results)} result(s)", results
+                )
+            return ExecutionManager._build_analysis_response(
+                True, "Analysis complete with no issues found", []
+            )
+        
+        if status in ["not_started", "running"]:
             progress_str = f" ({progress}%)" if progress else ""
-            return {
-                "is_ready": False,
-                "status_message": f"Analysis {status}{progress_str}",
-                "analysis_results": None
-            }
-        else:
-            return {
-                "is_ready": True,
-                "status_message": f"Analysis {status}",
-                "analysis_results": None
-            }
+            return ExecutionManager._build_analysis_response(
+                False, f"Analysis {status}{progress_str}", None
+            )
+        
+        if not status:
+            return ExecutionManager._build_analysis_response(
+                True, "Analysis complete", results
+            )
+        
+        return ExecutionManager._build_analysis_response(
+            True, f"Analysis {status}", results
+        )
 
     def _build_analysis_result(self, execution_id: int, analysis_state: Dict[str, Any]) -> BaseResult:
         is_ready = analysis_state["is_ready"]
-        status_message = analysis_state["status_message"]
-        analysis_results = analysis_state["analysis_results"]
-
-        context_message = self._get_analysis_context_message(is_ready, status_message)
-
         result = {
             "result": {
                 "execution_id": execution_id,
                 "analysis_status": "ready" if is_ready else "processing",
-                "analysis_message": status_message,
-                "is_ready": is_ready,
-                "analysis_results": analysis_results if is_ready else None
+                "analysis_message": analysis_state["status_message"],
+                "analysis_results": analysis_state["analysis_results"]
             },
-            "context": context_message
+            "context": self._get_analysis_context_message(is_ready, analysis_state["status_message"])
         }
-
         return BaseResult(result=[result])
 
     @staticmethod
@@ -330,7 +350,7 @@ class ExecutionManager(Manager):
                 f"Status: {status_message}\n"
                 "Please wait a moment and check again using the 'ai_analysis' action.\n"
                 "The analysis will be available once processing is complete."
-            )
+        )
 
 
 def register(mcp, token: Optional[BzmToken]):
@@ -384,19 +404,18 @@ def register(mcp, token: Optional[BzmToken]):
                 case "read_summary":
                     return await report_manager.read_summary(args["execution_id"])
                 case "read_errors":
-                    return BaseResult(
-                        result=await report_manager.read_error(args["execution_id"])
-                    )
+                    return await report_manager.read_error(args["execution_id"])
                 case "read_request_stats":
-                    return BaseResult(
-                        result=await report_manager.read_request_stats(args["execution_id"])
-                    )
+                    return await report_manager.read_request_stats(args["execution_id"])
                 case "read_all_reports":
+                    summary_result = await report_manager.read_summary(args["execution_id"])
+                    error_result = await report_manager.read_error(args["execution_id"])
+                    stats_result = await report_manager.read_request_stats(args["execution_id"])
                     return BaseResult(
                         result=[{
-                            "summary": await report_manager.read_summary(args["execution_id"]),
-                            "error": await report_manager.read_error(args["execution_id"]),
-                            "request_stats": await report_manager.read_request_stats(args["execution_id"])
+                            "summary": summary_result.result if summary_result.result else None,
+                            "error": error_result.result if error_result.result else None,
+                            "request_stats": stats_result.result if stats_result.result else None
                         }]
                     )
                 case "ai_analysis":
