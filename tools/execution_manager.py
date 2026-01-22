@@ -1,4 +1,3 @@
-import asyncio
 import traceback
 from typing import Optional, Dict, Any
 
@@ -226,9 +225,7 @@ class ExecutionManager(Manager):
             post_response = await self._request_log_analyzer_api("POST", execution_id)
             if post_response.error:
                 return post_response
-            
-            await asyncio.sleep(2)
-            analyzer_response = await self._request_log_analyzer_api("GET", execution_id)
+            return post_response
 
         return analyzer_response
 
