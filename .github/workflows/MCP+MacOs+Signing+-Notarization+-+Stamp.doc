@@ -1,0 +1,3349 @@
+Date: Wed, 28 Jan 2026 06:17:10 +0000 (UTC)
+Message-ID: <1478258986.51.1769581030817@30ce725b1b7e>
+Subject: Exported From Confluence
+MIME-Version: 1.0
+Content-Type: multipart/related; 
+	boundary="----=_Part_50_11362504.1769581030817"
+
+------=_Part_50_11362504.1769581030817
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Content-Location: file:///C:/exported.html
+
+<html xmlns:o=3D'urn:schemas-microsoft-com:office:office'
+      xmlns:w=3D'urn:schemas-microsoft-com:office:word'
+      xmlns:v=3D'urn:schemas-microsoft-com:vml'
+      xmlns=3D'urn:w3-org-ns:HTML'>
+<head>
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+">
+    <title>MCP MacOs Signing -Notarization - Stamp</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:TargetScreenSize>1024x640</o:TargetScreenSize>
+            <o:PixelsPerInch>72</o:PixelsPerInch>
+            <o:AllowPNG/>
+        </o:OfficeDocumentSettings>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+                <!--
+        @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in;
+            mso-header-margin: .5in;
+            mso-footer-margin: .5in;
+            mso-paper-source: 0;
+        }
+
+        table {
+            border: solid 1px;
+            border-collapse: collapse;
+        }
+
+        table td, table th {
+            border: solid 1px;
+            padding: 5px;
+        }
+
+        td {
+            page-break-inside: avoid;
+        }
+
+        tr {
+            page-break-after: avoid;
+        }
+
+        div.Section1 {
+            page: Section1;
+        }
+
+        /* Confluence print stylesheet. Common to all themes for print medi=
+a */
+/* Full of !important until we improve batching for print CSS */
+
+@media print {
+    #main {
+        padding-bottom: 1em !important; /* The default padding of 6em is to=
+o much for printouts */
+    }
+
+    body {
+        font: var(--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se=
+rif);
+    }
+
+    body, #full-height-container, #main, #page, #content, .has-personal-sid=
+ebar #content {
+        background: var(--ds-surface, #fff) !important;
+        color: var(--ds-text, #000) !important;
+        border: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    a, a:link, a:visited, a:focus, a:hover, a:active {
+        color: var(--ds-text, #000);
+    }
+
+    #content h1,
+    #content h2,
+    #content h3,
+    #content h4,
+    #content h5,
+    #content h6 {
+        page-break-after: avoid;
+    }
+
+    pre {
+        font: var(--ds-font-code, Monaco, "Courier New", monospace);
+    }
+
+    #header,
+    .aui-header-inner,
+    #navigation,
+    #sidebar,
+    .sidebar,
+    #personal-info-sidebar,
+    .ia-fixed-sidebar,
+    .page-actions,
+    .navmenu,
+    .ajs-menu-bar,
+    .noprint,
+    .inline-control-link,
+    .inline-control-link a,
+    a.show-labels-editor,
+    .global-comment-actions,
+    .comment-actions,
+    .quick-comment-container,
+    #addcomment {
+        display: none !important;
+    }
+
+    /* CONF-28544 cannot print multiple pages in IE */
+    #splitter-content {
+        position: relative !important;
+    }
+
+    .comment .date::before {
+        content: none !important; /* remove middot for print view */
+    }
+
+    h1.pagetitle img {
+        height: auto;
+        width: auto;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    #footer {
+        position: relative !important; /* CONF-17506 Place the footer at en=
+d of the content */
+        margin: 0;
+        padding: 0;
+        background: none;
+        clear: both;
+    }
+
+    #poweredby {
+        border-top: none;
+        background: none;
+    }
+
+    #poweredby li.print-only {
+        display: list-item;
+        font-style: italic;
+    }
+
+    #poweredby li.noprint {
+        display: none;
+    }
+
+    /* no width controls in print */
+    .wiki-content .table-wrap,
+    .wiki-content p,
+    .panel .codeContent,
+    .panel .codeContent pre,
+    .image-wrap {
+        overflow: visible !important;
+    }
+
+    /* TODO - should this work? */
+    #children-section,
+    #comments-section .comment,
+    #comments-section .comment .comment-body,
+    #comments-section .comment .comment-content,
+    #comments-section .comment p {
+        page-break-inside: avoid;
+    }
+
+    #page-children a {
+        text-decoration: none;
+    }
+
+    /**
+     hide twixies
+
+     the specificity here is a hack because print styles
+     are getting loaded before the base styles. */
+    #comments-section.pageSection .section-header,
+    #comments-section.pageSection .section-title,
+    #children-section.pageSection .section-header,
+    #children-section.pageSection .section-title,
+    .children-show-hide {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    .children-show-hide.icon {
+        display: none;
+    }
+
+    /* personal sidebar */
+    .has-personal-sidebar #content {
+        margin-right: 0px;
+    }
+
+    .has-personal-sidebar #content .pageSection {
+        margin-right: 0px;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+}
+-->
+    </style>
+</head>
+<body>
+    <h1>MCP MacOs Signing -Notarization - Stamp</h1>
+    <div class=3D"Section1">
+        <h1 local-id=3D"0aa31066-b1c1-496a-8e19-b57077e25c43" id=3D"MCPMacO=
+sSigning-Notarization-Stamp-macOSCodeSigningandNotarizationGuide">macOS Cod=
+e Signing and Notarization Guide</h1>
+<h2 local-id=3D"e200254e-db5e-49b6-9173-6c1e267ae40e" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Index">Index</h2>
+<ul local-id=3D"3e6774c4-6457-4919-ba0c-ba917551ea6a">
+<li local-id=3D"097f27b1-fe1a-4544-92a8-9179868e654a">
+<p local-id=3D"d2fbea40-03e4-4b58-aac3-ce99adfe8de3"><a href=3D"#-overview"=
+>Overview</a></p></li>
+<li local-id=3D"0bfd20bd-1090-4fc2-9f76-a2f3514c5719">
+<p local-id=3D"ee40244f-3b7a-4a42-b548-da9703f06d61"><a href=3D"#-critical-=
+notes-for-pyinstaller-users">Critical Notes for PyInstaller Users</a></p></=
+li>
+<li local-id=3D"b47eea67-508e-4b99-a797-b43801ac1d0b">
+<p local-id=3D"1b7baa9d-22f9-4d89-b0a9-3753ba5449df"><a href=3D"#-what-your=
+e-trying-to-achieve">What You're Trying to Achieve</a></p></li>
+<li local-id=3D"025cca2a-5829-4407-968d-048d9d8712fc">
+<p local-id=3D"81db486e-eb07-4ec6-93ca-c333bd46eade"><a href=3D"#-zip-vs-dm=
+g-distribution">ZIP vs DMG Distribution</a></p></li>
+<li local-id=3D"3b836373-fff0-4cf2-9557-225c19992c5e">
+<p local-id=3D"a10d1b02-256d-44e9-a85a-674c3a5d11d1"><a href=3D"#-prerequis=
+ites">Prerequisites</a></p></li>
+<li local-id=3D"89304a44-a7ca-4719-9d9f-0eba699ad5f9">
+<p local-id=3D"f84b8c43-b347-4e75-af75-1ba009e61682"><a href=3D"#-security-=
+best-practices">Security Best Practices</a></p></li>
+<li local-id=3D"5223bbe2-a3ae-4b95-a711-5febde3fe8a6">
+<p local-id=3D"5e6a60a4-e32c-4a06-8364-664bf4617689"><a href=3D"#-part-1-un=
+derstanding-the-credentials">Part 1: Understanding the Credentials</a></p><=
+/li>
+<li local-id=3D"5382e290-5bab-48e3-9b54-75d6a19d3863">
+<p local-id=3D"4148f882-234b-44b8-9e50-228836a30dbc"><a href=3D"#-part-2-se=
+tting-up-your-environment-one-time-setup">Part 2: Setting Up Your Environme=
+nt (=E2=8F=B0 ONE-TIME SETUP)</a></p></li>
+<li local-id=3D"c4519133-c604-4fa2-9eb9-e89782191908">
+<p local-id=3D"05347f71-c9d3-4de3-84f5-9a2b34e9a3c6"><a href=3D"#%EF%B8%8F-=
+part-3-pyinstaller-specific-requirements-one-time-setup">Part 3: PyInstalle=
+r-Specific Requirements (=E2=8F=B0 ONE-TIME SETUP)</a></p></li>
+<li local-id=3D"c3fa5724-2fc5-4cb2-b4c9-c126b9b454bb">
+<p local-id=3D"ce6f4cea-cc11-4762-bd2e-ed298ce998b8"><a href=3D"#-quick-sum=
+mary-after-initial-setup-is-complete">Quick Summary: After Initial Setup is=
+ Complete</a></p></li>
+<li local-id=3D"410be561-d8e6-442e-bb5e-9c6c4a41fb62">
+<p local-id=3D"9e0b2b2a-5a00-48a0-927e-73bc430dea20"><a href=3D"#-part-4-co=
+de-signing-your-binary-every-build">Part 4: Code Signing Your Binary (=F0=
+=9F=94=84 EVERY BUILD)</a></p></li>
+<li local-id=3D"cf302b6a-e49a-4fd4-9e05-08f7f0619e01">
+<p local-id=3D"750858a0-08b9-442a-819c-b72837dccc21"><a href=3D"#-part-5-cr=
+eating-a-dmg-every-build">Part 5: Creating a DMG (=F0=9F=94=84 EVERY BUILD)=
+</a></p></li>
+<li local-id=3D"45ddf70b-bc9d-4f15-bd09-ed5db10949b7">
+<p local-id=3D"6316b7b4-e75f-416c-8e88-df1feeb81a91"><a href=3D"#-part-5b-c=
+reating-a-zip-archive-alternative---current-method">Part 5B: Creating a ZIP=
+ Archive (Alternative - Current Method)</a></p></li>
+<li local-id=3D"eaddd178-84fb-4557-aef0-a463573fc4cc">
+<p local-id=3D"14624b81-341d-4cee-98e6-de55cdb84c8f"><a href=3D"#-part-6-no=
+tarization">Part 6: Notarization</a></p></li>
+<li local-id=3D"fced0d82-8462-4889-8655-c30d5d64ca91">
+<p local-id=3D"4a6d8abf-f98a-4db6-943b-162e10beb9b2"><a href=3D"#-part-7-st=
+apling-every-build---dmg-only">Part 7: Stapling (=F0=9F=94=84 EVERY BUILD -=
+ DMG ONLY)</a></p></li>
+<li local-id=3D"52ce103d-11ca-4569-987e-847ebdcbe549">
+<p local-id=3D"f4aaf013-d011-4d17-a711-fe79ac374f66"><a href=3D"#-part-8-te=
+sting-every-build">Part 8: Testing (=F0=9F=94=84 EVERY BUILD)</a></p></li>
+<li local-id=3D"c6dd2341-2f30-45e2-950a-3ced1a4b03a6">
+<p local-id=3D"8764344a-f1ad-4928-9ff6-9e2fe26ece00"><a href=3D"#-part-9-th=
+e-amd64-intel-binary-every-build">Part 9: The AMD64 (Intel) Binary (=F0=9F=
+=94=84 EVERY BUILD)</a></p></li>
+<li local-id=3D"be387eca-9a73-43c5-b1ef-4dec14669a8a">
+<p local-id=3D"b4c6cd51-585b-4af5-a8de-30fc4b53b23c"><a href=3D"#-common-is=
+sues--solutions">Common Issues &amp; Solutions</a></p></li>
+<li local-id=3D"06272fc2-2866-42c4-9322-733b5200ebe5">
+<p local-id=3D"4d2446ac-ed91-4d2f-8c17-03c23c434834"><a href=3D"#-complete-=
+workflow-scripts">Complete Workflow Scripts</a></p></li>
+<li local-id=3D"bfba5ec6-7300-4236-9712-6ef103995247">
+<p local-id=3D"b8426b8b-1afa-45a9-8b50-e582908b9dcb"><a href=3D"#-quick-ref=
+erence-checklist">Quick Reference Checklist</a></p></li>
+<li local-id=3D"29618093-a33d-4b1d-a012-43e620de8998">
+<p local-id=3D"2b1de1d8-7e60-47f4-adee-9cb0d8e3a074"><a href=3D"#-automatin=
+g-with-cicd-security-considerations">Automating with CI/CD (Security Consid=
+erations)</a></p></li>
+<li local-id=3D"fa82abe7-0ef4-4fcc-b051-d8f7bb0e1b4f">
+<p local-id=3D"7a274ac9-b18e-48b3-9fc2-03d94361effa"><a href=3D"#-additiona=
+l-resources">Additional Resources</a></p></li>
+<li local-id=3D"039fc084-4b46-4afc-bd46-446c3020590a">
+<p local-id=3D"0d9bf912-2297-48ee-b971-d3d4d5ecd484"><a href=3D"#-next-step=
+s">Next Steps</a></p></li>
+<li local-id=3D"064c3795-ea8f-4d60-8f8d-84f87217f882">
+<p local-id=3D"228a1c3d-dce6-4ea7-bb98-c235a14423cc"><a href=3D"#questions-=
+to-verify-your-setup">Questions to Verify Your Setup</a></p></li>
+<li local-id=3D"7eccc435-2591-4196-a063-07a06417b78a">
+<p local-id=3D"4af535bc-19d1-4c72-9e01-6003f65750a4"><a href=3D"#%EF%B8%8F-=
+security-checklist-for-git-repository">Security Checklist for Git Repositor=
+y</a></p></li>
+</ul>
+<hr local-id=3D"ece1ea9f-8cc8-48f9-b424-23441ca79b9f">
+<h2 local-id=3D"e170d05b-8f20-4b5b-b9e7-a20a59834e24" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=93=9AOverview">=F0=9F=93=9A Overview</h2>
+<p local-id=3D"266df857-c934-4f89-bb30-be199e458b7c">This guide will walk y=
+ou through the process of signing and notarizing your macOS binary so users=
+ can run it without security warnings. You'll learn the "why" behind each s=
+tep and execute the commands manually to understand the process.</p>
+<hr local-id=3D"3f608656-72b4-4687-af30-9ff52bf90158">
+<h2 local-id=3D"1c1ea964-b010-4f77-8ab7-90ae0bf0153d" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=E2=9A=A0=EF=B8=8FCriticalNotesforPyInstallerUsers">=E2=
+=9A=A0=EF=B8=8F Critical Notes for PyInstaller Users</h2>
+<p local-id=3D"48541e0c-3aac-40d3-80ff-e179dbd5f9d2"><strong>If you're sign=
+ing a PyInstaller binary (like bzm-mcp), READ THIS FIRST:</strong></p>
+<ol start=3D"1" local-id=3D"36992b09-def4-4f5c-a3bf-336ba701e002">
+<li local-id=3D"bfb7027a-2d3c-449a-be81-92accb1df2e4">
+<p local-id=3D"75a7e8ae-b06c-46b2-9b7e-487a467f54e1"><strong>You MUST use e=
+ntitlements</strong> - Without them, your app will fail with "Team ID misma=
+tch" errors</p></li>
+<li local-id=3D"1ecc2283-0419-4c59-8c5a-e4ee63948178">
+<p local-id=3D"c0920a12-cfa4-4eb4-ad00-2e0bfd4d3f3e"><strong>Raw binaries c=
+annot be stapled</strong> - Only .dmg, .app, or .pkg files support stapling=
+</p></li>
+<li local-id=3D"3720f8e4-e2a0-4423-95c2-76dcee722f36">
+<p local-id=3D"dcea168e-b42a-4d66-b742-6e5a6352d28f"><strong>Remove adhoc s=
+ignatures first</strong> - PyInstaller adds self-signatures that must be re=
+moved</p></li>
+<li local-id=3D"8c4a427f-34b8-4627-a6b0-39a791dec5b5">
+<p local-id=3D"dc1a5d92-f22b-44b6-8952-c33e3281feb8"><strong>Test locally b=
+efore packaging</strong> - Make sure the signed binary runs before creating=
+ the package</p></li>
+<li local-id=3D"5924b0a3-9d12-4bab-aebd-88c2cc7d4c90">
+<p local-id=3D"ce203254-c30b-44aa-8dfb-7a84a5e7ce0f"><strong>ZIP vs DMG</st=
+rong> - ZIP files are simpler but cannot be stapled; DMG files support stap=
+ling for offline verification</p></li>
+</ol>
+<p local-id=3D"ba55a0d7-a2e5-401f-b355-3f00f895da5f"><strong>The correct or=
+der (ZIP - Current Method):</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: java; gutter: false; theme: Confluence" data-theme=3D"Confluence">Build =
+=E2=86=92 Remove adhoc signature =E2=86=92 Sign with entitlements =E2=86=92=
+ Test locally =E2=86=92=20
+Create ZIP =E2=86=92 Notarize ZIP =E2=86=92 Test extracted binary</pre>
+</div>
+</div>
+<p local-id=3D"b7457e5f-eb0c-45fc-ae40-715cdca78fa9"><strong>The correct or=
+der (DMG - Alternative Method):</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: java; gutter: false; theme: Confluence" data-theme=3D"Confluence">Build =
+=E2=86=92 Remove adhoc signature =E2=86=92 Sign with entitlements =E2=86=92=
+ Test locally =E2=86=92=20
+Create DMG =E2=86=92 Sign DMG =E2=86=92 Notarize DMG =E2=86=92 Staple DMG =
+=E2=86=92 Test extracted binary</pre>
+</div>
+</div>
+<p local-id=3D"e8b8ada8-edd5-4778-8b71-d9ee0ff80561"><strong>Common mistake=
+s to avoid:</strong></p>
+<ul local-id=3D"a1b436a1-23ec-4c65-b0b9-4bb6f7900fd1">
+<li local-id=3D"87ef6555-dbff-414c-b0fb-6e48d2e1b4f0">
+<p local-id=3D"948f3751-2616-4cee-9283-90d1d5a6ee66">=E2=9D=8C Signing with=
+out entitlements (causes runtime errors)</p></li>
+<li local-id=3D"b587392a-21ca-4c17-9110-9a8ee7d73f3a">
+<p local-id=3D"345e0440-dc57-46c0-88fb-7f8e8f920463">=E2=9D=8C Creating pac=
+kage before signing the binary (users get "malware" warnings)</p></li>
+<li local-id=3D"54dd8f47-f5f8-4f8c-b98b-bc97c66e8509">
+<p local-id=3D"90a94552-c12e-458c-ba2c-c7b7ecdb2333">=E2=9D=8C Trying to st=
+aple ZIP files or raw binaries (not supported)</p></li>
+<li local-id=3D"21a5c7b3-7df5-4673-84b1-d5961381b140">
+<p local-id=3D"deebedb5-f076-4bd9-9fcf-6069cf0ff69e">=E2=9D=8C Forgetting t=
+o test the extracted binary from the package</p></li>
+</ul>
+<hr local-id=3D"ea15e79a-0b24-45e3-b4c4-7cebdfe7d1e0">
+<h2 local-id=3D"c79ff3a1-e1e7-4f5f-906a-5cc4ef6cfef8" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=8E=AFWhatYou'reTryingtoAchieve">=F0=9F=8E=AF Wha=
+t You're Trying to Achieve</h2>
+<p local-id=3D"9ff61b03-e132-4504-bab1-7a9ffc541905"><strong>The Problem:</=
+strong> When users download and try to run your unsigned macOS binary, they=
+ get a scary warning: <em>"cannot be opened because the developer cannot be=
+ verified"</em> and have to jump through hoops in System Settings to run it=
+.</p>
+<p local-id=3D"642d56e0-1244-44d0-8ade-da9f8e8f89c9"><strong>The Solution:<=
+/strong></p>
+<ol start=3D"1" local-id=3D"1e288084-a43e-41c2-aa63-b03ceb0b39c6">
+<li local-id=3D"55c74d02-e394-4ab9-b4b9-af07e225c248">
+<p local-id=3D"db30bec9-0a25-4dc7-a2d2-de85c19b065a"><strong>Code Signing</=
+strong> - Cryptographically prove that you created this binary</p></li>
+<li local-id=3D"1440d44e-4ce7-48ac-92e1-da985b0a30d0">
+<p local-id=3D"c9820cd5-2952-48f5-9c92-90f23d5d1938"><strong>Notarization</=
+strong> - Have Apple verify your binary doesn't contain malware</p></li>
+<li local-id=3D"7bfbc41d-4530-4611-ba83-51994d9c10e0">
+<p local-id=3D"f45d0d86-5c8c-4de7-b467-8784cd23e583"><strong>Distribution</=
+strong> - Package for delivery (ZIP or DMG)</p></li>
+<li local-id=3D"ac3c4f36-c892-4e4e-b9f3-6fd1ab54ba17">
+<p local-id=3D"fc23e24e-ddb3-44c7-8357-e08eacfdc6e9"><strong>Stapling</stro=
+ng> (DMG only) - Attach Apple's approval ticket so it works offline</p></li=
+>
+</ol>
+<hr local-id=3D"f4bc26ed-e134-4223-848f-016ae7f8d6e1">
+<h2 local-id=3D"d27512fe-9cac-452e-8613-0b733899226f" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=93=A6ZIPvsDMGDistribution">=F0=9F=93=A6 ZIP vs D=
+MG Distribution</h2>
+<p local-id=3D"998b9f1e-f9c6-4070-92cf-7c51d063c528"><strong>This guide cov=
+ers TWO distribution methods:</strong></p>
+<h3 local-id=3D"aebc0f19-ba88-44a2-9f94-bdd0c7b27458" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-ZIPDistribution(CurrentMethod-Simpler)">ZIP Distributio=
+n (Current Method - Simpler)</h3>
+<p local-id=3D"74c48c11-0b28-40b5-a82d-fc5395787c4d"><strong>Workflow:</str=
+ong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: java; gutter: false; theme: Confluence" data-theme=3D"Confluence">Sign Bi=
+nary =E2=86=92 Create ZIP =E2=86=92 Notarize ZIP =E2=86=92 Distribute</pre>
+</div>
+</div>
+<p local-id=3D"0c8b2433-3f5b-46e5-9534-d887f0c1174c"><strong>Pros:</strong>=
+</p>
+<ul local-id=3D"a79196dc-28da-403e-9318-25b657cb8133">
+<li local-id=3D"d473419b-a34c-44e9-81cf-21379bb618fa">
+<p local-id=3D"b489036b-6e0f-4e2f-8da0-c2a01602115f">=E2=9C=85 Simpler proc=
+ess (fewer steps)</p></li>
+<li local-id=3D"94804447-b630-41fd-8a64-9e9e1f1033d0">
+<p local-id=3D"9e1deb22-aa22-4845-bd2f-4fb775c6dce2">=E2=9C=85 No need to s=
+ign the archive itself</p></li>
+<li local-id=3D"38e63ae6-72ed-46cf-b52d-bd167e415a90">
+<p local-id=3D"8d022b19-4971-4b60-a756-f32f2525fa04">=E2=9C=85 Faster to cr=
+eate</p></li>
+<li local-id=3D"060417af-d54b-461d-9fd8-8893f149ea07">
+<p local-id=3D"3eb2e85c-dfe0-4a9b-b139-2a29c6d5ae31">=E2=9C=85 Standard for=
+mat, universally supported</p></li>
+</ul>
+<p local-id=3D"090b7281-9a7c-4bdc-bbda-df8a5350530a"><strong>Cons:</strong>=
+</p>
+<ul local-id=3D"2206b5b1-ad62-48d9-9bc4-177e740aa98d">
+<li local-id=3D"aef33e76-356d-48e6-bd7a-12e48939fdc4">
+<p local-id=3D"6ec0a689-fa70-4480-ae76-1e833b8fda9d">=E2=9D=8C Cannot be st=
+apled (stapling not supported for ZIP)</p></li>
+<li local-id=3D"c39412a4-50c9-40f4-918f-b1a068c71dc1">
+<p local-id=3D"abf0e051-7ae6-428c-a49a-6f3b91ad70da">=E2=9D=8C Requires int=
+ernet connection on first run for verification</p></li>
+<li local-id=3D"2bd4c6a1-6327-4efd-a09e-b60b6249c89c">
+<p local-id=3D"bf5ac38f-1fbf-498c-9637-38be000861b9">=E2=9D=8C Less polishe=
+d user experience</p></li>
+</ul>
+<p local-id=3D"b1d87670-6b92-4979-bd33-a31eac95a60e"><strong>Best for:</str=
+ong></p>
+<ul local-id=3D"c5fb4672-b889-4af9-a05d-ffebbd3454a9">
+<li local-id=3D"72a06e17-e0e0-4c6a-976b-2d312df9e49d">
+<p local-id=3D"c16b08b7-eccc-4016-9a72-06632ecf4e63">Command-line tools</p>=
+</li>
+<li local-id=3D"5490c8c3-1185-4533-8c73-c8a20b10f763">
+<p local-id=3D"ab41a00f-3425-4f6c-9adb-90acf6ce47b9">Developer-focused tool=
+s</p></li>
+<li local-id=3D"8ea21e5a-eeb5-4628-8e94-826226208f02">
+<p local-id=3D"92a3e000-03e6-4931-91cc-0f98011713be">Internal distribution<=
+/p></li>
+<li local-id=3D"ea08f2e5-5580-46ee-9ff7-608dea2551de">
+<p local-id=3D"eb0bc353-aee9-4d2d-a41c-9e72c40df40d">When simplicity is pri=
+oritized</p></li>
+</ul>
+<h3 local-id=3D"d16b8258-e0aa-4956-8c4a-f3dc2d8a9e71" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-DMGDistribution(AlternativeMethod-MorePolished)">DMG Di=
+stribution (Alternative Method - More Polished)</h3>
+<p local-id=3D"a8b3492f-55c1-4c11-aca4-b7a0af9ffb6e"><strong>Workflow:</str=
+ong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: java; gutter: false; theme: Confluence" data-theme=3D"Confluence">Sign Bi=
+nary =E2=86=92 Create DMG =E2=86=92 Sign DMG =E2=86=92 Notarize DMG =E2=86=
+=92 Staple DMG =E2=86=92 Distribute</pre>
+</div>
+</div>
+<p local-id=3D"1b431612-645d-40b8-a7be-cc8b5ff4a17b"><strong>Pros:</strong>=
+</p>
+<ul local-id=3D"2359f438-bee6-43a2-ac9c-618f0d5ad703">
+<li local-id=3D"054ab9eb-7ed5-4bb8-8c1f-c243c7a04978">
+<p local-id=3D"b38a76fd-afe6-412c-80c9-d05d03dacd19">=E2=9C=85 Can be stapl=
+ed (works offline after notarization)</p></li>
+<li local-id=3D"6f8454bb-8408-4d2f-98cc-c8b63324dbfb">
+<p local-id=3D"a9f258ad-f9f9-435c-9a4a-b0201da7d362">=E2=9C=85 Professional=
+ installer experience</p></li>
+<li local-id=3D"88fa969e-c6d8-4fbe-8e49-57ee7b185465">
+<p local-id=3D"f825d0d2-aaa8-4c1a-b3c6-5099de46495f">=E2=9C=85 Can include =
+custom backgrounds, licenses</p></li>
+<li local-id=3D"7fa7ccfc-3939-4107-9cd6-90689501f3d7">
+<p local-id=3D"2eb8edcb-f35d-4e32-af08-cead7dcb84ef">=E2=9C=85 Traditional =
+macOS distribution format</p></li>
+</ul>
+<p local-id=3D"092b9ef8-4842-41d0-94ad-35eb2ee20146"><strong>Cons:</strong>=
+</p>
+<ul local-id=3D"88049ab5-c78a-40fd-82fa-a5e608839d48">
+<li local-id=3D"f0e0981c-2e41-41c9-99f8-fa60ea30bf64">
+<p local-id=3D"43ee9b5f-fa51-4862-99fd-523364a51ae2">=E2=9D=8C More complex=
+ (additional signing and stapling steps)</p></li>
+<li local-id=3D"c3f08b6a-1a27-47be-b1a9-c1e4fa290935">
+<p local-id=3D"ee25fa63-9c50-481c-9c97-5d9111c1c8bb">=E2=9D=8C Requires sig=
+ning both binary AND DMG</p></li>
+<li local-id=3D"98bbd2c8-f5f7-4045-8d86-d3c359bfbdc6">
+<p local-id=3D"62e0f610-2a7c-4ae7-a28f-9f96cde6024f">=E2=9D=8C Takes longer=
+ to create</p></li>
+</ul>
+<p local-id=3D"f6664069-2899-4d6d-8b28-1b6aae7d5a3e"><strong>Best for:</str=
+ong></p>
+<ul local-id=3D"d000a9a5-59bc-43bc-9bd5-e02672bb744b">
+<li local-id=3D"08f0126e-db74-4be5-91e7-294e71c3a3a9">
+<p local-id=3D"7bdf7507-5540-4585-9db4-32b67b9e4aa9">End-user applications<=
+/p></li>
+<li local-id=3D"88314a93-fe17-4f5d-aa4e-d08c1278fb6c">
+<p local-id=3D"a1dcd11b-3b22-4d2d-85c3-bb4d173fe275">Professional software =
+distribution</p></li>
+<li local-id=3D"3525a685-6984-4525-bb89-9dd98445d91b">
+<p local-id=3D"7be18d88-e5f9-44e7-bc83-0adc66eccf35">When offline verificat=
+ion is important</p></li>
+<li local-id=3D"aa34abf8-0031-44d8-ab2c-8ba113e6cea6">
+<p local-id=3D"ee2ea4ae-82f2-4778-8d29-16458ed7e095">When polished UX matte=
+rs</p></li>
+</ul>
+<p local-id=3D"384aa5d4-4d64-4bad-880e-f3758d185d1b"><strong>Key Difference=
+ - Stapling:</strong></p>
+<ul local-id=3D"6f3ae444-6600-48db-bf9f-73981bc58150">
+<li local-id=3D"a8620797-f1df-4abb-9a16-71e265e6df78">
+<p local-id=3D"c15d0fbb-5ba3-44d6-b6be-7a1635f0044c"><strong>ZIP:</strong> =
+Cannot be stapled. macOS checks Apple's servers on first run (requires inte=
+rnet)</p></li>
+<li local-id=3D"fc2f1233-35c6-443b-8ea2-177b12df867a">
+<p local-id=3D"9b53bf51-8905-4b3f-abb9-5d9236974ce3"><strong>DMG:</strong> =
+Can be stapled. Notarization ticket embedded in file (works offline)</p></l=
+i>
+</ul>
+<p local-id=3D"15a267fe-43d4-475a-a5e6-65846cebd692">Both methods are secur=
+e and Apple-approved. Choose based on your use case!</p>
+<hr local-id=3D"be3dad13-b87c-4c67-8f07-3460a4cd5310">
+<h2 local-id=3D"e0eda152-32b2-44a3-b73a-0c14476054fc" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=94=91Prerequisites">=F0=9F=94=91 Prerequisites</=
+h2>
+<p local-id=3D"b4918bf4-c51b-4608-b5e5-deea3a7ac2c3">You mentioned you have=
+:</p>
+<ul local-id=3D"669fc5b2-8e63-46ec-9428-a62be3514bdd">
+<li local-id=3D"0c6659f1-9750-457c-9e1c-8936c6eb46e7">
+<p local-id=3D"841114da-4d75-40fa-a812-bb21eb06e57e"><strong>Apple Issuer U=
+UID</strong> (from App Store Connect API)</p></li>
+<li local-id=3D"392afd10-eeff-4a63-b32a-c14e5029995c">
+<p local-id=3D"0fc7428f-a46b-48a9-a146-b99c2c8b1996"><strong>Apple User ID<=
+/strong> (your Apple Developer account email)</p></li>
+<li local-id=3D"4f1f0c58-09db-435b-90ac-db13830a2e98">
+<p local-id=3D"e50e69fb-1616-4d39-9cc1-20ee6f5f5ce2"><strong>macOS Auth Key=
+ file</strong> (<code>.p8</code> file for API authentication)</p></li>
+<li local-id=3D"f8e917fd-094e-406d-bb33-dfc2d09617c4">
+<p local-id=3D"06fcea61-03ef-449e-aff4-fba193df5e76"><strong>Certificate zi=
+p</strong> (Developer ID Application certificate)</p></li>
+</ul>
+<hr local-id=3D"1c516242-be51-478f-ba71-5d04b7b6d058">
+<h2 local-id=3D"a3d23956-5fc9-4c13-96a6-aacfeab8d5fe" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=94=92SecurityBestPractices">=F0=9F=94=92 Securit=
+y Best Practices</h2>
+<p local-id=3D"6f6cef90-5c70-4769-b65a-bf407da11ab7"><strong>IMPORTANT:</st=
+rong> Code signing credentials are sensitive! Follow these security guideli=
+nes:</p>
+<h3 local-id=3D"3798b8ff-685b-4c02-a699-b0c0f6f181c8" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=E2=9C=85Do's:">=E2=9C=85 Do's:</h3>
+<ul local-id=3D"f539c56d-abb5-4573-ad57-b4fc87b0460e">
+<li local-id=3D"315a184a-0510-47ca-b099-2ab8e0986e70">
+<p local-id=3D"426ecc51-fb71-4bf8-95a0-1ceb50704aa2"><strong>Use secure tem=
+porary directories</strong> with restricted permissions (<code>chmod 700</c=
+ode>)</p></li>
+<li local-id=3D"ec36847c-36dc-44c4-af6c-1c68121af699">
+<p local-id=3D"848b3f5f-bd33-410f-a159-6cc2da8015b6"><strong>Import certifi=
+cates to Keychain immediately</strong> after extraction</p></li>
+<li local-id=3D"8ced88b5-73bb-490e-93cc-143c889d604f">
+<p local-id=3D"01f66ed1-d825-4123-9a98-ed5c8c93386e"><strong>Delete extract=
+ed files</strong> as soon as they're imported</p></li>
+<li local-id=3D"eeed5fec-1ce7-4dd9-b097-e19827666b3c">
+<p local-id=3D"53340894-1b3b-4529-83d1-915d95a68c05"><strong>Store API keys=
+ in </strong><code>~/.apple-keys</code> with restricted permissions (<code>=
+chmod 600</code>)</p></li>
+<li local-id=3D"1b29ab73-27fa-4951-8137-83473b9e380b">
+<p local-id=3D"00e8ca44-b2a6-4139-9fa9-5b8d7ea2c03d"><strong>Use Keychain t=
+o store notarization credentials</strong> (via <code>notarytool store-crede=
+ntials</code>)</p></li>
+<li local-id=3D"f1a38a4c-0d9c-4ca7-a71e-e814f5d2c519">
+<p local-id=3D"53847717-adf5-4364-80c9-2ee919c996ee"><strong>Keep backups</=
+strong> of credentials in a secure password manager or vault</p></li>
+</ul>
+<h3 local-id=3D"9c8fc915-9e22-403c-87a2-ea37fd795dcb" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=E2=9D=8CDon'ts:">=E2=9D=8C Don'ts:</h3>
+<ul local-id=3D"c0afcc5c-9dac-4f45-ae86-533e5640094e">
+<li local-id=3D"89a0710b-579d-4ae2-9ff5-db8cec8f40d0">
+<p local-id=3D"3f979f44-2449-4968-ac39-201c5ffb3629">=E2=9D=8C Leave certif=
+icate files in Downloads folder</p></li>
+<li local-id=3D"5e909a57-cc8e-4c09-a1b9-dbe576110317">
+<p local-id=3D"1fdf4dcd-c61f-46af-8cb0-f6bbd5f2383d">=E2=9D=8C Commit <code=
+>.p8</code> files or certificates to git (add to <code>.gitignore</code>)</=
+p></li>
+<li local-id=3D"2b8b4266-53c0-482a-9f87-c08a4e4f96ce">
+<p local-id=3D"45442274-057a-4a32-a685-f6c30f2246b0">=E2=9D=8C Store creden=
+tials in cloud-synced folders (Dropbox, iCloud Drive)</p></li>
+<li local-id=3D"1736e34b-9190-45e5-a27b-740d25588060">
+<p local-id=3D"4fb72cfb-a22c-419e-b568-8484525058c6">=E2=9D=8C Email creden=
+tials unencrypted</p></li>
+<li local-id=3D"f83e0dab-e5e9-4a45-a006-5e1db842638f">
+<p local-id=3D"c92b638f-3f4f-4465-b84d-0b65f89f11f5">=E2=9D=8C Share your K=
+eychain password</p></li>
+<li local-id=3D"75524829-be13-469e-aaef-e369591f2d85">
+<p local-id=3D"c61857b8-7519-4858-9e6d-c03b27ffb932">=E2=9D=8C Leave creden=
+tials in temporary directories after import</p></li>
+</ul>
+<h3 local-id=3D"9cb160ad-1b46-417d-a670-4e56db02874c" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=8E=AFWhatGetsStoredWhere:">=F0=9F=8E=AF What Get=
+s Stored Where:</h3>
+<ul local-id=3D"2b7d77b9-8133-4e0e-b114-0806c5b026e1">
+<li local-id=3D"82120a06-2348-4eff-bd88-b0e2e15607dc">
+<p local-id=3D"8b324fd6-5225-409a-9b4e-8a94cf2f9850"><strong>Certificates &=
+amp; Private Keys</strong> =E2=86=92 Keychain (secure, encrypted by macOS)<=
+/p></li>
+<li local-id=3D"323e9665-5cfa-4199-b4b2-caa09d99a3e5">
+<p local-id=3D"f2950d15-b7bf-4e30-9961-16d7c3ad93f1"><strong>API Key (.p8 f=
+ile)</strong> =E2=86=92 <code>~/.apple-keys/</code> (needed for future sign=
+ing)</p></li>
+<li local-id=3D"96a2723c-3f51-4039-8aa2-233ac86caff0">
+<p local-id=3D"f0c46d2c-db7d-49a5-be78-32e605a0a4b0"><strong>Notarization c=
+redentials</strong> =E2=86=92 Keychain (via notarytool profile)</p></li>
+<li local-id=3D"8959b0ed-c274-4e04-879f-32a978fbb0f0">
+<p local-id=3D"9782e3e4-fa0b-4702-a304-790721e4e59a"><strong>Original files=
+</strong> =E2=86=92 Delete after import (or store in secure vault only)</p>=
+</li>
+</ul>
+<hr local-id=3D"e6264af3-f443-44bd-8962-80b9332ff636">
+<h2 local-id=3D"de9ca501-25b3-43c3-8557-5d68b2f826c6" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=93=96Part1:UnderstandingtheCredentials">=F0=9F=
+=93=96 Part 1: Understanding the Credentials</h2>
+<h3 local-id=3D"ee54e4ee-d540-402f-956b-b5b11ae71dbc" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-1.1TheCertificate(DeveloperIDApplication)">1.1 The Cert=
+ificate (Developer ID Application)</h3>
+<p local-id=3D"51245562-3f3d-4a4d-b18c-30393c41fb0b"><strong>What it is:</s=
+trong> A cryptographic certificate that proves you're a registered Apple de=
+veloper. Think of it like a digital passport.</p>
+<p local-id=3D"46b10c46-5171-4a8e-9d56-8e4ad17e6e26"><strong>Where it comes=
+ from:</strong> Apple Developer Program ($99/year membership)</p>
+<p local-id=3D"01ee5524-23b5-42c8-95b6-3ebc2d5dda7b"><strong>Two parts:</st=
+rong></p>
+<ul local-id=3D"81a75dc4-5f8d-403a-8355-b0ed0fe951f1">
+<li local-id=3D"0576cafc-0ad7-42a9-9d48-2b0ab34500fa">
+<p local-id=3D"5cb3aa99-079b-4247-9a34-0fb974cf16fe"><strong>Certificate (.=
+cer file)</strong> - The public part</p></li>
+<li local-id=3D"6623eccc-d54c-46ea-886f-c00e00a6af1e">
+<p local-id=3D"43d21823-ede1-4b09-9468-800bade47a7a"><strong>Private key (.=
+p12 or in Keychain)</strong> - The secret part that does the signing</p></l=
+i>
+</ul>
+<h3 local-id=3D"c57a3668-9569-4030-b9ff-03120762f84c" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-1.2TheAPIKey(forNotarization)">1.2 The API Key (for Not=
+arization)</h3>
+<p local-id=3D"55e6af0f-6be0-4226-8490-c3b636eb2197"><strong>What it is:</s=
+trong> A token that lets tools communicate with Apple's notarization servic=
+e without typing your password.</p>
+<p local-id=3D"7677f7ef-f5f2-4c19-b80f-135ea9cc3c0d"><strong>The three piec=
+es:</strong></p>
+<ul local-id=3D"e6739719-9b8e-4dcb-8987-547982b8438b">
+<li local-id=3D"66df7f60-187d-4e00-b1cb-c94d18bf8247">
+<p local-id=3D"9a481c02-4f27-4a80-937a-637de1079d63"><strong>AuthKey_XXXXXX=
+XXXX.p8</strong> - The key file itself</p></li>
+<li local-id=3D"1b5e90b3-b7f1-4b6c-9a3c-c7d6f949a77e">
+<p local-id=3D"c86b10d4-acea-4f94-a9c9-2847a75462f3"><strong>Key ID</strong=
+> - The XXXXXXXXXX part of the filename</p></li>
+<li local-id=3D"77b91f4d-22df-4bfc-94ee-53275d048409">
+<p local-id=3D"98eb3546-6c52-4b47-b74e-ce43855684a8"><strong>Issuer ID</str=
+ong> - Your team's UUID from App Store Connect</p></li>
+</ul>
+<hr local-id=3D"d4d6b096-aed1-45c9-87ec-45508f3aa04c">
+<h2 local-id=3D"ee1c9507-be7d-4acc-b5c3-e71e89b87a69" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=9B=A0=EF=B8=8FPart2:SettingUpYourEnvironment(=E2=
+=8F=B0ONE-TIMESETUP)">=F0=9F=9B=A0=EF=B8=8F Part 2: Setting Up Your Environ=
+ment (=E2=8F=B0 ONE-TIME SETUP)</h2>
+<h3 local-id=3D"f841a817-6aac-40ee-92fa-83a7bc5de970" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step1:InstallXcodeCommandLineTools">Step 1: Install Xco=
+de Command Line Tools</h3>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">xcode-s=
+elect --install</pre>
+</div>
+</div>
+<p local-id=3D"fb5d78ff-2a00-4178-b296-9c1ff88bf4e0"><strong>Why:</strong> =
+Provides <code>codesign</code>, <code>productsign</code>, <code>notarytool<=
+/code>, and other essential tools.</p>
+<p local-id=3D"f4fe7ae8-afa5-435c-85ff-e41aec98b691"><strong>Verify install=
+ation:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">codesig=
+n --version</pre>
+</div>
+</div>
+<h3 local-id=3D"db82566d-3fe3-4342-8d20-85750cdf8e11" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step2:ExtractandInstallYourCertificate">Step 2: Extract=
+ and Install Your Certificate</h3>
+<p local-id=3D"d18a6387-8a5c-439b-bea8-b694c696bc52"><strong>Create a secur=
+e temporary directory:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Creat=
+e a secure temp directory (only you can access)
+mkdir -p ~/tmp/signing-setup
+chmod 700 ~/tmp/signing-setup
+cd ~/tmp/signing-setup</pre>
+</div>
+</div>
+<p local-id=3D"f472ffe9-0a48-45a6-935f-efe54bcc1279"><strong>Move/download =
+your certificates here, then extract:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># If ce=
+rtificates.zip is in Downloads, move it here
+mv ~/Downloads/certificates.zip .
+
+# Extract the certificates
+unzip certificates.zip
+ls -la</pre>
+</div>
+</div>
+<p local-id=3D"c32083d9-e8a2-48fd-a31a-98a609b91c65"><strong>Understanding =
+what you have:</strong></p>
+<p local-id=3D"77b90061-93f2-4ac8-a044-d628704aecba">Based on your extracti=
+on, you should see these files:</p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: java; gutter: false; theme: Confluence" data-theme=3D"Confluence">Apple-D=
+eveloper-ID-Certification-Authority.cer    =E2=86=90 Apple's root certifica=
+te
+password.txt                                       =E2=86=90 Password for .=
+p12 files
+Apple-Developer-ID-Application-2025.p12           =E2=86=90 =E2=AD=90 MAIN =
+FILE (cert + key)
+Apple-Developer-ID-Application-2025.cer           =E2=86=90 Just the certif=
+icate
+Apple-Developer-ID-Application-2025.pem           =E2=86=90 PEM format (opt=
+ional)
+Apple-Developer-ID-Installer-2025.p12             =E2=86=90 For .pkg instal=
+lers (not needed)
+Apple-Developer-ID-Installer-2025.cer             =E2=86=90 For .pkg instal=
+lers (not needed)
+... (other files)</pre>
+</div>
+</div>
+<p local-id=3D"8ccbcb56-9d2d-4d4a-8168-363914d76759"><strong>=F0=9F=8E=AF K=
+ey Files Explained:</strong></p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"760" data-layout=3D"default" data-local-id=3D"97=
+4bec27-9be8-4126-8fbf-745fa7f64540" class=3D"confluenceTable">
+<tbody>
+<tr data-local-id=3D"275d2cc2-d7bf-4374-8a92-fc8b5123b94d">
+<th data-local-id=3D"39b4ffba-7001-4c24-83b2-2713460c6518" class=3D"conflue=
+nceTh">
+<p local-id=3D"6ae6a4f7-01c9-4990-acb3-c4d80c424cce">File</p></th>
+<th data-local-id=3D"89ee67cc-95ca-4308-96a2-599d0dd6774e" class=3D"conflue=
+nceTh">
+<p local-id=3D"c42f20e3-7d93-4770-80c4-c025792efbdd">What It Is</p></th>
+<th data-local-id=3D"3c51e785-9a45-4d2a-86f3-e4316206a1bf" class=3D"conflue=
+nceTh">
+<p local-id=3D"b3fabcad-eede-49a1-a80c-dace77c7d383">Do You Need It?</p></t=
+h>
+</tr>
+<tr data-local-id=3D"e4b79712-7da7-413a-9def-876983df4153">
+<td data-local-id=3D"3df717f9-3732-435d-9453-3d57c6f15b33" class=3D"conflue=
+nceTd">
+<p local-id=3D"199c4407-dc56-479a-a4bf-a561134c042d"><code>Apple-Developer-=
+ID-Application-2025.p12</code></p></td>
+<td data-local-id=3D"278437d7-025d-4674-8586-156b02b25e64" class=3D"conflue=
+nceTd">
+<p local-id=3D"81d2ee6c-ae00-44f1-a8ae-87efc5d04274"><strong>Certificate + =
+Private Key</strong> (for apps/binaries)</p></td>
+<td data-local-id=3D"fac04958-1ad0-47c0-81c4-7020e6397977" class=3D"conflue=
+nceTd">
+<p local-id=3D"c35966f6-f0e0-4503-8582-86152fcd11b1">=E2=9C=85 <strong>YES =
+- This is your main file!</strong></p></td>
+</tr>
+<tr data-local-id=3D"d9421823-661f-46ba-90ba-cc618c0e5dcc">
+<td data-local-id=3D"4183f17e-d702-4b8d-86e9-f0c02f022dbf" class=3D"conflue=
+nceTd">
+<p local-id=3D"b4417cdb-57d6-4b81-b771-b73d733a42b0"><code>Apple-Developer-=
+ID-Certification-Authority.cer</code></p></td>
+<td data-local-id=3D"2f9c604f-0a70-4d37-9c90-78cae8438c0d" class=3D"conflue=
+nceTd">
+<p local-id=3D"c1e40bbb-1c82-4717-a640-6710f6f73e0d">Apple's intermediate c=
+ertificate</p></td>
+<td data-local-id=3D"573a35de-856e-47a0-8350-b088c6fa245e" class=3D"conflue=
+nceTd">
+<p local-id=3D"93e77403-b593-4e37-892c-932017489c23">=E2=9C=85 YES - Import=
+ this first</p></td>
+</tr>
+<tr data-local-id=3D"597a06f8-f41e-48f3-9604-baee8404445e">
+<td data-local-id=3D"e0fecb57-6bc9-4051-87fa-2e39d62806ff" class=3D"conflue=
+nceTd">
+<p local-id=3D"0c01edc6-67d3-4de5-8078-60342abac6ac"><code>password.txt</co=
+de></p></td>
+<td data-local-id=3D"4fd7c006-9b7a-4f40-aecb-880e955c0fd5" class=3D"conflue=
+nceTd">
+<p local-id=3D"6190f15a-3f9a-44c2-91a6-5f020916c737">Password for the .p12 =
+file</p></td>
+<td data-local-id=3D"990f3b76-c1cc-47a9-b7c8-4746578c517f" class=3D"conflue=
+nceTd">
+<p local-id=3D"2e1139be-2be0-4f86-97e0-0cf66932b7cd">=E2=9C=85 YES - You'll=
+ need this when importing</p></td>
+</tr>
+<tr data-local-id=3D"47cc69f1-54db-4f6f-adb1-b30889cf8156">
+<td data-local-id=3D"64fb19c6-670a-45b0-9757-692f10272e6d" class=3D"conflue=
+nceTd">
+<p local-id=3D"098a54f1-a2da-473c-9457-1754e0b30789"><code>Apple-Developer-=
+ID-Application-2025.cer</code></p></td>
+<td data-local-id=3D"9427f588-e2b9-4ac8-9994-c210debcf19d" class=3D"conflue=
+nceTd">
+<p local-id=3D"cb4d9100-a674-4887-8141-71874c3d6f45">Just the certificate (=
+no private key)</p></td>
+<td data-local-id=3D"526a68bc-ae08-4c9c-a38c-39c72bffe1f9" class=3D"conflue=
+nceTd">
+<p local-id=3D"f457249c-90f6-4f61-915b-88266c166118">=E2=9D=8C NO - The .p1=
+2 has everything</p></td>
+</tr>
+<tr data-local-id=3D"04e5d991-e6f3-4f95-9872-2432874f8fc9">
+<td data-local-id=3D"1895cb04-32f5-4001-b78d-6968253db610" class=3D"conflue=
+nceTd">
+<p local-id=3D"f36d9721-76d4-4ed8-b96f-4c60ba6a568b"><code>Apple-Developer-=
+ID-Installer-2025.p12</code></p></td>
+<td data-local-id=3D"24426633-f4c6-4ea5-9dd3-87e73d2ccdcb" class=3D"conflue=
+nceTd">
+<p local-id=3D"177377b9-2075-44f6-8c7b-4c6e8af4e9b2">For signing .pkg insta=
+ller packages</p></td>
+<td data-local-id=3D"b7700470-5fda-4133-9485-1d353298119d" class=3D"conflue=
+nceTd">
+<p local-id=3D"60151e92-a960-40fc-8f7b-33c68bb1434e">=E2=9D=8C NO - You're =
+signing binaries, not installers</p></td>
+</tr>
+<tr data-local-id=3D"d5e0b8b2-7db2-4a64-8a0f-d000936937fd">
+<td data-local-id=3D"bf8bfdd2-3a05-4cfe-aa32-196a64d52ba7" class=3D"conflue=
+nceTd">
+<p local-id=3D"bbe01550-67f4-4307-8827-db1b499e510a"><code>*.pem</code> fil=
+es</p></td>
+<td data-local-id=3D"f108046a-d7ec-4293-885c-d3ea96e4b92d" class=3D"conflue=
+nceTd">
+<p local-id=3D"a6e65525-e7e7-4d24-8c39-40cf08aa2293">Alternative format</p>=
+</td>
+<td data-local-id=3D"45e57961-eda8-4b07-815d-9977c62c79b2" class=3D"conflue=
+nceTd">
+<p local-id=3D"72114e6f-6f1a-4a25-8004-cd18b3b4c868">=E2=9D=8C NO - .p12 is=
+ easier to use</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p local-id=3D"cebf1d17-c9da-4d7d-8f80-ca50578576f5"><strong>=F0=9F=93=9D I=
+mportant Distinction:</strong></p>
+<ul local-id=3D"36122541-1e2e-4178-a00e-56ca61329394">
+<li local-id=3D"43113d6d-1d3a-41c2-ad54-27105c22b0c8">
+<p local-id=3D"6da7c33e-35f3-4362-a658-d455d7f4c9f6"><strong>Developer ID A=
+pplication</strong> =3D Sign apps, binaries, frameworks (what you need!)</p=
+></li>
+<li local-id=3D"1083007e-4d08-4e96-8065-5d2994996b7a">
+<p local-id=3D"534b0a4b-b279-4116-85aa-62ddc88b1bb1"><strong>Developer ID I=
+nstaller</strong> =3D Sign .pkg installer packages (you don't need this)</p=
+></li>
+</ul>
+<p local-id=3D"0b00e79d-05a8-425c-8e3b-dc9f651d5320"><strong>Install certif=
+icates to Keychain:</strong></p>
+<p local-id=3D"13d19033-ed26-4745-b2c5-e3baa104652b">First, check what pass=
+word to use:</p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># View =
+the password (you'll need it in a moment)
+cat password.txt</pre>
+</div>
+</div>
+<p local-id=3D"1ccf771e-23eb-4a55-8557-ca0fd31c3934">Now import the certifi=
+cates:</p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Step =
+1: Install Apple's intermediate certificate first
+security import Apple-Developer-ID-Certification-Authority.cer \
+  -k ~/Library/Keychains/login.keychain-db
+
+# Step 2: Install your Developer ID Application certificate
+# This will prompt for the password from password.txt
+security import Apple-Developer-ID-Application-2025.p12 \
+  -k ~/Library/Keychains/login.keychain-db \
+  -T /usr/bin/codesign \
+  -T /usr/bin/productsign
+
+# When prompted, enter the password from password.txt</pre>
+</div>
+</div>
+<p local-id=3D"c58a0c0c-3ff0-43b1-b353-453ace51d850"><strong>Breaking down =
+the import command:</strong></p>
+<ul local-id=3D"56908008-c0ad-4aa1-af2e-3f15238748d2">
+<li local-id=3D"8db6eca2-1a3a-4b2a-8b46-5c6048d2fecb">
+<p local-id=3D"2cf0def3-b973-46ed-91fc-3fa37d6af6d9"><code>-k ~/Library/Key=
+chains/login.keychain-db</code> - Import to your login keychain</p></li>
+<li local-id=3D"4f235568-bb35-4f1b-990d-8cbfbbc254ad">
+<p local-id=3D"2022a828-ae10-4da7-9e88-f16e7f311cac"><code>-T /usr/bin/code=
+sign</code> - Allow codesign to use this without password prompt</p></li>
+<li local-id=3D"62fa1786-6254-4ef1-9aeb-1a3ce88a147b">
+<p local-id=3D"e932f6ec-ad1d-48c9-ab70-f1bf8174ea98"><code>-T /usr/bin/prod=
+uctsign</code> - Allow productsign to use this without password prompt</p><=
+/li>
+</ul>
+<p local-id=3D"4bd25e95-a79f-48dc-8267-d48ada2d6861"><strong>Note:</strong>=
+ You might be prompted for your macOS user password to allow the import.</p=
+>
+<p local-id=3D"549006fb-c42a-491a-9b21-125087870de4"><strong>Securely store=
+ your API key and clean up:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Creat=
+e secure directory for API key
+mkdir -p ~/.apple-keys
+chmod 700 ~/.apple-keys
+
+# Move your .p8 API key to secure location (you received this separately)
+# If you have it in Downloads or current directory:
+mv ~/Downloads/AuthKey_*.p8 ~/.apple-keys/ 2&gt;/dev/null || echo "Move you=
+r .p8 file manually"
+chmod 600 ~/.apple-keys/AuthKey_*.p8 2&gt;/dev/null
+
+# IMPORTANT: The .p8 file is NOT in the certificates zip - it's a separate =
+file
+# Make sure you know where your AuthKey_XXXXXXXXXX.p8 file is located
+
+# Clean up ALL certificate files (they're now safely in Keychain)
+cd ~
+rm -rf ~/tmp/signing-setup
+
+echo "=E2=9C=85 Certificates imported to Keychain and temporary files delet=
+ed"
+echo "=E2=9A=A0=EF=B8=8F  Make sure your .p8 API key is in ~/.apple-keys/"<=
+/pre>
+</div>
+</div>
+<p local-id=3D"6cec6c81-26d7-4ab4-a599-3755f227ece6"><strong>What got clean=
+ed up vs. what remains:</strong></p>
+<ul local-id=3D"82570f2e-e7b0-4f67-be2f-a63807a699b8">
+<li local-id=3D"7b5bb2d8-1673-4712-8413-6adef885c0b8">
+<p local-id=3D"a418920a-91b9-4646-a6c5-2d8ac61aa57a">=E2=9C=85 <strong>Dele=
+ted:</strong> All <code>.p12</code>, <code>.cer</code>, <code>.pem</code>, =
+<code>password.txt</code> files (no longer needed)</p></li>
+<li local-id=3D"c6c61b6b-0317-453b-b4a3-f7a591901509">
+<p local-id=3D"76144d24-8512-497a-a59a-6b0434992335">=E2=9C=85 <strong>In K=
+eychain:</strong> Your certificates and private keys (secure, encrypted by =
+macOS)</p></li>
+<li local-id=3D"df82310c-3167-4277-b675-13e7a975995c">
+<p local-id=3D"cb622f73-2343-4bbe-b99f-8cfe3b472883">=E2=9C=85 <strong>Kept=
+:</strong> Your <code>.p8</code> API key file in <code>~/.apple-keys/</code=
+> (needed for notarization)</p></li>
+</ul>
+<p local-id=3D"beca5af1-73f1-4851-b567-be600384462e"><strong>Why delete the=
+ certificate files?</strong><br>
+They're now securely stored in your macOS Keychain. Leaving them in tempora=
+ry directories is a security risk. The Keychain is encrypted and protected =
+by your user password.</p>
+<p local-id=3D"03cdef31-ed36-4e43-8a8e-7eaef9f1b15f"><strong>Verify certifi=
+cates are installed:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">securit=
+y find-identity -v -p codesigning</pre>
+</div>
+</div>
+<p local-id=3D"4635acb2-b0a0-44ae-8126-0ae5cfa62d5b"><strong>What to look f=
+or:</strong> You should see something like:</p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: java; gutter: false; theme: Confluence" data-theme=3D"Confluence">1) ABC1=
+23DEF456789 "Developer ID Application: BlazeMeter Ltd (TEAM123456)"
+     1 valid identities found</pre>
+</div>
+</div>
+<p local-id=3D"ded5cf84-d06d-45c0-8053-74ccc5599db7"><strong>Understanding =
+the output:</strong></p>
+<ul local-id=3D"bb7f2737-5e17-4dbe-aa49-483b34debdbc">
+<li local-id=3D"5262dbb6-fdcb-4c4a-afbf-489851dfa123">
+<p local-id=3D"bfea5cdf-8896-46a6-8bfb-0914186b53e1"><code>ABC123DEF456789<=
+/code> - The certificate's SHA-1 hash (unique identifier)</p></li>
+<li local-id=3D"a6959107-5206-4626-9214-2f266fcfe76d">
+<p local-id=3D"d3828078-8ad2-4d13-bf83-167d1d3f2ecd"><code>"Developer ID Ap=
+plication: BlazeMeter Ltd (TEAM123456)"</code> - The certificate's common n=
+ame</p></li>
+<li local-id=3D"904d646d-b10d-4a91-be96-ff1557c94a61">
+<p local-id=3D"8a6b23e9-f630-4799-8ae5-ecac20776690">The company name and T=
+eam ID will match your Apple Developer account</p></li>
+</ul>
+<p local-id=3D"ab31e4d4-b4ae-4fc9-9670-c739eb6c519d"><strong>Save your sign=
+ing identity:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># This =
+is what you'll use in codesign commands
+# Copy the ENTIRE quoted string (including quotes)
+SIGNING_IDENTITY=3D"Developer ID Application: BlazeMeter Ltd (TEAM123456)"
+
+# Verify it's set correctly
+echo "Your signing identity: $SIGNING_IDENTITY"</pre>
+</div>
+</div>
+<p local-id=3D"877b71e6-5647-45dd-808c-56f4f7d7c478"><strong>Optional: Test=
+ your signing identity works</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Creat=
+e a test file and try signing it
+echo "test" &gt; /tmp/test-sign
+codesign --sign "$SIGNING_IDENTITY" /tmp/test-sign
+codesign --verify --verbose /tmp/test-sign
+# Should output: /tmp/test-sign: valid on disk
+rm /tmp/test-sign</pre>
+</div>
+</div>
+<p local-id=3D"168ea845-a59b-4f03-9720-9856a0351cb0"><strong>If you see "0 =
+valid identities found":</strong></p>
+<ul local-id=3D"2f31f620-1179-49ab-b5c3-97b1ef2eec7e">
+<li local-id=3D"664aa39d-076d-45d7-908f-09ac005f21cd">
+<p local-id=3D"2605ec43-97cd-4f65-bbb7-a0fe4f54c02b">The import failed</p><=
+/li>
+<li local-id=3D"60097880-5380-4f97-a7ad-bc3803a11807">
+<p local-id=3D"54600cab-4f27-4c78-b99f-985da3268f38">You entered the wrong =
+password</p></li>
+<li local-id=3D"389e8ee2-3a49-4d84-a4e2-750ab15df765">
+<p local-id=3D"b810c34e-085c-4041-9b6b-11bf22b4fca0">The certificate is exp=
+ired</p></li>
+<li local-id=3D"427f1f34-8338-4702-b8c5-6aa00b7f3cde">
+<p local-id=3D"b34fc9b8-63d2-444e-aa61-3c217470752f">Try the import steps a=
+gain</p></li>
+</ul>
+<hr local-id=3D"091bd73f-3749-4242-bba1-2e05ce637968">
+<h2 local-id=3D"dd21ea68-c3f1-433d-a612-99d6563d6051" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=E2=9A=A0=EF=B8=8FPart3:PyInstaller-SpecificRequirement=
+s(=E2=8F=B0ONE-TIMESETUP)">=E2=9A=A0=EF=B8=8F Part 3: PyInstaller-Specific =
+Requirements (=E2=8F=B0 ONE-TIME SETUP)</h2>
+<h3 local-id=3D"cb1c1dd6-0570-4b5f-aacd-0d2c0f068714" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step3:UnderstandingPyInstaller+HardenedRuntimeIssues">S=
+tep 3: Understanding PyInstaller + Hardened Runtime Issues</h3>
+<p local-id=3D"88324a8c-0e5e-473b-aeb5-f0fe6971774e"><strong>CRITICAL FOR P=
+YINSTALLER APPS:</strong></p>
+<p local-id=3D"d7868b4c-8375-43f8-a455-919039b88d44">If you're signing a Py=
+Installer binary (like bzm-mcp), you <strong>MUST</strong> use entitlements=
+. Without them, your app will fail with a Team ID mismatch error.</p>
+<p local-id=3D"17252ac5-e602-49ea-983e-e39e002689b3"><strong>Why this happe=
+ns:</strong></p>
+<ul local-id=3D"7f5b9c2a-8a98-49d7-ac00-aa9d79020b4a">
+<li local-id=3D"41ec8e8d-0ba5-42aa-bdec-685ac0d3d0b9">
+<p local-id=3D"0d72714e-433a-4761-8cfe-8ba2e6300f61">PyInstaller bundles Py=
+thon.framework inside your binary</p></li>
+<li local-id=3D"c0bc621d-5963-43a0-92d7-2604c0c27bdc">
+<p local-id=3D"84bd0284-8773-45da-a2ea-7a86a3365dba">At runtime, it extract=
+s Python to a temporary folder</p></li>
+<li local-id=3D"a8362264-4c92-4de0-9ef6-8e526962d829">
+<p local-id=3D"241e0189-9d85-4a7b-879e-b5cfbdcafcdd">With hardened runtime =
+enabled, macOS strictly checks signatures</p></li>
+<li local-id=3D"a189427a-6c0d-46a0-9993-ffd78f1dc1e4">
+<p local-id=3D"fbbeab81-8005-4da8-b8a0-c3b3bcaffcd4">The extracted Python f=
+ramework may have a different (or no) Team ID</p></li>
+<li local-id=3D"dba54d22-8f65-4080-a385-84e7adeba23a">
+<p local-id=3D"c7e6471f-11cb-4966-a83c-8ce0f5343028">macOS blocks it unless=
+ you explicitly allow it with entitlements</p></li>
+</ul>
+<h3 local-id=3D"adaf4352-f94f-47e1-8a69-ed6c12fe8ca6" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step4:CreateEntitlementsFile">Step 4: Create Entitlemen=
+ts File</h3>
+<p local-id=3D"4866541b-c813-474f-a957-2252ff8d882a"><strong>Create the ent=
+itlements file in your project:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">cd /Use=
+rs/joaquinaraujo/github/bzm-mcp
+
+cat &gt; entitlements.plist &lt;&lt; 'EOF'
+&lt;?xml version=3D"1.0" encoding=3D"UTF-8"?&gt;
+&lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.c=
+om/DTDs/PropertyList-1.0.dtd"&gt;
+&lt;plist version=3D"1.0"&gt;
+&lt;dict&gt;
+    &lt;!-- Allow loading libraries not signed with the same Team ID --&gt;
+    &lt;!-- Required for PyInstaller's bundled Python framework --&gt;
+    &lt;key&gt;com.apple.security.cs.disable-library-validation&lt;/key&gt;
+    &lt;true/&gt;
+   =20
+    &lt;!-- Allow DYLD environment variables --&gt;
+    &lt;!-- Required for PyInstaller's dynamic library loading --&gt;
+    &lt;key&gt;com.apple.security.cs.allow-dyld-environment-variables&lt;/k=
+ey&gt;
+    &lt;true/&gt;
+   =20
+    &lt;!-- Allow unsigned executable memory --&gt;
+    &lt;!-- Required for JIT compilation in some Python packages --&gt;
+    &lt;key&gt;com.apple.security.cs.allow-unsigned-executable-memory&lt;/k=
+ey&gt;
+    &lt;true/&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;
+EOF</pre>
+</div>
+</div>
+<p local-id=3D"c008669a-5008-4855-a35b-743da77197f4"><strong>What each enti=
+tlement does:</strong></p>
+<div class=3D"table-wrap">
+<table data-table-width=3D"760" data-layout=3D"default" data-local-id=3D"85=
+5d0648-f335-4eb5-97f1-175f87f9e626" class=3D"confluenceTable">
+<tbody>
+<tr data-local-id=3D"bfeb405d-bf37-4db9-8027-cafad0b7f802">
+<th data-local-id=3D"1195cdb6-0094-4428-8cca-374babde84ca" class=3D"conflue=
+nceTh">
+<p local-id=3D"c50cafd1-2f7a-4126-8373-296537cf45cd">Entitlement</p></th>
+<th data-local-id=3D"db5118ec-fb9a-43e3-87fd-f7e4ff168426" class=3D"conflue=
+nceTh">
+<p local-id=3D"5be76d60-a480-43f3-b6bf-2d7078dc2749">Purpose</p></th>
+<th data-local-id=3D"61a99a55-03c2-4805-b0b5-bb2e033c2e81" class=3D"conflue=
+nceTh">
+<p local-id=3D"72824c17-46e3-45ca-b807-a77c4099f5ce">Why PyInstaller Needs =
+It</p></th>
+</tr>
+<tr data-local-id=3D"5d76cc08-609b-4c54-8e13-c6e8007ee0b4">
+<td data-local-id=3D"dc64428c-a066-43c1-a04e-6ba6c95e975e" class=3D"conflue=
+nceTd">
+<p local-id=3D"d52ca55a-e339-4942-a2cc-6e08d32a1674"><code>disable-library-=
+validation</code></p></td>
+<td data-local-id=3D"76afa61a-0fc8-48ca-9ce1-cfc3e6ff8cb2" class=3D"conflue=
+nceTd">
+<p local-id=3D"55a027a2-ad8f-4a7b-9012-fffc2ec04740">Allow loading librarie=
+s with different Team IDs</p></td>
+<td data-local-id=3D"270a7f7c-1164-4e3e-9bad-7845aa6d687a" class=3D"conflue=
+nceTd">
+<p local-id=3D"77a3ffaa-c7ac-4b81-a184-0aba0a2dbe4e">Python.framework has d=
+ifferent/no Team ID</p></td>
+</tr>
+<tr data-local-id=3D"64e134ec-ee75-4839-aa8d-274037a9227e">
+<td data-local-id=3D"3590bb66-1a8d-455c-9611-545807de396e" class=3D"conflue=
+nceTd">
+<p local-id=3D"5f1e21a9-00be-48a4-9b2f-29655987a577"><code>allow-dyld-envir=
+onment-variables</code></p></td>
+<td data-local-id=3D"5ed115d3-8fb9-4fcd-a3b2-5e3a3980d9ad" class=3D"conflue=
+nceTd">
+<p local-id=3D"07113613-2d59-43ed-9b5d-d8dfec932c28">Allow DYLD_* env vars<=
+/p></td>
+<td data-local-id=3D"7cb8cc23-e894-4823-8745-cf9400d21ff5" class=3D"conflue=
+nceTd">
+<p local-id=3D"46a0bf8a-80ba-4560-96a2-3eb409b21cda">PyInstaller uses these=
+ for library paths</p></td>
+</tr>
+<tr data-local-id=3D"f4c2dd0d-bd65-42b3-a6fc-7a7a8d7cb7a8">
+<td data-local-id=3D"e48c29fc-0575-4d1a-a9fa-2f0eca847e4f" class=3D"conflue=
+nceTd">
+<p local-id=3D"22bc8a35-7a12-49ee-83ac-090ab667e7b9"><code>allow-unsigned-e=
+xecutable-memory</code></p></td>
+<td data-local-id=3D"371b2ae9-7aa7-4620-bbce-cd01b1ed4207" class=3D"conflue=
+nceTd">
+<p local-id=3D"f59e11d5-8ed1-4f7e-98de-620fad62f474">Allow JIT/dynamic code=
+ execution</p></td>
+<td data-local-id=3D"9fd5a77c-b1dd-419c-b1af-bc83887c1b9f" class=3D"conflue=
+nceTd">
+<p local-id=3D"ec571beb-364f-43bc-91b1-4134fa095592">Some Python packages (=
+numpy, etc.) need this</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p local-id=3D"861a48d6-11d2-400d-9a86-98829113b5bb"><strong>Security Note:=
+</strong> These entitlements reduce some security restrictions but are <str=
+ong>necessary for PyInstaller apps</strong> and <strong>still allow notariz=
+ation</strong>. Apple accepts these for legitimate use cases.</p>
+<p local-id=3D"6faafc6b-e615-484c-9b6e-a34d774ae004"><strong>Save this file=
+ in your repository</strong> - you'll need it for every build!</p>
+<hr local-id=3D"a0a9024e-8860-430b-91e4-10309e106376">
+<h2 local-id=3D"5bbef2ea-278e-4197-a435-75ab57f07537" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=93=8BQuickSummary:AfterInitialSetupisComplete">=
+=F0=9F=93=8B Quick Summary: After Initial Setup is Complete</h2>
+<p local-id=3D"719fa161-b482-4e15-a5a3-9a29a9bb9e4f"><strong>=F0=9F=8E=89 C=
+ongratulations!</strong> Once you've completed Parts 1-3 above (ONE-TIME SE=
+TUP), you don't need to repeat those steps.</p>
+<p local-id=3D"f972fbdd-cfad-4788-80e6-c9f1ddc20274"><strong>What you did o=
+nce (never repeat unless credentials expire):</strong></p>
+<ul local-id=3D"d16120e1-63c3-4390-8f3c-6977b606a1bb">
+<li local-id=3D"c956fc8e-64d0-4c12-bcea-7a821b4733a6">
+<p local-id=3D"bfed87d0-bbb4-4626-9254-b1fbf919bb3d">=E2=9C=85 Installed Xc=
+ode Command Line Tools</p></li>
+<li local-id=3D"2778b406-4f3d-49f0-867a-5440ba2287ee">
+<p local-id=3D"09f9a6d9-3a11-447e-bd5f-b8db33d5fecb">=E2=9C=85 Imported cer=
+tificates to Keychain</p></li>
+<li local-id=3D"a2a39a2f-8b03-425e-abf4-e9480689d288">
+<p local-id=3D"3f54bec6-7b84-4d3a-a5e6-7b4fb0cafe1c">=E2=9C=85 Stored API k=
+ey in <code>~/.apple-keys/</code></p></li>
+<li local-id=3D"2f47f24c-e683-4bde-af61-c848e5103dfd">
+<p local-id=3D"6272eccf-92f3-4242-8ade-6bb668c86d74">=E2=9C=85 Stored notar=
+ization credentials with <code>notarytool store-credentials</code></p></li>
+<li local-id=3D"52cd5a06-5f82-43b4-977b-19a886a9a28b">
+<p local-id=3D"17621704-334e-42d6-9416-3566232d3ec3">=E2=9C=85 Created <cod=
+e>entitlements.plist</code> file</p></li>
+</ul>
+<p local-id=3D"3351a514-7317-4866-8ea9-1cba05f5af7a"><strong>For every subs=
+equent build, you only need to:</strong></p>
+<p local-id=3D"da642744-c23f-431b-887a-935bfe253f2b"><strong>Common Steps (=
+1-4):</strong></p>
+<ol start=3D"1" local-id=3D"4e29a3db-313d-42d0-910b-896c7a63e50b">
+<li local-id=3D"cfbcab7c-b77f-422a-a538-49dcf6b2ec2e">
+<p local-id=3D"f7f9303b-4435-41bc-925b-2ed18d238862"><strong>Build your bin=
+ary</strong> (with your normal build process)</p></li>
+<li local-id=3D"dad60a05-27f0-45d7-b61f-2dccaac0bb47">
+<p local-id=3D"f438be26-01a1-483f-bac6-8fb2824d996b"><strong>Check quaranti=
+ne</strong> =E2=86=92 <code>xattr -l</code> and remove if present</p></li>
+<li local-id=3D"e781a941-548f-48cf-910f-396ed79da4b1">
+<p local-id=3D"02ffea15-b14f-432b-a98a-58748281f997"><strong>Remove adhoc s=
+ignature</strong> =E2=86=92 <code>codesign --remove-signature</code></p></l=
+i>
+<li local-id=3D"45f17b50-9c3c-465e-836f-d56e886b3b68">
+<p local-id=3D"94876a8c-a375-468a-b153-05bdba524b6f"><strong>Sign binary</s=
+trong> =E2=86=92 with <code>--entitlements</code> and <code>--options runti=
+me</code></p></li>
+</ol>
+<p local-id=3D"85f44b58-b0eb-4ac2-85a1-99f49fb91d29"><strong>ZIP Method (Cu=
+rrent - Steps 5-7):</strong><br>
+5. <strong>Create ZIP</strong> =E2=86=92 <code>ditto -c -k --sequesterRsrc =
+--keepParent</code><br>
+6. <strong>Notarize ZIP</strong> =E2=86=92 Submit to Apple (1-5 mins)<br>
+7. <strong>Test</strong> =E2=86=92 Verify everything works</p>
+<ul local-id=3D"fd77557a-14fe-4343-9514-f71929942af8">
+<li local-id=3D"5aa812c6-7947-4ec9-8a9b-938aa712067b">
+<p local-id=3D"d0dea69f-7009-4724-b55d-6b5a5444c041">=E2=9A=A0=EF=B8=8F Not=
+e: ZIP cannot be stapled, requires internet on first run</p></li>
+</ul>
+<p local-id=3D"f76327fd-a5ae-4c8d-9a17-6507dd7fbb99"><strong>DMG Method (Al=
+ternative - Steps 5-9):</strong><br>
+5. <strong>Create DMG</strong> =E2=86=92 Package signed binary<br>
+6. <strong>Sign DMG</strong> =E2=86=92 Sign the DMG container<br>
+7. <strong>Notarize DMG</strong> =E2=86=92 Submit to Apple (1-5 mins)<br>
+8. <strong>Staple DMG</strong> =E2=86=92 Embed notarization ticket (offline=
+ verification)<br>
+9. <strong>Test</strong> =E2=86=92 Verify everything works</p>
+<p local-id=3D"aeac6711-1722-4077-b42b-3adae896c029"><strong>That's it!</st=
+rong> Just follow Parts 4-9 below for each new build. The process becomes q=
+uick and straightforward once setup is done.</p>
+<hr local-id=3D"60807d9f-1314-4e8d-93c8-2584757b194c">
+<h2 local-id=3D"e43ad887-3661-4cec-ba1e-607622570e17" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=94=90Part4:CodeSigningYourBinary(=F0=9F=94=84EVE=
+RYBUILD)">=F0=9F=94=90 Part 4: Code Signing Your Binary (=F0=9F=94=84 EVERY=
+ BUILD)</h2>
+<h3 local-id=3D"7d0ea872-3ee3-42f9-8920-55ae8c999871" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step5:UnderstandWhatSigningDoes">Step 5: Understand Wha=
+t Signing Does</h3>
+<p local-id=3D"ed1cbcdb-20b2-4732-8c97-9ad255a31288">When you sign a binary=
+:</p>
+<ol start=3D"1" local-id=3D"ca488b60-9788-4607-ae5d-b3633aae8c0b">
+<li local-id=3D"0ca43ba6-9a84-4ac2-91ac-cfdd8860c0a4">
+<p local-id=3D"1fe2771f-4b40-4e49-87d6-fb012b73a1a9">macOS calculates a cry=
+ptographic hash of your binary</p></li>
+<li local-id=3D"5f5bff70-5d41-4959-9ecd-30d2b16bf50a">
+<p local-id=3D"3509683c-a2ae-4381-9ec3-0e782d829971">It encrypts that hash =
+with your private key</p></li>
+<li local-id=3D"7572ad83-7f52-4885-a831-67ee62f50b20">
+<p local-id=3D"c19bfd7e-8e41-4816-bc2e-9ede44dcd161">The signature is embed=
+ded in the binary</p></li>
+<li local-id=3D"9f1f91a6-02c1-485b-8620-8a0b6bce36e7">
+<p local-id=3D"4a885ac0-fdbb-4631-9419-1a4f26e80377">When a user runs it, m=
+acOS verifies the signature matches</p></li>
+</ol>
+<p local-id=3D"7baa125e-6dca-461a-80d9-7e9ec3687bc4"><strong>The guarantee:=
+</strong> If even one byte changes, the signature becomes invalid.</p>
+<h3 local-id=3D"fbdbb186-c11b-401f-baa4-7f013228fafb" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step6:CheckandRemoveQuarantineAttribute">Step 6: Check =
+and Remove Quarantine Attribute</h3>
+<p local-id=3D"4cf0a963-dd4a-441e-87f6-5f6493348203"><strong>CRITICAL:</str=
+ong> Before signing, check if the binary has a quarantine attribute. This c=
+an cause the signing process to fail or create issues later.</p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">cd /Use=
+rs/joaquinaraujo/github/bzm-mcp/dist
+
+# Check if binary is quarantined
+xattr -l bzm-mcp-macos-arm64</pre>
+</div>
+</div>
+<p local-id=3D"3b97f92d-0d17-4588-905c-b9d857f5fd8b"><strong>If you see </s=
+trong><code>com.apple.quarantine</code> in the output:</p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Remov=
+e the quarantine attribute
+xattr -d com.apple.quarantine bzm-mcp-macos-arm64
+
+# Verify it's gone
+xattr -l bzm-mcp-macos-arm64</pre>
+</div>
+</div>
+<p local-id=3D"2faa2269-5d73-4be9-8266-8be1a31d82b3"><strong>Why this matte=
+rs:</strong> macOS marks downloaded files with a quarantine attribute. If y=
+our binary has this attribute, it can interfere with code signing and cause=
+ security warnings even after proper signing and notarization.</p>
+<h3 local-id=3D"af0b77f2-b9cd-4311-ab0f-355c5b4f8f75" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step7:RemoveExistingSignatures">Step 7: Remove Existing=
+ Signatures</h3>
+<p local-id=3D"b601e420-aa44-4724-a672-4cf9c4881e06">PyInstaller automatica=
+lly adds an <strong>adhoc signature</strong> (self-signed). You must remove=
+ it first:</p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Remov=
+e the adhoc signature
+codesign --remove-signature bzm-mcp-macos-arm64</pre>
+</div>
+</div>
+<h3 local-id=3D"6d0984ca-6fa5-4707-ba72-5f75a34875bf" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step8:SignYourBinary(WITHEntitlements)">Step 8: Sign Yo=
+ur Binary (WITH Entitlements)</h3>
+<p local-id=3D"2e2f5fb8-ff46-4a95-b20a-ddf34c14f218"><strong>Sign it with y=
+our Developer ID and entitlements:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">codesig=
+n --sign "Developer ID Application: Your Name (TEAM_ID)" \
+  --entitlements ../entitlements.plist \
+  --options runtime \
+  --timestamp \
+  --force \
+  --deep \
+  --verbose \
+  bzm-mcp-macos-arm64</pre>
+</div>
+</div>
+<p local-id=3D"1fedeeaa-fdbd-4acb-9c15-e149ece97c52"><strong>Breaking down =
+the flags:</strong></p>
+<ul local-id=3D"cbbc04bd-6933-4f1c-b846-ee7f8b8e406c">
+<li local-id=3D"d88576ff-fbec-4363-a253-690f4348e7b4">
+<p local-id=3D"797e5cbd-07e5-4758-b803-c199af70cfea"><code>--sign "..."</co=
+de> - Use this specific certificate identity</p></li>
+<li local-id=3D"ef9af9b9-ef4c-4aa3-8a87-a0e0b7a11b40">
+<p local-id=3D"75226512-dcd8-479c-822a-b45381b4bbbd"><code>--entitlements</=
+code> - <strong>CRITICAL:</strong> Path to your entitlements file</p></li>
+<li local-id=3D"bc586039-2332-48a5-b62e-9feb026012c7">
+<p local-id=3D"d0cfc4b8-15f4-498d-9a0c-37c18dc5920f"><code>--options runtim=
+e</code> - Enable hardened runtime (required for notarization)</p></li>
+<li local-id=3D"742cd63c-6304-4835-8650-893575600e2f">
+<p local-id=3D"f5ede9b1-7146-4885-97e1-95fc7a0a9628"><code>--timestamp</cod=
+e> - Include a trusted timestamp (proves when it was signed)</p></li>
+<li local-id=3D"cc31ab06-3bdc-43cb-83fa-ef23c7b265b0">
+<p local-id=3D"3e449b60-0047-4928-a929-87b07c5d538a"><code>--force</code> -=
+ Replace any existing signature</p></li>
+<li local-id=3D"2ad4aaf6-5e98-4bd1-b03a-06a8329b968e">
+<p local-id=3D"4c688ef7-5b12-4880-b55e-e94d8505be8a"><code>--verbose</code>=
+ - Show what's happening</p></li>
+</ul>
+<h3 local-id=3D"c8e6b351-e6c0-4b28-8c03-602e63cba4c9" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step9:VerifytheSignature">Step 9: Verify the Signature<=
+/h3>
+<p local-id=3D"3b482565-b893-4f43-8a4f-034c293bd314"><strong>Check the sign=
+ature is valid:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">codesig=
+n --verify --verbose bzm-mcp-macos-arm64</pre>
+</div>
+</div>
+<p local-id=3D"e8a001a0-f52c-46da-b04e-cb527c94a5c8"><strong>Check signatur=
+e details:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">codesig=
+n --display --verbose=3D4 bzm-mcp-macos-arm64</pre>
+</div>
+</div>
+<p local-id=3D"07770854-fdf3-4a14-8732-1ea3b4c0d545"><strong>What to look f=
+or:</strong></p>
+<ul local-id=3D"514c0a40-baa9-47a6-aee5-c753403ee80a">
+<li local-id=3D"5d997c2b-c3e5-4baf-a812-fa67b65fa93f">
+<p local-id=3D"6cec3845-5913-4228-bee1-1249710be90f">=E2=9D=8C <code>Signat=
+ure=3Dadhoc</code> means NOT properly signed (bad!)</p></li>
+<li local-id=3D"49b1033a-56c6-4ecf-b0ac-8a11e98015a3">
+<p local-id=3D"cab8c99b-a15f-4a98-bb53-947b42a82f1c">=E2=9C=85 <code>Author=
+ity=3DDeveloper ID Application: Your Name</code> means properly signed (goo=
+d!)</p></li>
+<li local-id=3D"f7eb9755-7c2b-4d42-9176-739d7fee522a">
+<p local-id=3D"5eb9a04a-c6d7-407e-a8e4-153d0dd5410a">=E2=9C=85 <code>Timest=
+amp=3D...</code> should show a date (good!)</p></li>
+<li local-id=3D"c74b5978-4a7d-47b0-8110-47ef3232351b">
+<p local-id=3D"5b5a1d06-5dd4-4bf0-8b44-67abacd16585">=E2=9C=85 <code>Runtim=
+e Version=3D...</code> confirms hardened runtime is enabled</p></li>
+</ul>
+<p local-id=3D"3d3e8cc0-b05d-433f-ab60-84ceca852b8b"><strong>Verify entitle=
+ments were applied:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">codesig=
+n --display --entitlements - bzm-mcp-macos-arm64</pre>
+</div>
+</div>
+<p local-id=3D"904a07de-68f0-4861-800e-43c5f36e1919">You should see your th=
+ree entitlements listed in XML format.</p>
+<h3 local-id=3D"874637d4-5370-4757-a0c3-3223053aaaed" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step10:TesttheBinaryLocally">Step 10: Test the Binary L=
+ocally</h3>
+<p local-id=3D"62c5fa30-9789-49a9-96fa-5581a1ad3151"><strong>Before creatin=
+g the DMG, test the binary works:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">./bzm-m=
+cp-macos-arm64 --version
+# or
+./bzm-mcp-macos-arm64 --help</pre>
+</div>
+</div>
+<p local-id=3D"a1624005-5930-4ee8-b056-dfe55f80529b"><strong>If it fails wi=
+th "Team ID" errors:</strong></p>
+<ul local-id=3D"b99f3761-d287-4a64-ab05-7ba38f1dec89">
+<li local-id=3D"30609ef1-458f-422c-8246-7ad671a59f3c">
+<p local-id=3D"22de7e28-8572-4aef-9bf4-9fc3f4115413">The entitlements weren=
+'t applied correctly</p></li>
+<li local-id=3D"6a8d1a9a-ed8f-4abe-b288-73c687f618d5">
+<p local-id=3D"3a29ec86-080d-4d92-8cb2-ebf62b20d36a">Re-check the <code>--e=
+ntitlements</code> path</p></li>
+<li local-id=3D"31d4e6f7-a8a7-4f7e-8d13-c651813aa1c7">
+<p local-id=3D"6396f0f1-5651-4e37-a857-5e769f71d514">Make sure you used <co=
+de>--force</code> when signing</p></li>
+</ul>
+<p local-id=3D"701be77f-73b1-4b1b-88d0-5d745d0d4785"><strong>If it works lo=
+cally, you're ready for the next step!</strong></p>
+<hr local-id=3D"5a142a2e-f11c-4262-90de-8c7a296c84cf">
+<h2 local-id=3D"16a54072-fadd-4527-89fd-089064028b08" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=93=A6Part5:CreatingaDMG(=F0=9F=94=84EVERYBUILD)"=
+>=F0=9F=93=A6 Part 5: Creating a DMG (=F0=9F=94=84 EVERY BUILD)</h2>
+<h3 local-id=3D"5c39db67-c635-4138-a6ee-c481bba0eae5" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step11:WhyPackageasDMG?">Step 11: Why Package as DMG?</=
+h3>
+<p local-id=3D"0ae87a43-6fd7-44e7-a548-19a69efa5229"><strong>DMG Benefits:<=
+/strong></p>
+<ul local-id=3D"f4fbf1ca-11c5-43fb-b45c-34f551cd72a8">
+<li local-id=3D"896890f3-700c-408e-90a0-69e90c12c00a">
+<p local-id=3D"6c56ea9a-3d11-4a7a-92bc-5e684a28eba1">Professional distribut=
+ion format</p></li>
+<li local-id=3D"6c2b4c8a-c859-46c1-8308-efcb0f5dc288">
+<p local-id=3D"f4ee83d7-9592-42d9-a6e4-f0f8282071e3">Can include custom bac=
+kground, icons, license</p></li>
+<li local-id=3D"7976093d-9833-469c-8de7-2fa2f9189c50">
+<p local-id=3D"eec60ae8-0b2e-4d56-a148-f7a09e8cf3a0">Single file to distrib=
+ute</p></li>
+<li local-id=3D"51f3d2e9-d462-430d-bc61-2fe8acf45c9c">
+<p local-id=3D"8a21adfa-9375-4fda-b5a7-766b21fa346b">DMGs can be notarized =
+and stapled (raw binaries cannot!)</p></li>
+<li local-id=3D"bb166e98-1eae-4047-b3ce-c7113da7aa10">
+<p local-id=3D"9e8fb765-fd69-443e-aa56-cbeab6fa00b9">Provides a consistent =
+download experience</p></li>
+</ul>
+<p local-id=3D"018669f2-c333-48bd-a94b-48917252e0ba"><strong>Important:</st=
+rong> Raw Mach-O executables (like your binary) <strong>cannot be stapled</=
+strong>. Only <code>.app</code> bundles, <code>.dmg</code> files, and <code=
+>.pkg</code> installers support stapling. This is why we package in a DMG.<=
+/p>
+<h3 local-id=3D"66e673dc-b3e0-4ee2-8411-245d95566517" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step12:CreateaDMGwithYourSignedBinary">Step 12: Create =
+a DMG with Your Signed Binary</h3>
+<p local-id=3D"4080e54c-23dd-4fe9-9c6b-1836222d7c53"><strong>Create a tempo=
+rary folder for DMG contents:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">cd /Use=
+rs/joaquinaraujo/github/bzm-mcp/dist
+
+# Create temp directory
+mkdir -p ~/tmp/bzm-mcp-dmg
+
+# Copy the SIGNED binary into it
+cp bzm-mcp-macos-arm64 ~/tmp/bzm-mcp-dmg/</pre>
+</div>
+</div>
+<p local-id=3D"cafc1ee1-5bd5-4ce5-9c5a-c21325d85eb5"><strong>Create the DMG=
+:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">hdiutil=
+ create -volname "BlazeMeter MCP" \
+  -srcfolder ~/tmp/bzm-mcp-dmg \
+  -ov -format UDZO \
+  bzm-mcp-macos-arm64.dmg
+
+# Clean up temp directory
+rm -rf ~/tmp/bzm-mcp-dmg</pre>
+</div>
+</div>
+<p local-id=3D"eec7d929-30f5-455c-aeca-79eec7fbafd2"><strong>Breaking down =
+the command:</strong></p>
+<ul local-id=3D"5c508734-41fa-4ceb-86ce-2de84e752b6b">
+<li local-id=3D"cb224089-a534-4992-b0cb-37ed614c2556">
+<p local-id=3D"7dd433a3-9bf4-4757-930e-cdd08ff61a93"><code>-volname</code> =
+- Name shown when DMG is mounted (users see this)</p></li>
+<li local-id=3D"139a8a5f-6a38-4fec-b8d9-b7a03e6b9e04">
+<p local-id=3D"5eb20368-82d8-454c-b1ce-c67392a9ad2e"><code>-srcfolder</code=
+> - What to put in the DMG (your signed binary!)</p></li>
+<li local-id=3D"54dce468-ead3-4bdc-9d7f-b56a2345027a">
+<p local-id=3D"1b5afa77-5b4c-4231-a334-2a52159b8c9b"><code>-ov</code> - Ove=
+rwrite if DMG already exists</p></li>
+<li local-id=3D"012dfe39-174e-4ed2-a8e7-5d292f012049">
+<p local-id=3D"9a561ff5-3c44-4834-8fc9-0bdbc1244645"><code>-format UDZO</co=
+de> - Compressed format (smaller file size)</p></li>
+</ul>
+<h3 local-id=3D"a46644b7-71ce-41c0-8158-12e9188f41f4" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step13:SigntheDMG">Step 13: Sign the DMG</h3>
+<p local-id=3D"2f098d42-63a5-44c6-b3db-116a38a9f871"><strong>Sign the DMG c=
+ontainer itself:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">codesig=
+n --sign "Developer ID Application: Your Name (TEAM_ID)" \
+  --timestamp \
+  --force \
+  --verbose \
+  bzm-mcp-macos-arm64.dmg</pre>
+</div>
+</div>
+<p local-id=3D"03686ead-75ff-41a2-9158-861d33f73afa"><strong>Why sign the D=
+MG?</strong></p>
+<ul local-id=3D"c0c08d0b-875b-4b10-ac87-1fbba6216d6e">
+<li local-id=3D"3eb933e1-7098-476b-b034-b5c72e7c7f68">
+<p local-id=3D"c9471c23-970f-4754-b373-7af18076d29e">Protects the DMG conta=
+iner from tampering</p></li>
+<li local-id=3D"8545b5a4-93ba-4853-a79d-38a66f36513f">
+<p local-id=3D"420ae64e-dbb3-45f5-bcd1-2d7cccbd327e">Required for notarizat=
+ion</p></li>
+<li local-id=3D"401c3e89-42fb-4a0a-a552-9ef11727e2b2">
+<p local-id=3D"6fde00d7-633b-447e-92b5-4ccbb044ee5b">Provides an additional=
+ layer of security</p></li>
+</ul>
+<p local-id=3D"d8b1e48a-d7f6-4d36-92b3-c210e9a24ae1"><strong>Verify DMG sig=
+nature:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">codesig=
+n --verify --verbose bzm-mcp-macos-arm64.dmg</pre>
+</div>
+</div>
+<p local-id=3D"e8c8cef9-b692-42d7-84b3-e156d8bf134d"><strong>Expected outpu=
+t:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: java; gutter: false; theme: Confluence" data-theme=3D"Confluence">bzm-mcp=
+-macos-arm64.dmg: valid on disk
+bzm-mcp-macos-arm64.dmg: satisfies its Designated Requirement</pre>
+</div>
+</div>
+<hr local-id=3D"ddcbb37f-ba34-4172-a40b-fcf277b8bd71">
+<h2 local-id=3D"c86d23c2-28bf-4f29-863d-829b828f4d03" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=93=A6Part5B:CreatingaZIPArchive(Alternative-Curr=
+entMethod)">=F0=9F=93=A6 Part 5B: Creating a ZIP Archive (Alternative - Cur=
+rent Method)</h2>
+<h3 local-id=3D"ad65fcd8-94f4-4048-8ab8-7c8786efa17e" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step11B:WhyUseZIPInsteadofDMG?">Step 11B: Why Use ZIP I=
+nstead of DMG?</h3>
+<p local-id=3D"85e20808-7265-4a83-8a85-6f4dae8dad56"><strong>ZIP Benefits:<=
+/strong></p>
+<ul local-id=3D"d62421f5-893d-4eba-a0da-2e21e46f4957">
+<li local-id=3D"dc788724-9e05-4fd7-bbad-1ddd4f32a083">
+<p local-id=3D"58731596-46cf-4341-8bec-fa393e8f0a14">Simpler creation proce=
+ss (no signing of the archive itself needed)</p></li>
+<li local-id=3D"668f05c4-a3d7-48e7-823a-e571a9d78efc">
+<p local-id=3D"bcc9dd4e-40ba-4f8e-9e29-0b4f5ba9a650">Standard format univer=
+sally supported</p></li>
+<li local-id=3D"00d4b567-3bd0-467d-8ca2-b6f1417a0bfb">
+<p local-id=3D"cf22839c-589a-4390-83f4-ba9bda4a7b47">Faster to create and p=
+rocess</p></li>
+<li local-id=3D"23806417-387c-4455-83d5-d9f5e5ada23a">
+<p local-id=3D"2713cfa1-6e5a-4c58-9e51-0cdbcc711cdc">Direct notarization of=
+ the ZIP file</p></li>
+</ul>
+<p local-id=3D"4bc82cf3-ea80-4dc5-9d6d-c7ae0b6df44d"><strong>ZIP Limitation=
+s:</strong></p>
+<ul local-id=3D"21ca18e7-0b6e-4a75-8811-a004a9d07e46">
+<li local-id=3D"bf8d311f-53b1-476b-a95b-f653637592cd">
+<p local-id=3D"2e592f25-ee84-4fd0-954d-b1e99668c062">=E2=9A=A0=EF=B8=8F <st=
+rong>Cannot be stapled</strong> - Unlike DMG, ZIP files don't support stapl=
+ing the notarization ticket</p></li>
+<li local-id=3D"919107ac-5aa9-4004-b333-b88107e4240f">
+<p local-id=3D"5f3d6924-268c-4c3b-8272-3d0c856570bb">First-run verification=
+ requires internet connection (macOS checks online)</p></li>
+<li local-id=3D"a347a3b0-293b-4993-8d6b-53cd32043939">
+<p local-id=3D"edca8803-9731-4b56-b208-4a5ed4d712e7">Less polished user exp=
+erience compared to custom DMG</p></li>
+</ul>
+<p local-id=3D"8c0c4ca4-f1c4-4976-bde2-f1aa2a56f449"><strong>When to use ZI=
+P vs DMG:</strong></p>
+<ul local-id=3D"4b91c5cf-b29b-4e92-9fdc-12aed5c0a7f8">
+<li local-id=3D"b44d2729-2f59-4b66-8871-e1bf09d9600c">
+<p local-id=3D"ec7cc052-7b3a-47fd-8c5c-8cceb953b88b"><strong>Use ZIP</stron=
+g> - For command-line tools, internal distribution, or when simplicity is p=
+referred</p></li>
+<li local-id=3D"07eefb31-f633-4d3d-89f7-425e480e85b3">
+<p local-id=3D"8b41de06-3835-4f9b-84ec-961c63aea1b5"><strong>Use DMG</stron=
+g> - For end-user applications requiring offline verification and a polishe=
+d installer experience</p></li>
+</ul>
+<p local-id=3D"fb32f7c0-e93f-4fc8-af2b-4debcbb68ceb"><strong>Important:</st=
+rong> While ZIP files cannot be stapled, the notarized binary inside is sti=
+ll recorded by Apple. macOS will verify it online on first run (requires in=
+ternet connection).</p>
+<h3 local-id=3D"04ab2189-123c-4cff-8353-6fd606bdac4e" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step12B:CreateaZIPArchivewithYourSignedBinary">Step 12B=
+: Create a ZIP Archive with Your Signed Binary</h3>
+<p local-id=3D"20cbb4f0-ef5c-482f-85f0-5423af37ee59"><strong>Create a ZIP u=
+sing ditto (preserves macOS metadata):</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">cd /Use=
+rs/joaquinaraujo/github/bzm-mcp/dist
+
+# Create ZIP archive preserving resource forks and metadata
+ditto -c -k --sequesterRsrc --keepParent bzm-mcp-macos-arm64 bzm-mcp-macos-=
+arm64.zip</pre>
+</div>
+</div>
+<p local-id=3D"590a3a16-8a3d-47ca-b089-dc9535b897e1"><strong>Breaking down =
+the command:</strong></p>
+<ul local-id=3D"b016bf41-702c-4926-8362-17081e9e91e6">
+<li local-id=3D"7f25aa7b-776b-4d39-9251-283bab368a64">
+<p local-id=3D"0e8a4aaa-269a-4c42-b6da-32ef3b88731b"><code>-c</code> - Crea=
+te an archive</p></li>
+<li local-id=3D"ad3d7663-354d-41e6-b089-56882fa509d9">
+<p local-id=3D"34813e11-8caa-4ad7-af67-060e57861ff0"><code>-k</code> - Crea=
+te a PKZip archive (standard ZIP format)</p></li>
+<li local-id=3D"3312ce3b-659b-4804-a77f-47f3b5e0987a">
+<p local-id=3D"6c516b56-1985-44a9-8507-84d58e1e9fa5"><code>--sequesterRsrc<=
+/code> - Preserve resource forks and HFS+ metadata in AppleDouble format</p=
+></li>
+<li local-id=3D"1c7e1889-f363-4d2c-830d-e00dcd6acd33">
+<p local-id=3D"5455501f-6822-4958-847f-ab440286a373"><code>--keepParent</co=
+de> - Include the parent directory name (so extraction creates a folder)</p=
+></li>
+<li local-id=3D"9b5e862c-63cf-46fb-aaf4-0d94bcb156d7">
+<p local-id=3D"b5e011ce-4fe5-4f4b-9e4b-d0453f8c0f52">Source: <code>bzm-mcp-=
+macos-arm64</code> (your signed binary!)</p></li>
+<li local-id=3D"939d8168-c9d9-4db6-9f33-65bf07e9f4f6">
+<p local-id=3D"165fc67c-b93e-4f25-b45d-635c838be93d">Destination: <code>bzm=
+-mcp-macos-arm64.zip</code></p></li>
+</ul>
+<p local-id=3D"bdc49995-e267-4df5-9f4f-b85d0bdc0f4e"><strong>Why use </stro=
+ng><code>ditto</code> instead of regular <code>zip</code>?</p>
+<ul local-id=3D"44f370d2-fc0c-457e-8ad8-70e48a5ebfc7">
+<li local-id=3D"a2551212-cf89-4613-8191-eb750f9e68d1">
+<p local-id=3D"7110c1e1-6537-4512-a81d-4daa255b74ba">Properly preserves mac=
+OS extended attributes</p></li>
+<li local-id=3D"7a8e6473-f6ce-4012-8d1b-fa68fd35a55b">
+<p local-id=3D"6dded09c-a281-4672-83ac-ca0a0d10daff">Maintains code signatu=
+res correctly</p></li>
+<li local-id=3D"b9c29af0-1afd-47cf-8485-31b5bd086b73">
+<p local-id=3D"d74a069e-aa66-4f9c-8680-83f278449ca6">Apple-recommended tool=
+ for creating archives</p></li>
+<li local-id=3D"77c21839-0b00-4247-a37c-064cbe05b198">
+<p local-id=3D"31ee5181-1462-4ad7-8f3a-b9fa3d2ea93f">Better handling of res=
+ource forks and metadata</p></li>
+</ul>
+<p local-id=3D"c1776550-7d2a-4e78-b9c4-bef0ee9b1322"><strong>Important Note=
+s:</strong></p>
+<ol start=3D"1" local-id=3D"c22bee14-34d3-4002-8c57-92b4fd52194f">
+<li local-id=3D"dfe31739-ddff-43eb-9750-141b09294d61">
+<p local-id=3D"ceeb2b60-f380-47d2-8f54-cec8907d9531">The binary inside MUST=
+ already be signed before creating the ZIP</p></li>
+<li local-id=3D"215ed03a-6ccf-4f14-9ab6-ad7be8e95bfb">
+<p local-id=3D"25370a96-0295-42a4-a253-f8b8119b8f48">ZIP files do NOT need =
+to be signed separately (unlike DMG)</p></li>
+<li local-id=3D"388c3aa7-cc1a-4a33-8723-7790f40afd78">
+<p local-id=3D"eabd9f3a-d1f5-4d93-b1ee-7ca2dc4ce07e">You will notarize the =
+ZIP itself in the next step</p></li>
+<li local-id=3D"09e32bb3-06cf-4388-b591-923bdf8d2110">
+<p local-id=3D"df49f327-90ca-41a6-a087-ee5added408e">You CANNOT staple the =
+ZIP (only DMG/app/pkg support stapling)</p></li>
+</ol>
+<h3 local-id=3D"17526c72-8689-4b02-a9ef-294f34159fb4" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step13B:VerifyZIPContents">Step 13B: Verify ZIP Content=
+s</h3>
+<p local-id=3D"ae5f4215-8b93-460f-8618-b4dddc8957b8"><strong>Extract and ve=
+rify the binary is properly signed:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Creat=
+e temp directory to test extraction
+mkdir -p ~/tmp/zip-test
+cd ~/tmp/zip-test
+
+# Extract the ZIP
+unzip /Users/joaquinaraujo/github/bzm-mcp/dist/bzm-mcp-macos-arm64.zip
+
+# Verify the extracted binary signature
+codesign --display --verbose=3D4 bzm-mcp-macos-arm64
+
+# Should show: Authority=3DDeveloper ID Application: ...
+
+# Clean up
+cd ~
+rm -rf ~/tmp/zip-test</pre>
+</div>
+</div>
+<p local-id=3D"db942ff3-ab16-4f5c-95c7-999b7cb5f2f9"><strong>What to look f=
+or:</strong></p>
+<ul local-id=3D"8a0c9d6a-7948-4dd3-a880-7672e6b9c69b">
+<li local-id=3D"867dda7a-c7bf-4ccf-9643-9e5c0c9f34d2">
+<p local-id=3D"325dd4fc-7425-40fa-a0ec-a1f49ee11f7e">=E2=9C=85 Binary extra=
+cts successfully</p></li>
+<li local-id=3D"d243e9a5-614a-44d4-a509-c994c510e9a6">
+<p local-id=3D"29982132-ac2d-4f86-b73c-9021f38080ef">=E2=9C=85 Code signatu=
+re is intact (<code>Authority=3DDeveloper ID Application</code>)</p></li>
+<li local-id=3D"e77b23f8-5f23-4f7d-b4db-fdec9b89b2e6">
+<p local-id=3D"61ef1b73-fdc6-4889-80c0-79aab9a916f8">=E2=9C=85 Entitlements=
+ are preserved</p></li>
+<li local-id=3D"da4a5dbd-ef8e-417e-8739-d9d822c77824">
+<p local-id=3D"e73154e7-a9d9-4672-bc78-bcbbf05b5222">=E2=9D=8C If signature=
+ shows <code>adhoc</code>, the ZIP was created from unsigned binary</p></li=
+>
+</ul>
+<p local-id=3D"9918c123-c37e-42e5-8e5c-e62c223d3da1"><strong>If signature i=
+s missing or adhoc:</strong></p>
+<ul local-id=3D"d8bad3dc-7759-42f9-bbdc-0add15b6d741">
+<li local-id=3D"5bf3e5e8-05a4-41d2-a803-6140af6f654f">
+<p local-id=3D"838b2581-d4bd-4eb2-9894-59b82f8b2879">Delete the ZIP file</p=
+></li>
+<li local-id=3D"44f18aae-9723-4c17-b1cd-b2af4e7424bb">
+<p local-id=3D"fd588aa0-c8a9-4fd4-ae49-f3574631d800">Re-sign the binary pro=
+perly</p></li>
+<li local-id=3D"65f0cc6a-9020-4dd1-9c5c-7ccef5ded5aa">
+<p local-id=3D"7b4ffa78-8f60-4159-b07c-5d44016ea83d">Create a new ZIP from =
+the signed binary</p></li>
+</ul>
+<hr local-id=3D"fbfb5ce4-a003-4226-bd9d-ad7502534ed0">
+<h2 local-id=3D"59c97a0c-4af4-4291-a906-0f5c19526b4f" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=E2=9C=85Part6:Notarization">=E2=9C=85 Part 6: Notariza=
+tion</h2>
+<h3 local-id=3D"1b5191e2-6c05-408a-b1ff-03d881923d88" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step14:UnderstandingNotarization">Step 14: Understandin=
+g Notarization</h3>
+<p local-id=3D"24747f44-b4dc-4a37-9a74-9df459c3288c"><strong>What it is:</s=
+trong> You upload your signed DMG to Apple's servers. They automatically sc=
+an it for malware and policy violations. If it passes, they return a "ticke=
+t" that says "Apple has checked this."</p>
+<p local-id=3D"0407777d-b1f3-4542-8281-b9441216d848"><strong>What Apple che=
+cks:</strong></p>
+<ul local-id=3D"169dfe1e-4445-4231-995d-1b6c361d3707">
+<li local-id=3D"2d3aadf3-91c7-4a83-a8c0-855e5168e0a6">
+<p local-id=3D"1efb2e45-7fb9-4b95-8dbb-792f9207d9af">The DMG is properly si=
+gned</p></li>
+<li local-id=3D"790e9628-c2b0-47a2-99a1-cf5bafde5001">
+<p local-id=3D"b36c9c07-e877-49a0-a410-5847bb564590">The binary inside the =
+DMG is properly signed</p></li>
+<li local-id=3D"33062c69-896e-47bb-95ea-17b769fae3fd">
+<p local-id=3D"3fb322bd-b669-426c-a900-148b6a8e066c">No known malware signa=
+tures</p></li>
+<li local-id=3D"5c5e7893-13ce-4718-9539-0ab674a73364">
+<p local-id=3D"2a6e4f84-0f43-48d9-a9fb-77492ef4435b">Hardened runtime is en=
+abled</p></li>
+<li local-id=3D"2e1ff507-7749-4ab0-bae1-94c737f11362">
+<p local-id=3D"1e062e12-e41a-4422-89dd-ce4a29cd4f65">No suspicious code pat=
+terns</p></li>
+</ul>
+<p local-id=3D"d8a88879-5873-46f0-95f4-475ec3fead82"><strong>Important:</st=
+rong> Notarization is NOT the same as App Store review. It's automated and =
+takes 1-5 minutes.</p>
+<p local-id=3D"eb80d7cc-533d-4c21-a7c1-bc1f413820d6"><strong>For raw binari=
+es:</strong> When you notarize a DMG, Apple records the cryptographic hash =
+of the binary inside. When a user extracts and runs the binary, macOS check=
+s online (first run only) to verify it came from a notarized package.</p>
+<h3 local-id=3D"5abb4618-85b8-461d-8da5-9121fea3502b" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step15:StoreYourCredentials(=E2=8F=B0ONE-TIMESETUP)">St=
+ep 15: Store Your Credentials (=E2=8F=B0 ONE-TIME SETUP)</h3>
+<p local-id=3D"91436919-9a96-4f21-b930-c940d820ae5f"><strong>Set up your AP=
+I key for notarization:</strong></p>
+<p local-id=3D"47a9432e-1a21-49c2-a031-275bfcd6d25d">First, find your Key I=
+D (it's in the filename of your .p8 file):</p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># List =
+your API key to get the Key ID
+ls -la ~/.apple-keys/
+# If your file is AuthKey_ABC123XYZ.p8
+# Then ABC123XYZ is your Key ID</pre>
+</div>
+</div>
+<p local-id=3D"c291023f-2c6a-423f-8b63-1960fc7b1627"><strong>Store credenti=
+als in Keychain (this is secure and recommended):</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">xcrun n=
+otarytool store-credentials "bzm-mcp-notary" \
+  --key ~/.apple-keys/AuthKey_XXXXXXXXXX.p8 \
+  --key-id XXXXXXXXXX \
+  --issuer YOUR-ISSUER-UUID</pre>
+</div>
+</div>
+<p local-id=3D"bbe7de20-b953-422a-b655-9452d7bd7545"><strong>Breaking it do=
+wn:</strong></p>
+<ul local-id=3D"fa15ea83-cef8-4469-b3b0-b62d076149e5">
+<li local-id=3D"f8e6815f-e997-4f93-b2b5-5b2d7c2c1d1e">
+<p local-id=3D"c005f46e-868a-4e9b-9ae7-493c450dc7f4"><code>"bzm-mcp-notary"=
+</code> - A profile name you choose (anything memorable)</p></li>
+<li local-id=3D"82937321-cccc-4758-a6fc-b2c9cfe4117f">
+<p local-id=3D"ca4aee4c-9c8c-4035-acbb-cad7b19c2124"><code>--key</code> - P=
+ath to your .p8 API key file in <code>~/.apple-keys/</code></p></li>
+<li local-id=3D"59ea4352-8661-47e2-a238-623f7c9332f1">
+<p local-id=3D"ba61f63a-4d6f-4477-9f87-19786762b93a"><code>--key-id</code> =
+- The ID from the filename (the XXXXXXXXXX part)</p></li>
+<li local-id=3D"6384aa69-77da-48e0-a42a-0962755e4b76">
+<p local-id=3D"0d844bd6-4825-42d0-8244-6f84911ea698"><code>--issuer</code> =
+- Your Apple Issuer UUID</p></li>
+</ul>
+<p local-id=3D"add5bee4-907b-4853-8b03-95b7d24771c1"><strong>What this does=
+:</strong> Saves credentials securely in your Keychain so you don't have to=
+ type them each time.</p>
+<p local-id=3D"e5a1fbc0-2bab-4375-a429-371214012abf"><strong>Security Note:=
+</strong> The <code>.p8</code> file will remain in <code>~/.apple-keys/</co=
+de> as it's needed for future signing operations. This directory has restri=
+cted permissions (only you can access), and the credentials are also stored=
+ encrypted in your Keychain via the notarytool profile.</p>
+<p local-id=3D"2ad9c08a-95b8-4e80-a472-845cb45c3ac3"><strong>You only need =
+to do this once</strong> - the credentials are saved for future notarizatio=
+ns.</p>
+<h3 local-id=3D"e7cf2fd1-bd62-4f8b-9007-f517e0ae25de" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step16:SubmitforNotarization(=F0=9F=94=84EVERYBUILD)">S=
+tep 16: Submit for Notarization (=F0=9F=94=84 EVERY BUILD)</h3>
+<p local-id=3D"13f9b8c6-0efd-47ef-8a18-bce3271652fb"><strong>For ZIP files =
+(Current Method):</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">xcrun n=
+otarytool submit bzm-mcp-macos-arm64.zip \
+  --keychain-profile "bzm-mcp-notary" \
+  --wait</pre>
+</div>
+</div>
+<p local-id=3D"fdbe8737-ba88-4d9c-aa55-eaab54bb95ea"><strong>For DMG files =
+(Alternative Method):</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">xcrun n=
+otarytool submit bzm-mcp-macos-arm64.dmg \
+  --keychain-profile "bzm-mcp-notary" \
+  --wait</pre>
+</div>
+</div>
+<p local-id=3D"94a7e817-6d0a-4473-bf10-f868a0419e9c"><strong>Breaking it do=
+wn:</strong></p>
+<ul local-id=3D"b45906a6-08cf-41f4-8e2a-d924a7c32b49">
+<li local-id=3D"17ed0a0c-0a6c-4a0c-b88c-00059bd8d2fc">
+<p local-id=3D"19237db8-b173-41f2-9e17-155db3b0c81c"><code>submit</code> - =
+Upload to Apple (works for ZIP, DMG, PKG, APP)</p></li>
+<li local-id=3D"3c1d9390-a0cc-468b-a246-cdfc879b53cf">
+<p local-id=3D"88275fa5-ecaf-4b9d-b8ce-da3d395c6bb8"><code>--keychain-profi=
+le</code> - Use the credentials you stored</p></li>
+<li local-id=3D"f800c1b0-fecc-4052-9f8f-eda5cd7d32a7">
+<p local-id=3D"c67af855-9cf4-4bc4-a045-49cce63646f9"><code>--wait</code> - =
+Don't return until done (could take 1-5 minutes)</p></li>
+</ul>
+<p local-id=3D"f03da9c3-e947-4e7b-9160-b3137dd6e334"><strong>What you'll se=
+e:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: java; gutter: false; theme: Confluence" data-theme=3D"Confluence">Submitt=
+ing bzm-mcp-macos-arm64.zip for notarization...
+Successfully uploaded file
+  id: a1b2c3d4-1234-5678-9abc-def012345678
+  path: /path/to/bzm-mcp-macos-arm64.zip
+
+Waiting for processing to complete...
+Current status: In Progress.....
+Current status: Accepted
+
+Processing complete
+  id: a1b2c3d4-1234-5678-9abc-def012345678
+  status: Accepted</pre>
+</div>
+</div>
+<p local-id=3D"8cc7d98c-0822-486c-b4fc-968081447857"><strong>If it gets rej=
+ected:</strong> Check the logs:</p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">xcrun n=
+otarytool log a1b2c3d4-1234-5678-9abc-def012345678 \
+  --keychain-profile "bzm-mcp-notary"</pre>
+</div>
+</div>
+<p local-id=3D"5ab27645-25f6-4783-8843-35cff602aeab"><strong>Common rejecti=
+on reasons:</strong></p>
+<ul local-id=3D"69dd0b5f-e0c2-4510-a409-85db4692b17c">
+<li local-id=3D"30a79572-e7d8-4859-83f5-efc691bfaa65">
+<p local-id=3D"1aae7b54-c3ad-4825-8a26-5070720c2e70">Binary inside package =
+not properly signed</p></li>
+<li local-id=3D"bb7b14f0-499a-46e8-9140-afd9be4f9cac">
+<p local-id=3D"1223b1f4-17d4-4ede-9abb-41d4d5dae076">Missing hardened runti=
+me</p></li>
+<li local-id=3D"cd44c96b-5c87-43bf-8647-be74d9acf7fb">
+<p local-id=3D"0b92fff4-6fe6-4d9c-a712-932e8c4db41f">Missing entitlements f=
+or PyInstaller apps</p></li>
+<li local-id=3D"66822909-6570-4fdc-a760-ece8387e0b83">
+<p local-id=3D"d6b72870-c2b0-44f9-875c-f8e3544a6820">Signature issues with =
+embedded frameworks</p></li>
+</ul>
+<h3 local-id=3D"27af5087-61c4-4a5c-9850-b0388c3e831c" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step17:CheckNotarizationHistory(Optional)">Step 17: Che=
+ck Notarization History (Optional)</h3>
+<p local-id=3D"cf539f7c-656c-4a1c-b90d-4016bf2a13d9"><strong>See all your s=
+ubmissions:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">xcrun n=
+otarytool history \
+  --keychain-profile "bzm-mcp-notary"</pre>
+</div>
+</div>
+<hr local-id=3D"6f89d7e7-0cf6-49fc-a22b-aa9630a660fc">
+<h2 local-id=3D"1a354aaf-f79b-488d-a2de-4121d65bdfd9" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=8E=ABPart7:Stapling(=F0=9F=94=84EVERYBUILD-DMGON=
+LY)">=F0=9F=8E=AB Part 7: Stapling (=F0=9F=94=84 EVERY BUILD - DMG ONLY)</h=
+2>
+<h3 local-id=3D"22c87518-9928-4cfa-b3f9-5a74e07a611e" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step18:UnderstandingStapling">Step 18: Understanding St=
+apling</h3>
+<p local-id=3D"62ca1b34-e5cc-4db2-aaa7-541632775295"><strong>=E2=9A=A0=EF=
+=B8=8F IMPORTANT: This step only applies to DMG files. ZIP files cannot be =
+stapled!</strong></p>
+<p local-id=3D"dd27168d-3240-4cc2-9870-06abae64ab86"><strong>The problem:</=
+strong> Even though Apple approved your package, the approval "ticket" live=
+s on Apple's servers. If a user is offline during first run, macOS can't ve=
+rify it.</p>
+<p local-id=3D"e50c323a-628c-4e2a-a130-896e3810c26a"><strong>The solution (=
+DMG only):</strong> "Staple" the notarization ticket directly to your DMG. =
+This embeds Apple's approval into the file itself.</p>
+<p local-id=3D"231f5f5f-44b9-41b5-92ed-9404a31b9bf5"><strong>What can be st=
+apled:</strong></p>
+<ul local-id=3D"a0c9dd28-868b-4b1e-9c36-832b559bff5a">
+<li local-id=3D"c0b369b0-a792-4aab-9fb9-7434e6e2c5ac">
+<p local-id=3D"ea5b2b1b-bc68-486d-95e7-34c54831068c">=E2=9C=85 <code>.dmg</=
+code> files (disk images)</p></li>
+<li local-id=3D"2b16297b-ebc5-4294-bda7-211728058301">
+<p local-id=3D"e144a86b-5870-48d6-a8b3-9f69a07058d5">=E2=9C=85 <code>.app</=
+code> bundles (applications)</p></li>
+<li local-id=3D"3e27fecd-04f9-4e71-ad1e-64afc608a785">
+<p local-id=3D"afc3c9ff-0105-4bd8-9fbd-8f9223034647">=E2=9C=85 <code>.pkg</=
+code> files (installers)</p></li>
+<li local-id=3D"8c8479d1-4423-4a8c-a038-50178f40d683">
+<p local-id=3D"f30d417b-2bdf-40a2-863d-da26817fa7b2">=E2=9D=8C <code>.zip</=
+code> files (not supported!)</p></li>
+<li local-id=3D"dd8c9bcb-6bb8-43ac-a5d9-029f4ed40c0b">
+<p local-id=3D"c2783074-7342-4e84-9043-0723311616a6">=E2=9D=8C Raw Mach-O e=
+xecutables (like your standalone binary)</p></li>
+</ul>
+<p local-id=3D"eea5bbdd-8310-464f-9ef1-5109dbcc575e"><strong>Why you can't =
+staple ZIP files:</strong><br>
+The stapler tool requires a file format that supports extended attributes i=
+n a way that ZIP doesn't support. ZIP files store metadata differently and =
+don't support Apple's stapling mechanism.</p>
+<p local-id=3D"64c22c91-b079-45bf-ba43-c970fcdecc3c"><strong>Impact of not =
+stapling (ZIP files):</strong></p>
+<ul local-id=3D"85c77d98-c926-47ca-891d-dbde0868991d">
+<li local-id=3D"18d4bf0f-c67d-4da5-a937-b4bcf1603b47">
+<p local-id=3D"07fd586e-a475-4004-9a37-b8b6eefd658d"><strong>ZIP (no stapli=
+ng possible):</strong> macOS checks online on first run (requires internet =
+connection)</p></li>
+<li local-id=3D"2e12679e-d703-41d7-8897-be1b005d3d83">
+<p local-id=3D"fff95ab2-4316-486d-be2e-7029da6d8e42"><strong>DMG with stapl=
+ing:</strong> macOS verifies offline (works without internet)</p></li>
+<li local-id=3D"22e0e425-97ec-4695-943e-1ddfad34f2a4">
+<p local-id=3D"8568e010-ef2b-4d17-b549-1005331e3bd0">Both methods provide s=
+ecurity, but DMG offers better offline experience</p></li>
+</ul>
+<p local-id=3D"16d11d31-fd7b-42e2-830e-3d463779c38c"><strong>How notarizati=
+on protects ZIP contents:</strong><br>
+When Apple notarizes your ZIP, they record the hash of every file inside it=
+, including your binary. Even without stapling:</p>
+<ul local-id=3D"a1dc96ce-97f2-45b6-bdb2-fc6ec3107b40">
+<li local-id=3D"2f18cc9c-fc26-49ca-8bda-ad22b7303959">
+<p local-id=3D"1b0d769d-46a8-4ec5-b432-e3f6422a91b8">The binary is recorded=
+ in Apple's notarization database</p></li>
+<li local-id=3D"2cfb4e74-3214-45d1-b6c9-7d711b0b6852">
+<p local-id=3D"b4d8b509-a813-4624-b660-4e07771b5617">macOS checks online du=
+ring first run (caches result for subsequent runs)</p></li>
+<li local-id=3D"1cf9bf25-d9c2-4ee0-bc9e-e220a5cd3635">
+<p local-id=3D"a8aab973-fee9-4fcd-9586-31778fa5ed24">The binary is just as =
+secure, but requires internet for first verification</p></li>
+</ul>
+<h3 local-id=3D"93f1dccf-d518-4222-93a1-d24a65594a4e" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step19:StapletheNotarizationTicket(DMGOnly)">Step 19: S=
+taple the Notarization Ticket (DMG Only)</h3>
+<p local-id=3D"25b60d91-e652-4cd9-9bc5-934a29b6c904"><strong>=E2=9A=A0=EF=
+=B8=8F Skip this step if using ZIP files - proceed to Part 8 (Testing)</str=
+ong></p>
+<p local-id=3D"4f4fa18b-8404-41f9-a077-4ee5eebdf1a3"><strong>For DMG files =
+only, staple it:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">xcrun s=
+tapler staple bzm-mcp-macos-arm64.dmg</pre>
+</div>
+</div>
+<p local-id=3D"42d6af3d-0b21-41ba-bd52-b26fcf8de839"><strong>What you'll se=
+e:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: java; gutter: false; theme: Confluence" data-theme=3D"Confluence">Process=
+ing: /path/to/bzm-mcp-macos-arm64.dmg
+Processing: /path/to/bzm-mcp-macos-arm64.dmg
+The staple and validate action worked!</pre>
+</div>
+</div>
+<p local-id=3D"0f40d145-8fac-4aca-924b-830d5df9e84a"><strong>If you see "Er=
+ror 73":</strong></p>
+<ul local-id=3D"29692d09-cc8c-4d17-bc17-1123e6d15118">
+<li local-id=3D"70e3491b-cd41-4595-b041-bc9f0cad4d2d">
+<p local-id=3D"3dbcd444-3070-43f8-a112-61a3c845d168">You're trying to stapl=
+e something that doesn't support it (ZIP, raw binary)</p></li>
+<li local-id=3D"412f24b7-9e25-44b4-b5d6-c95faaa735c1">
+<p local-id=3D"e3b4da4a-e8b5-4b48-8757-e8e22821c220">Only DMG, APP, and PKG=
+ files can be stapled</p></li>
+</ul>
+<p local-id=3D"44044fea-02e4-43ab-bf3a-43a8393ecde9"><strong>Verify staplin=
+g worked:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">xcrun s=
+tapler validate bzm-mcp-macos-arm64.dmg</pre>
+</div>
+</div>
+<p local-id=3D"32e4fa24-e650-485d-bd62-09e3d2b72afb"><strong>Expected outpu=
+t:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: java; gutter: false; theme: Confluence" data-theme=3D"Confluence">Process=
+ing: /path/to/bzm-mcp-macos-arm64.dmg
+The validate action worked!</pre>
+</div>
+</div>
+<p local-id=3D"3ccdc226-100b-4813-a0eb-bd77e8d9d101"><strong>What happened:=
+</strong> The notarization ticket is now embedded in the DMG file. Users ca=
+n verify it offline!</p>
+<hr local-id=3D"8fb305e5-5572-4e51-b7f3-954ba17a1547">
+<h2 local-id=3D"a3bcad79-2334-4b02-be3e-33578083ce11" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=8E=89Part8:Testing(=F0=9F=94=84EVERYBUILD)">=F0=
+=9F=8E=89 Part 8: Testing (=F0=9F=94=84 EVERY BUILD)</h2>
+<h3 local-id=3D"0edbf887-c6b9-48cc-9fc5-4d4f826a7a61" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step20:TestYourSigned&amp;NotarizedPackage">Step 20: Te=
+st Your Signed &amp; Notarized Package</h3>
+<p local-id=3D"70c7a5e2-c9c8-4b36-9823-eeb8621f6c6a"><strong>For ZIP files =
+(Current Method):</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Check=
+ notarization status
+spctl --assess --verbose=3D4 --type install bzm-mcp-macos-arm64.zip</pre>
+</div>
+</div>
+<p local-id=3D"a1dfada6-ed35-4710-8408-0a5379ce8e93"><strong>For DMG files =
+(Alternative Method):</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Verif=
+y signature
+codesign --verify --deep --strict --verbose=3D2 bzm-mcp-macos-arm64.dmg
+
+# Check notarization and stapling
+spctl --assess --verbose=3D4 --type open --context context:primary-signatur=
+e bzm-mcp-macos-arm64.dmg</pre>
+</div>
+</div>
+<p local-id=3D"49b64e67-3880-469a-afe1-f02f2cf12291"><strong>What you want =
+to see:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: java; gutter: false; theme: Confluence" data-theme=3D"Confluence">bzm-mcp=
+-macos-arm64.zip: accepted
+source=3DNotarized Developer ID</pre>
+</div>
+</div>
+<p local-id=3D"ddd48f4d-138c-42b7-a338-220696e063d7">or</p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: java; gutter: false; theme: Confluence" data-theme=3D"Confluence">bzm-mcp=
+-macos-arm64.dmg: accepted
+source=3DNotarized Developer ID</pre>
+</div>
+</div>
+<h3 local-id=3D"d0e89431-1b0d-4234-9f1a-567ccea67c3e" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step21:TheReal-WorldTest">Step 21: The Real-World Test<=
+/h3>
+<p local-id=3D"b0435cad-cede-4ba9-96bb-f2f1e7cc89e7"><strong>For ZIP files:=
+</strong></p>
+<ol start=3D"1" local-id=3D"7f64552c-3d6c-41a4-a746-0c36e28b9d47">
+<li local-id=3D"e0d2b07c-30f0-4caf-a134-e519ad6d73b6">
+<p local-id=3D"8312f891-fadd-4801-ad96-9b34de363e58"><strong>Extract the ZI=
+P:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">cd ~/De=
+sktop
+unzip /Users/joaquinaraujo/github/bzm-mcp/dist/bzm-mcp-macos-arm64.zip</pre=
+>
+</div>
+</div></li>
+<li local-id=3D"1fea435f-f91f-418b-a23f-b72c37770471">
+<p local-id=3D"3b799aba-b0b1-4664-99bf-b3f3d6f2fcf6"><strong>Verify the bin=
+ary is properly signed:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">codesig=
+n --display --verbose=3D4 ~/Desktop/bzm-mcp-macos-arm64
+# Should show: Authority=3DDeveloper ID Application: ...</pre>
+</div>
+</div></li>
+<li local-id=3D"ffdfe082-465c-4a13-ad43-0ffaab5cbab1">
+<p local-id=3D"c6a95957-b768-47a3-a31d-8533bff3aa39"><strong>Run the extrac=
+ted binary:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">~/Deskt=
+op/bzm-mcp-macos-arm64 --version</pre>
+</div>
+</div></li>
+</ol>
+<p local-id=3D"d6d77f79-300e-4e5b-b864-dc2d25fc63a4"><strong>For DMG files:=
+</strong></p>
+<ol start=3D"1" local-id=3D"78552fff-475b-4ce6-944d-10587193e8f5">
+<li local-id=3D"5b8649b7-7f31-495f-b92e-6b083a070f42">
+<p local-id=3D"e24cd7d6-df26-4b01-bd11-a3bddb540762"><strong>Mount the DMG:=
+</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">hdiutil=
+ attach bzm-mcp-macos-arm64.dmg</pre>
+</div>
+</div></li>
+<li local-id=3D"ebf7af37-afc7-442f-a730-947937a94152">
+<p local-id=3D"8965be7c-ccf2-4abd-8e92-080bd627eed1"><strong>Verify the bin=
+ary inside the DMG is properly signed:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">codesig=
+n --display --verbose=3D4 /Volumes/BlazeMeter\ MCP/bzm-mcp-macos-arm64
+# Should show: Authority=3DDeveloper ID Application: ...</pre>
+</div>
+</div></li>
+<li local-id=3D"301f0860-607a-49e9-9596-ec106bf207d9">
+<p local-id=3D"2c1f245b-f2c2-4325-b102-37e0dcbfcd9a"><strong>Extract the bi=
+nary to Desktop:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">cp /Vol=
+umes/BlazeMeter\ MCP/bzm-mcp-macos-arm64 ~/Desktop/</pre>
+</div>
+</div></li>
+<li local-id=3D"b7591f95-f8de-4c79-8bfb-ccbb7d142fa4">
+<p local-id=3D"916953b8-0897-4cd2-834c-a48be53f7527"><strong>Run the extrac=
+ted binary:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">~/Deskt=
+op/bzm-mcp-macos-arm64 --version</pre>
+</div>
+</div></li>
+<li local-id=3D"a43aaa2d-768a-4da0-b7aa-2d0327dffaa9">
+<p local-id=3D"da4a2b99-52d8-417e-9c34-ef15fa53735d"><strong>Unmount the DM=
+G:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">hdiutil=
+ detach /Volumes/BlazeMeter\ MCP</pre>
+</div>
+</div></li>
+</ol>
+<p local-id=3D"cb7dbe3d-c0db-4bff-8c08-c7b1ec878a61"><strong>What should ha=
+ppen (both ZIP and DMG):</strong></p>
+<ul local-id=3D"01f6fbc7-aa8b-43ee-89d6-8d820edeaf8a">
+<li local-id=3D"11ec0305-9834-4b4b-a623-b939c02fdfb4">
+<p local-id=3D"554624a3-4086-4c96-8611-ea77dadeeec1">=E2=9C=85 Binary extra=
+cts successfully</p></li>
+<li local-id=3D"95d342cc-62c4-4123-bd32-d5b71505ada5">
+<p local-id=3D"3538ead1-bf65-4a8a-8e5e-98602c93dab9">=E2=9C=85 Binary runs =
+without warnings</p></li>
+<li local-id=3D"30fd4cdf-d4f8-49c4-9c7f-4cd479cfa809">
+<p local-id=3D"aae5adf2-7b19-4ac4-8bbc-e0ba8abef40a">=E2=9C=85 No "malware"=
+ errors</p></li>
+<li local-id=3D"bacbbbe4-1d75-4652-886e-803d5d001287">
+<p local-id=3D"0afe34f0-a737-4bff-9d81-c729a2f4dc7b">=E2=9C=85 No Team ID m=
+ismatch errors</p></li>
+<li local-id=3D"4d54cadb-fc17-4d4f-844d-766756152d7b">
+<p local-id=3D"3a61bce6-7c3d-4713-9bcd-3bde5c580385">=E2=9C=85 Application =
+works as expected</p></li>
+</ul>
+<p local-id=3D"d5d4b794-61fb-4ac0-8bf3-e257ca96a7cd"><strong>If you see err=
+ors:</strong></p>
+<ul local-id=3D"1bf5d3b0-de5c-4127-a62a-5f375db17d9d">
+<li local-id=3D"1786b0a8-c2b3-4a34-b6c5-bc47a9902a35">
+<p local-id=3D"5becf50d-e7e8-4f29-88a9-dbd7a6d264a4">"Apple cannot verify" =
+=E2=86=92 Notarization didn't work, check logs</p></li>
+<li local-id=3D"e39030ca-d822-497d-b450-143970473325">
+<p local-id=3D"57d884ab-ee4c-4518-b00f-66b724342595">"Team ID mismatch" =E2=
+=86=92 Entitlements not applied correctly</p></li>
+<li local-id=3D"26173bfc-f334-46b9-8dff-bcd090a39276">
+<p local-id=3D"0dddfab0-cd55-4e70-b404-8a8b26183f61">"Damaged" =E2=86=92 Si=
+gnature issue, re-sign with <code>--force</code></p></li>
+<li local-id=3D"3882bdbf-8c7b-41b9-a3bb-dc1796496ed7">
+<p local-id=3D"d855a11b-d623-4216-b83a-9c5a1ac28c58">"Network required" (ZI=
+P only) =E2=86=92 Expected on first run, normal behavior</p></li>
+</ul>
+<h3 local-id=3D"c0cdbe66-0699-4a91-8e90-6c7922059b8c" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Step22:TheUltimateTest">Step 22: The Ultimate Test</h3>
+<p local-id=3D"f0c9786f-0bab-42b0-b38a-f2b0ea2129b7"><strong>Send it to som=
+eone else (or test on a different Mac):</strong></p>
+<p local-id=3D"c855e285-630d-4a21-a912-4c86e7404f95">This is the final proo=
+f that everything works:</p>
+<ol start=3D"1" local-id=3D"410e93ab-b6f8-461f-8c76-c1977e39de30">
+<li local-id=3D"c28b083d-7d7e-410e-8390-ce9049ca7c0a">
+<p local-id=3D"3843f0dd-0c16-4b5c-a1bc-fec00113da0b">Upload the DMG to clou=
+d storage or your website</p></li>
+<li local-id=3D"191908c6-106e-4f8f-b752-51f6629a25d5">
+<p local-id=3D"89f93f8c-8555-4ff2-bca1-8d3d68b1b338">Download it on a <stro=
+ng>different Mac</strong> (not the one you built on)</p></li>
+<li local-id=3D"88f59574-e9b4-4591-87aa-e171e8ee8922">
+<p local-id=3D"16832c92-2ccc-439e-80db-2972e63d9144">Double-click to mount =
+the DMG</p></li>
+<li local-id=3D"1af83679-3349-4d75-aa18-f59cc99f5b64">
+<p local-id=3D"39118280-b7ce-4d73-bda9-b29fea8a6896">Drag the binary to Des=
+ktop</p></li>
+<li local-id=3D"a4420fbd-f83b-43d8-93f6-4d6faac9399e">
+<p local-id=3D"5fda42f3-82a8-4249-97a8-bba6be98d379">Double-click to run (o=
+r run from terminal)</p></li>
+</ol>
+<p local-id=3D"6ff9c286-b78e-4b75-bb25-bbaee9056f51"><strong>It should run =
+without ANY warnings!</strong> =F0=9F=8E=8A</p>
+<p local-id=3D"a4ac5853-c1e7-4715-81c6-c9c523cc2ad1"><strong>Why test on a =
+different Mac?</strong></p>
+<ul local-id=3D"d131f464-1e21-4e86-8737-3df442f4ccf5">
+<li local-id=3D"0219e703-befa-4e58-8083-2524fea103c4">
+<p local-id=3D"9d66e0da-15db-469d-adf6-7821cb87c6a3">Gatekeeper behaves dif=
+ferently on the build machine</p></li>
+<li local-id=3D"8f33fe42-9a46-4780-b858-0761b0dcf17d">
+<p local-id=3D"3604c3e9-fbcb-43f3-b7bb-a0c21b17b0b4">Ensures the notarizati=
+on ticket is properly embedded</p></li>
+<li local-id=3D"a8adc4db-52be-4d43-8685-d5daf54b207c">
+<p local-id=3D"e5cd93cd-15ec-4229-8bd8-1b677c00c8a2">Confirms users will ha=
+ve a smooth experience</p></li>
+</ul>
+<hr local-id=3D"2cf749ea-26c3-4cbe-9be0-c21131ad0ddd">
+<h2 local-id=3D"536d6988-ad1b-457c-aa7e-7bd778daf83f" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=94=84Part9:TheAMD64(Intel)Binary(=F0=9F=94=84EVE=
+RYBUILD)">=F0=9F=94=84 Part 9: The AMD64 (Intel) Binary (=F0=9F=94=84 EVERY=
+ BUILD)</h2>
+<p local-id=3D"3cea0300-a120-40f6-952a-ea40390c9d70">Repeat the same proces=
+s for your Intel Mac binary. <strong>Don't forget the entitlements!</strong=
+></p>
+<h3 local-id=3D"4acda4b8-1c4f-4a75-abdc-2257ac91800c" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-UsingZIP(CurrentMethod):">Using ZIP (Current Method):</=
+h3>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">cd /Use=
+rs/joaquinaraujo/github/bzm-mcp/dist
+
+SIGNING_IDENTITY=3D"Developer ID Application: Your Name (TEAM_ID)"
+
+# 1. Check and remove quarantine attribute
+xattr -l bzm-mcp-macos-amd64
+# If quarantine found, remove it:
+xattr -d com.apple.quarantine bzm-mcp-macos-amd64 2&gt;/dev/null || true
+
+# 2. Remove adhoc signature and sign with entitlements
+codesign --remove-signature bzm-mcp-macos-amd64
+codesign --sign "$SIGNING_IDENTITY" \
+  --entitlements ../entitlements.plist \
+  --options runtime \
+  --timestamp \
+  --force \
+  --verbose \
+  bzm-mcp-macos-amd64
+
+# 3. Test locally
+./bzm-mcp-macos-amd64 --version
+
+# 4. Create ZIP
+ditto -c -k --sequesterRsrc --keepParent bzm-mcp-macos-amd64 bzm-mcp-macos-=
+amd64.zip
+
+# 5. Notarize ZIP
+xcrun notarytool submit bzm-mcp-macos-amd64.zip \
+  --keychain-profile "bzm-mcp-notary" \
+  --wait
+
+# 6. Verify
+spctl --assess --type install bzm-mcp-macos-amd64.zip</pre>
+</div>
+</div>
+<h3 local-id=3D"146bf2c0-3850-47c1-975b-5e51c51e56d8" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-UsingDMG(AlternativeMethod):">Using DMG (Alternative Me=
+thod):</h3>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">cd /Use=
+rs/joaquinaraujo/github/bzm-mcp/dist
+
+SIGNING_IDENTITY=3D"Developer ID Application: Your Name (TEAM_ID)"
+
+# 1-3. Same as ZIP method above (quarantine, sign, test)
+
+# 4. Create DMG
+mkdir -p ~/tmp/bzm-mcp-dmg-amd64
+cp bzm-mcp-macos-amd64 ~/tmp/bzm-mcp-dmg-amd64/
+hdiutil create -volname "BlazeMeter MCP Intel" \
+  -srcfolder ~/tmp/bzm-mcp-dmg-amd64 \
+  -ov -format UDZO \
+  bzm-mcp-macos-amd64.dmg
+rm -rf ~/tmp/bzm-mcp-dmg-amd64
+
+# 5. Sign DMG
+codesign --sign "$SIGNING_IDENTITY" \
+  --timestamp \
+  --force \
+  --verbose \
+  bzm-mcp-macos-amd64.dmg
+
+# 6. Notarize DMG
+xcrun notarytool submit bzm-mcp-macos-amd64.dmg \
+  --keychain-profile "bzm-mcp-notary" \
+  --wait
+
+# 7. Staple DMG
+xcrun stapler staple bzm-mcp-macos-amd64.dmg
+
+# 8. Verify
+xcrun stapler validate bzm-mcp-macos-amd64.dmg
+spctl --assess --type open --context context:primary-signature bzm-mcp-maco=
+s-amd64.dmg</pre>
+</div>
+</div>
+<p local-id=3D"c07f4c54-0026-4887-b982-5c5a976a387d"><strong>Now you have b=
+oth architectures signed and notarized!</strong></p>
+<p local-id=3D"e3964e37-da38-4749-a3df-e38ba6f111f1"><strong>ZIP Distributi=
+on (Current):</strong></p>
+<ul local-id=3D"d8727c02-dbdd-43b0-81d5-f9e33b66d353">
+<li local-id=3D"a92f7aaa-fb11-41b7-a969-81ffe9e9f905">
+<p local-id=3D"e98b53a4-e713-49d1-8419-98371ec970eb"><code>bzm-mcp-macos-ar=
+m64.zip</code> - For Apple Silicon Macs (M1, M2, M3, etc.)</p></li>
+<li local-id=3D"d9e34473-feed-481d-b762-aa48a04a4aca">
+<p local-id=3D"5fb8ce96-e1b3-4d97-a951-4e6c40b213a8"><code>bzm-mcp-macos-am=
+d64.zip</code> - For Intel Macs</p></li>
+</ul>
+<p local-id=3D"0564da64-df68-4b57-9d15-bfad42bb8d2e"><strong>DMG Distributi=
+on (Alternative):</strong></p>
+<ul local-id=3D"5365dcbe-1410-461c-8a67-6f12cf8dd8d6">
+<li local-id=3D"c86208de-7e3d-45ec-b0df-314374a84f16">
+<p local-id=3D"8e364cb2-015b-4c37-b1e8-282151eec6dc"><code>bzm-mcp-macos-ar=
+m64.dmg</code> - For Apple Silicon Macs (M1, M2, M3, etc.)</p></li>
+<li local-id=3D"68d98f52-28bf-4885-901b-a143295018b8">
+<p local-id=3D"c8692340-6ce4-4dfa-8b08-ae1358b4bea9"><code>bzm-mcp-macos-am=
+d64.dmg</code> - For Intel Macs</p></li>
+</ul>
+<hr local-id=3D"2fe89d06-97fa-4877-8287-a8df8af72711">
+<h2 local-id=3D"f54ce8d6-092d-4a22-9256-c1fd1c10f1d8" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=9A=A8CommonIssues&amp;Solutions">=F0=9F=9A=A8 Co=
+mmon Issues &amp; Solutions</h2>
+<h3 local-id=3D"5032ce62-056d-4bf6-8005-dcf486fa5a12" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Issue1:&quot;DeveloperIDApplicationcertificatenotfound&=
+quot;">Issue 1: "Developer ID Application certificate not found"</h3>
+<p local-id=3D"b0936929-de7a-4f8e-b6c1-208750ba84d0"><strong>Solution:</str=
+ong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># List =
+all signing identities
+security find-identity -v -p codesigning
+
+# If empty, your certificate isn't installed
+# Re-import your .p12 or .cer file</pre>
+</div>
+</div>
+<h3 local-id=3D"4b683ce3-070f-41bf-9f19-835a19d5bfae" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Issue2:&quot;Theoperationcouldn'tbecompleted.Unabletofi=
+ndsigningcertificate&quot;">Issue 2: "The operation couldn't be completed. =
+Unable to find signing certificate"</h3>
+<p local-id=3D"3a13d666-92c6-4406-bc69-af4c5c2fa29e"><strong>Solution:</str=
+ong> Your certificate might be in a different keychain or expired.</p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Check=
+ certificate expiration
+security find-certificate -c "Developer ID Application" -p | openssl x509 -=
+noout -enddate</pre>
+</div>
+</div>
+<h3 local-id=3D"99e3e7f0-2664-4b50-9f8d-06094700a83b" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Issue3:Notarizationfailswith&quot;invalidsignature&quot=
+;">Issue 3: Notarization fails with "invalid signature"</h3>
+<p local-id=3D"88b61ec1-2029-4c70-89aa-3adddcd8f72e"><strong>Solution:</str=
+ong> Make sure you:</p>
+<ol start=3D"1" local-id=3D"879d84ed-b811-4fb8-a20e-f71b685ba8da">
+<li local-id=3D"5f9b54c3-5a10-4c54-8965-3703b283010b">
+<p local-id=3D"edbd653d-4e6e-4955-87aa-441cafb22483">Signed with <code>--op=
+tions runtime</code></p></li>
+<li local-id=3D"cad93ae4-005c-42a4-ad7c-8b53d85762d3">
+<p local-id=3D"31f8eff1-069d-4f79-bad7-eb07ca7144ff">Included <code>--times=
+tamp</code></p></li>
+<li local-id=3D"5b3b7fec-071b-4d0c-b24d-9657c7c01c11">
+<p local-id=3D"ef67ece0-8bd5-40d0-9f85-89bcb0733231">Used a Developer ID ce=
+rtificate (not a Mac App Distribution certificate)</p></li>
+</ol>
+<h3 local-id=3D"c7df2f46-ea2e-4884-9387-707d1be1458f" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Issue4:&quot;UnabletocommunicatewithApple'sservers&quot=
+;">Issue 4: "Unable to communicate with Apple's servers"</h3>
+<p local-id=3D"bd5b66a6-d0b3-46c9-8e6d-c487ba65785f"><strong>Solution:</str=
+ong></p>
+<ul local-id=3D"36d45b22-bc06-41af-98b0-5dd0c2fe8f3a">
+<li local-id=3D"60f503ad-cf66-4945-9170-216ac4d0d8c7">
+<p local-id=3D"57378856-f18b-43bb-9c12-40108b2a8fbb">Check your internet co=
+nnection</p></li>
+<li local-id=3D"9582234f-71fe-4929-accd-ef0ac68ba55e">
+<p local-id=3D"2ff333c7-e437-475e-ade4-3cbd91424092">Verify your API key ha=
+sn't expired</p></li>
+<li local-id=3D"b69c9a60-ebbc-4010-badd-57dbd3519487">
+<p local-id=3D"37696ed7-78fa-43fe-a1cc-cdbf5f1993ea">Check the Key ID and I=
+ssuer ID are correct</p></li>
+</ul>
+<h3 local-id=3D"e61ec8d8-22b4-49d9-9fed-688af0c0e83d" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Issue5:DMGworksonmyMacbutnotothers">Issue 5: DMG works =
+on my Mac but not others</h3>
+<p local-id=3D"c8c10f0d-6ad1-478a-bb2c-41349ebdd16d"><strong>Solution:</str=
+ong> You probably forgot to staple!</p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">xcrun s=
+tapler staple bzm-mcp-macos-arm64.dmg</pre>
+</div>
+</div>
+<h3 local-id=3D"0746beab-8ef1-4fce-893d-ebd64f6e1b15" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Issue6:&quot;Applecannotverifythisappisfreefrommalware&=
+quot;">Issue 6: "Apple cannot verify this app is free from malware"</h3>
+<p local-id=3D"afc1d80c-59af-4507-8b63-37188abccf79"><strong>Causes:</stron=
+g></p>
+<ul local-id=3D"49e1f805-b2ca-4333-9c8c-3651982eba4d">
+<li local-id=3D"ee38d0a3-7968-43db-b5aa-4aab292e29e8">
+<p local-id=3D"c48acf81-06f7-4d4c-afa9-9eb8b4df6750">Binary not properly no=
+tarized</p></li>
+<li local-id=3D"8457d3b4-3786-450c-a37d-de7c174ec45a">
+<p local-id=3D"9ad209bf-450d-4a68-aeca-de1304ad7de6">Notarization ticket no=
+t found</p></li>
+<li local-id=3D"21c6e1b5-113a-486c-a6bc-e0448d74609e">
+<p local-id=3D"f4b545a8-f1dc-4d0f-96d3-d46f150eac41">Binary was signed but =
+notarization failed</p></li>
+</ul>
+<p local-id=3D"0e9a7954-22a8-4b5d-b1de-6a5c425d60cd"><strong>Solution:</str=
+ong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Verif=
+y DMG is notarized and stapled
+stapler validate bzm-mcp-macos-arm64.dmg
+
+# Check if binary inside DMG is properly signed
+hdiutil attach bzm-mcp-macos-arm64.dmg
+codesign --display --verbose=3D4 /Volumes/BlazeMeter\ MCP/bzm-mcp-macos-arm=
+64
+# Should show Authority=3DDeveloper ID Application (NOT Signature=3Dadhoc)
+
+# If adhoc, you put the wrong binary in the DMG - re-sign and recreate</pre=
+>
+</div>
+</div>
+<h3 local-id=3D"23e1efbb-a6c8-4798-a573-c4a9c0e880f3" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Issue7:&quot;Error73&quot;whenstapling">Issue 7: "Error=
+ 73" when stapling</h3>
+<p local-id=3D"6d9c5bd5-7e2f-4b7f-bb93-829aea72e4bc"><strong>Cause:</strong=
+> You're trying to staple a raw executable binary.</p>
+<p local-id=3D"7d379c3b-b523-434b-8d4f-ec61bd9223a8"><strong>Solution:</str=
+ong> You can only staple:</p>
+<ul local-id=3D"b380fb23-a145-4cc6-9726-ed6283921e19">
+<li local-id=3D"25256f6e-7aa9-4606-aee0-71b4a83f97d8">
+<p local-id=3D"8207aff4-f8fb-4cfd-bb63-d044e972345f"><code>.app</code> bund=
+les</p></li>
+<li local-id=3D"7c008da4-477c-49ae-9ef7-c847e5c1ace6">
+<p local-id=3D"74feac60-ca6f-451b-ac82-a967ad89196d"><code>.dmg</code> file=
+s</p></li>
+<li local-id=3D"97e312af-9d97-47c3-9390-8b9233449b73">
+<p local-id=3D"f58389f5-f7f3-4a99-9765-cc02f1a5b200"><code>.pkg</code> inst=
+allers</p></li>
+</ul>
+<p local-id=3D"e295dafe-26ce-46b9-bc57-e160d32c9f5b">For raw binaries, stap=
+le the DMG that contains them, not the binary itself.</p>
+<h3 local-id=3D"5a1385ae-8289-4acc-b649-391e137a142a" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Issue8:Binaryfailswith&quot;TeamIDmismatch&quot;orPytho=
+nloadingerrors">Issue 8: Binary fails with "Team ID mismatch" or Python loa=
+ding errors</h3>
+<p local-id=3D"a71130ed-3c4f-4777-a062-7635590e3f1f"><strong>Cause:</strong=
+> PyInstaller apps need entitlements to load embedded Python framework.</p>
+<p local-id=3D"e927fbb6-da39-4776-aea1-4740493dae02"><strong>Solution:</str=
+ong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Make =
+sure you signed with entitlements
+codesign --sign "$SIGNING_IDENTITY" \
+  --entitlements entitlements.plist \
+  --options runtime \
+  --timestamp \
+  --force \
+  bzm-mcp-macos-arm64
+
+# Verify entitlements are present
+codesign --display --entitlements - bzm-mcp-macos-arm64</pre>
+</div>
+</div>
+<h3 local-id=3D"35a36758-bdd3-4c94-bfc6-f67f84741256" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Issue9:&quot;isalreadysigned&quot;message">Issue 9: "is=
+ already signed" message</h3>
+<p local-id=3D"c6983903-c319-410c-9a8f-e5a432ab76ba"><strong>Cause:</strong=
+> Binary has an existing signature (usually adhoc from PyInstaller).</p>
+<p local-id=3D"d664cb58-dd1a-4bf1-81bf-3386ada6c922"><strong>Solution:</str=
+ong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Remov=
+e old signature first
+codesign --remove-signature bzm-mcp-macos-arm64
+
+# Then sign properly
+codesign --sign "$SIGNING_IDENTITY" --entitlements entitlements.plist ...</=
+pre>
+</div>
+</div>
+<h3 local-id=3D"0c5c14e3-fb9a-407b-8896-4108b6d92b3f" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-Issue10:&quot;CannotstapleZIPfile&quot;">Issue 10: "Can=
+not staple ZIP file"</h3>
+<p local-id=3D"79eb44bc-f791-4aa2-947a-1b7f526489eb"><strong>Cause:</strong=
+> ZIP files do not support stapling (by design).</p>
+<p local-id=3D"86d4324c-978d-4cd9-95b3-1ed9d4c89688"><strong>Solution:</str=
+ong></p>
+<ul local-id=3D"f8907dc3-218c-4885-baba-8a68e0fb2747">
+<li local-id=3D"9d3f3e18-f176-449c-92d3-12791e9d6f02">
+<p local-id=3D"908e3f29-4e9a-41c2-b14a-b3d9f3d85ade">This is expected behav=
+ior for ZIP files</p></li>
+<li local-id=3D"cc73ffd8-c081-4f71-84ed-31b4733192ca">
+<p local-id=3D"a4ff87fb-7ad0-4525-9a0d-e5c1047a1fe6">ZIP files can still be=
+ notarized, just not stapled</p></li>
+<li local-id=3D"26d5a393-a38a-4b2d-8048-1753e05b121b">
+<p local-id=3D"54d524bd-ab08-461c-ac29-db570aa5ff47">Users will need intern=
+et connection on first run to verify</p></li>
+<li local-id=3D"17e81c10-c795-4dab-973a-49dea2177c2e">
+<p local-id=3D"5fe8c688-a72d-4c68-aa70-78958f156b4a">If offline verificatio=
+n is critical, use DMG distribution instead</p></li>
+</ul>
+<p local-id=3D"b35fc6ef-1b62-4467-b4b1-0ecd18180c95"><strong>To verify a ZI=
+P is notarized (without stapling):</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Check=
+ notarization status
+xcrun notarytool history --keychain-profile "bzm-mcp-notary"
+
+# Extract and check binary signature
+unzip bzm-mcp-macos-arm64.zip
+codesign --display --verbose=3D4 bzm-mcp-macos-arm64
+# Should show: Authority=3DDeveloper ID Application</pre>
+</div>
+</div>
+<hr local-id=3D"09cfacde-ea79-48bd-9283-c3337d01707c">
+<h2 local-id=3D"2065c362-eaf6-445c-a278-f9c9627fb5e3" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=8E=AFCompleteWorkflowScripts">=F0=9F=8E=AF Compl=
+ete Workflow Scripts</h2>
+<p local-id=3D"7dc5ab87-6472-4185-b0ab-960d7a9543f9">Once you understand al=
+l the steps, use these complete scripts for future builds:</p>
+<h3 local-id=3D"2204e553-5ec5-4bd0-9416-ac3915cb9595" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-ZIPDistributionScript(CurrentMethod)">ZIP Distribution =
+Script (Current Method)</h3>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">#!/bin/=
+bash
+set -e  # Exit on any error
+
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+# macOS Code Signing &amp; Notarization Script
+# For PyInstaller Binaries - ZIP Distribution
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+
+# Configuration
+SIGNING_IDENTITY=3D"Developer ID Application: Your Company (TEAMID)"
+BINARY_ARM64=3D"bzm-mcp-macos-arm64"
+BINARY_AMD64=3D"bzm-mcp-macos-amd64"
+ENTITLEMENTS=3D"../entitlements.plist"
+NOTARY_PROFILE=3D"bzm-mcp-notary"
+
+cd /Users/joaquinaraujo/github/bzm-mcp/dist
+
+echo "=F0=9F=9A=80 Starting macOS signing &amp; notarization process (ZIP).=
+.."
+echo ""
+
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+# ARM64 Binary
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+echo "=F0=9F=93=B1 Processing ARM64 binary..."
+
+# 1. Check and remove quarantine attribute
+echo "  Checking for quarantine attribute..."
+if xattr -l "$BINARY_ARM64" 2&gt;/dev/null | grep -q "com.apple.quarantine"=
+; then
+  echo "  Removing quarantine attribute..."
+  xattr -d com.apple.quarantine "$BINARY_ARM64"
+fi
+
+# 2. Remove adhoc signature
+echo "  Removing adhoc signature..."
+codesign --remove-signature "$BINARY_ARM64" 2&gt;/dev/null || true
+
+# 3. Sign with entitlements
+echo "  Signing binary..."
+codesign --sign "$SIGNING_IDENTITY" \
+  --entitlements "$ENTITLEMENTS" \
+  --options runtime \
+  --timestamp \
+  --force \
+  --verbose \
+  "$BINARY_ARM64"
+
+# 4. Verify signature
+echo "  Verifying signature..."
+codesign --verify --verbose "$BINARY_ARM64"
+codesign --display --verbose=3D4 "$BINARY_ARM64" | grep Authority
+
+# 5. Test binary
+echo "  Testing binary..."
+./"$BINARY_ARM64" --version || echo "=E2=9A=A0=EF=B8=8F  Binary test failed=
+, but continuing..."
+
+# 6. Create ZIP
+echo "  Creating ZIP..."
+rm -f "${BINARY_ARM64}.zip"
+ditto -c -k --sequesterRsrc --keepParent "$BINARY_ARM64" "${BINARY_ARM64}.z=
+ip"
+
+# 7. Notarize ZIP
+echo "  Notarizing ZIP (this takes 1-5 minutes)..."
+xcrun notarytool submit "${BINARY_ARM64}.zip" \
+  --keychain-profile "$NOTARY_PROFILE" \
+  --wait
+
+# 8. Verify
+echo "  Final verification..."
+spctl --assess --type install "${BINARY_ARM64}.zip" || echo "=E2=9C=85 Nota=
+rized (verification may require extraction)"
+
+echo "=E2=9C=85 ARM64 binary complete!"
+echo ""
+
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+# AMD64 Binary
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+echo "=F0=9F=92=BB Processing AMD64 binary..."
+
+# Repeat same steps for AMD64
+if xattr -l "$BINARY_AMD64" 2&gt;/dev/null | grep -q "com.apple.quarantine"=
+; then
+  echo "  Removing quarantine attribute..."
+  xattr -d com.apple.quarantine "$BINARY_AMD64"
+fi
+
+codesign --remove-signature "$BINARY_AMD64" 2&gt;/dev/null || true
+
+codesign --sign "$SIGNING_IDENTITY" \
+  --entitlements "$ENTITLEMENTS" \
+  --options runtime \
+  --timestamp \
+  --force \
+  --verbose \
+  "$BINARY_AMD64"
+
+codesign --verify --verbose "$BINARY_AMD64"
+
+rm -f "${BINARY_AMD64}.zip"
+ditto -c -k --sequesterRsrc --keepParent "$BINARY_AMD64" "${BINARY_AMD64}.z=
+ip"
+
+xcrun notarytool submit "${BINARY_AMD64}.zip" \
+  --keychain-profile "$NOTARY_PROFILE" \
+  --wait
+
+echo "=E2=9C=85 AMD64 binary complete!"
+echo ""
+
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+# Summary
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+echo "=F0=9F=8E=89 All done!"
+echo ""
+echo "Signed and notarized ZIPs:"
+echo "  =E2=80=A2 ${BINARY_ARM64}.zip (Apple Silicon)"
+echo "  =E2=80=A2 ${BINARY_AMD64}.zip (Intel)"
+echo ""
+echo "=E2=9A=A0=EF=B8=8F  Note: ZIP files cannot be stapled. First-run veri=
+fication requires internet connection."
+echo "Ready to distribute!"</pre>
+</div>
+</div>
+<h3 local-id=3D"3ae7ce7d-374a-4386-bd30-b37ebb2f0bc2" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-DMGDistributionScript(AlternativeMethod)">DMG Distribut=
+ion Script (Alternative Method)</h3>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence">#!/bin/=
+bash
+set -e  # Exit on any error
+
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+# macOS Code Signing &amp; Notarization Script
+# For PyInstaller Binaries - DMG Distribution
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+
+# Configuration
+SIGNING_IDENTITY=3D"Developer ID Application: Your Company (TEAMID)"
+BINARY_ARM64=3D"bzm-mcp-macos-arm64"
+BINARY_AMD64=3D"bzm-mcp-macos-amd64"
+ENTITLEMENTS=3D"../entitlements.plist"
+NOTARY_PROFILE=3D"bzm-mcp-notary"
+
+cd /Users/joaquinaraujo/github/bzm-mcp/dist
+
+echo "=F0=9F=9A=80 Starting macOS signing &amp; notarization process (DMG).=
+.."
+echo ""
+
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+# ARM64 Binary
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+echo "=F0=9F=93=B1 Processing ARM64 binary..."
+
+# Steps 1-5 same as ZIP script (quarantine, sign, verify, test)
+if xattr -l "$BINARY_ARM64" 2&gt;/dev/null | grep -q "com.apple.quarantine"=
+; then
+  xattr -d com.apple.quarantine "$BINARY_ARM64"
+fi
+
+codesign --remove-signature "$BINARY_ARM64" 2&gt;/dev/null || true
+
+codesign --sign "$SIGNING_IDENTITY" \
+  --entitlements "$ENTITLEMENTS" \
+  --options runtime \
+  --timestamp \
+  --force \
+  --verbose \
+  "$BINARY_ARM64"
+
+codesign --verify --verbose "$BINARY_ARM64"
+
+./"$BINARY_ARM64" --version || echo "=E2=9A=A0=EF=B8=8F  Binary test failed=
+, but continuing..."
+
+# 6. Create DMG
+echo "  Creating DMG..."
+rm -f "${BINARY_ARM64}.dmg"
+mkdir -p /tmp/bzm-mcp-dmg-arm64
+cp "$BINARY_ARM64" /tmp/bzm-mcp-dmg-arm64/
+hdiutil create -volname "BlazeMeter MCP" \
+  -srcfolder /tmp/bzm-mcp-dmg-arm64 \
+  -ov -format UDZO \
+  "${BINARY_ARM64}.dmg"
+rm -rf /tmp/bzm-mcp-dmg-arm64
+
+# 7. Sign DMG
+echo "  Signing DMG..."
+codesign --sign "$SIGNING_IDENTITY" \
+  --timestamp \
+  --force \
+  --verbose \
+  "${BINARY_ARM64}.dmg"
+
+# 8. Notarize
+echo "  Notarizing DMG (this takes 1-5 minutes)..."
+xcrun notarytool submit "${BINARY_ARM64}.dmg" \
+  --keychain-profile "$NOTARY_PROFILE" \
+  --wait
+
+# 9. Staple
+echo "  Stapling notarization ticket..."
+xcrun stapler staple "${BINARY_ARM64}.dmg"
+
+# 10. Verify
+echo "  Final verification..."
+xcrun stapler validate "${BINARY_ARM64}.dmg"
+spctl --assess --type open --context context:primary-signature "${BINARY_AR=
+M64}.dmg"
+
+echo "=E2=9C=85 ARM64 binary complete!"
+echo ""
+
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+# AMD64 Binary (same process)
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+echo "=F0=9F=92=BB Processing AMD64 binary..."
+
+if xattr -l "$BINARY_AMD64" 2&gt;/dev/null | grep -q "com.apple.quarantine"=
+; then
+  xattr -d com.apple.quarantine "$BINARY_AMD64"
+fi
+
+codesign --remove-signature "$BINARY_AMD64" 2&gt;/dev/null || true
+
+codesign --sign "$SIGNING_IDENTITY" \
+  --entitlements "$ENTITLEMENTS" \
+  --options runtime \
+  --timestamp \
+  --force \
+  --verbose \
+  "$BINARY_AMD64"
+
+codesign --verify --verbose "$BINARY_AMD64"
+
+rm -f "${BINARY_AMD64}.dmg"
+mkdir -p /tmp/bzm-mcp-dmg-amd64
+cp "$BINARY_AMD64" /tmp/bzm-mcp-dmg-amd64/
+hdiutil create -volname "BlazeMeter MCP Intel" \
+  -srcfolder /tmp/bzm-mcp-dmg-amd64 \
+  -ov -format UDZO \
+  "${BINARY_AMD64}.dmg"
+rm -rf /tmp/bzm-mcp-dmg-amd64
+
+codesign --sign "$SIGNING_IDENTITY" \
+  --timestamp \
+  --force \
+  --verbose \
+  "${BINARY_AMD64}.dmg"
+
+xcrun notarytool submit "${BINARY_AMD64}.dmg" \
+  --keychain-profile "$NOTARY_PROFILE" \
+  --wait
+
+xcrun stapler staple "${BINARY_AMD64}.dmg"
+xcrun stapler validate "${BINARY_AMD64}.dmg"
+
+echo "=E2=9C=85 AMD64 binary complete!"
+echo ""
+
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+# Summary
+# =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+echo "=F0=9F=8E=89 All done!"
+echo ""
+echo "Signed and notarized DMGs:"
+echo "  =E2=80=A2 ${BINARY_ARM64}.dmg (Apple Silicon)"
+echo "  =E2=80=A2 ${BINARY_AMD64}.dmg (Intel)"
+echo ""
+echo "=E2=9C=85 DMG files are stapled for offline verification."
+echo "Ready to distribute!"</pre>
+</div>
+</div>
+<p local-id=3D"0fbbf0e2-408f-447a-b087-64daef652b89"><strong>To use these s=
+cripts:</strong></p>
+<ol start=3D"1" local-id=3D"864271dc-8995-4128-932e-5c980e7ba47e">
+<li local-id=3D"899615fd-be28-4489-b4e0-1b74f5bb745f">
+<p local-id=3D"8d3154b5-a455-40e2-bdda-ffcfc1dc7122">Choose the appropriate=
+ script (ZIP for current method, DMG for alternative)</p></li>
+<li local-id=3D"14dd1108-6aa2-4b10-8027-12c5ca0adc69">
+<p local-id=3D"54962506-6f0d-4310-8436-26862665b709">Save it as <code>sign-=
+and-notarize-zip.sh</code> or <code>sign-and-notarize-dmg.sh</code></p></li=
+>
+<li local-id=3D"e85033d8-74ff-42b1-98ec-3a4c646e2af2">
+<p local-id=3D"1f968cd1-ace5-492e-b193-1cc4fcf1f5c7">Update the <code>SIGNI=
+NG_IDENTITY</code> with your actual identity</p></li>
+<li local-id=3D"5982cbd9-4517-4888-9e50-819a1b4958dd">
+<p local-id=3D"a631c6ab-050d-4643-ac1e-b08a7d73d106">Make it executable: <c=
+ode>chmod +x sign-and-notarize-*.sh</code></p></li>
+<li local-id=3D"5a9b5b46-87a2-40a9-a808-ef61332ed1c8">
+<p local-id=3D"51e49442-f7ae-49a7-aad5-b5d874567dc8">Run it after building:=
+ <code>./sign-and-notarize-zip.sh</code></p></li>
+</ol>
+<hr local-id=3D"8fd00fd0-1cb4-4d5f-a83a-a74897ba54bb">
+<h2 local-id=3D"8dfaa8dc-0d90-496b-b12f-96c42856c1ef" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=93=9DQuickReferenceChecklist">=F0=9F=93=9D Quick=
+ Reference Checklist</h2>
+<h3 local-id=3D"8c3a228e-f3e8-4031-b007-a9fdfc134b1c" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=E2=8F=B0ONE-TIMESETUP(Dothesestepsonlyonce)">=E2=8F=B0=
+ ONE-TIME SETUP (Do these steps only once)</h3>
+<p local-id=3D"fda735ea-f44f-4aff-b360-b27bc39cd520"><strong>Security Setup=
+:</strong></p>
+<ul local-id=3D"f654de4c-2775-4051-a7d2-4fe838a15446">
+<li local-id=3D"f8e772a0-865b-455c-825c-318cc9aab391">
+<p local-id=3D"f47a6d8f-6655-48f2-b052-011a9811fbab">[ ] Install Xcode Comm=
+and Line Tools: <code>xcode-select --install</code></p></li>
+<li local-id=3D"355c766f-a4f2-4f7c-8076-44796a9f1a2d">
+<p local-id=3D"9afb395c-73df-441c-9e62-58b49d78be2b">[ ] Create secure temp=
+orary directory (<code>~/tmp/signing-setup</code>)</p></li>
+<li local-id=3D"aae44626-7e7a-42b8-8b50-371d54778b51">
+<p local-id=3D"60d30c51-495e-47ce-8fe7-cf4db21b127c">[ ] Extract certificat=
+es in secure location</p></li>
+<li local-id=3D"b90186bf-a1f0-44fe-89f8-db285f0e0d48">
+<p local-id=3D"14618c5f-cf09-4909-9e9e-1bd9b945eb0c">[ ] Import Apple's roo=
+t certificate to Keychain</p></li>
+<li local-id=3D"79ed7009-0705-4c27-b8ff-c60916243b6e">
+<p local-id=3D"cc92ce64-c9fa-462a-8a53-1977b04a9d53">[ ] Import your Develo=
+per ID Application .p12 to Keychain</p></li>
+<li local-id=3D"2d702e23-ce9c-4bd7-b5a6-9a4c0edea0c2">
+<p local-id=3D"f24e5e80-80f9-415a-b0ce-b20b7b549f04">[ ] Store API key (.p8=
+) in <code>~/.apple-keys/</code> with restricted permissions (chmod 600)</p=
+></li>
+<li local-id=3D"679200de-e512-43ea-82a7-143dd4ceaf54">
+<p local-id=3D"f7adddf5-61d2-47c5-bed4-7f4fd1d8d38b">[ ] Delete temporary c=
+ertificate files after import</p></li>
+<li local-id=3D"a00ed36e-9114-43c3-a015-27724eed260e">
+<p local-id=3D"9d66c657-4098-49f7-9f93-f019e2b2aa30">[ ] Store notarization=
+ credentials in Keychain (via <code>notarytool store-credentials</code>)</p=
+></li>
+<li local-id=3D"4889f034-0810-4d10-8f63-a5829ffbc128">
+<p local-id=3D"5a2a7fa4-6036-41e0-9642-b3c185619f1d">[ ] Verify no credenti=
+als left in Downloads or temp directories</p></li>
+<li local-id=3D"9ee95cfe-9ced-41e7-8394-c115fd91407d">
+<p local-id=3D"f0a1498e-ec36-4aa8-b60a-8d4c5dc49a32">[ ] Verify signing ide=
+ntity: <code>security find-identity -v -p codesigning</code></p></li>
+</ul>
+<p local-id=3D"ccbbbd10-3e62-47e9-b159-d25d6b846599"><strong>PyInstaller Se=
+tup:</strong></p>
+<ul local-id=3D"fa0f4ce1-2246-4096-a636-8bdae8ec0051">
+<li local-id=3D"6deb6ebb-a0da-4a84-8269-03e3a1a859b1">
+<p local-id=3D"6bd4ba57-9613-4bbc-9766-59efa9d053ec">[ ] Create <code>entit=
+lements.plist</code> file in your project root</p></li>
+<li local-id=3D"9092a62b-9c79-4afc-8f21-b88ff8c9912d">
+<p local-id=3D"24381a81-6bbb-4386-939d-174600dbd52b">[ ] Add to version con=
+trol</p></li>
+<li local-id=3D"89426b91-8521-4fb5-8961-f05d60a9b721">
+<p local-id=3D"88532e32-d9d2-4392-b053-1e5fb765a4f5">[ ] Verify entitlement=
+s include:</p>
+<ul local-id=3D"62230a73-0205-4505-ab75-e905acc5600a">
+<li local-id=3D"bc9c155c-ba33-4ca7-9c70-6422bf797d7d">
+<p local-id=3D"833b413c-882d-49c5-9c82-7eaebc15a40b"><code>com.apple.securi=
+ty.cs.disable-library-validation</code></p></li>
+<li local-id=3D"338c7302-44a1-467c-a7dd-89300689acb7">
+<p local-id=3D"d0529e51-3c42-42c4-a1ac-eb82a2fdbcfe"><code>com.apple.securi=
+ty.cs.allow-dyld-environment-variables</code></p></li>
+<li local-id=3D"49b08775-b02f-440f-9f54-c323bb5d076b">
+<p local-id=3D"83225dd1-534a-4b3e-bec8-a5431db040ef"><code>com.apple.securi=
+ty.cs.allow-unsigned-executable-memory</code></p></li>
+</ul></li>
+</ul>
+<hr local-id=3D"8b285022-4740-45e8-a41e-ac1baf3cb252">
+<h3 local-id=3D"3cb44766-e3b5-47de-b8c7-d6439a0b34c4" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=94=84EVERYBUILD(Dothesestepsforeachnewrelease)">=
+=F0=9F=94=84 EVERY BUILD (Do these steps for each new release)</h3>
+<p local-id=3D"32c7fad0-7d99-44d9-af7e-0636ec85e1fa"><strong>Per Architectu=
+re (ARM64 &amp; AMD64):</strong></p>
+<p local-id=3D"d9a097b0-2052-43ce-99bf-47fe7e436ecc"><strong>Common Steps (=
+Both ZIP and DMG):</strong></p>
+<ul local-id=3D"76ea847e-64a5-418d-a795-e162e4dbe4c9">
+<li local-id=3D"adcd248e-da8e-4090-821d-82219f8ae724">
+<p local-id=3D"6531c47e-a1c3-432b-803f-4721ba4bec9d">[ ] Build your binary =
+with PyInstaller</p></li>
+<li local-id=3D"8a2aab22-3e37-417a-a80d-c4d41a812d91">
+<p local-id=3D"0cdb91bd-7b6e-46cf-a286-2f9e825b0032">[ ] Check for quaranti=
+ne attribute (<code>xattr -l binary</code>)</p></li>
+<li local-id=3D"a9a46e01-17bf-4b81-8fd6-00e18a844ae4">
+<p local-id=3D"d2395ba9-7872-4d80-9926-d8ef1a76493c">[ ] Remove quarantine =
+if present (<code>xattr -d com.apple.quarantine binary</code>)</p></li>
+<li local-id=3D"ce91e965-bc54-4bc5-99fd-d0543aa5bdc1">
+<p local-id=3D"d1596cca-157c-47e8-8765-0fb5d1138edf">[ ] Remove adhoc signa=
+ture from binary (<code>codesign --remove-signature</code>)</p></li>
+<li local-id=3D"e23dd767-a4e9-4b1f-bb63-87fcd1d57607">
+<p local-id=3D"e541171d-df7a-458e-815a-4344b252c117">[ ] Sign binary WITH e=
+ntitlements (<code>--entitlements entitlements.plist</code>)</p></li>
+<li local-id=3D"039c0edd-c349-4174-b543-f009b7373e66">
+<p local-id=3D"bad698ee-41f9-45b5-97e8-068861ed9a15">[ ] Enable hardened ru=
+ntime (<code>--options runtime</code>)</p></li>
+<li local-id=3D"ccfbe331-f784-47e8-9307-dc812b3444cc">
+<p local-id=3D"cb207528-ac5c-4cb0-b75e-7b6093ea7713">[ ] Add timestamp (<co=
+de>--timestamp</code>)</p></li>
+<li local-id=3D"11e0013c-cd65-4c98-b4e1-5f6244b7c49c">
+<p local-id=3D"812673f3-5c3b-465b-98b0-f8fdd2d49aae">[ ] Verify signature s=
+hows <code>Authority=3DDeveloper ID</code> (NOT <code>Signature=3Dadhoc</co=
+de>)</p></li>
+<li local-id=3D"0dd6f866-4489-4f0e-a7eb-a0f6bd6bb4dd">
+<p local-id=3D"65541831-ac59-4434-84e2-35d967416b35">[ ] Test binary locall=
+y to ensure it runs (check for Team ID errors)</p></li>
+</ul>
+<p local-id=3D"3baf5307-5980-4097-b4f0-51efce9630e3"><strong>For ZIP Distri=
+bution (Current Method):</strong></p>
+<ul local-id=3D"f72672da-c052-4afa-806b-f9bbf9c193e7">
+<li local-id=3D"cbdb16af-af3f-4143-8367-d7d66ade5273">
+<p local-id=3D"0eee0acb-2d1b-4964-be65-a15b30d03415">[ ] Create ZIP from si=
+gned binary (<code>ditto -c -k --sequesterRsrc --keepParent</code>)</p></li=
+>
+<li local-id=3D"1173dec4-2672-4efa-828f-be6d55a45b0e">
+<p local-id=3D"d6ff8c60-00bb-4832-a5b5-ac8e1265fdb9">[ ] Submit ZIP for not=
+arization</p></li>
+<li local-id=3D"68493079-aa1d-4595-84f4-677bad81c717">
+<p local-id=3D"32020105-60b8-4530-ada1-decc8e11dcac">[ ] Wait for acceptanc=
+e (1-5 minutes)</p></li>
+<li local-id=3D"dd433242-d012-443d-a1f0-447ba6e0456f">
+<p local-id=3D"cdc8b241-6479-489a-89a8-828d5c89bc94">[ ] Check notarization=
+ logs if rejected</p></li>
+<li local-id=3D"720f3777-b693-49cc-bef4-be4255e9fb77">
+<p local-id=3D"47cafc60-af3f-4334-80bb-90a63a3964de">[ ] Verify notarizatio=
+n status</p></li>
+<li local-id=3D"d54e0c40-b969-4c30-8220-c29ebf310988">
+<p local-id=3D"cda63a5d-8f8e-4019-aa8d-2f2ab4c9fb32">[ ] Test extracted bin=
+ary from ZIP</p></li>
+<li local-id=3D"fbb3022b-b43e-4ec7-a767-e486020f3828">
+<p local-id=3D"b6708baa-ce9e-41bd-8c66-bd52a8403b52">[ ] =E2=9A=A0=EF=B8=8F=
+ Note: ZIP cannot be stapled (requires internet on first run)</p></li>
+<li local-id=3D"eeae7bd4-6204-472d-9adf-87fb4081c5cd">
+<p local-id=3D"e3b6b967-e0e9-4c5e-9cc5-c255408870ac">[ ] Test on a differen=
+t Mac if possible (ultimate test)</p></li>
+<li local-id=3D"b2a61cdf-cebc-4e8d-a1fe-4dbda1d1a5fd">
+<p local-id=3D"cbe07da4-2a98-467f-abb8-b0c9d17de53c">[ ] Repeat for other a=
+rchitecture</p></li>
+</ul>
+<p local-id=3D"2decbc95-f953-46d0-8ecd-0c592a446bf0"><strong>For DMG Distri=
+bution (Alternative Method):</strong></p>
+<ul local-id=3D"5726c6d3-4cfc-4a09-bced-06d0a5385594">
+<li local-id=3D"771af1a4-8767-4a81-aecf-6a8fb6fe2e0f">
+<p local-id=3D"a904eb84-8755-4a5b-bce7-51e261b74f78">[ ] Create DMG from si=
+gned binary</p></li>
+<li local-id=3D"0f6c4fc8-d939-4dc9-968e-26f617f6d7bf">
+<p local-id=3D"d051f16e-80a7-41ce-96bb-98f6ed1530fe">[ ] Sign the DMG</p></=
+li>
+<li local-id=3D"2c6daa86-0009-467a-8440-36b0c9843caa">
+<p local-id=3D"d19f4222-cb3a-464e-8dd5-510c7c478f9d">[ ] Submit DMG for not=
+arization</p></li>
+<li local-id=3D"8bd44c98-9ae7-4527-906f-726e3e4d4e84">
+<p local-id=3D"01d85158-64f7-4d71-b079-40e827befdb2">[ ] Wait for acceptanc=
+e (1-5 minutes)</p></li>
+<li local-id=3D"e8ef65a5-722d-45ab-80eb-f5b9225dcd73">
+<p local-id=3D"bf214721-8b4c-4ce0-9e74-eed54205cc77">[ ] Check notarization=
+ logs if rejected</p></li>
+<li local-id=3D"079a2d54-91f6-41d4-8da5-9cd0fd560313">
+<p local-id=3D"4a5d3ce8-043c-4ed9-ace3-b2aa78608ced">[ ] Staple notarizatio=
+n ticket to DMG (not the binary!)</p></li>
+<li local-id=3D"16be7534-1ec6-4606-bbe0-e0fdff822b00">
+<p local-id=3D"b6762102-401c-4c0a-b21b-f30f4038d15d">[ ] Validate stapling =
+worked</p></li>
+<li local-id=3D"2b23bda0-bef8-4704-9bbb-85fefe7b7d7b">
+<p local-id=3D"883741d2-9bfa-4a1e-811b-08732846ed70">[ ] Test extracted bin=
+ary from DMG</p></li>
+<li local-id=3D"bbe51c17-8c33-4288-8450-832c7677b49e">
+<p local-id=3D"03e383e2-fec0-4383-a864-857f5c21428b">[ ] Test on a differen=
+t Mac if possible (ultimate test)</p></li>
+<li local-id=3D"dd4c8927-143d-466f-ba31-772034083186">
+<p local-id=3D"e9da1601-0f0a-4319-9b5d-eb79d8f9c3a3">[ ] Repeat for other a=
+rchitecture</p></li>
+</ul>
+<hr local-id=3D"5a68c250-ea60-4dd1-8ef4-9257e288920e">
+<h2 local-id=3D"2446b34a-51da-4a9d-ace4-aa347eaa12cb" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=A4=96AutomatingwithCI/CD(SecurityConsiderations)=
+">=F0=9F=A4=96 Automating with CI/CD (Security Considerations)</h2>
+<p local-id=3D"8ec212fc-586f-4d2b-be58-a18cabcddb38">When you're ready to a=
+utomate this in your <code>build.py</code> or CI/CD pipeline:</p>
+<h3 local-id=3D"86bf9747-a2d3-457d-9ce1-66881d67fbf0" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-GitHubActions/GitLabCIApproach:">GitHub Actions / GitLa=
+b CI Approach:</h3>
+<p local-id=3D"82ec60e1-10b8-48ab-952c-60aa16c6a2a7"><strong>Store credenti=
+als as encrypted secrets:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: java; gutter: false; theme: Confluence" data-theme=3D"Confluence"># GitHu=
+b Secrets to create:
+# - APPLE_CERTIFICATE_P12 (base64 encoded .p12 file)
+# - APPLE_CERTIFICATE_PASSWORD
+# - APPLE_API_KEY_P8 (base64 encoded .p8 file)
+# - APPLE_API_KEY_ID
+# - APPLE_ISSUER_ID</pre>
+</div>
+</div>
+<p local-id=3D"a7a50378-12dc-4597-b6da-4b919b594543"><strong>In your workfl=
+ow:</strong></p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: bash; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Decod=
+e and import certificate
+echo "$APPLE_CERTIFICATE_P12" | base64 --decode &gt; certificate.p12
+security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PA=
+SSWORD"
+security set-keychain-settings -lut 21600 build.keychain
+
+# Save API key
+echo "$APPLE_API_KEY_P8" | base64 --decode &gt; AuthKey.p8
+
+# Sign and notarize...
+
+# Clean up
+security delete-keychain build.keychain
+rm -f certificate.p12 AuthKey.p8</pre>
+</div>
+</div>
+<h3 local-id=3D"1841c8bc-d385-42af-ad34-ec64de449a6f" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-BestPracticesforCI/CD:">Best Practices for CI/CD:</h3>
+<ul local-id=3D"b5c67142-19bf-4330-9b77-06a5859f1687">
+<li local-id=3D"9533a125-a6ed-4398-ad53-4def082ac6e4">
+<p local-id=3D"297a0892-93e7-4878-9c3b-6a66451aec86">=E2=9C=85 Use encrypte=
+d secrets/variables</p></li>
+<li local-id=3D"4a5c23de-955e-4c43-919f-c749314e5939">
+<p local-id=3D"b00e04f7-008a-402b-82da-3c683b007d4f">=E2=9C=85 Create tempo=
+rary keychains (delete after build)</p></li>
+<li local-id=3D"848e116a-63fd-4176-93aa-e04e5771e5a2">
+<p local-id=3D"3b602371-0459-4c39-adb2-b9693e1d4c0f">=E2=9C=85 Clean up cre=
+dentials at end of pipeline</p></li>
+<li local-id=3D"9b8d44b0-4219-4806-8605-809cacb48bf0">
+<p local-id=3D"ba2035cf-8fca-4c3d-a6fd-3429c956d430">=E2=9C=85 Use short-li=
+ved tokens when possible</p></li>
+<li local-id=3D"2a221b2b-ce12-4693-a007-d3927d718c3f">
+<p local-id=3D"77d5c8ed-c079-4511-a422-03e88478d68d">=E2=9C=85 Restrict who=
+ can view/edit secrets</p></li>
+<li local-id=3D"d5c4ba9d-9263-4c03-b06f-651bda87c737">
+<p local-id=3D"04c3bb7b-0a06-46c7-ad13-5d8e5e7bc6f3">=E2=9C=85 Use dedicate=
+d Apple Developer account for CI</p></li>
+<li local-id=3D"5ad6e488-8be4-41a9-8f90-42c9606c1484">
+<p local-id=3D"94f325ca-eb40-4b90-8ab6-0fc3a8660968">=E2=9D=8C Never log cr=
+edentials or print them</p></li>
+<li local-id=3D"4c4348ed-b9aa-451a-b267-92d9952bbc43">
+<p local-id=3D"471bd54f-7633-4701-aee1-1b474dbd3956">=E2=9D=8C Never commit=
+ credentials to repo</p></li>
+<li local-id=3D"a5cc341c-b69d-4738-94a2-b5ea1137c3fb">
+<p local-id=3D"a0cf0ce3-ab23-4d7c-91f3-59f1717fb65a">=E2=9D=8C Don't use pe=
+rsonal certificates for CI</p></li>
+</ul>
+<hr local-id=3D"69beb62b-30c0-45aa-9eea-365c2d6010dd">
+<h2 local-id=3D"c1fcfd82-de24-4ec0-b074-a6bc4cc53fe9" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=94=97AdditionalResources">=F0=9F=94=97 Additiona=
+l Resources</h2>
+<ul local-id=3D"adb3c832-d04d-4e42-a1c2-87a51b5d9ee2">
+<li local-id=3D"633a4d0e-4888-46b4-b6da-ba4c9d6ccef7">
+<p local-id=3D"6dbca5aa-84ad-49c9-8806-753c12c73646"><a class=3D"external-l=
+ink" href=3D"https://developer.apple.com/library/archive/documentation/Secu=
+rity/Conceptual/CodeSigningGuide/" rel=3D"nofollow">Apple's Code Signing Gu=
+ide</a></p></li>
+<li local-id=3D"6d6b3439-15c6-4d0e-bc71-1e2d54a46b16">
+<p local-id=3D"f84eecae-585c-4d36-9915-44341a339c22"><a class=3D"external-l=
+ink" href=3D"https://developer.apple.com/documentation/security/notarizing_=
+macos_software_before_distribution" rel=3D"nofollow">Notarizing macOS Softw=
+are</a></p></li>
+<li local-id=3D"1fd58589-5e24-4276-b869-581fa07ee2b9">
+<p local-id=3D"69449f55-0251-46cb-a3cf-0f82466469e1"><a class=3D"external-l=
+ink" href=3D"https://developer.apple.com/documentation/technotes/tn3147-how=
+-to-notarize-macos-software" rel=3D"nofollow">TN3147: How to notarize</a></=
+p></li>
+<li local-id=3D"6e25bf51-1d92-4d5c-9628-71164b4bfef9">
+<p local-id=3D"b67e7dba-8112-4b33-a584-6e2eeff7dcac"><a class=3D"external-l=
+ink" href=3D"https://docs.github.com/en/actions/security-guides/encrypted-s=
+ecrets" rel=3D"nofollow">GitHub Actions: Encrypted Secrets</a></p></li>
+</ul>
+<hr local-id=3D"441b7ce5-772c-4453-8c58-120be23bf106">
+<h2 local-id=3D"7f2419d8-7a68-406e-9197-1da71d3c6f9f" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=92=A1NextSteps">=F0=9F=92=A1 Next Steps</h2>
+<p local-id=3D"658eb336-b61b-4b13-8f07-69aca855142e">Once you've done this =
+manually and understand the process, you can:</p>
+<ol start=3D"1" local-id=3D"1a7e3e57-4bab-4bfb-b7c7-b9a239e25ff4">
+<li local-id=3D"c6ece2a8-68f5-4ef9-af2e-ef1ed85332fb">
+<p local-id=3D"fc39abf0-6734-40b3-9adc-36f3e7ca5446">Automate it in your <c=
+ode>build.py</code> script</p></li>
+<li local-id=3D"b828621d-c7fc-44d3-b778-a6dca63305dd">
+<p local-id=3D"71ce345d-43c6-4d4d-80f8-91413099d486">Add it to your CI/CD p=
+ipeline</p></li>
+<li local-id=3D"5266623c-b4c3-43fe-a029-e4e580150905">
+<p local-id=3D"f645f975-d326-4c63-88c2-d305448c3a00">Choose your preferred =
+distribution method (ZIP for simplicity, DMG for polish)</p></li>
+<li local-id=3D"76eaca8e-c12e-4fe5-a912-2dadfd9ba97b">
+<p local-id=3D"ac9411e1-1ec7-4ae6-a7c8-ce7e9cca62da">Learn about Windows co=
+de signing (uses <code>signtool.exe</code> with a similar process)</p></li>
+</ol>
+<hr local-id=3D"9f6e6d3f-d4ae-498a-b93f-7b546cbd3f4c">
+<h2 local-id=3D"20189415-fc47-4aa8-896c-1b8651b69d11" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-QuestionstoVerifyYourSetup">Questions to Verify Your Se=
+tup</h2>
+<p local-id=3D"f97b75cf-f746-418a-b1d6-7a6df003c998">Before you start, make=
+ sure you can answer:</p>
+<ol start=3D"1" local-id=3D"9ee09f93-3ca6-4163-85c8-60b9c6b0882c">
+<li local-id=3D"5f77ec91-17a7-4f32-8e06-1ab94839b1b3">
+<p local-id=3D"d7ec4310-44c0-4de8-96c6-84a18af25da6"><strong>Where is your =
+</strong><code>.p8</code> API key file located? (Should be in <code>~/.appl=
+e-keys/</code> after setup)</p></li>
+<li local-id=3D"ec522d5e-4fd1-4d7d-8316-bd6d7bb77771">
+<p local-id=3D"945c2d66-2600-4e93-bbac-7a60db03dc91"><strong>What's the Key=
+ ID</strong> (the XXXXXXXXXX in AuthKey_XXXXXXXXXX.p8)?</p></li>
+<li local-id=3D"f71637c4-bb00-46ce-9a40-ce53f9ae0d7b">
+<p local-id=3D"42c6e534-0a0c-4962-93b4-e58e08500402"><strong>Do you have th=
+e certificate as </strong><code>.p12</code> or <code>.cer</code>? (If .cer,=
+ you might also need the private key)</p></li>
+<li local-id=3D"50f47b65-fc17-48d2-aa4d-fa49739985c1">
+<p local-id=3D"90fbcb60-29a3-4455-b93f-8ae4530f4b6c"><strong>Have you enrol=
+led in the Apple Developer Program?</strong> (Required for Developer ID cer=
+tificates)</p></li>
+<li local-id=3D"8f48e59f-cf2e-4cf2-9e59-f467e9c025eb">
+<p local-id=3D"a6a56630-8853-478c-b7ab-38b16f793420"><strong>Have you secur=
+ed your credentials properly?</strong> (Keychain for certs, restricted perm=
+issions for .p8)</p></li>
+</ol>
+<hr local-id=3D"34dd363c-8033-489b-a81e-5282ff65f12f">
+<h2 local-id=3D"6ac9243a-3893-47f4-a635-ac39bc2c5c22" id=3D"MCPMacOsSigning=
+-Notarization-Stamp-=F0=9F=9B=A1=EF=B8=8FSecurityChecklistforGitRepository"=
+>=F0=9F=9B=A1=EF=B8=8F Security Checklist for Git Repository</h2>
+<p local-id=3D"178258c8-9d5e-415b-97cc-30cc305ed1a4"><strong>Add these to y=
+our </strong><code>.gitignore</code> to prevent credential leaks:</p>
+<div class=3D"code panel pdl" style=3D"border-width: 1px;">
+<div class=3D"codeContent panelContent pdl">
+<pre class=3D"syntaxhighlighter-pre" data-syntaxhighlighter-params=3D"brush=
+: java; gutter: false; theme: Confluence" data-theme=3D"Confluence"># Apple=
+ Code Signing Credentials
+*.p8
+*.p12
+*.cer
+*.mobileprovision
+certificates/
+certificates.zip
+AuthKey_*.p8
+
+# Keychain exports
+*.keychain
+*.keychain-db
+
+# Distribution packages (these are build artifacts, not source)
+*.dmg
+*.zip</pre>
+</div>
+</div>
+<p local-id=3D"f2149459-0ea4-4ed8-9fd2-2b7d98e1dda1"><strong>IMPORTANT:</st=
+rong> If you ever accidentally commit credentials:</p>
+<ol start=3D"1" local-id=3D"f4319683-d55c-4970-9157-a2dd115e3ee4">
+<li local-id=3D"e5af0584-77b1-4e80-9328-b389f1a6c1f5">
+<p local-id=3D"988e56de-41f2-4dc6-9b00-84844b7792c2">Immediately revoke the=
+m in Apple Developer Portal</p></li>
+<li local-id=3D"7cafabfd-a0a0-4e47-a6bb-d2ab7e284056">
+<p local-id=3D"5bf67a8a-8902-45ce-a4d9-9bc47ecf0d78">Generate new credentia=
+ls</p></li>
+<li local-id=3D"870230d3-c9e3-4fd2-b41e-366c52a1221d">
+<p local-id=3D"cbc13844-c6df-42a5-9166-7169ed6c1df8">Use <code>git filter-b=
+ranch</code> or BFG Repo-Cleaner to remove from history</p></li>
+<li local-id=3D"4334deaa-3f15-4073-acd0-a94f2e472dbb">
+<p local-id=3D"9feda4e1-3864-4a59-aa2d-f22506ca72b3">Force push (if safe to=
+ do so)</p></li>
+<li local-id=3D"218fb61c-1114-4a5a-a245-3de118e02413">
+<p local-id=3D"44003bd2-e010-49cc-89ca-dae9b47f5883">Treat the old credenti=
+als as compromised permanently</p></li>
+</ol>
+<hr local-id=3D"ee3a62a9-7833-41d8-ae00-2c53f09c4116">
+<p local-id=3D"98633425-3091-495b-8da1-da7aef57070c">Good luck! Once you've=
+ gone through this process manually, you'll understand exactly what's happe=
+ning and can confidently automate it. Feel free to ask questions as you wor=
+k through each step! =F0=9F=9A=80</p>
+    </div>
+</body>
+</html>
+------=_Part_50_11362504.1769581030817--
