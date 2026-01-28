@@ -185,7 +185,10 @@ jobs:
           
           # Test binary
           echo "🧪 Testing binary..."
-          ./"$BINARY" --version || echo "⚠️ Binary test failed, but continuing..."
+          if ! ./"$BINARY" --version; then
+            echo "❌ Binary test failed for $BINARY. Aborting signing and notarization."
+            exit 1
+          fi
           
           # Create ZIP
           echo "📦 Creating ZIP..."
