@@ -94,7 +94,7 @@ cd - > /dev/null
 
 # 7. Check notarization profile
 echo "☁️ Checking notarization credentials..."
-if ! xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" 2>&1 | grep -q "Successfully received submission"; then
+if ! xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
   echo "❌ Error: Notarization profile '$NOTARY_PROFILE' not found or not working"
   echo ""
   echo "Please set up notarization credentials first:"
