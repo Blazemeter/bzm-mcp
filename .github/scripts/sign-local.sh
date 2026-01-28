@@ -32,24 +32,10 @@ fi
 
 # Check if entitlements file exists
 if [ ! -f "$ENTITLEMENTS" ]; then
-  echo "⚠️ Entitlements file not found. Creating default..."
-  cat > entitlements.plist <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>com.apple.security.cs.allow-jit</key>
-    <true/>
-    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-    <true/>
-    <key>com.apple.security.cs.disable-library-validation</key>
-    <true/>
-    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
-    <true/>
-</dict>
-</plist>
-EOF
-  echo "✅ Created entitlements.plist"
+  echo "❌ Entitlements file '$ENTITLEMENTS' not found."
+  echo "   Please create an entitlements plist with only the capabilities required by your application,"
+  echo "   and set the ENTITLEMENTS environment variable or place it at '$ENTITLEMENTS'."
+  exit 1
 fi
 
 # Get full signing identity name
