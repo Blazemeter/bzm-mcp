@@ -162,9 +162,6 @@ jobs:
         if [ -f "$BINARY" ]; then
           echo "📦 Processing $BINARY..."
           
-          # Remove quarantine attribute if present
-          xattr -d com.apple.quarantine "$BINARY" 2>/dev/null || true
-          
           # Remove existing signature
           codesign --remove-signature "$BINARY" 2>/dev/null || true
           
