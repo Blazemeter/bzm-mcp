@@ -167,6 +167,8 @@ def main():
             " |____/|_|\__,_/___\___||_|  |_|\___|\__\___|_|   \n"
             "                                                    \n"
             f" BlazeMeter MCP Server v{__version__} \n"
+            " Copyright © 2025, Perforce Software, Inc. All rights reserved.\n"
+            " Licensed under the Apache License, Version 2.0.\n"
         )
         print(logo_ascii)
         if sys.platform == "darwin" and __bundle__.endswith(".app"):
