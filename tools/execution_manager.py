@@ -185,6 +185,9 @@ def register(mcp, token: Optional[BzmToken]):
         - read_all_reports: get all reports (summary, error, and request statistics) for a given execution ID.
             args(dict): Dictionary with the following required parameters:
                 execution_id (int): The execution ID to get all reports for.
+        - read_anomalies_stats: get anomaly statistics for a test execution (count, affected labels, per-anomaly KPI/time/spike details).
+            args(dict): Dictionary with the following required parameters:
+                execution_id (int): The execution (master) ID to get anomaly stats for.
         """
     )
     async def execution(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
@@ -217,6 +220,8 @@ def register(mcp, token: Optional[BzmToken]):
                             "request_stats": await report_manager.read_request_stats(args["execution_id"])
                         }]
                     )
+                case "read_anomalies_stats":
+                    return await report_manager.read_anomalies_stats(args["execution_id"])
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in test execution manager tool"
