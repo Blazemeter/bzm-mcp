@@ -82,6 +82,7 @@ class ExecutionManager(Manager):
 
     async def start(self, test_id: int, delayed_start_ready: bool = True,
                     is_debug_run: bool = False) -> BaseResult:
+        # Check if it's valid or allowed
         test_result = await bridge.read_test(self.token, self.ctx, test_id)
         if test_result.error:
             return test_result
