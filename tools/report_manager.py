@@ -71,3 +71,18 @@ class ReportManager(Manager):
             "GET",
             f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/aggregatereport/data"
         )
+
+    async def read_anomalies_stats(self, master_id: int):
+        """
+        Get anomaly statistics for a given master_id (test execution).
+        Returns anomaly count, affected labels, and per-anomaly details (KPI, time range, max spike).
+        """
+        execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
+        if execution_result.error:
+            return execution_result
+
+        return await api_request(
+            self.token,
+            "GET",
+            f"{EXECUTIONS_ENDPOINT}/{master_id}/anomalies/stats",
+        )
