@@ -1,3 +1,18 @@
+"""
+Copyright 2025 Perforce Software, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 import traceback
 from typing import Optional, Dict, Any
 
@@ -382,6 +397,9 @@ def register(mcp, token: Optional[BzmToken]):
         - read_all_reports: get all reports (summary, error, and request statistics) for a given execution ID.
             args(dict): Dictionary with the following required parameters:
                 execution_id (int): The execution ID to get all reports for.
+        - read_anomalies_stats: get anomaly statistics for a test execution (count, affected labels, per-anomaly KPI/time/spike details).
+            args(dict): Dictionary with the following required parameters:
+                execution_id (int): The execution (master) ID to get anomaly stats for.
         - ai_analysis: Trigger AI analysis for an execution and get dynamic responses based on polling results.
             args(dict): Dictionary with the following required parameters:
                 execution_id (int): The execution ID (masterId) to trigger AI analysis for.
@@ -418,6 +436,8 @@ def register(mcp, token: Optional[BzmToken]):
                             "request_stats": stats_result.result or None
                         }]
                     )
+                case "read_anomalies_stats":
+                    return await report_manager.read_anomalies_stats(args["execution_id"])
                 case "ai_analysis":
                     return await test_manager.ai_analysis(args["execution_id"])
                 case _:
