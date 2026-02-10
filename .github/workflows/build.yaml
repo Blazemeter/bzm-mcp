@@ -72,13 +72,27 @@ jobs:
       if: matrix.name == 'windows'
       shell: pwsh
       run: |
-        # Ensure we're in the correct directory
-        Write-Host "Current directory: $PWD"
+        # PyInstaller doesn't allow builds from paths containing System32
+        # Create a temporary build directory outside the runner path
+        $tempBuild = "C:\Temp\bzm-mcp-build-$([guid]::NewGuid().ToString().Substring(0,8))"
+        Write-Host "Creating temporary build directory: $tempBuild"
+        New-Item -ItemType Directory -Path $tempBuild -Force | Out-Null
+        
+        # Copy project to temp location
+        Copy-Item -Path "$env:GITHUB_WORKSPACE\*" -Destination $tempBuild -Recurse -Force
+        
+        # Build in the temp location
+        Set-Location $tempBuild
         Remove-Item -Path dist/* -Recurse -Force -ErrorAction SilentlyContinue
         uv sync
-        # Run build.py from the workspace directory
-        Set-Location $env:GITHUB_WORKSPACE
         uv run build.py
+        
+        # Copy dist back to workspace
+        Copy-Item -Path "$tempBuild\dist\*" -Destination "$env:GITHUB_WORKSPACE\dist" -Recurse -Force
+        
+        # Cleanup temp directory
+        Set-Location $env:GITHUB_WORKSPACE
+        Remove-Item -Path $tempBuild -Recurse -Force -ErrorAction SilentlyContinue
     
     - name: Build binary (macOS)
       if: matrix.name == 'macos'
