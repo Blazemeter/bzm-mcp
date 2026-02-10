@@ -22,7 +22,7 @@ jobs:
           - os: ubuntu-24.04-arm
             name: linux
             arch: arm64
-          - os: windows-latest  
+          - os: [self-hosted, mcpwindows]
             name: windows
             arch: amd64
           - os: macos-latest
