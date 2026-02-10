@@ -104,6 +104,10 @@ def get_icon_file(system: str) -> str:
 
 
 def run_pyinstaller(name: str, icon: str):
+    # Ensure we're in the correct directory (important for Windows)
+    script_dir = Path(__file__).parent.absolute()
+    os.chdir(script_dir)
+    
     PyInstaller.__main__.run([
         'main.py',
         '--onefile',
