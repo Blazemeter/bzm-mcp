@@ -72,8 +72,12 @@ jobs:
       if: matrix.name == 'windows'
       shell: pwsh
       run: |
+        # Ensure we're in the correct directory
+        Write-Host "Current directory: $PWD"
         Remove-Item -Path dist/* -Recurse -Force -ErrorAction SilentlyContinue
         uv sync
+        # Run build.py from the workspace directory
+        Set-Location $env:GITHUB_WORKSPACE
         uv run build.py
     
     - name: Build binary (macOS)
