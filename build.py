@@ -104,11 +104,13 @@ def get_icon_file(system: str) -> str:
 
 
 def run_pyinstaller(name: str, icon: str):
-    # Ensure we're in the correct directory (important for Windows)
+    # Get the script directory and use it as working directory
     script_dir = Path(__file__).parent.absolute()
-    os.chdir(script_dir)
     
-    PyInstaller.__main__.run([
+    # Use subprocess instead of PyInstaller.__main__.run to avoid path detection issues
+    # This is especially important for Windows runners in System32 paths
+    cmd = [
+        'pyinstaller',
         'main.py',
         '--onefile',
         '--version-file=version_info.txt',
@@ -118,7 +120,11 @@ def run_pyinstaller(name: str, icon: str):
         f'--icon={icon}',
         '--clean',
         '--noconfirm',
-    ])
+    ]
+    
+    result = subprocess.run(cmd, cwd=script_dir, check=True)
+    if result.returncode != 0:
+        raise RuntimeError(f"PyInstaller failed with exit code {result.returncode}")
 
 
 def build():
