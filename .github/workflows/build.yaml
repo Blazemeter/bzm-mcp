@@ -68,8 +68,16 @@ jobs:
       if: matrix.name != 'linux'
       uses: astral-sh/setup-uv@v4
     
-    - name: Build binary (Windows/macOS native)
-      if: matrix.name != 'linux'
+    - name: Build binary (Windows)
+      if: matrix.name == 'windows'
+      shell: pwsh
+      run: |
+        Remove-Item -Path dist/* -Recurse -Force -ErrorAction SilentlyContinue
+        uv sync
+        uv run build.py
+    
+    - name: Build binary (macOS)
+      if: matrix.name == 'macos'
       shell: bash
       run: |
         rm -rf dist/*
