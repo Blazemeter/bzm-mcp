@@ -87,8 +87,11 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
+    # Use REPO_PUSH_PAT (user PAT with bypass allowance) to push dist/ to main when branch protection blocks GITHUB_TOKEN. See docs/ci-branch-protection.md.
     - uses: actions/checkout@v4
-    
+      with:
+        token: ${{ secrets.REPO_PUSH_PAT || secrets.GITHUB_TOKEN }}
+
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
