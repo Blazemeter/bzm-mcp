@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:25.10
+FROM ubuntu:26.04
 
 
 WORKDIR /app
