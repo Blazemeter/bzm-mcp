@@ -5,7 +5,7 @@
 
 The BlazeMeter MCP Server connects AI tools directly to BlazeMeter's cloud-based performance testing platform. This gives AI agents, assistants, and chatbots the ability to manage complete load testing workflows from creation to execution and reporting. All through natural language interactions.
 
-> [!NOTE]
+> [!NOTE]  
 > **For detailed documentation including use cases, available tools, integration points, and troubleshooting, see the [BlazeMeter MCP Server documentation](https://help.blazemeter.com/docs/guide/integrations-blazemeter-mcp-server.html).**
 
 ---
@@ -21,9 +21,10 @@ The BlazeMeter MCP Server connects AI tools directly to BlazeMeter's cloud-based
 ## Setup
 
 ### **Get BlazeMeter API Credentials**
+
 Follow the [BlazeMeter API Keys guide](https://help.blazemeter.com/docs/guide/api-blazemeter-api-keys.html) to obtain your API keys as JSON.
 
-> [!IMPORTANT]
+> [!IMPORTANT]  
 > When downloading your API keys from BlazeMeter, save the `api-keys.json` file in the same folder where you'll place the MCP binary.
 
 ### **Quick Setup with CLI Tool** ⚡
@@ -32,14 +33,16 @@ The easiest way to configure your MCP client is using our interactive CLI tool:
 
 1. **Download the appropriate binary** for your operating system from the [Releases](https://github.com/BlazeMeter/bzm-mcp/releases) page
 
-> [!NOTE]
+> [!NOTE]  
 > Choose the binary that matches your OS (Windows, macOS, Linux)
-2. **Place the binary** in the same folder as your `api-keys.json` file
-3. **Execute or Double-click the binary** to launch the interactive configuration tool
-4. **The tool automatically generates** the JSON configuration file for you
+>
+> 1. **Place the binary** in the same folder as your `api-keys.json` file
+> 2. **Execute or Double-click the binary** to launch the interactive configuration tool
+> 3. **The tool automatically generates** the JSON configuration file for you
 
-> [!IMPORTANT]
+> [!IMPORTANT]  
 > For macOS: You may encounter a security alert saying "Apple could not verify 'bzm-mcp-darwin' is free of malware." To resolve this:
+>
 > 1. Go to **System Settings** → **Privacy & Security** → **Security**
 > 2. Look for the blocked application and click **"Allow Anyway"**
 > 3. Try running the binary again
@@ -51,7 +54,8 @@ The easiest way to configure your MCP client is using our interactive CLI tool:
 **Manual Client Configuration (Binary Installation)**
 
 1. **Download the binary** for your operating system from the [Releases](https://github.com/BlazeMeter/bzm-mcp/releases) page
-2. **Configure your MCP client** with the following settings:
+2. **Run the binary once** — it will print a JSON config and **clickable links** to add this MCP in Cursor or VS Code.
+3. **Or configure your MCP client manually** with the following settings:
 
 ```json
 {
@@ -66,12 +70,19 @@ The easiest way to configure your MCP client is using our interactive CLI tool:
   }
 }
 ```
+
 ---
 
 **Manual Client Configuration (From Remote Source Code)**
 
 1. **Prerequisites:** [uv](https://docs.astral.sh/uv/) and Python 3.11+
-2. **Configure your MCP client** with the following settings:
+2. **One-click install** or configure your MCP client manually:
+
+[![Add to Cursor (uvx)](https://img.shields.io/badge/Add_to_Cursor-uvx_install-blue?style=for-the-badge)](cursor://anysphere.cursor-deeplink/mcp/install?name=BlazeMeter%20MCP&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyItLWZyb20iLCJnaXQraHR0cHM6Ly9naXRodWIuY29tL0JsYXplbWV0ZXIvYnptLW1jcC5naXRAdjEuMC4xIiwiLXEiLCJiem0tbWNwIiwiLS1tY3AiXSwiZW52Ijp7IkJMQVpFTUVURVJfQVBJX0tFWSI6IiJ9fQ) [![Add to VS Code (uvx)](https://img.shields.io/badge/Add_to_VS_Code-uvx_install-007ACC?style=for-the-badge&logo=visualstudiocode)](https://insiders.vscode.dev/redirect/mcp/install?name=BlazeMeter%20MCP&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22--from%22%2C%22git%2Bhttps%3A%2F%2Fgithub.com%2FBlazemeter%2Fbzm-mcp.git%40v1.0.1%22%2C%22-q%22%2C%22bzm-mcp%22%2C%22--mcp%22%5D%2C%22env%22%3A%7B%22BLAZEMETER_API_KEY%22%3A%22%22%7D%7D)
+
+After installing, set `BLAZEMETER_API_KEY` to your `api-key.json` path in your client's MCP settings.
+
+**Or configure manually** with the following settings:
 
 ```json
 {
@@ -90,9 +101,9 @@ The easiest way to configure your MCP client is using our interactive CLI tool:
 }
 ```
 
-> [!NOTE]
-> uvx installs and runs the package and its dependencies in a temporary environment.
-> You can change to any version that has been released or any branch you want. Package support for uvx command is supported from version 1.0.1 onwards.
+> [!NOTE]  
+> uvx installs and runs the package and its dependencies in a temporary environment.  
+> You can change to any version that has been released or any branch you want. Package support for uvx command is supported from version 1.0.1 onwards.  
 > For more details on the uv/uvx arguments used, please refer to the official [uv documentation](https://docs.astral.sh/uv/).
 
 </details>
@@ -100,6 +111,12 @@ The easiest way to configure your MCP client is using our interactive CLI tool:
 ---
 
 **Docker MCP Client Configuration**
+
+1. **Prerequisites:** [Docker]([https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/))
+
+[![Add to Cursor (Docker)](https://img.shields.io/badge/Add_to_Cursor-Docker_install-blue?style=for-the-badge)](cursor://anysphere.cursor-deeplink/mcp/install?name=BlazeMeter%20MCP&config=eyJjb21tYW5kIjoiZG9ja2VyIiwiYXJncyI6WyJydW4iLCItLXJtIiwiLWkiLCItZSIsIkFQSV9LRVlfSUQiLCItZSIsIkFQSV9LRVlfU0VDUkVUIiwiLWUiLCJTT1VSQ0VfV09SS0lOR19ESVJFQ1RPUlkiLCJnaGNyLmlvL2JsYXplbWV0ZXIvYnptLW1jcDpsYXRlc3QiXSwiZW52Ijp7IkFQSV9LRVlfSUQiOiIiLCJBUElfS0VZX1NFQ1JFVCI6IiIsIlNPVVJDRV9XT1JLSU5HX0RJUkVDVE9SWSI6IiJ9fQ) [![Add to VS Code (Docker)](https://img.shields.io/badge/Add_to_VS_Code-Docker_install-007ACC?style=for-the-badge&logo=visualstudiocode)](https://insiders.vscode.dev/redirect/mcp/install?name=BlazeMeter%20MCP&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22--rm%22%2C%22-i%22%2C%22-e%22%2C%22API_KEY_ID%22%2C%22-e%22%2C%22API_KEY_SECRET%22%2C%22-e%22%2C%22SOURCE_WORKING_DIRECTORY%22%2C%22ghcr.io%2Fblazemeter%2Fbzm-mcp%3Alatest%22%5D%2C%22env%22%3A%7B%22API_KEY_ID%22%3A%22%22%2C%22API_KEY_SECRET%22%3A%22%22%2C%22SOURCE_WORKING_DIRECTORY%22%3A%22%22%7D%7D)
+
+After installing, set `API_KEY_ID`, `API_KEY_SECRET`, and optionally mount/working dir in your client's MCP settings.
 
 ```json
 {
@@ -124,11 +141,12 @@ The easiest way to configure your MCP client is using our interactive CLI tool:
   }
 }
 ```
-> [!IMPORTANT]
-> For Windows OS, paths must use backslashes (`\`) and be properly escaped as double backslashes (`\\`) in the JSON configuration.
+
+> [!IMPORTANT]  
+> For Windows OS, paths must use backslashes (`\`) and be properly escaped as double backslashes (`\\`) in the JSON configuration.  
 > E.g.: `C:\\User\\Desktop\\mcp_test_folder`
 
-> [!NOTE]
+> [!NOTE]  
 > In order to obtain the `API_KEY_ID` and`API_KEY_SECRET` refere to [BlazeMeter API keys](https://help.blazemeter.com/docs/guide/api-blazemeter-api-keys.html)
 
 ---
@@ -136,6 +154,7 @@ The easiest way to configure your MCP client is using our interactive CLI tool:
 **Custom CA Certificates (Corporate Environments) for Docker**
 
 **When you need this:**
+
 - Your organization uses self-signed certificates
 - You're behind a corporate proxy with SSL inspection
 - You have a custom Certificate Authority (CA)
@@ -179,12 +198,76 @@ When using custom CA certificate bundles, you must configure both:
 ```
 
 **Replace:**
+
 - `/path/to/your/ca-bundle.crt` with your host system's CA certificate file path
 - The container path `/etc/ssl/certs/custom-ca-bundle.crt` can be any path you prefer (just ensure it matches `SSL_CERT_FILE`)
 
 > The `SSL_CERT_FILE` environment variable must be set to point to your custom CA certificate bundle. The `httpx` library [automatically respects the `SSL_CERT_FILE` environment variable](https://www.python-httpx.org/advanced/ssl/#working-with-ssl_cert_file-and-ssl_cert_dir) for SSL certificate verification.
 </details>
 
+---
+
+## Publishing to the Docker catalog (Docker Hub)
+
+CI builds multi-platform images and publishes to GitHub Container Registry (GHCR). Images are also published to **Docker Hub** (the Docker catalog) when enabled.
+
+**Before every publish**, [Docker Scout](https://docs.docker.com/scout/) runs on the image. The job **fails** if critical or high vulnerabilities are found, so only images that pass the Scout review are pushed.
+
+**To publish to Docker Hub:**
+
+1. In the repo: **Settings → Secrets and variables → Actions**
+2. Add secrets: `DOCKERHUB_USERNAME` (Docker Hub username), `DOCKERHUB_TOKEN` (access token or PAT).
+3. Add variable: `PUBLISH_TO_DOCKERHUB` = `true`.
+4. Optionally set `DOCKERHUB_IMAGE_NAME` (e.g. `blazemeter/bzm-mcp`; default is `blazemeter/bzm-mcp`).
+
+The same image and tags (e.g. `latest`, semver) are pushed to GHCR and, when enabled, to Docker Hub.
+
+**Run Scout locally** (same checks as CI, before pushing):
+
+1. **Prereqs:** [Docker](https://docs.docker.com/get-docker/) with the Scout plugin (included in Docker Desktop 4.17+), a built Linux binary in `dist/` (e.g. from `uv run build.py` or from a release), and **logged in to Docker Hub** so Scout can use the vulnerability database:
+  ```bash
+   docker login
+  ```
+   (Or sign in via Docker Desktop.)
+2. Build the image and run Scout:
+  ```bash
+   ./scripts/scout-local.sh
+  ```
+   Or with a custom tag: `./scripts/scout-local.sh myimage:tag`
+3. To fail when critical/high CVEs are found (same as CI): `SCOUT_EXIT_CODE=1 ./scripts/scout-local.sh`
+  **Note:** Scout may show “Base image was auto-detected” for local builds. CI builds use provenance attestations when pushing, so pipeline results are more accurate.
+
+**Publish to Docker Hub manually (from your machine):**
+
+1. **Prerequisites**
+  - Docker installed and running.
+  - A [Docker Hub](https://hub.docker.com) account.
+  - Linux binaries in `dist/` (e.g. run `uv sync && uv run build.py`, or use binaries from a release).
+2. **Create the repository on Docker Hub** (if it doesn't exist)
+  - Go to [hub.docker.com](https://hub.docker.com) → **Repositories** → **Create Repository**.
+  - Choose a name (e.g. `bzm-mcp`) and optionally a namespace (e.g. `blazemeter`). The full image name will be `<namespace>/<name>` (e.g. `blazemeter/bzm-mcp`).
+3. **Log in to Docker Hub**
+  ```bash
+   docker login
+  ```
+   Use your Docker ID and password or a [Personal Access Token](https://docs.docker.com/go/access-tokens/).
+4. **Build the image with your Docker Hub tag**
+  From the repo root (replace `YOUR_DOCKERHUB_USERNAME` with your Docker Hub username or org, e.g. `blazemeter`):
+   For a versioned tag as well:
+5. **Review with Docker Scout (recommended)**
+  ```bash
+   docker scout quickview YOUR_DOCKERHUB_USERNAME/bzm-mcp:latest
+  ```
+   Fix or accept any findings before publishing.
+6. **Push to the Docker catalog**
+  ```bash
+   docker push YOUR_DOCKERHUB_USERNAME/bzm-mcp:latest
+   docker push YOUR_DOCKERHUB_USERNAME/bzm-mcp:v1.0.0   # if you created a version tag
+  ```
+7. **Optional: multi-platform (linux/amd64 + linux/arm64)**
+  You need both binaries in `dist/` (e.g. from CI artifacts). Then:
+
+Your image will appear at `https://hub.docker.com/r/YOUR_DOCKERHUB_USERNAME/bzm-mcp`.
 
 ---
 
@@ -200,3 +283,4 @@ This project is licensed under the Apache License, Version 2.0. Please refer to 
 - **API Documentation**: [BlazeMeter API Documentation](https://help.blazemeter.com/apidocs/)
 - **Issues**: [GitHub Issues](https://github.com/BlazeMeter/bzm-mcp/issues)
 - **Support**: Contact BlazeMeter support for enterprise assistance
+
