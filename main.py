@@ -215,7 +215,6 @@ def main():
             command_path = os.path.join(__bundle__, "Contents", "MacOS", "bzm-mcp")
         else:
             command_path = __executable__
-        get_token()  # ensure BLAZEMETER_API_KEY_FILE_PATH is set from env or local api-key.json
         server_entry = {
             "command": command_path,
             "args": ["--mcp"],
