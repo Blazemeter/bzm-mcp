@@ -14,10 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import argparse
+import base64
 import json
 import logging
 import os
 import sys
+import urllib.parse
 from typing import Literal, cast
 
 from mcp.server.fastmcp import FastMCP
@@ -30,6 +32,29 @@ from tools.utils import ConfirmMode, register_confirm_mode
 BLAZEMETER_API_KEY_FILE_PATH = os.getenv('BLAZEMETER_API_KEY')
 
 LOG_LEVELS = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
+# URLs for adding this MCP server in each client (install redirects or docs)
+CURSOR_INSTALL_BASE = "https://cursor.com/en/install-mcp"
+VSCODE_INSTALL_BASE = "https://insiders.vscode.dev/redirect/mcp/install"
+
+
+def _cursor_install_url(server_config: dict, name: str = "BlazeMeter MCP") -> str:
+    """Build a Cursor one-click install URL from a server config (command, args, env)."""
+    raw = json.dumps(server_config, separators=(",", ":"))
+    b64 = base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
+    return f"{CURSOR_INSTALL_BASE}?config={urllib.parse.quote(b64)}&name={urllib.parse.quote(name)}"
+
+
+def _vscode_install_url(server_config: dict, name: str = "BlazeMeter MCP") -> str:
+    """Build a VS Code one-click install URL; config is URL-encoded JSON (not base64)."""
+    raw = json.dumps(server_config, separators=(",", ":"))
+    config_param = urllib.parse.quote(raw, safe="")
+    return f"{VSCODE_INSTALL_BASE}?name={urllib.parse.quote(name)}&config={config_param}"
+
+
+def _hyperlink(url: str, label: str) -> str:
+    """Return an OSC 8 hyperlink for terminals that support it (e.g. Cursor, iTerm2)."""
+    return f"\033]8;;{url}\033\\{label}\033]8;;\033\\"
 
 
 def init_logging(level_name: str) -> None:
@@ -190,12 +215,13 @@ def main():
             command_path = os.path.join(__bundle__, "Contents", "MacOS", "bzm-mcp")
         else:
             command_path = __executable__
-        config_dict = {
-            "BlazeMeter MCP": {
-                "command": command_path,
-                "args": ["--mcp"],
-            }
+        server_entry = {
+            "command": command_path,
+            "args": ["--mcp"],
         }
+        if BLAZEMETER_API_KEY_FILE_PATH:
+            server_entry["env"] = {"BLAZEMETER_API_KEY": BLAZEMETER_API_KEY_FILE_PATH}
+        config_dict = {"BlazeMeter MCP": server_entry}
 
         print(" MCP Server Configuration:\n")
         print(" In your tool with MCP server support, locate the MCP server configuration file")
@@ -213,6 +239,12 @@ def main():
             print(" https://help.blazemeter.com/docs/guide/api-blazemeter-api-keys.html")
         else:
             print(" [OK] BlazeMeter API Key configured correctly.")
+        print(" ")
+        print(" Install this MCP in your client (click to open):")
+        cursor_url = _cursor_install_url(server_entry)
+        vscode_url = _vscode_install_url(server_entry)
+        print("   Cursor:  " + _hyperlink(cursor_url, "Add to Cursor"))
+        print("   VS Code: " + _hyperlink(vscode_url, "Add to VS Code"))
         print(" ")
         print(" There are configuration alternatives, if you want to know more:")
         print(" https://github.com/Blazemeter/bzm-mcp/")
