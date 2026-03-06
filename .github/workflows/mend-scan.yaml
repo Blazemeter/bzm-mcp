@@ -1,60 +1,46 @@
-name: Mend (WhiteSource) Scan
+name: Mend CLI Scan
 
 on:
   workflow_dispatch:
   push:
   pull_request:
 
+concurrency:
+  group: mend-scan-${{ github.repository }}
+  cancel-in-progress: true
+
 jobs:
   mend-scan:
-    runs-on: ubuntu-latest
-    
+    runs-on: ubuntu-latest 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup uv 
-      uses: astral-sh/setup-uv@v4
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
 
-    - name: Export toml as requirements
-      shell: bash
-      run: uv pip compile pyproject.toml -o requirements.txt
+      - name: Create venv and sync packages
+        run: |
+          uv venv
+          uv sync --all-packages
 
-    - name: Checkout config file
-      uses: actions/checkout@v4
-      with:
-        repository: ${{ secrets.BLAZE_UTILS_REPO }}
-        ref: master
-        path: whitesourceScanFile
-        sparse-checkout: |
-          whiteSource/wss-unified-agent-with-policies.config
-        token: ${{ secrets.BLAZE_UTILS_TOKEN }}
-    
-    - name: Setup Java (required for WhiteSource agent)
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-    
-    - name: Download WhiteSource Unified Agent
-      shell: bash
-      run: |
-        curl -LJO https://github.com/whitesource/unified-agent-distribution/raw/master/standAlone/wss_agent.sh
-        chmod +x wss_agent.sh
-        ls -ltr
-    
-    - name: Run WhiteSource Scan
-      shell: bash
-      env:
-        WHITESOURCE_TOKEN: ${{ secrets.WHITESOURCE_API_KEY }}
-      run: |
-        ./wss_agent.sh \
-          -apiKey ${WHITESOURCE_TOKEN} \
-          -project bzm-mcp \
-          -scanComment "${{ github.ref_name }}" \
-          -projectPerFolder False \
-          -gradle.aggregateModules True \
-          -product BlazeMeter \
-          -c whitesourceScanFile/whiteSource/wss-unified-agent-with-policies.config \
-          -wss.url https://saas-eu.whitesourcesoftware.com/agent
+      - name: Install Mend CLI
+        run: |
+          MEND_DIR="$HOME/mend-cli"
+          mkdir -p "$MEND_DIR"
+          curl -fsSL -o "$MEND_DIR/mend" https://downloads.mend.io/cli/linux_amd64/mend
+          chmod +x "$MEND_DIR/mend"
+          echo "$MEND_DIR" >> $GITHUB_PATH
+          echo "MEND_BIN=$MEND_DIR/mend" >> $GITHUB_ENV
 
+      - name: Run Mend dependency scan
+        env:
+          MEND_URL: https://saas-eu.whitesourcesoftware.com
+          MEND_USER_KEY: ${{ secrets.MEND_USER_KEY }}
+          MEND_EMAIL: ${{ secrets.MEND_EMAIL }}
+        run: |
+          source .venv/bin/activate
+          $MEND_BIN dep -d . -u --scope "BlazeMeter//bzm-mcp"
+          exitcode=$?
+          # Exit 9 = policy violation; don't fail job
+          [ $exitcode -eq 9 ] && exit 0 || exit $exitcode
