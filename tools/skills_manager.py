@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import asyncio
-import traceback
 from typing import Optional, Dict, Any, List
 from urllib.parse import unquote
 
@@ -26,6 +25,7 @@ from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE
 from config.token import BzmToken
 from models.manager import Manager
 from models.result import BaseResult
+from tools.utils import format_sanitized_traceback
 from tools.skills_utils import list_skills, read_skill_definition, read_skill_file, parse_skill_uri, \
     is_skill_uri, list_skill_resources_uri
 
@@ -35,6 +35,11 @@ from tools.skills_utils import list_skills, read_skill_definition, read_skill_fi
 
 class SkillsManager(Manager):
     skills = None  # Static to share between different instance of SkillsManager
+    MAX_BATCH_CONCURRENCY = 100
+    CONTENT_TRUST = "trusted"
+    CONTENT_TRUST_NOTE = (
+        "Skills content is sourced from curated repository resources and is trusted by design."
+    )
 
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
@@ -56,11 +61,15 @@ class SkillsManager(Manager):
     @staticmethod
     async def read_skill(skill_name: str) -> BaseResult:
         skill_content, error = read_skill_definition(skill_name)
+        # Trust policy note for future audits:
+        # Skills and their resources are curated project artifacts and considered trusted by design.
         return BaseResult(
             result=[{
                 "skill_name": skill_name,
                 "path": "SKILL.md",
                 "content": skill_content,
+                "content_trust": SkillsManager.CONTENT_TRUST,
+                "content_trust_note": SkillsManager.CONTENT_TRUST_NOTE,
             }],
             error=error
         )
@@ -73,17 +82,25 @@ class SkillsManager(Manager):
                 "skill_name": skill_name,
                 "path": file_path,
                 "content": skill_content,
+                "content_trust": SkillsManager.CONTENT_TRUST,
+                "content_trust_note": SkillsManager.CONTENT_TRUST_NOTE,
             }],
             error=error
         )
 
     @staticmethod
     async def list_skill_resources(skill_name: str) -> BaseResult:
-        skill_resources = list_skill_resources_uri(skill_name)
+        try:
+            skill_resources = list_skill_resources_uri(skill_name)
+        except ValueError as e:
+            return BaseResult(error=str(e))
+
         return BaseResult(
             result=[{
                 "skill_name": skill_name,
                 "resources": skill_resources,
+                "content_trust": SkillsManager.CONTENT_TRUST,
+                "content_trust_note": SkillsManager.CONTENT_TRUST_NOTE,
             }],
             total=len(skill_resources),
             has_more=False,
@@ -99,6 +116,8 @@ class SkillsManager(Manager):
                     "skill_name": skill_name,
                     "path": file_path,
                     "content": skill_content,
+                    "content_trust": SkillsManager.CONTENT_TRUST,
+                    "content_trust_note": SkillsManager.CONTENT_TRUST_NOTE,
                 }],
                 error=error
             )
@@ -182,17 +201,22 @@ Hints:
                         return BaseResult(
                             error="batch_calls must be a non-empty list of dicts with 'action' and 'args'")
 
+                    semaphore = asyncio.Semaphore(SkillsManager.MAX_BATCH_CONCURRENCY)
+
                     async def process_call(call: Dict[str, Any]) -> BaseResult | List[BaseResult]:
                         sub_action = call.get("action", "")
                         sub_args = call.get("args", {})
-                        try:
-                            # Recursively call the skills function itself
-                            return await skills(sub_action, sub_args, ctx)
-                        except httpx.HTTPStatusError as e:
-                            return BaseResult(error=f"HTTP error in sub-action {sub_action}: {traceback.format_exc()}")
-                        except Exception as e:
-                            return BaseResult(
-                                error=f"Error in sub-action {sub_action}: {traceback.format_exc()}\n{SUPPORT_MESSAGE}")
+                        async with semaphore:
+                            try:
+                                # Recursively call the skills function itself
+                                return await skills(sub_action, sub_args, ctx)
+                            except httpx.HTTPStatusError:
+                                return BaseResult(
+                                    error=f"HTTP error in sub-action {sub_action}: {format_sanitized_traceback()}"
+                                )
+                            except Exception:
+                                return BaseResult(
+                                    error=f"Error in sub-action {sub_action}: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}")
 
                     # Parallel execution with asyncio.gather
                     results = await asyncio.gather(*[process_call(call) for call in batch_calls],
@@ -209,9 +233,9 @@ Hints:
                     )
         except httpx.HTTPStatusError:
             return BaseResult(
-                error=f"Error: {traceback.format_exc()}"
+                error=f"Error: {format_sanitized_traceback()}"
             )
         except Exception:
             return BaseResult(
-                error=f"Error: {traceback.format_exc()}\n{SUPPORT_MESSAGE}"
+                error=f"Error: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}"
             )

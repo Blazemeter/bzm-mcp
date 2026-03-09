@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import traceback
 from typing import Any, Dict, Optional
 
 import httpx
@@ -25,7 +24,7 @@ from config.token import BzmToken
 from formatters.user import format_users
 from models.manager import Manager
 from models.result import BaseResult
-from tools.utils import api_request
+from tools.utils import api_request, format_sanitized_traceback
 
 
 class UserManager(Manager):
@@ -71,10 +70,10 @@ Hints:
                     )
         except httpx.HTTPStatusError:
             return BaseResult(
-                error=f"Error: {traceback.format_exc()}"
+                error=f"Error: {format_sanitized_traceback()}"
             )
         except Exception:
             return BaseResult(
-                error=f"""Error: {traceback.format_exc()}
+                error=f"""Error: {format_sanitized_traceback()}
                           If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
             )

@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import traceback
 from typing import Optional, Dict, Any
 import httpx
 from mcp.server.fastmcp import Context
@@ -23,7 +22,7 @@ from config.token import BzmToken
 from formatters.account import format_accounts
 from models.manager import Manager
 from models.result import BaseResult
-from tools.utils import api_request
+from tools.utils import api_request, format_sanitized_traceback
 
 
 class AccountManager(Manager):
@@ -106,9 +105,9 @@ Hints:
                     )
         except httpx.HTTPStatusError:
             return BaseResult(
-                error=f"Error: {traceback.format_exc()}"
+                error=f"Error: {format_sanitized_traceback()}"
             )
         except Exception:
             return BaseResult(
-                error=f"Error: {traceback.format_exc()}\n{SUPPORT_MESSAGE}"
+                error=f"Error: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}"
             )
