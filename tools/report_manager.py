@@ -19,7 +19,9 @@ from mcp.server.fastmcp import Context
 
 from config.blazemeter import EXECUTIONS_ENDPOINT
 from config.token import BzmToken
+from formatters.execution import format_summary_report
 from models.manager import Manager
+from models.result import BaseResult
 from tools import bridge
 from tools.utils import api_request
 
@@ -35,10 +37,24 @@ class ReportManager(Manager):
         if execution_result.error:
             return execution_result
 
+        # Extract execution name from execution result if available
+        execution_name = None
+        if execution_result.result and len(execution_result.result) > 0:
+            exec_data = execution_result.result[0]
+            if isinstance(exec_data, dict):
+                execution_name = exec_data.get("execution_name") or exec_data.get("name")
+
+        # Get summary data from API with formatter
         return await api_request(
             self.token,
             "GET",
-            f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/default/summary")
+            f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/default/summary",
+            result_formatter=format_summary_report,
+            result_formatter_params={
+                "execution_id": master_id,
+                "execution_name": execution_name
+            }
+        )
 
     async def read_error(self, master_id: int):
         """

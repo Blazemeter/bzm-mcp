@@ -50,3 +50,31 @@ class TestExecutionDetailed(TestExecution):
         description="Indicates the ending status of the test execution. Value can be pass, fail, unset, error, abort, or noData")
     execution_status_detailed: Optional[TestExecutionStatus] = Field(
         "Indicates the current status of the test execution.")
+
+
+class SummaryReportMetrics(BaseModel):
+    """Performance metrics for a test execution summary."""
+    total_requests: int = Field(description="Total number of requests (hits) executed during the test")
+    total_errors: int = Field(description="Total number of failed requests")
+    error_rate_percent: float = Field(description="Percentage of requests that failed")
+    average_response_time_ms: float = Field(description="Average response time in milliseconds")
+    min_response_time_ms: int = Field(description="Minimum response time in milliseconds")
+    max_response_time_ms: int = Field(description="Maximum response time in milliseconds")
+    percentile_90_ms: float = Field(description="90th percentile response time in milliseconds (90% of requests were faster)")
+    percentile_95_ms: float = Field(description="95th percentile response time in milliseconds (95% of requests were faster)")
+    percentile_99_ms: float = Field(description="99th percentile response time in milliseconds (99% of requests were faster)")
+    median_response_time_ms: float = Field(description="Median (50th percentile) response time in milliseconds")
+    average_throughput_per_second: float = Field(description="Average number of requests per second")
+    total_duration_seconds: int = Field(description="Total test duration in seconds")
+    average_bytes_per_request: float = Field(description="Average response size in bytes")
+    total_bytes: int = Field(description="Total bytes transferred")
+    max_concurrent_users: int = Field(description="Maximum number of concurrent virtual users")
+
+
+class SummaryReport(BaseModel):
+    """Formatted summary report for a test execution."""
+    execution_id: int = Field(description="The execution ID this summary belongs to")
+    execution_name: Optional[str] = Field(description="The execution name", default=None)
+    execution_url: str = Field(description="URL to view this execution in BlazeMeter")
+    overall_metrics: SummaryReportMetrics = Field(description="Overall performance metrics aggregated across all requests")
+    context: str = Field(description="Explanatory context about the summary report format and metrics")
