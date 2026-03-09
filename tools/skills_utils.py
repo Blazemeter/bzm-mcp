@@ -22,7 +22,10 @@ from config.blazemeter import TOOLS_PREFIX
 from tools.utils import get_resources_path
 
 SKILL_PREFIX = f"{TOOLS_PREFIX}-skill-"
-SKILL_URI_REGEX = re.compile(rf"^{SKILL_PREFIX}(?P<skill_name>[a-zA-Z0-9_-]+)://(?P<path>.+)$")
+SKILL_NAME_REGEX = re.compile(r"^[a-zA-Z0-9_-]+$")
+SKILL_URI_REGEX = re.compile(
+    rf"^{SKILL_PREFIX}(?P<skill_name>[a-zA-Z0-9_-]+)://(?P<path>(?!/)(?!.*(?:^|/)\.\.(?:/|$))[a-zA-Z0-9._/-]+)$"
+)
 
 
 def parse_frontmatter(frontmatter: str) -> Dict[str, str]:
@@ -169,10 +172,31 @@ def read_skill_meta(md_path) -> Tuple[Dict[str, None], str | None]:
 
 
 def get_skill_file_path(skill_name: str, file_path: str) -> Path:
-    fixed_file_path = file_path.split("#")[0]  # Protection against the use of anchors
+    if not SKILL_NAME_REGEX.fullmatch(skill_name):
+        raise ValueError(f"Invalid skill name: {skill_name}")
+
+    fixed_file_path = file_path.split("#")[0].strip()  # Protection against the use of anchors
+    fixed_file_path = fixed_file_path.replace("\\", "/")
+    if not fixed_file_path:
+        raise ValueError("Invalid file path: empty path")
+    if fixed_file_path.startswith("/") or re.match(r"^[a-zA-Z]:", fixed_file_path):
+        raise ValueError("Invalid file path: absolute paths are not allowed")
+
+    path_parts = Path(fixed_file_path).parts
+    if any(part == ".." for part in path_parts):
+        raise ValueError("Invalid file path: parent directory traversal is not allowed")
+
     full_skills_dir = os.path.join(get_resources_path(), 'skills')
     skills_path = Path(full_skills_dir)
-    return skills_path / skill_name / fixed_file_path
+    skill_base_path = (skills_path / skill_name).resolve()
+    skill_file_path = (skill_base_path / fixed_file_path).resolve()
+
+    try:
+        skill_file_path.relative_to(skill_base_path)
+    except ValueError:
+        raise ValueError("Invalid file path: path traversal detected")
+
+    return skill_file_path
 
 
 def replace_skills_markdown_links(content: str, skill_name: str, file_path: str) -> str:
@@ -205,7 +229,11 @@ def replace_skills_markdown_links(content: str, skill_name: str, file_path: str)
 
 
 def read_skill_file(skill_name: str, file_path: str) -> Tuple[str | None, str | None]:
-    skill_file_path = get_skill_file_path(skill_name, file_path)
+    try:
+        skill_file_path = get_skill_file_path(skill_name, file_path)
+    except ValueError as e:
+        return None, str(e)
+
     if skill_file_path.exists():
         content = skill_file_path.read_text(encoding='utf-8')
         if file_path.endswith('.md'):  # Only on Markdown replace to skills uri format
@@ -219,7 +247,7 @@ def read_skill_file(skill_name: str, file_path: str) -> Tuple[str | None, str | 
         else:
             return content, None
     else:
-        return None, f"Skill file not found: {skill_file_path}"
+        return None, f"Skill file not found: {file_path}"
 
 
 def is_skill_uri(uri: str) -> bool:
@@ -234,13 +262,25 @@ def parse_skill_uri(uri: str) -> Tuple[str, str]:
 
 
 def list_skill_resources_uri(skill_name: str) -> List[str]:
+    if not SKILL_NAME_REGEX.fullmatch(skill_name):
+        raise ValueError(f"Invalid skill name: {skill_name}")
+
     full_skills_dir = os.path.join(get_resources_path(), 'skills')
-    skills_path = Path(full_skills_dir)
-    skill_path = skills_path / skill_name
+    skills_path = Path(full_skills_dir).resolve()
+    skill_path = (skills_path / skill_name).resolve()
+
+    try:
+        skill_path.relative_to(skills_path)
+    except ValueError:
+        raise ValueError("Invalid skill path: path traversal detected")
+
+    if not skill_path.exists() or not skill_path.is_dir():
+        raise ValueError(f"Skill folder not found: {skill_name}")
+
     skill_resources = []
     for file_path in skill_path.rglob("*"):
         if file_path.is_file():
-            url = file_path.relative_to(skills_path / skill_name).as_posix()
+            url = file_path.relative_to(skill_path).as_posix()
             skill_resources.append(f"{SKILL_PREFIX}{skill_name}://{url}")
     return skill_resources
 

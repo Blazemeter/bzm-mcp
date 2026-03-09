@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import traceback
 from typing import Optional, Dict, Any
 
 import httpx
@@ -26,7 +25,7 @@ from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
 from tools.report_manager import ReportManager
-from tools.utils import api_request, timeout, user_agent
+from tools.utils import api_request, timeout, user_agent, format_sanitized_traceback, require_confirmation, Operations
 
 
 class ExecutionManager(Manager):
@@ -95,6 +94,7 @@ class ExecutionManager(Manager):
             except:
                 return BaseResult(error=f"HTTP {status_code}: {e.response.text[:200]}")
 
+    @require_confirmation(operation=Operations.CREATE)
     async def start(self, test_id: int, delayed_start_ready: bool = True,
                     is_debug_run: bool = False) -> BaseResult:
         # Check if it's valid or allowed
@@ -144,7 +144,7 @@ class ExecutionManager(Manager):
         return BaseResult(result=[result])
 
     async def _fetch_execution_status(self, execution_id: int) -> BaseResult:
-        parameters = {"level ": 200, "events": False}
+        parameters = {"level": 200, "events": False}
         return await api_request(
             self.token,
             "GET",
@@ -351,6 +351,50 @@ class ExecutionManager(Manager):
         }
         return BaseResult(result=[result])
 
+    async def read_all_reports(self, execution_id: int) -> BaseResult:
+        report_manager = ReportManager(self.token, self.ctx)
+        summary_result = await report_manager.read_summary(execution_id)
+        error_result = await report_manager.read_error(execution_id)
+        stats_result = await report_manager.read_request_stats(execution_id)
+
+        report_errors = {}
+        if summary_result.error:
+            report_errors["summary"] = summary_result.error
+        if error_result.error:
+            report_errors["error"] = error_result.error
+        if stats_result.error:
+            report_errors["request_stats"] = stats_result.error
+
+        all_failed = len(report_errors) == 3
+        if all_failed:
+            return BaseResult(
+                error=(
+                    f"Failed to fetch all reports for execution {execution_id}. "
+                    f"Errors: summary={report_errors['summary']}; "
+                    f"error={report_errors['error']}; "
+                    f"request_stats={report_errors['request_stats']}"
+                )
+            )
+
+        result_payload = {
+            "summary": summary_result.result if not summary_result.error else None,
+            "error": error_result.result if not error_result.error else None,
+            "request_stats": stats_result.result if not stats_result.error else None,
+            "report_errors": report_errors or None,
+        }
+
+        warnings = None
+        if report_errors:
+            failed_reports = ", ".join(report_errors.keys())
+            warnings = [
+                f"Some reports could not be retrieved for execution {execution_id}: {failed_reports}."
+            ]
+
+        return BaseResult(
+            result=[result_payload],
+            warning=warnings
+        )
+
     @staticmethod
     def _get_analysis_context_message(is_ready: bool, status_message: str) -> str:
         if is_ready:
@@ -420,7 +464,11 @@ Hints:
                 case "read":
                     return await test_manager.read(args["execution_id"])
                 case "list":
-                    return await test_manager.list(args["test_id"])
+                    return await test_manager.list(
+                        args["test_id"],
+                        args.get("limit", 50),
+                        args.get("offset", 0),
+                    )
                 case "read_summary":
                     return await report_manager.read_summary(args["execution_id"])
                 case "read_errors":
@@ -428,16 +476,7 @@ Hints:
                 case "read_request_stats":
                     return await report_manager.read_request_stats(args["execution_id"])
                 case "read_all_reports":
-                    summary_result = await report_manager.read_summary(args["execution_id"])
-                    error_result = await report_manager.read_error(args["execution_id"])
-                    stats_result = await report_manager.read_request_stats(args["execution_id"])
-                    return BaseResult(
-                        result=[{
-                            "summary": summary_result.result or None,
-                            "error": error_result.result or None,
-                            "request_stats": stats_result.result or None
-                        }]
-                    )
+                    return await test_manager.read_all_reports(args["execution_id"])
                 case "read_anomalies_stats":
                     return await report_manager.read_anomalies_stats(args["execution_id"])
                 case "ai_analysis":
@@ -448,9 +487,9 @@ Hints:
                     )
         except httpx.HTTPStatusError:
             return BaseResult(
-                error=f"Error: {traceback.format_exc()}"
+                error=f"Error: {format_sanitized_traceback()}"
             )
         except Exception:
             return BaseResult(
-                error=f"Error: {traceback.format_exc()}\n{SUPPORT_MESSAGE}"
+                error=f"Error: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}"
             )

@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import traceback
 from typing import Optional, Dict, Any
 
 import httpx
@@ -24,6 +23,7 @@ from config.token import BzmToken
 from models.manager import Manager
 from models.result import BaseResult
 from tools.billing_utils import calculate_test_cost
+from tools.utils import format_sanitized_traceback
 
 
 class BillingManager(Manager):
@@ -97,9 +97,9 @@ Hints:
                     )
         except httpx.HTTPStatusError:
             return BaseResult(
-                error=f"Error: {traceback.format_exc()}"
+                error=f"Error: {format_sanitized_traceback()}"
             )
         except Exception:
             return BaseResult(
-                error=f"Error: {traceback.format_exc()}\n{SUPPORT_MESSAGE}"
+                error=f"Error: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}"
             )

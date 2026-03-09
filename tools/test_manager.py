@@ -16,7 +16,6 @@ limitations under the License.
 import asyncio
 import logging
 import os
-import traceback
 from pathlib import Path
 from typing import Any, Dict
 from typing import Optional, List
@@ -26,19 +25,19 @@ from mcp.server.fastmcp import Context
 
 from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
 from config.path_mapper import PathMapperFactory
+from config.security import detect_sensitive_upload_path_reason
 from config.token import BzmToken
 from formatters.test import format_tests
 from models.manager import Manager
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
 from tools import bridge
-from tools.utils import api_request, require_confirmation, Operations
+from tools.utils import api_request, require_confirmation, Operations, format_sanitized_traceback
 
 logger = logging.getLogger(__name__)
 
 
 class TestManager(Manager):
-
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
         self.path_mapper = PathMapperFactory.create_strategy()
@@ -106,10 +105,30 @@ class TestManager(Manager):
                 test_deleted_result.result = [f"Test {test_id} Deleted Successfully"]
                 return test_deleted_result
 
-    @staticmethod
-    def _validate_files(file_paths: List[str], valid_files: List[str], invalid_files: List[str]):
+    @classmethod
+    def _detect_sensitive_path_reason(cls, file_path: str) -> Optional[str]:
+        return detect_sensitive_upload_path_reason(file_path)
+
+    @classmethod
+    def _validate_files(cls, file_paths: List[str], valid_files: List[str], invalid_files: List[str],
+                        blocked_files: List[Dict[str, str]]):
+        # Security design note:
+        # Uploads are intentionally allowed from any user working location (not restricted to one workspace root),
+        # because users may execute tests from different local projects or folders.
+        # The destination is BlazeMeter-managed infrastructure, and sensitive-origin filtering is enforced by
+        # detect_sensitive_upload_path_reason() to prevent accidental leakage of system/secret files.
+        # UNC paths are intentionally supported by design. Any sensitive data exposed through shared UNC
+        # locations is an administrative responsibility of the UNC share owners/administrators.
         for file_path in file_paths:
             logger.debug(f"Checking file: {file_path}")
+            sensitive_reason = cls._detect_sensitive_path_reason(file_path)
+            if sensitive_reason:
+                logger.warning(f"Blocked sensitive file path: {file_path} ({sensitive_reason})")
+                blocked_files.append({
+                    "file": file_path,
+                    "reason": sensitive_reason,
+                })
+                continue
             if os.path.exists(file_path) and os.path.isfile(file_path):
                 logger.debug(f"File exists: {file_path}")
                 valid_files.append(file_path)
@@ -158,17 +177,20 @@ class TestManager(Manager):
 
         valid_files = []
         invalid_files = []
+        blocked_files = []
 
-        self._validate_files(mapped_file_paths, valid_files, invalid_files)
+        self._validate_files(mapped_file_paths, valid_files, invalid_files, blocked_files)
 
         logger.debug(f"Valid files: {valid_files}")
         logger.debug(f"Invalid files: {invalid_files}")
+        logger.debug(f"Blocked files: {blocked_files}")
 
         if not valid_files:
             logger.error("No valid files found to upload")
             return {
                 "error": "No valid files found to upload",
-                "invalid_files": invalid_files
+                "invalid_files": invalid_files,
+                "blocked_files": blocked_files
             }
 
         logger.debug("Starting concurrent uploads")
@@ -192,6 +214,7 @@ class TestManager(Manager):
             "successful_uploads": successful_uploads,
             "failed_uploads": failed_uploads,
             "invalid_files": invalid_files,
+            "blocked_files": blocked_files,
             "config_update": config_update_result
         }
 
@@ -227,7 +250,7 @@ class TestManager(Manager):
 
         except Exception as e:
             logger.error(f"Exception in _upload_single_file: {e}")
-            logger.error(f"Traceback: {traceback.format_exc()}")
+            logger.error(f"Traceback: {format_sanitized_traceback(e)}")
             raise Exception(f"Failed to upload {file_path}: {str(e)}")
 
     async def _update_test_configuration(self, test_id: int, main_script_path: str) -> BaseResult:
@@ -336,10 +359,12 @@ class TestManager(Manager):
             for location, percent in test_data_override["locationsPercents"].items():
                 locations_concurrency[location] = int(percent * concurrency / 100)
 
-            for location, users in locations_concurrency.items():
-                if users == 0:
-                    locations_concurrency[location] = 1  # Default behaviour on BlazeMeter
-                break
+            # Fallback behavior: int(percent * concurrency / 100) can truncate to 0 for low loads.
+            # To avoid ending with all locations at 0 users, we guarantee at least 1 user only on
+            # the first location when that first computed value is 0.
+            first_location = next(iter(locations_concurrency), None)
+            if first_location is not None and locations_concurrency[first_location] == 0:
+                locations_concurrency[first_location] = 1  # Default behaviour on BlazeMeter
 
             test_data_override["locations"] = locations_concurrency
 
@@ -455,10 +480,10 @@ Hints:
                     )
         except httpx.HTTPStatusError:
             return BaseResult(
-                error=f"Error: {traceback.format_exc()}"
+                error=f"Error: {format_sanitized_traceback()}"
             )
         except Exception:
             return BaseResult(
-                error=f"""Error: {traceback.format_exc()}
+                error=f"""Error: {format_sanitized_traceback()}
                           If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
             )
