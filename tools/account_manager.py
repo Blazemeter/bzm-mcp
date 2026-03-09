@@ -76,20 +76,21 @@ def register(mcp, token: Optional[BzmToken]) -> None:
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_account",
         description="""
-        Operations on account users. 
-        Use this when a user needs to select a account.
-        Actions:
-        - read: Read a Account. Get the information of a account.
-            args(dict): Dictionary with the following required parameters:
-                account_id (int): The id of the account to get information.
-        - list: List all accounts. 
-            args(dict): Dictionary with the following required parameters:
-                limit (int, default=10, valid=[1 to 50]): The number of tests to list.
-                offset (int, default=0): Number of tests to skip.
-        Hints:
-        - If you need to get the default account, use the project id to get the workspace and with that the account.
-        - Use the read operation if AI consent information is needed. The AI Consent it's located at account level.
-    """
+Operations on account users. 
+Use this when a user needs to select a account.
+Actions:
+- read: Read a Account. Get the information of a account.
+    args(dict): Dictionary with the following required parameters:
+        account_id (int): The id of the account to get information.
+- list: List all accounts. 
+    args(dict): Dictionary with the following required parameters:
+        limit (int, default=10, valid=[1 to 50]): The number of tests to list.
+        offset (int, default=0): Number of tests to skip.
+Hints:
+- If you need to get the default account, use the project id to get the workspace and with that the account.
+- Use the read operation if AI consent information is needed. The AI Consent it's located at account level.
+- **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
+"""
     )
     async def account(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
         account_manager = AccountManager(token, ctx)
