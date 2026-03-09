@@ -133,7 +133,7 @@ def process_inline_elements(element, base_url=None, as_html=False):
 
             if text and href:
                 if as_html:
-                    parts.append(f"<a href='{{href}}'>{text}</a>")
+                    parts.append(f"<a href='{href}'>{text}</a>")
                 else:
                     parts.append(f"[{text}]({href})")
             elif text:
