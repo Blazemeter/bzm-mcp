@@ -152,6 +152,10 @@ class HelpManager(Manager):
         )
 
     async def list_help_category_content(self, category_id: str, subcategory_id_list: List[str]) -> BaseResult:
+        if not isinstance(subcategory_id_list, list) or not subcategory_id_list:
+            return BaseResult(
+                error="Missing required argument 'subcategory_id_list'. Please provide a non-empty list."
+            )
         if HelpManager.help_tree is None:
             await self._load_help_tree()
         results = []
@@ -226,6 +230,10 @@ class HelpManager(Manager):
         return help_object
 
     async def read_help_info(self, category_id: str, subcategory_id: str, help_id_list: List[str]) -> BaseResult:
+        if not isinstance(help_id_list, list) or not help_id_list:
+            return BaseResult(
+                error="Missing required argument 'help_id_list'. Please provide a non-empty list."
+            )
         if HelpManager.help_tree is None:
             await self._load_help_tree()
         results = []
@@ -280,18 +288,23 @@ Hints:
     ) -> BaseResult:
         if args is None:
             args = {}
+
         help_manager = HelpManager(token, ctx)
         try:
             match action:
                 case "list_help_categories":
                     return await help_manager.list_help_categories()
                 case "list_help_category_content":
-                    return await help_manager.list_help_category_content(args.get("category_id", "home"),
-                                                                         args.get("subcategory_id_list", []))
+                    return await help_manager.list_help_category_content(
+                        args.get("category_id", "home"),
+                        args.get("subcategory_id_list")
+                    )
                 case "read_help_info":
-                    return await help_manager.read_help_info(args.get("category_id", "home"),
-                                                             args.get("subcategory_id", ""),
-                                                             args.get("help_id_list", []))
+                    return await help_manager.read_help_info(
+                        args.get("category_id", "home"),
+                        args.get("subcategory_id", ""),
+                        args.get("help_id_list")
+                    )
                 case "batch":
                     # Make sure this initialization doesn't run in parallel
                     if HelpManager.help_tree is None:

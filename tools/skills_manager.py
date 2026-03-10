@@ -59,7 +59,12 @@ class SkillsManager(Manager):
         )
 
     @staticmethod
-    async def read_skill(skill_name: str) -> BaseResult:
+    async def read_skill(skill_name: Optional[str]) -> BaseResult:
+        if not isinstance(skill_name, str) or not skill_name.strip():
+            return BaseResult(
+                error="Missing required argument 'skill_name'. Please specify a non-empty skill name."
+            )
+        skill_name = skill_name.strip()
         skill_content, error = read_skill_definition(skill_name)
         # Trust policy note for future audits:
         # Skills and their resources are curated project artifacts and considered trusted by design.
@@ -89,7 +94,12 @@ class SkillsManager(Manager):
         )
 
     @staticmethod
-    async def list_skill_resources(skill_name: str) -> BaseResult:
+    async def list_skill_resources(skill_name: Optional[str]) -> BaseResult:
+        if not isinstance(skill_name, str) or not skill_name.strip():
+            return BaseResult(
+                error="Missing required argument 'skill_name'. Please specify a non-empty skill name."
+            )
+        skill_name = skill_name.strip()
         try:
             skill_resources = list_skill_resources_uri(skill_name)
         except ValueError as e:
@@ -107,7 +117,12 @@ class SkillsManager(Manager):
         )
 
     @staticmethod
-    async def read_skill_resource_uri(skill_uri: str) -> BaseResult:
+    async def read_skill_resource_uri(skill_uri: Optional[str]) -> BaseResult:
+        if not isinstance(skill_uri, str) or not skill_uri.strip():
+            return BaseResult(
+                error="Missing required argument 'skill_resource_uri'. Please specify a non-empty skill URI."
+            )
+        skill_uri = skill_uri.strip()
         if is_skill_uri(skill_uri):
             skill_name, file_path = parse_skill_uri(skill_uri)
             skill_content, error = read_skill_file(skill_name, file_path)
@@ -127,7 +142,11 @@ class SkillsManager(Manager):
             )
 
     @staticmethod
-    async def read_skill_resource_uri_list(skill_uri_list: List[str]) -> BaseResult:
+    async def read_skill_resource_uri_list(skill_uri_list: Optional[List[str]]) -> BaseResult:
+        if not isinstance(skill_uri_list, list) or not skill_uri_list:
+            return BaseResult(
+                error="Missing required argument 'skill_resource_uri_list'. Please provide a non-empty list of skill URIs."
+            )
         results = await asyncio.gather(
             *(SkillsManager.read_skill_resource_uri(skill_uri) for skill_uri in skill_uri_list)
         )
@@ -182,19 +201,20 @@ Hints:
     ) -> BaseResult:
         if args is None:
             args = {}
+
         skills_manager = SkillsManager(token, ctx)
         try:
             match action:
                 case "list_skills":
                     return await skills_manager.list_skills()
                 case "read_skill":
-                    return await skills_manager.read_skill(args.get("skill_name", ""))
+                    return await skills_manager.read_skill(args.get("skill_name"))
                 case "list_skill_resources":
-                    return await skills_manager.list_skill_resources(args.get("skill_name", ""))
+                    return await skills_manager.list_skill_resources(args.get("skill_name"))
                 case "read_skill_resource_uri":
-                    return await skills_manager.read_skill_resource_uri(args.get("skill_resource_uri", ""))
+                    return await skills_manager.read_skill_resource_uri(args.get("skill_resource_uri"))
                 case "read_skill_resource_uri_list":
-                    return await skills_manager.read_skill_resource_uri_list(args.get("skill_resource_uri_list", []))
+                    return await skills_manager.read_skill_resource_uri_list(args.get("skill_resource_uri_list"))
                 case "batch":
                     batch_calls = args.get("batch_calls", [])
                     if not isinstance(batch_calls, list) or not batch_calls:
