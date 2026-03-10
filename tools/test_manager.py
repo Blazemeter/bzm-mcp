@@ -42,7 +42,9 @@ class TestManager(Manager):
         super().__init__(token, ctx)
         self.path_mapper = PathMapperFactory.create_strategy()
 
-    async def read(self, test_id: int) -> BaseResult:
+    async def read(self, test_id: Optional[int]) -> BaseResult:
+        if not isinstance(test_id, int) or test_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
 
         test_result = await api_request(
             self.token,
@@ -61,7 +63,11 @@ class TestManager(Manager):
                 return test_result
 
     @require_confirmation(operation=Operations.CREATE)
-    async def create(self, test_name: str, project_id: int) -> BaseResult:
+    async def create(self, test_name: Optional[str], project_id: Optional[int]) -> BaseResult:
+        if not isinstance(test_name, str) or not test_name.strip():
+            return BaseResult(error="Missing or invalid required argument 'test_name'. Expected non-empty string.")
+        if not isinstance(project_id, int) or project_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'project_id'. Expected integer.")
 
         # Check if it's valid or allowed
         project_result = await bridge.read_project(self.token, self.ctx, project_id)
@@ -87,7 +93,10 @@ class TestManager(Manager):
         )
 
     @require_confirmation(operation=Operations.DELETE)
-    async def delete(self, test_id: int) -> BaseResult:
+    async def delete(self, test_id: Optional[int]) -> BaseResult:
+        if not isinstance(test_id, int) or test_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
+
         test_result = await self.read(test_id)
         if test_result.error:
             return test_result
@@ -154,8 +163,12 @@ class TestManager(Manager):
                 })
 
     @require_confirmation(operation=Operations.CREATE)
-    async def upload_assets(self, test_id: int, file_paths: List[str], main_script: Optional[str] = None) -> Dict[
+    async def upload_assets(self, test_id: Optional[int], file_paths: Optional[List[str]], main_script: Optional[str] = None) -> Dict[
         str, Any]:
+        if not isinstance(test_id, int) or test_id < 1:
+            return {"error": "Missing or invalid required argument 'test_id'. Expected integer."}
+        if not isinstance(file_paths, list) or not file_paths:
+            return {"error": "Missing or invalid required argument 'file_paths'. Expected non-empty list."}
 
         # Check if it's valid or allowed
         test_data = await self.read(test_id)
@@ -304,8 +317,12 @@ class TestManager(Manager):
 
         return script_types.get(extension, 'unknown')
 
-    async def list(self, project_id: int, limit: int = 50,
+    async def list(self, project_id: Optional[int], limit: int = 50,
                    offset: int = 0, control_ai_consent: bool = True) -> BaseResult:
+        if not isinstance(project_id, int) or project_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'project_id'. Expected integer.")
+        if not isinstance(limit, int) or not isinstance(offset, int):
+            return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
 
         if control_ai_consent:
             # Check if it's valid or allowed
@@ -403,7 +420,6 @@ class TestManager(Manager):
             result_formatter=format_tests,
             json=configuration_body)
 
-
 def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_tests",
@@ -452,13 +468,13 @@ def register(mcp, token: Optional[BzmToken]):
         try:
             match action:
                 case "read":
-                    return await test_manager.read(args["test_id"])
+                    return await test_manager.read(args.get("test_id"))
                 case "create":
-                    return await test_manager.create(args["test_name"], args["project_id"])
+                    return await test_manager.create(args.get("test_name"), args.get("project_id"))
                 case "delete":
-                    return await test_manager.delete(args["test_id"])
+                    return await test_manager.delete(args.get("test_id"))
                 case "list":
-                    return await test_manager.list(args["project_id"], args.get("limit", 50), args.get("offset", 0))
+                    return await test_manager.list(args.get("project_id"), args.get("limit", 50), args.get("offset", 0))
                 case "configure_load":
                     performance_test = PerformanceTestObject.from_args(args)
                     return await test_manager.configure(performance_test)
@@ -466,12 +482,14 @@ def register(mcp, token: Optional[BzmToken]):
                     performance_test = PerformanceTestObject.from_args(args)
                     return await test_manager.configure(performance_test)
                 case "upload_assets":
-                    return BaseResult(
-                        result=[await test_manager.upload_assets(
-                            args["test_id"],
-                            args["file_paths"],
-                            args.get("main_script"))]
+                    upload_result = await test_manager.upload_assets(
+                        args.get("test_id"),
+                        args.get("file_paths"),
+                        args.get("main_script"),
                     )
+                    if isinstance(upload_result, dict) and upload_result.get("error"):
+                        return BaseResult(error=upload_result["error"])
+                    return BaseResult(result=[upload_result])
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in tests manager tool"

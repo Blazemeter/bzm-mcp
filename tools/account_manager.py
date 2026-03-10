@@ -34,7 +34,10 @@ class AccountManager(Manager):
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
 
-    async def read(self, account_id: int) -> BaseResult:
+    async def read(self, account_id: Optional[int]) -> BaseResult:
+        if not isinstance(account_id, int) or account_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'account_id'. Expected integer.")
+
         account_result = await api_request(
             self.token,
             "GET",
@@ -53,6 +56,8 @@ class AccountManager(Manager):
                 return account_result
 
     async def list(self, limit: int = 50, offset: int = 0) -> BaseResult:
+        if not isinstance(limit, int) or not isinstance(offset, int):
+            return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
 
         # Note: Not it's needed to control AI consent at this level
 
@@ -69,7 +74,6 @@ class AccountManager(Manager):
             result_formatter=format_accounts,
             params=parameters
         )
-
 
 def register(mcp, token: Optional[BzmToken]) -> None:
     @mcp.tool(
@@ -95,7 +99,7 @@ def register(mcp, token: Optional[BzmToken]) -> None:
         try:
             match action:
                 case "read":
-                    return await account_manager.read(args["account_id"])
+                    return await account_manager.read(args.get("account_id"))
                 case "list":
                     return await account_manager.list(args.get("limit", 50), args.get("offset", 0))
                 case _:

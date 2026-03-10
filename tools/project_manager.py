@@ -32,7 +32,10 @@ class ProjectManager(Manager):
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
 
-    async def read(self, project_id: int) -> BaseResult:
+    async def read(self, project_id: Optional[int]) -> BaseResult:
+        if not isinstance(project_id, int) or project_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'project_id'. Expected integer.")
+
         project_result = await api_request(
             self.token,
             "GET",
@@ -53,7 +56,11 @@ class ProjectManager(Manager):
         project_element.tests_count = await bridge.count_project_tests(self.token, self.ctx, project_id)
         return project_result
 
-    async def list(self, workspace_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
+    async def list(self, workspace_id: Optional[int], limit: int = 50, offset: int = 0) -> BaseResult:
+        if not isinstance(workspace_id, int) or workspace_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'workspace_id'. Expected integer.")
+        if not isinstance(limit, int) or not isinstance(offset, int):
+            return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
 
         # Check if it's valid or allowed
         workspace_result = await bridge.read_workspace(self.token, self.ctx, workspace_id)
@@ -74,7 +81,6 @@ class ProjectManager(Manager):
             result_formatter=format_projects,
             params=parameters
         )
-
 
 def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
@@ -101,11 +107,9 @@ def register(mcp, token: Optional[BzmToken]):
         try:
             match action:
                 case "read":
-                    return await project_manager.read(args["project_id"])
+                    return await project_manager.read(args.get("project_id"))
                 case "list":
-                    limit = args.get("limit", 10)
-                    offset = args.get("offset", 0)
-                    return await project_manager.list(args["workspace_id"], limit, offset)
+                    return await project_manager.list(args.get("workspace_id"), args.get("limit", 10), args.get("offset", 0))
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in project manager tool"

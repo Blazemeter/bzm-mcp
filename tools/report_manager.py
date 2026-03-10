@@ -20,6 +20,7 @@ from mcp.server.fastmcp import Context
 from config.blazemeter import EXECUTIONS_ENDPOINT
 from config.token import BzmToken
 from models.manager import Manager
+from models.result import BaseResult
 from tools import bridge
 from tools.utils import api_request
 
@@ -29,7 +30,10 @@ class ReportManager(Manager):
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
 
-    async def read_summary(self, master_id: int):
+    async def read_summary(self, master_id: Optional[int]):
+        if not isinstance(master_id, int) or master_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
+
         # Check if it's valid or allowed
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
@@ -40,11 +44,14 @@ class ReportManager(Manager):
             "GET",
             f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/default/summary")
 
-    async def read_error(self, master_id: int):
+    async def read_error(self, master_id: Optional[int]):
         """
         Get error report for a given master_id with client-side paging.
         Always returns paged results for AI efficiency.
         """
+        if not isinstance(master_id, int) or master_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
+
         # Check if it's valid or allowed
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
@@ -56,11 +63,14 @@ class ReportManager(Manager):
             f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/errorsreport/data"
         )
 
-    async def read_request_stats(self, master_id: int):
+    async def read_request_stats(self, master_id: Optional[int]):
         """
         Get request statistics report for a given master_id with client-side paging.
         Always returns paged results for AI efficiency.
         """
+        if not isinstance(master_id, int) or master_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
+
         # Check if it's valid or allowed
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
@@ -72,11 +82,14 @@ class ReportManager(Manager):
             f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/aggregatereport/data"
         )
 
-    async def read_anomalies_stats(self, master_id: int):
+    async def read_anomalies_stats(self, master_id: Optional[int]):
         """
         Get anomaly statistics for a given master_id (test execution).
         Returns anomaly count, affected labels, and per-anomaly details (KPI, time range, max spike).
         """
+        if not isinstance(master_id, int) or master_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
+
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
             return execution_result
