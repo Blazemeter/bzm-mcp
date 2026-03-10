@@ -19,7 +19,7 @@ from mcp.server.fastmcp import Context
 
 from config.blazemeter import EXECUTIONS_ENDPOINT
 from config.token import BzmToken
-from formatters.execution import format_summary_report
+from formatters.execution import format_summary_report, format_request_stats
 from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
@@ -31,6 +31,14 @@ class ReportManager(Manager):
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
 
+    def _extract_execution_name(self, execution_result: BaseResult) -> Optional[str]:
+        """Extract execution name from execution result if available."""
+        if execution_result.result and len(execution_result.result) > 0:
+            exec_data = execution_result.result[0]
+            if isinstance(exec_data, dict):
+                return exec_data.get("execution_name") or exec_data.get("name")
+        return None
+
     async def read_summary(self, master_id: int):
         # Check if it's valid or allowed
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
@@ -38,11 +46,7 @@ class ReportManager(Manager):
             return execution_result
 
         # Extract execution name from execution result if available
-        execution_name = None
-        if execution_result.result and len(execution_result.result) > 0:
-            exec_data = execution_result.result[0]
-            if isinstance(exec_data, dict):
-                execution_name = exec_data.get("execution_name") or exec_data.get("name")
+        execution_name = self._extract_execution_name(execution_result)
 
         # Get summary data from API with formatter
         return await api_request(
@@ -74,18 +78,27 @@ class ReportManager(Manager):
 
     async def read_request_stats(self, master_id: int):
         """
-        Get request statistics report for a given master_id with client-side paging.
-        Always returns paged results for AI efficiency.
+        Get request statistics report for a given master_id with formatted, AI-friendly structure.
+        Includes execution metadata and explanatory context about metrics per endpoint.
         """
         # Check if it's valid or allowed
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
             return execution_result
 
+        # Extract execution name from execution result if available
+        execution_name = self._extract_execution_name(execution_result)
+
+        # Get request stats data from API with formatter
         return await api_request(
             self.token,
             "GET",
-            f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/aggregatereport/data"
+            f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/aggregatereport/data",
+            result_formatter=format_request_stats,
+            result_formatter_params={
+                "execution_id": master_id,
+                "execution_name": execution_name
+            }
         )
 
     async def read_anomalies_stats(self, master_id: int):
