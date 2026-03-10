@@ -18,9 +18,24 @@ from typing import Any, List, Optional, Dict
 from config.blazemeter import BZM_BASE_URL
 from models.execution import (
     TestExecution, TestExecutionDetailed, TestExecutionStatus, TestExecutionStatuses,
-    SummaryReport, SummaryReportMetrics
+    SummaryReport, SummaryReportMetrics,
+    RequestStatsReport, RequestStatMetrics
 )
 from tools.utils import get_date_time_iso
+
+
+def _build_execution_url(execution_id: Optional[int]) -> str:
+    """Build execution URL from execution ID."""
+    return f"{BZM_BASE_URL}/app/#/masters/{execution_id}" if execution_id else ""
+
+
+def _calculate_error_rate(errors_count: int, total_count: int, existing_rate: float = 0.0) -> float:
+    """Calculate error rate percentage if not already provided."""
+    if existing_rate > 0:
+        return existing_rate
+    if total_count > 0 and errors_count > 0:
+        return (errors_count / total_count * 100)
+    return 0.0
 
 
 def format_executions(executions: List[Any], params: Optional[dict] = None) -> List[TestExecution]:
@@ -124,7 +139,7 @@ def format_summary_report(summary_data: List[Any], params: Optional[dict] = None
         # Extract metrics with safe defaults
         hits = overall_data.get("hits", 0)
         failed = overall_data.get("failed", 0)
-        error_rate = (failed / hits * 100) if hits > 0 else 0.0
+        error_rate = _calculate_error_rate(failed, hits)
         
         metrics = SummaryReportMetrics(
             total_requests=hits,
@@ -147,7 +162,7 @@ def format_summary_report(summary_data: List[Any], params: Optional[dict] = None
         report = SummaryReport(
             execution_id=execution_id or 0,
             execution_name=execution_name,
-            execution_url=f"{BZM_BASE_URL}/app/#/masters/{execution_id}" if execution_id else "",
+            execution_url=_build_execution_url(execution_id),
             overall_metrics=metrics,
             context=_get_summary_context()
         )
@@ -155,6 +170,33 @@ def format_summary_report(summary_data: List[Any], params: Optional[dict] = None
         formatted_reports.append(report)
     
     return formatted_reports
+
+
+def _get_common_metrics_explanation() -> str:
+    """Common metrics explanation shared across report types."""
+    return (
+        "- avg_response_time_ms: Mean response time across all requests\n"
+        "- percentile_90_ms: 90% of requests completed faster than this time (important for SLA monitoring)\n"
+        "- percentile_95_ms: 95% of requests completed faster than this time\n"
+        "- percentile_99_ms: 99% of requests completed faster than this time (catches outliers)\n"
+        "- median_response_time_ms: Middle value when all response times are sorted (less affected by outliers than average)\n"
+        "- min_response_time_ms: Fastest response time\n"
+        "- max_response_time_ms: Slowest response time\n"
+        "- avg_throughput_per_second: Average requests per second (indicates system capacity)\n"
+        "- errors_count: Total number of failed requests\n"
+        "- errors_rate_percent: Percentage of requests that failed\n"
+    )
+
+
+def _get_common_interpretation_guidance() -> str:
+    """Common interpretation guidance shared across report types."""
+    return (
+        "- Compare percentiles to average: Large gaps indicate inconsistent performance\n"
+        "- High errors_rate_percent (>1%) suggests system issues or misconfiguration\n"
+        "- Response times should be consistent across percentiles for stable systems\n"
+        "- Throughput indicates system capacity under load\n"
+        "- Compare percentile_99_ms to avg_response_time_ms to identify outliers\n"
+    )
 
 
 def _get_summary_context() -> str:
@@ -166,19 +208,99 @@ def _get_summary_context() -> str:
         "- total_requests: Total number of HTTP requests executed\n"
         "- total_errors: Number of requests that failed (non-2xx/3xx responses or timeouts)\n"
         "- error_rate_percent: Percentage of failed requests (total_errors / total_requests * 100)\n"
-        "- average_response_time_ms: Mean response time across all requests\n"
-        "- percentile_90_ms: 90% of requests completed faster than this time (important for SLA monitoring)\n"
-        "- percentile_95_ms: 95% of requests completed faster than this time\n"
-        "- percentile_99_ms: 99% of requests completed faster than this time (catches outliers)\n"
-        "- median_response_time_ms: Middle value when all response times are sorted (less affected by outliers than average)\n"
-        "- average_throughput_per_second: Average requests per second (indicates system capacity)\n"
+        + _get_common_metrics_explanation() +
         "- total_duration_seconds: How long the test ran\n"
-        "- max_concurrent_users: Peak number of simultaneous virtual users\n\n"
+        "- max_concurrent_users: Peak number of simultaneous virtual users\n"
+        "- average_bytes_per_request: Average response size in bytes\n"
+        "- total_bytes: Total bytes transferred\n\n"
         "INTERPRETATION GUIDANCE:\n"
-        "- Compare percentiles to average: Large gaps indicate inconsistent performance\n"
-        "- High error_rate_percent (>1%) suggests system issues or misconfiguration\n"
-        "- Response times should be consistent across percentiles for stable systems\n"
-        "- Throughput indicates system capacity under load\n"
+        + _get_common_interpretation_guidance() +
         "- Use request_stats for per-endpoint breakdown (available via read_request_stats action)\n\n"
         "For more details about the summary report, consult the BlazeMeter skill blazemeter-performance-testing and read the related reporting resource\n"
+    )
+
+
+def format_request_stats(request_stats_data: List[Any], params: Optional[dict] = None) -> List[RequestStatsReport]:
+    """
+    Format request statistics data from BlazeMeter API into a structured, AI-friendly format.
+    
+    The API returns request stats as a list of objects, one per endpoint/label.
+    This function normalizes field names and adds context for AI interpretation.
+    """
+    formatted_reports = []
+    execution_id = params.get("execution_id") if params else None
+    execution_name = params.get("execution_name") if params else None
+    
+    # Handle case where data might be nested
+    stats_list = request_stats_data
+    if request_stats_data and isinstance(request_stats_data[0], list):
+        stats_list = request_stats_data[0]
+    
+    formatted_stats = []
+    for stat_item in stats_list:
+        if not isinstance(stat_item, dict):
+            continue
+        
+        # Calculate error rate if not provided
+        samples = stat_item.get("samples", 0)
+        errors_count = stat_item.get("errorsCount", 0)
+        errors_rate = _calculate_error_rate(errors_count, samples, stat_item.get("errorsRate", 0))
+        
+        metrics = RequestStatMetrics(
+            label_id=stat_item.get("labelId", ""),
+            label_name=stat_item.get("labelName", "Unknown"),
+            samples=samples,
+            avg_response_time_ms=round(stat_item.get("avgResponseTime", 0), 2),
+            percentile_90_ms=stat_item.get("90line", 0),
+            percentile_95_ms=stat_item.get("95line", 0),
+            percentile_99_ms=stat_item.get("99line", 0),
+            min_response_time_ms=stat_item.get("minResponseTime", 0),
+            max_response_time_ms=stat_item.get("maxResponseTime", 0),
+            avg_latency_ms=round(stat_item.get("avgLatency", 0), 2),
+            standard_deviation_ms=round(stat_item.get("stDev", 0), 2),
+            duration_seconds=stat_item.get("duration", 0),
+            avg_bytes=round(stat_item.get("avgBytes", 0), 2),
+            avg_throughput_per_second=round(stat_item.get("avgThroughput", 0), 2),
+            median_response_time_ms=stat_item.get("medianResponseTime", 0),
+            errors_count=errors_count,
+            errors_rate_percent=round(errors_rate, 2),
+            concurrency=stat_item.get("concurrency", 0)
+        )
+        
+        formatted_stats.append(metrics)
+    
+    # Create report with all stats and context
+    report = RequestStatsReport(
+        execution_id=execution_id or 0,
+        execution_name=execution_name,
+        execution_url=_build_execution_url(execution_id),
+        request_stats=formatted_stats,
+        context=_get_request_stats_context()
+    )
+    
+    formatted_reports.append(report)
+    return formatted_reports
+
+
+def _get_request_stats_context() -> str:
+    """Provide context about request stats report metrics for AI interpretation."""
+    return (
+        "REQUEST STATS REPORT METRICS EXPLANATION:\n"
+        "This report provides performance metrics for each request label/endpoint in the test execution.\n\n"
+        "KEY METRICS PER ENDPOINT:\n"
+        "- label_id: Unique identifier for the request label\n"
+        "- label_name: Name of the endpoint/request (e.g., 'Login', 'Homepage', 'View Product')\n"
+        "- samples: Total number of requests executed for this endpoint\n"
+        + _get_common_metrics_explanation() +
+        "- avg_latency_ms: Average network latency (time to first byte) for this endpoint\n"
+        "- standard_deviation_ms: Measure of response time variability (higher = more inconsistent)\n"
+        "- duration_seconds: Duration of the test period for this endpoint\n"
+        "- avg_bytes: Average response size in bytes for this endpoint\n"
+        "- concurrency: Number of concurrent users hitting this endpoint\n\n"
+        "INTERPRETATION GUIDANCE:\n"
+        "- Compare avg_response_time_ms across endpoints to identify slow endpoints\n"
+        + _get_common_interpretation_guidance() +
+        "- Standard deviation indicates consistency: lower = more consistent, higher = more variable\n"
+        "- Use this report to drill down into specific endpoint performance issues\n"
+        "- The 'ALL' label (if present) shows aggregated metrics across all endpoints\n"
     )
