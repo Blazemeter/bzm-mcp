@@ -95,8 +95,11 @@ class ExecutionManager(Manager):
                 return BaseResult(error=f"HTTP {status_code}: {e.response.text[:200]}")
 
     @require_confirmation(operation=Operations.CREATE)
-    async def start(self, test_id: int, delayed_start_ready: bool = True,
+    async def start(self, test_id: Optional[int], delayed_start_ready: bool = True,
                     is_debug_run: bool = False) -> BaseResult:
+        if not isinstance(test_id, int) or test_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
+
         # Check if it's valid or allowed
         test_result = await bridge.read_test(self.token, self.ctx, test_id)
         if test_result.error:
@@ -113,7 +116,10 @@ class ExecutionManager(Manager):
             json=start_body
         )
 
-    async def read(self, execution_id: int) -> BaseResult:
+    async def read(self, execution_id: Optional[int]) -> BaseResult:
+        if not isinstance(execution_id, int) or execution_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
+
         execution_response = await api_request(
             self.token,
             "GET",
@@ -173,7 +179,12 @@ class ExecutionManager(Manager):
             "Always verify that the 'ended' field is not null before retrieving final reports to ensure the test has fully completed and all data is available.\n"
         )
 
-    async def list(self, test_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
+    async def list(self, test_id: Optional[int], limit: int = 50, offset: int = 0) -> BaseResult:
+        if not isinstance(test_id, int) or test_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
+        if not isinstance(limit, int) or not isinstance(offset, int):
+            return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
+
         test_result = await bridge.read_test(self.token, self.ctx, test_id)
         if test_result.error:
             return test_result
@@ -193,7 +204,10 @@ class ExecutionManager(Manager):
             params=parameters
         )
 
-    async def ai_analysis(self, execution_id: int) -> BaseResult:
+    async def ai_analysis(self, execution_id: Optional[int]) -> BaseResult:
+        if not isinstance(execution_id, int) or execution_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
+
         execution_response = await self.read(execution_id)
         if execution_response.error:
             return execution_response
@@ -351,7 +365,10 @@ class ExecutionManager(Manager):
         }
         return BaseResult(result=[result])
 
-    async def read_all_reports(self, execution_id: int) -> BaseResult:
+    async def read_all_reports(self, execution_id: Optional[int]) -> BaseResult:
+        if not isinstance(execution_id, int) or execution_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
+
         report_manager = ReportManager(self.token, self.ctx)
         summary_result = await report_manager.read_summary(execution_id)
         error_result = await report_manager.read_error(execution_id)
@@ -460,27 +477,27 @@ Hints:
         try:
             match action:
                 case "start":
-                    return await test_manager.start(args["test_id"])
+                    return await test_manager.start(args.get("test_id"))
                 case "read":
-                    return await test_manager.read(args["execution_id"])
+                    return await test_manager.read(args.get("execution_id"))
                 case "list":
                     return await test_manager.list(
-                        args["test_id"],
+                        args.get("test_id"),
                         args.get("limit", 50),
                         args.get("offset", 0),
                     )
                 case "read_summary":
-                    return await report_manager.read_summary(args["execution_id"])
+                    return await report_manager.read_summary(args.get("execution_id"))
                 case "read_errors":
-                    return await report_manager.read_error(args["execution_id"])
+                    return await report_manager.read_error(args.get("execution_id"))
                 case "read_request_stats":
-                    return await report_manager.read_request_stats(args["execution_id"])
+                    return await report_manager.read_request_stats(args.get("execution_id"))
                 case "read_all_reports":
-                    return await test_manager.read_all_reports(args["execution_id"])
+                    return await test_manager.read_all_reports(args.get("execution_id"))
                 case "read_anomalies_stats":
-                    return await report_manager.read_anomalies_stats(args["execution_id"])
+                    return await report_manager.read_anomalies_stats(args.get("execution_id"))
                 case "ai_analysis":
-                    return await test_manager.ai_analysis(args["execution_id"])
+                    return await test_manager.ai_analysis(args.get("execution_id"))
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in test execution manager tool"
