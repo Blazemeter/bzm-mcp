@@ -106,9 +106,31 @@ async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
                         response_dict.get("skip", 0) + response_dict.get("limit", 0)) > 0
             )
         except httpx.HTTPStatusError as e:
-            if e.response.status_code in [401, 403]:
+            status_code = e.response.status_code
+            if status_code in [401, 403]:
+                # Try to extract detailed error message from response body
+                error_msg = "Invalid credentials"
+                try:
+                    error_body = e.response.json()
+                    if isinstance(error_body, dict):
+                        api_error = error_body.get("error")
+                        if api_error:
+                            if isinstance(api_error, dict):
+                                error_msg = api_error.get("message", error_msg)
+                            else:
+                                error_msg = str(api_error)
+                        elif "message" in error_body:
+                            error_msg = error_body.get("message", error_msg)
+                        
+                        # Check for data retention related keywords
+                        error_text = str(error_body).lower()
+                        if any(keyword in error_text for keyword in ["retention", "expired", "no longer available"]):
+                            error_msg = "Data retention period expired: Report data is no longer available due to data retention policy"
+                except:
+                    pass
+                
                 return BaseResult(
-                    error="Invalid credentials"
+                    error=error_msg
                 )
             raise
 
