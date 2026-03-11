@@ -262,9 +262,11 @@ def format_request_stats(request_stats_data: List[Any], params: Optional[dict] =
             avg_bytes=round(stat_item.get("avgBytes", 0), 2),
             avg_throughput_per_second=round(stat_item.get("avgThroughput", 0), 2),
             median_response_time_ms=stat_item.get("medianResponseTime", 0),
+            geometric_mean_response_time_ms=round(stat_item.get("geoMeanResponseTime"), 2) if stat_item.get("geoMeanResponseTime") is not None else None,
             errors_count=errors_count,
             errors_rate_percent=round(errors_rate, 2),
-            concurrency=stat_item.get("concurrency", 0)
+            concurrency=stat_item.get("concurrency", 0),
+            has_label_passed_thresholds=stat_item.get("hasLabelPassedThresholds")
         )
         
         formatted_stats.append(metrics)
@@ -296,7 +298,9 @@ def _get_request_stats_context() -> str:
         "- standard_deviation_ms: Measure of response time variability (higher = more inconsistent)\n"
         "- duration_seconds: Duration of the test period for this endpoint\n"
         "- avg_bytes: Average response size in bytes for this endpoint\n"
-        "- concurrency: Number of concurrent users hitting this endpoint\n\n"
+        "- geometric_mean_response_time_ms: Geometric mean response time (less affected by outliers than arithmetic mean, useful for skewed distributions)\n"
+        "- concurrency: Number of concurrent users hitting this endpoint\n"
+        "- has_label_passed_thresholds: Indicates whether this endpoint passed configured performance thresholds (null if thresholds not configured)\n\n"
         "INTERPRETATION GUIDANCE:\n"
         "- Compare avg_response_time_ms across endpoints to identify slow endpoints\n"
         + _get_common_interpretation_guidance() +
