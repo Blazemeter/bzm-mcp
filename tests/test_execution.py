@@ -15,7 +15,7 @@ limitations under the License.
 """
 import pytest
 
-from formatters.execution import format_request_stats
+from formatters.execution import format_request_stats, format_summary_report
 
 
 class TestFormatRequestStats:
@@ -88,3 +88,61 @@ class TestFormatRequestStats:
         assert len(result) == 1
         assert len(result[0].request_stats) == 0
         assert result[0].execution_id == 0
+
+
+class TestFormatSummaryReport:
+
+    def test_format_summary_report_basic(self):
+        api_data = [[
+            {
+                "summary": [
+                    {
+                        "id": "ALL",
+                        "hits": 5000,
+                        "failed": 25,
+                        "avg": 120.5,
+                        "min": 50,
+                        "max": 500,
+                        "tp90": 200,
+                        "tp95": 250,
+                        "tp99": 300,
+                        "median": 115,
+                        "hits_avg": 83.33,
+                        "duration": 60,
+                        "size_avg": 1024.5,
+                        "bytes": 5122500,
+                        "maxUsers": 50
+                    }
+                ]
+            }
+        ]]
+
+        result = format_summary_report(api_data, {
+            "execution_id": 12345,
+            "execution_name": "Test Summary Execution"
+        })
+
+        assert len(result) == 1
+        report = result[0]
+        assert report.execution_id == 12345
+        assert report.execution_name == "Test Summary Execution"
+        assert report.context is not None
+        assert len(report.context) > 0
+        assert "SUMMARY REPORT METRICS EXPLANATION" in report.context
+
+        metrics = report.overall_metrics
+        assert metrics.total_requests == 5000
+        assert metrics.total_errors == 25
+        assert metrics.error_rate_percent == 0.5
+        assert metrics.average_response_time_ms == 120.5
+        assert metrics.min_response_time_ms == 50
+        assert metrics.max_response_time_ms == 500
+        assert metrics.percentile_90_ms == 200
+        assert metrics.percentile_95_ms == 250
+        assert metrics.percentile_99_ms == 300
+        assert metrics.median_response_time_ms == 115
+        assert metrics.average_throughput_per_second == 83.33
+        assert metrics.total_duration_seconds == 60
+        assert metrics.average_bytes_per_request == 1024.5
+        assert metrics.total_bytes == 5122500
+        assert metrics.max_concurrent_users == 50
