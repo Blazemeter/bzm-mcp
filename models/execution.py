@@ -97,9 +97,11 @@ class RequestStatMetrics(BaseModel):
     avg_bytes: float = Field(description="Average response size in bytes")
     avg_throughput_per_second: float = Field(description="Average requests per second for this label")
     median_response_time_ms: float = Field(description="Median (50th percentile) response time in milliseconds")
+    geometric_mean_response_time_ms: Optional[float] = Field(description="Geometric mean response time in milliseconds (less affected by outliers than arithmetic mean)", default=None)
     errors_count: int = Field(description="Total number of errors for this label")
     errors_rate_percent: float = Field(description="Percentage of requests that failed for this label")
     concurrency: int = Field(description="Number of concurrent users for this label")
+    has_label_passed_thresholds: Optional[bool] = Field(description="Indicates whether this label passed the configured performance thresholds", default=None)
 
 
 class RequestStatsReport(BaseModel):
