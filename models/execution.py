@@ -111,3 +111,51 @@ class RequestStatsReport(BaseModel):
     execution_url: str = Field(description="URL to view this execution in BlazeMeter")
     request_stats: List[RequestStatMetrics] = Field(description="Performance metrics for each request label/endpoint")
     context: str = Field(description="Explanatory context about the request stats report format and metrics")
+
+
+class HttpError(BaseModel):
+    """HTTP error information."""
+    response_code: Optional[str] = Field(description="HTTP response code of the error (e.g., '404', '500', empty string for transaction errors)", default=None)
+    response_message: str = Field(description="Error message or description")
+    error_count: int = Field(description="Number of times this specific HTTP error occurred")
+
+
+class AssertionError(BaseModel):
+    """Assertion failure information."""
+    assertion_name: str = Field(description="Name of the assertion that failed")
+    failure_message: str = Field(description="Message describing why the assertion failed")
+    failures: int = Field(description="Number of times this assertion failed")
+
+
+class FailedEmbeddedResource(BaseModel):
+    """Failed embedded resource information (e.g., CSS, JS, images)."""
+    response_code: str = Field(description="HTTP response code of the failed resource")
+    response_message: str = Field(description="Error message for the failed resource")
+    resource_count: int = Field(description="Number of times this resource failed to load")
+
+
+class FailedUrl(BaseModel):
+    """Failed URL information."""
+    url: str = Field(description="URL that failed to load")
+    failure_count: int = Field(description="Number of times this URL failed")
+
+
+class LabelErrors(BaseModel):
+    """Error information for a specific label/endpoint."""
+    label_id: str = Field(description="Unique identifier for the request label")
+    label_name: str = Field(description="Name of the endpoint/label (e.g., 'Login', 'Homepage', 'ALL')")
+    http_errors: List[HttpError] = Field(description="List of HTTP errors (response codes) for this label", default_factory=list)
+    assertion_errors: List[AssertionError] = Field(description="List of assertion failures for this label", default_factory=list)
+    failed_embedded_resources: List[FailedEmbeddedResource] = Field(description="List of failed embedded resources (CSS, JS, images) for this label", default_factory=list)
+    failed_urls: List[FailedUrl] = Field(description="List of failed URLs for this label", default_factory=list)
+    total_errors_for_label: int = Field(description="Total number of errors (HTTP + assertions + embedded resources) for this label")
+
+
+class ErrorReport(BaseModel):
+    """Formatted error report for a test execution."""
+    execution_id: int = Field(description="The execution ID this error report belongs to")
+    execution_name: Optional[str] = Field(description="The execution name", default=None)
+    execution_url: str = Field(description="URL to view this execution in BlazeMeter")
+    label_errors: List[LabelErrors] = Field(description="List of errors grouped by label/endpoint")
+    total_errors: int = Field(description="Total number of errors across all labels and error types")
+    context: str = Field(description="Explanatory context about the error report format and metrics")
