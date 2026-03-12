@@ -19,7 +19,8 @@ from config.blazemeter import BZM_BASE_URL
 from models.execution import (
     TestExecution, TestExecutionDetailed, TestExecutionStatus, TestExecutionStatuses,
     SummaryReport, SummaryReportMetrics,
-    RequestStatsReport, RequestStatMetrics
+    RequestStatsReport, RequestStatMetrics,
+    ErrorReport, LabelErrors, HttpError, AssertionError, FailedEmbeddedResource, FailedUrl
 )
 from tools.utils import get_date_time_iso
 
@@ -307,4 +308,175 @@ def _get_request_stats_context() -> str:
         "- Standard deviation indicates consistency: lower = more consistent, higher = more variable\n"
         "- Use this report to drill down into specific endpoint performance issues\n"
         "- The 'ALL' label (if present) shows aggregated metrics across all endpoints\n"
+    )
+
+
+def format_error_report(error_data: List[Any], params: Optional[dict] = None) -> List[ErrorReport]:
+    """
+    Format error report data from BlazeMeter API into a structured, AI-friendly format.
+    
+    The API returns error data as a list of label objects, each containing arrays of:
+    - errors: HTTP errors with response codes and messages
+    - assertions: Assertion failures
+    - failedEmbeddedResources: Failed CSS/JS/images
+    - urls: Failed URLs
+    This function normalizes field names and adds context for AI interpretation.
+    """
+    formatted_reports = []
+    execution_id = params.get("execution_id") if params else None
+    execution_name = params.get("execution_name") if params else None
+    
+    label_list = error_data
+    if error_data and isinstance(error_data[0], list):
+        label_list = error_data[0]
+    
+    formatted_label_errors = []
+    total_errors = 0
+    
+    for label_item in label_list:
+        if not isinstance(label_item, dict):
+            continue
+        
+        label_id = label_item.get("labelId", "")
+        label_name = label_item.get("name", label_item.get("_id", "Unknown"))
+        
+        # Process HTTP errors
+        http_errors = []
+        errors_array = label_item.get("errors", [])
+        for error_obj in errors_array:
+            if isinstance(error_obj, dict):
+                http_errors.append(HttpError(
+                    response_code=error_obj.get("rc") if error_obj.get("rc") else None,
+                    response_message=error_obj.get("m", ""),
+                    error_count=error_obj.get("count", 0)
+                ))
+                total_errors += error_obj.get("count", 0)
+        
+        # Process assertion errors
+        assertion_errors = []
+        assertions_array = label_item.get("assertions", [])
+        for assertion_obj in assertions_array:
+            if isinstance(assertion_obj, dict):
+                failures = assertion_obj.get("failures", 0)
+                assertion_errors.append(AssertionError(
+                    assertion_name=assertion_obj.get("name", ""),
+                    failure_message=assertion_obj.get("failureMessage", ""),
+                    failures=failures
+                ))
+                total_errors += failures
+        
+        # Process failed embedded resources
+        failed_resources = []
+        failed_embedded_array = label_item.get("failedEmbeddedResources", [])
+        for resource_obj in failed_embedded_array:
+            if isinstance(resource_obj, dict):
+                resource_count = resource_obj.get("count", 0)
+                failed_resources.append(FailedEmbeddedResource(
+                    response_code=resource_obj.get("rc", ""),
+                    response_message=resource_obj.get("rm", ""),
+                    resource_count=resource_count
+                ))
+                total_errors += resource_count
+        
+        # Process failed URLs
+        failed_urls = []
+        urls_array = label_item.get("urls", [])
+        for url_obj in urls_array:
+            if isinstance(url_obj, dict):
+                url_count = url_obj.get("count", 0)
+                failed_urls.append(FailedUrl(
+                    url=url_obj.get("url", ""),
+                    failure_count=url_count
+                ))
+                total_errors += url_count
+        
+        # Calculate total errors for this label
+        label_total = sum(e.error_count for e in http_errors) + \
+                     sum(a.failures for a in assertion_errors) + \
+                     sum(r.resource_count for r in failed_resources) + \
+                     sum(u.failure_count for u in failed_urls)
+        
+        label_error = LabelErrors(
+            label_id=label_id,
+            label_name=label_name,
+            http_errors=http_errors,
+            assertion_errors=assertion_errors,
+            failed_embedded_resources=failed_resources,
+            failed_urls=failed_urls,
+            total_errors_for_label=label_total
+        )
+        
+        formatted_label_errors.append(label_error)
+    
+    # Create report with all label errors and context
+    report = ErrorReport(
+        execution_id=execution_id or 0,
+        execution_name=execution_name,
+        execution_url=_build_execution_url(execution_id),
+        label_errors=formatted_label_errors,
+        total_errors=total_errors,
+        context=_get_error_report_context()
+    )
+    
+    formatted_reports.append(report)
+    return formatted_reports
+
+
+def _get_error_report_context() -> str:
+    """Provide context about error report metrics for AI interpretation."""
+    return (
+        "ERROR REPORT METRICS EXPLANATION:\n"
+        "This report lists errors that occurred during test execution, grouped by endpoint/label.\n\n"
+
+        "STRUCTURE:\n"
+        "The report contains label_errors entries. Each entry represents errors for a specific endpoint and includes four arrays:\n"
+        "1. http_errors – HTTP response code errors\n"
+        "2. assertion_errors – Custom assertion failures\n"
+        "3. failed_embedded_resources – Failed CSS, JavaScript, or image resources\n"
+        "4. failed_urls – Failed URL requests\n\n"
+
+        "KEY METRICS PER LABEL:\n"
+        "- label_id: Unique identifier of the request label/endpoint\n"
+        "- label_name: Endpoint/request name (e.g., 'Login', 'Homepage', 'ALL' for aggregated data)\n"
+        "- total_errors_for_label: Total errors for this label (HTTP + assertions + embedded resources + URLs)\n\n"
+
+        "HTTP ERRORS:\n"
+        "- response_code: HTTP status code (e.g., '404', '500', '401'; empty string may indicate transaction/connection errors)\n"
+        "- response_message: Server error message (e.g., 'Not Found', 'Internal Server Error')\n"
+        "- error_count: Number of occurrences\n\n"
+
+        "ASSERTION ERRORS:\n"
+        "- assertion_name: Failed assertion name\n"
+        "- failure_message: Reason for the failure\n"
+        "- failures: Number of occurrences\n\n"
+
+        "FAILED EMBEDDED RESOURCES:\n"
+        "- response_code: HTTP status code\n"
+        "- response_message: Error message\n"
+        "- resource_count: Number of failed loads\n\n"
+
+        "FAILED URLS:\n"
+        "- url: Failed URL\n"
+        "- failure_count: Number of failures\n\n"
+
+        "OVERALL METRIC:\n"
+        "- total_errors: Sum of all errors across labels and types\n\n"
+
+        "INTERPRETATION GUIDANCE:\n"
+        "- 'ALL' label aggregates errors across endpoints for overall analysis\n"
+        "- Group by response_code to identify HTTP patterns (4xx client errors, 5xx server errors)\n"
+        "- Group by label_name to identify endpoints with the most failures\n"
+        "- Empty response_code often indicates transaction or connection issues\n"
+        "- High counts suggest systemic problems rather than isolated failures\n"
+        "- Failed embedded resources may cause UI issues but not necessarily functional failures\n"
+        "- Assertion errors indicate validation failures; review failure_message for expected conditions\n"
+        "- Compare total_errors with total_requests from the summary report to calculate error rate\n"
+        "- Same response_code across labels suggests widespread issues; different codes in one label may indicate intermittent problems\n\n"
+
+        "SKILL CATEGORIES FOR RESOLVING ERRORS:\n"
+        "- blazemeter-performance-testing: Analyze error patterns and assertion failures\n"
+        "- blazemeter-integrations: Troubleshoot scripts, authentication errors (401), and integrations\n"
+        "- blazemeter-api-reference: Understand API error codes and response formats\n\n"
+
+        "For deeper troubleshooting, consult the BlazeMeter skill blazemeter-performance-testing and related reporting resources.\n"
     )
