@@ -372,40 +372,42 @@ def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_execution",
         description="""
-        Operations on tests executions and results reports.
-        Actions:
-        - start: start a preconfigured load test, you need to know the test_id of a created and configured test.
-            args(dict): Dictionary with the following required parameters:
-                test_id (int): The test Id that should be started.
-        - read: Read a Test Execution. Get the information and status of a test execution.
-            args(dict): Dictionary with the following required parameters:
-                execution_id (int): The execution ID to get the information.
-        - list: List all executions for a test ID. 
-            args(dict): Dictionary with the following required parameters:
-                test_id (int): The id of the test to list the execution from
-                limit (int, default=10, valid=[1 to 50]): The number of test executions to list.
-                offset (int, default=0): Number of test executions to skip.       
-        - read_summary: get the summary report for a given execution ID.
-            args(dict): Dictionary with the following required parameters:
-                execution_id (int): The execution ID to get the summary report for.
-        - read_errors: get the error report for a given execution ID.
-            args(dict): Dictionary with the following required parameters:
-                execution_id (int): The execution ID to get the error report for.
-        - read_request_stats: get the request statistics report for a given execution ID.
-            args(dict): Dictionary with the following required parameters:
-                execution_id (int): The execution ID to get the request statistics report for.
-        - read_all_reports: get all reports (summary, error, and request statistics) for a given execution ID.
-            args(dict): Dictionary with the following required parameters:
-                execution_id (int): The execution ID to get all reports for.
-        - read_anomalies_stats: get anomaly statistics for a test execution (count, affected labels, per-anomaly KPI/time/spike details).
-            args(dict): Dictionary with the following required parameters:
-                execution_id (int): The execution (master) ID to get anomaly stats for.
-        - ai_analysis: Trigger AI analysis for an execution and get dynamic responses based on polling results.
-            args(dict): Dictionary with the following required parameters:
-                execution_id (int): The execution ID (masterId) to trigger AI analysis for.
-            The action will check if the execution is running or finished, then either retrieve existing analysis status
-            or create a new analysis entry. It provides dynamic responses indicating whether the analysis is ready or still processing.
-        """
+Operations on tests executions and results reports.
+Actions:
+- start: start a preconfigured load test, you need to know the test_id of a created and configured test.
+    args(dict): Dictionary with the following required parameters:
+        test_id (int): The test Id that should be started.
+- read: Read a Test Execution. Get the information and status of a test execution.
+    args(dict): Dictionary with the following required parameters:
+        execution_id (int): The execution ID to get the information.
+- list: List all executions for a test ID. 
+    args(dict): Dictionary with the following required parameters:
+        test_id (int): The id of the test to list the execution from
+        limit (int, default=10, valid=[1 to 50]): The number of test executions to list.
+        offset (int, default=0): Number of test executions to skip.       
+- read_summary: get the summary report for a given execution ID.
+    args(dict): Dictionary with the following required parameters:
+        execution_id (int): The execution ID to get the summary report for.
+- read_errors: get the error report for a given execution ID.
+    args(dict): Dictionary with the following required parameters:
+        execution_id (int): The execution ID to get the error report for.
+- read_request_stats: get the request statistics report for a given execution ID.
+    args(dict): Dictionary with the following required parameters:
+        execution_id (int): The execution ID to get the request statistics report for.
+- read_all_reports: get all reports (summary, error, and request statistics) for a given execution ID.
+    args(dict): Dictionary with the following required parameters:
+        execution_id (int): The execution ID to get all reports for.
+- read_anomalies_stats: get anomaly statistics for a test execution (count, affected labels, per-anomaly KPI/time/spike details).
+    args(dict): Dictionary with the following required parameters:
+        execution_id (int): The execution (master) ID to get anomaly stats for.
+- ai_analysis: Trigger AI analysis for an execution and get dynamic responses based on polling results.
+    args(dict): Dictionary with the following required parameters:
+        execution_id (int): The execution ID (masterId) to trigger AI analysis for.
+    The action will check if the execution is running or finished, then either retrieve existing analysis status
+    or create a new analysis entry. It provides dynamic responses indicating whether the analysis is ready or still processing.
+Hints:
+- **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
+"""
     )
     async def execution(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
         test_manager = ExecutionManager(token, ctx)
