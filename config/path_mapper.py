@@ -41,21 +41,23 @@ class BinaryPathMappingStrategy(PathMappingStrategy):
 class DockerPathMappingStrategy(PathMappingStrategy):
     
     def __init__(self, source_working_directory: str, container_working_directory: str = "/home/bzm-mcp/working_directory"):
-        self.source_working_directory = str(Path(source_working_directory).resolve()).rstrip('/')
+        self.source_working_directory = Path(source_working_directory).resolve()
         # Don't resolve container path - it should remain as specified for container execution
-        self.container_working_directory = container_working_directory.rstrip('/')
+        self.container_working_directory = container_working_directory.rstrip("/\\")
     
     def map_paths(self, file_paths: List[str]) -> List[str]:
         mapped_paths = []
+        source_path = self.source_working_directory
         
         for file_path in file_paths:
-            abs_file_path = str(Path(file_path).resolve())
+            abs_file_path = Path(file_path).resolve()
             
-            if abs_file_path.startswith(self.source_working_directory):
-                relative_path = abs_file_path[len(self.source_working_directory):].lstrip('/')
-                mapped_path = f"{self.container_working_directory}/{relative_path}"
+            try:
+                relative_path = abs_file_path.relative_to(source_path)
+                # Use as_posix() so container paths always use forward slashes (Linux)
+                mapped_path = f"{self.container_working_directory}/{relative_path.as_posix()}"
                 mapped_paths.append(mapped_path)
-            else:
+            except ValueError:
                 # Path doesn't start with source directory - keep as-is (might be relative or outside source)
                 mapped_paths.append(file_path)
         

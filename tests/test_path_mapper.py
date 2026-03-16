@@ -142,7 +142,8 @@ class TestPathMapperFactory:
     def test_create_strategy_docker_mode(self):
         strategy = PathMapperFactory.create_strategy()
         assert isinstance(strategy, DockerPathMappingStrategy)
-        assert strategy.source_working_directory == '/Users/user/Documents'
+        # Resolved path varies by OS (e.g. C:\Users\... on Windows, /Users/... on Linux)
+        assert strategy.source_working_directory == Path('/Users/user/Documents').resolve()
 
     @patch.dict(os.environ, {'MCP_DOCKER': 'true'}, clear=True)
     def test_create_strategy_docker_mode_missing_env_var(self):
