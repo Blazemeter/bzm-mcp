@@ -1,9 +1,9 @@
 name: Build Binaries
 
 on:
-  push:
-    branches: ['main']
-  pull_request:
+  workflow_run:
+    workflows: ["Tests"]
+    types: [completed]
     branches: ['main']
   workflow_dispatch:
 
@@ -13,6 +13,7 @@ permissions:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     strategy:
       matrix:
         include:
@@ -87,8 +88,11 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
+    # Use REPO_PUSH_PAT (user PAT with bypass allowance) to push dist/ to main when branch protection blocks GITHUB_TOKEN.
     - uses: actions/checkout@v4
-    
+      with:
+        token: ${{ secrets.REPO_PUSH_PAT || secrets.GITHUB_TOKEN }}
+
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
