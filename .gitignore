@@ -15,3 +15,10 @@ wheels/
 
 .idea/
 version_info.txt
+
+# Mend/WhiteSource artifacts
+whitesource/
+.whitesource.lock
+mend
+mend-cli
+*.mend.json

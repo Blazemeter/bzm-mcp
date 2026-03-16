@@ -52,37 +52,38 @@ def register(mcp, token: Optional[BzmToken]) -> None:
 Operations on Billing.
 Actions: 
 - calculate_cost_from_config: Calculate the cost of a test based on test configuration and workspace allowance type.
-    args(dict): Dictionary with the following parameters:
-        allowance_type (str, required, valid=["credits", "virtualUserHours", "actualThreads", "serverHours", "functionalRequests"]): The workspace allowance.
-        test_type (str, required, default="performance", valid=["performance", "browser_performance", "gui_functional", "api_monitoring", "service_virtualization"]): Type of test.
-        concurrency (int, required for performance/browser_performance): Maximum concurrent virtual users/threads.
-        duration_minutes (float, required for performance/browser_performance/gui_functional): Test duration in minutes.
-        iterations (int, optional, alternative to duration_minutes): Number of iterations.
-        browser_sessions (int, required for gui_functional): Number of browser sessions.
-        api_calls (int, required for api_monitoring): Number of API calls.
-        virtual_services (int, required for service_virtualization): Number of virtual services.
-        transactions (int, optional, for service_virtualization): Number of transactions.
-        locations (list[str], optional): List of location IDs for load distribution.
-        uses_test_data (bool, optional, default=False): Whether test uses BlazeMeter Test Data (adds 50% to cost).
-        number_of_servers (int, optional, for serverHours calculation): Number of engines/servers. If not provided, estimated based on concurrency (~1000 users per engine).
-    Hints:
-    - The workspace allowance type is automatically determined from the workspace (via 'read' action).
-    - Supported allowance types: "credits", "virtualUserHours", "actualThreads", "serverHours", "functionalRequests".
-    - Allowance type details:
-      * credits: Tests as Credit (1 credit per test).
-      * virtualUserHours: Variable Unit Hours (VUH) as Credit, formerly known as Virtual User Hour.
-      * actualThreads: Variable Unit (VU) as Credit - Maximum concurrent threads/units reached (peak concurrency).
-      * serverHours: Number of Server Hours - Server/engine hours consumed (engines × duration in hours).
-      * functionalRequests: API Functional Tests - Number of API Calls - One unit per API call.
-    - The 'amount' value within the 'allowance' of a Workspace is how much credit is available. 
-    - For Performance/Browser Performance tests: provide concurrency and duration_minutes.
-    - For GUI Functional tests: provide browser_sessions and duration_minutes.
-    - For API Monitoring tests: provide api_calls.
-    - For Service Virtualization tests: provide virtual_services and optionally transactions.
-    - Test Data usage increases cost by 50% for all test types.
-    - Server hours calculation can use provided number_of_servers or estimate based on concurrency (~1000 users per engine).
-    - All calculations are based on official BlazeMeter documentation (blazemeter-usage-billing skill).
-    """
+args(dict): Dictionary with the following parameters:
+    allowance_type (str, required, valid=["credits", "virtualUserHours", "actualThreads", "serverHours", "functionalRequests"]): The workspace allowance.
+    test_type (str, required, default="performance", valid=["performance", "browser_performance", "gui_functional", "api_monitoring", "service_virtualization"]): Type of test.
+    concurrency (int, required for performance/browser_performance): Maximum concurrent virtual users/threads.
+    duration_minutes (float, required for performance/browser_performance/gui_functional): Test duration in minutes.
+    iterations (int, optional, alternative to duration_minutes): Number of iterations.
+    browser_sessions (int, required for gui_functional): Number of browser sessions.
+    api_calls (int, required for api_monitoring): Number of API calls.
+    virtual_services (int, required for service_virtualization): Number of virtual services.
+    transactions (int, optional, for service_virtualization): Number of transactions.
+    locations (list[str], optional): List of location IDs for load distribution.
+    uses_test_data (bool, optional, default=False): Whether test uses BlazeMeter Test Data (adds 50% to cost).
+    number_of_servers (int, optional, for serverHours calculation): Number of engines/servers. If not provided, estimated based on concurrency (~1000 users per engine).
+Hints:
+- The workspace allowance type is automatically determined from the workspace (via 'read' action).
+- Supported allowance types: "credits", "virtualUserHours", "actualThreads", "serverHours", "functionalRequests".
+- Allowance type details:
+  * credits: Tests as Credit (1 credit per test).
+  * virtualUserHours: Variable Unit Hours (VUH) as Credit, formerly known as Virtual User Hour.
+  * actualThreads: Variable Unit (VU) as Credit - Maximum concurrent threads/units reached (peak concurrency).
+  * serverHours: Number of Server Hours - Server/engine hours consumed (engines × duration in hours).
+  * functionalRequests: API Functional Tests - Number of API Calls - One unit per API call.
+- The 'amount' value within the 'allowance' of a Workspace is how much credit is available. 
+- For Performance/Browser Performance tests: provide concurrency and duration_minutes.
+- For GUI Functional tests: provide browser_sessions and duration_minutes.
+- For API Monitoring tests: provide api_calls.
+- For Service Virtualization tests: provide virtual_services and optionally transactions.
+- Test Data usage increases cost by 50% for all test types.
+- Server hours calculation can use provided number_of_servers or estimate based on concurrency (~1000 users per engine).
+- All calculations are based on official BlazeMeter documentation (blazemeter-usage-billing skill).
+- **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
+"""
     )
     async def billing(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
         billing_manager = BillingManager(token, ctx)
