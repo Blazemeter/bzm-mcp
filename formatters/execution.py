@@ -218,6 +218,7 @@ def _get_summary_context() -> str:
         + _get_common_interpretation_guidance() +
         "- Use request_stats for per-endpoint breakdown (available via read_request_stats action)\n\n"
         "For more details about the summary report, consult the BlazeMeter skill blazemeter-performance-testing and read the related reporting resource\n"
+        "**CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.\n"
     )
 
 
@@ -308,6 +309,7 @@ def _get_request_stats_context() -> str:
         "- Standard deviation indicates consistency: lower = more consistent, higher = more variable\n"
         "- Use this report to drill down into specific endpoint performance issues\n"
         "- The 'ALL' label (if present) shows aggregated metrics across all endpoints\n"
+        "**CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.\n"
     )
 
 
@@ -479,4 +481,5 @@ def _get_error_report_context() -> str:
         "- blazemeter-api-reference: Understand API error codes and response formats\n\n"
 
         "For deeper troubleshooting, consult the BlazeMeter skill blazemeter-performance-testing and related reporting resources.\n"
+        "**CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.\n"
     )
