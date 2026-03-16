@@ -14,7 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import os
 import re
+
+import pytest
 
 from tools.utils import format_sanitized_traceback
 
@@ -65,6 +68,7 @@ class TestTracebackSanitization:
         assert "private_script.py" in sanitized
         assert "/tmp/secret/runtime/private_script.py" not in sanitized
 
+    @pytest.mark.skipif(os.name != "nt", reason="Only supported on Windows")
     def test_sanitized_traceback_hides_windows_absolute_paths(self):
         try:
             _raise_with_custom_filename(r"C:\secret\runtime\private_script.py")
