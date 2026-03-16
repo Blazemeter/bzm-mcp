@@ -436,13 +436,13 @@ def _get_error_report_context() -> str:
         "4. failed_urls – Failed URL requests\n\n"
 
         "KEY METRICS PER LABEL:\n"
-        "- label_id: Unique identifier of the request label/endpoint\n"
-        "- label_name: Endpoint/request name (e.g., 'Login', 'Homepage', 'ALL' for aggregated data)\n"
+        "- label_id: request label/endpoint\n"
+        "- label_name: Endpoint/request name\n"
         "- total_errors_for_label: Total errors for this label (HTTP + assertions + embedded resources + URLs)\n\n"
 
         "HTTP ERRORS:\n"
         "- response_code: HTTP status code (e.g., '404', '500', '401'; empty string may indicate transaction/connection errors)\n"
-        "- response_message: Server error message (e.g., 'Not Found', 'Internal Server Error')\n"
+        "- response_message: Server error message\n"
         "- error_count: Number of occurrences\n\n"
 
         "ASSERTION ERRORS:\n"
