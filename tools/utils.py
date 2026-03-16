@@ -51,13 +51,22 @@ timeout = httpx.Timeout(
     pool=60.0
 )
 project_root = Path(__file__).resolve().parent.parent
-windows_abs_path_pattern = re.compile(r"[A-Za-z]:\\(?:[^\\\n\r\t\"']+\\)*[^\\\n\r\t\"']*")
+# Match Windows absolute paths (backslash or forward slash; latter may appear on POSIX)
+windows_abs_path_pattern = re.compile(
+    r"[A-Za-z]:[\\/](?:[^\\\n\r\t\"']+[\\/])*[^\\\n\r\t\"']*"
+)
 unix_abs_path_pattern = re.compile(r"/(?:Users|home|var|tmp|opt|srv|etc)/[^\n\r\t\"']+")
 
 
 def sanitize_path(path_value: str) -> str:
     if not path_value:
         return path_value
+
+    # On POSIX, Windows-style paths (e.g. from compile() or cross-platform code)
+    # resolve to cwd+path, so relative_to() would incorrectly return the raw path.
+    # Redact them immediately. On Windows, the normal flow handles them correctly.
+    if so != "Windows" and re.match(r"^[A-Za-z]:[\\/]", path_value):
+        return Path(path_value.replace("\\", "/")).name or "<root hidden>"
 
     try:
         absolute_path = Path(path_value).resolve()
@@ -67,7 +76,7 @@ def sanitize_path(path_value: str) -> str:
         pass
 
     if re.match(r"^[A-Za-z]:[\\/]", path_value) or path_value.startswith("/"):
-        return Path(path_value.replace("\\", "/")).name or "<redacted-path>"
+        return Path(path_value.replace("\\", "/")).name or "<root hidden>"
 
     return path_value
 
