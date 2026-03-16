@@ -1,9 +1,9 @@
 name: Build Binaries
 
 on:
-  push:
-    branches: ['main']
-  pull_request:
+  workflow_run:
+    workflows: ["Tests"]
+    types: [completed]
     branches: ['main']
   workflow_dispatch:
 
@@ -13,6 +13,7 @@ permissions:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     strategy:
       matrix:
         include:
