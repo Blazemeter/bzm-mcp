@@ -153,7 +153,7 @@ Actions:
 Hints:
 - Always generates the url attributes as a link in markdown format (like command_url).
 - **CRITICAL**: For multiple actions, always use the 'batch' action.
-
+- **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
 """
     )
     async def skills(

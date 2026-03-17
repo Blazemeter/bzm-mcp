@@ -3,11 +3,7 @@ name: Mend CLI Scan
 on:
   workflow_dispatch:
   push:
-  pull_request:
 
-concurrency:
-  group: mend-scan-${{ github.repository }}
-  cancel-in-progress: true
 
 jobs:
   mend-scan:
