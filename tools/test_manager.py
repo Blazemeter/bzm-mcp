@@ -383,44 +383,46 @@ def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_tests",
         description="""
-        Operations on tests.
-        Actions:
-        - read: Read a test. Get the detailed information of a test.
-            args(dict): Dictionary with the following required parameters:
-                test_id (int): The only required parameter. The id of the test to read.
-        - create: Create a new test. Do not create a test if the user has not confirmed the location for validation of workspace, project and account.
-            args(dict): Dictionary with the following required parameters:
-                test_name (str): The required name of the test to create.
-                project_id (int): The id of the project to list tests from.
-        - delete: Delete a test.
-            args(dict): Dictionary with the following required parameters:
-                test_id (int): The only required parameter. The id of the test to be deleted.
-        - list: List all tests. 
-            args(dict): Dictionary with the following required parameters:
-                project_id (int): The id of the project to list tests from.
-                limit (int, default=10, valid=[1 to 50]): The number of tests to list.
-                offset (int, default=0): Number of tests to skip.
-        - configure_load: Configure the load of a test for the given test id. The test id is the only required parameter. 
-                     The test will be configured based on the following parameters only if user confirms the configuration:
-            args(dict): Dictionary with the following parameters:
-                test_id (int): The only required parameter. The id of the test to configure.
-                iterations (int, default=1, infinite=-1): The number of iterations to run the test with. Don't use if hold-for is provided.
-                hold-for (str, default=1m): The length of time the test will run at the peak concurrency. Values can be provided in m (minutes) only. Don't use if iterations is provided.
-                concurrency (int, default=20, disable=0, max=500000): The number of concurrent virtual users simulated to run. For example, 20 will set the test to run with 20 concurrent users. To disable it set to 0.
-                ramp-up (str, disable=""): The length of time the test will take to ramp-up to full concurrency. Values can be provided in m (minutes) only. Can be empty.
-                steps (int, default=1, disable=-1): The number of ramp-up steps. Can be empty.
-                executor (str, default=jmeter): The script type you are running. Includes the following options: (gatling,grinder,jmeter,locust,pbench,selenium,siege).
-        - configure_locations: Configure the distribution of a test for given test id. The test id is the only required parameter. 
-                     The test will be configured based on the following parameters only if user confirms the configuration:
-            args(dict): Dictionary with the following parameters:
-                test_id (int): The only required parameter. The id of the test to configure.
-                locations (list[str]): List of all locations with their percentage distribution of user load in a key value format "location_id=percent_value". Example: ["us-east4-a=25", "us-east1-b=25", "us-west1-a=25", "us-central1-a=25"]
-        - upload_assets: Upload main script test as well as multiple related assets to a test. Supports .zip, .csv, .jmx, .yaml and other file types.
-            args(dict): Dictionary with the following required parameters:
-                test_id (int): The id of the test to upload assets to.
-                file_paths (list): List of full file paths to upload.
-                main_script (str, optional): Path to the main script file. If provided, will update test configuration to use this script.
-        """
+Operations on tests.
+Actions:
+- read: Read a test. Get the detailed information of a test.
+    args(dict): Dictionary with the following required parameters:
+        test_id (int): The only required parameter. The id of the test to read.
+- create: Create a new test. Do not create a test if the user has not confirmed the location for validation of workspace, project and account.
+    args(dict): Dictionary with the following required parameters:
+        test_name (str): The required name of the test to create.
+        project_id (int): The id of the project to list tests from.
+- delete: Delete a test.
+    args(dict): Dictionary with the following required parameters:
+        test_id (int): The only required parameter. The id of the test to be deleted.
+- list: List all tests. 
+    args(dict): Dictionary with the following required parameters:
+        project_id (int): The id of the project to list tests from.
+        limit (int, default=10, valid=[1 to 50]): The number of tests to list.
+        offset (int, default=0): Number of tests to skip.
+- configure_load: Configure the load of a test for the given test id. The test id is the only required parameter. 
+             The test will be configured based on the following parameters only if user confirms the configuration:
+    args(dict): Dictionary with the following parameters:
+        test_id (int): The only required parameter. The id of the test to configure.
+        iterations (int, default=1, infinite=-1): The number of iterations to run the test with. Don't use if hold-for is provided.
+        hold-for (str, default=1m): The length of time the test will run at the peak concurrency. Values can be provided in m (minutes) only. Don't use if iterations is provided.
+        concurrency (int, default=20, disable=0, max=500000): The number of concurrent virtual users simulated to run. For example, 20 will set the test to run with 20 concurrent users. To disable it set to 0.
+        ramp-up (str, disable=""): The length of time the test will take to ramp-up to full concurrency. Values can be provided in m (minutes) only. Can be empty.
+        steps (int, default=1, disable=-1): The number of ramp-up steps. Can be empty.
+        executor (str, default=jmeter): The script type you are running. Includes the following options: (gatling,grinder,jmeter,locust,pbench,selenium,siege).
+- configure_locations: Configure the distribution of a test for given test id. The test id is the only required parameter. 
+             The test will be configured based on the following parameters only if user confirms the configuration:
+    args(dict): Dictionary with the following parameters:
+        test_id (int): The only required parameter. The id of the test to configure.
+        locations (list[str]): List of all locations with their percentage distribution of user load in a key value format "location_id=percent_value". Example: ["us-east4-a=25", "us-east1-b=25", "us-west1-a=25", "us-central1-a=25"]
+- upload_assets: Upload main script test as well as multiple related assets to a test. Supports .zip, .csv, .jmx, .yaml and other file types.
+    args(dict): Dictionary with the following required parameters:
+        test_id (int): The id of the test to upload assets to.
+        file_paths (list): List of full file paths to upload.
+        main_script (str, optional): Path to the main script file. If provided, will update test configuration to use this script.
+Hints:
+- **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
+"""
     )
     async def tests(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
         test_manager = TestManager(token, ctx)

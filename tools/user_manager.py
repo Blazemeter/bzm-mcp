@@ -46,12 +46,13 @@ def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_user",
         description="""
-            Operations on user information.
-            Actions:
-            - read: Read a current user information from BlazeMeter.
-            Hints:
-            - For default account, workspace and project, use the 'read' action. 
-        """
+Operations on user information.
+Actions:
+- read: Read a current user information from BlazeMeter.
+Hints:
+- For default account, workspace and project, use the 'read' action. 
+- **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
+"""
     )
     async def user(
             action: str = Field(description="The action id to execute"),

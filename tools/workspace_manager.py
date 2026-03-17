@@ -104,23 +104,24 @@ def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_workspaces",
         description="""
-                Operations on workspaces.
-                Actions: 
-                - read: Read a workspace. Get the detailed information of a workspace.
-                    args(dict): Dictionary with the following required parameters:
-                        workspace_id (int): The id of the workspace.
-                - list: List all workspaces. 
-                    args(dict): Dictionary with the following required parameters:
-                        account_id (int): The id of the account to list the workspaces from
-                        limit (int, default=10, valid=[1 to 50]): The number of workspaces to list.
-                        offset (int, default=0): Number of workspaces to skip.
-                - read_locations: get the location list for a given workspace ID.
-                    args(dict): Dictionary with the following required parameters:
-                        workspace_id (int): The id of the workspace.
-                        purpose (str, default="load", valid=["load", "functional", "grid", "mock"]): The purpose filter.
-                Hints:
-                - For available locations and available billing usage use the 'read' action for a particular workspace.
-                """
+Operations on workspaces.
+Actions: 
+- read: Read a workspace. Get the detailed information of a workspace.
+    args(dict): Dictionary with the following required parameters:
+        workspace_id (int): The id of the workspace.
+- list: List all workspaces. 
+    args(dict): Dictionary with the following required parameters:
+        account_id (int): The id of the account to list the workspaces from
+        limit (int, default=10, valid=[1 to 50]): The number of workspaces to list.
+        offset (int, default=0): Number of workspaces to skip.
+- read_locations: get the location list for a given workspace ID.
+    args(dict): Dictionary with the following required parameters:
+        workspace_id (int): The id of the workspace.
+        purpose (str, default="load", valid=["load", "functional", "grid", "mock"]): The purpose filter.
+Hints:
+- For available locations and available billing usage use the 'read' action for a particular workspace.
+- **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
+"""
     )
     async def workspace(
             action: str = Field(description="The action id to execute"),
