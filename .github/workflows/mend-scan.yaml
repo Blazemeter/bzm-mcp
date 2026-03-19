@@ -5,10 +5,8 @@ on:
     workflows: ["Tests"]
     types: [completed]
   workflow_dispatch:
+  push:
 
-concurrency:
-  group: mend-scan-${{ github.repository }}
-  cancel-in-progress: true
 
 jobs:
   mend-scan:
