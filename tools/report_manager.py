@@ -25,6 +25,9 @@ from models.result import BaseResult
 from tools import bridge
 from tools.utils import api_request
 
+EXECUTION_ARCHIVED_MSG = ("Execution report is archived. It is not possible to read execution "
+                          "information from an archived execution.")
+
 
 class ReportManager(Manager):
 
@@ -39,11 +42,22 @@ class ReportManager(Manager):
                 return exec_data.get("execution_name") or exec_data.get("name")
         return None
 
+    @staticmethod
+    def _evaluate_archived(execution_result: BaseResult) -> bool:
+        return (execution_result.result and len(execution_result.result) > 0 and
+                execution_result.result[0].get("result").archived)
+
     async def read_summary(self, master_id: int):
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
             return execution_result
 
+        if self._evaluate_archived(execution_result):
+            return BaseResult(
+                error=EXECUTION_ARCHIVED_MSG,
+            )
+
+        # Extract execution name from execution result if available
         execution_name = self._extract_execution_name(execution_result)
 
         return await api_request(
@@ -68,6 +82,10 @@ class ReportManager(Manager):
             return execution_result
 
         execution_name = self._extract_execution_name(execution_result)
+        if self._evaluate_archived(execution_result):
+            return BaseResult(
+                error=EXECUTION_ARCHIVED_MSG,
+            )
 
         return await api_request(
             self.token,
@@ -90,7 +108,12 @@ class ReportManager(Manager):
             return execution_result
 
         execution_name = self._extract_execution_name(execution_result)
+        if self._evaluate_archived(execution_result):
+            return BaseResult(
+                error=EXECUTION_ARCHIVED_MSG,
+            )
 
+        # Get request stats data from API with formatter
         return await api_request(
             self.token,
             "GET",
@@ -110,6 +133,11 @@ class ReportManager(Manager):
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
             return execution_result
+
+        if self._evaluate_archived(execution_result):
+            return BaseResult(
+                error=EXECUTION_ARCHIVED_MSG,
+            )
 
         return await api_request(
             self.token,
