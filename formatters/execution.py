@@ -574,4 +574,5 @@ def _get_request_stats_context() -> str:
             "- Standard deviation indicates consistency: lower = more consistent, higher = more variable\n"
             "- Use this report to drill down into specific endpoint performance issues\n"
             "- The 'ALL' label (if present) shows aggregated metrics across all endpoints\n"
+            "**CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.\n"
     )
