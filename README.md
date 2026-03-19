@@ -114,7 +114,7 @@ After installing, set `BLAZEMETER_API_KEY` to your `api-key.json` path in your c
 
 1. **Prerequisites:** [Docker]([https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/))
 
-[![Add to Cursor (Docker)](https://img.shields.io/badge/Add_to_Cursor-Docker_install-blue?style=for-the-badge)](cursor://anysphere.cursor-deeplink/mcp/install?name=BlazeMeter%20MCP&config=eyJjb21tYW5kIjoiZG9ja2VyIiwiYXJncyI6WyJydW4iLCItLXJtIiwiLWkiLCItZSIsIkFQSV9LRVlfSUQiLCItZSIsIkFQSV9LRVlfU0VDUkVUIiwiLWUiLCJTT1VSQ0VfV09SS0lOR19ESVJFQ1RPUlkiLCJnaGNyLmlvL2JsYXplbWV0ZXIvYnptLW1jcDpsYXRlc3QiXSwiZW52Ijp7IkFQSV9LRVlfSUQiOiIiLCJBUElfS0VZX1NFQ1JFVCI6IiIsIlNPVVJDRV9XT1JLSU5HX0RJUkVDVE9SWSI6IiJ9fQ) [![Add to VS Code (Docker)](https://img.shields.io/badge/Add_to_VS_Code-Docker_install-007ACC?style=for-the-badge&logo=visualstudiocode)](https://insiders.vscode.dev/redirect/mcp/install?name=BlazeMeter%20MCP&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22--rm%22%2C%22-i%22%2C%22-e%22%2C%22API_KEY_ID%22%2C%22-e%22%2C%22API_KEY_SECRET%22%2C%22-e%22%2C%22SOURCE_WORKING_DIRECTORY%22%2C%22ghcr.io%2Fblazemeter%2Fbzm-mcp%3Alatest%22%5D%2C%22env%22%3A%7B%22API_KEY_ID%22%3A%22%22%2C%22API_KEY_SECRET%22%3A%22%22%2C%22SOURCE_WORKING_DIRECTORY%22%3A%22%22%7D%7D)
+[![Add to Cursor (Docker)](https://img.shields.io/badge/Add_to_Cursor-Docker_install-blue?style=for-the-badge)](cursor://anysphere.cursor-deeplink/mcp/install?name=BlazeMeter%20MCP&config=eyJjb21tYW5kIjoiZG9ja2VyIiwiYXJncyI6WyJydW4iLCItLXB1bGw9YWx3YXlzIiwiLS1ybSIsIi1pIiwiLWUiLCJBUElfS0VZX0lEIiwiLWUiLCJBUElfS0VZX1NFQ1JFVCIsIi1lIiwiU09VUkNFX1dPUktJTkdfRElSRUNUT1JZIiwiZ2hjci5pby9ibGF6ZW1ldGVyL2J6bS1tY3A6bGF0ZXN0Il0sImVudiI6eyJBUElfS0VZX0lEIjoiIiwiQVBJX0tFWV9TRUNSRVQiOiIiLCJTT1VSQ0VfV09SS0lOR19ESVJFQ1RPUlkiOiIifX0=) [![Add to VS Code (Docker)](https://img.shields.io/badge/Add_to_VS_Code-Docker_install-007ACC?style=for-the-badge&logo=visualstudiocode)](https://insiders.vscode.dev/redirect/mcp/install?name=BlazeMeter%20MCP&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22--pull%3Dalways%22%2C%22--rm%22%2C%22-i%22%2C%22-e%22%2C%22API_KEY_ID%22%2C%22-e%22%2C%22API_KEY_SECRET%22%2C%22-e%22%2C%22SOURCE_WORKING_DIRECTORY%22%2C%22ghcr.io%2Fblazemeter%2Fbzm-mcp%3Alatest%22%5D%2C%22env%22%3A%7B%22API_KEY_ID%22%3A%22%22%2C%22API_KEY_SECRET%22%3A%22%22%2C%22SOURCE_WORKING_DIRECTORY%22%3A%22%22%7D%7D)
 
 After installing, set `API_KEY_ID`, `API_KEY_SECRET`, and optionally mount/working dir in your client's MCP settings.
 
@@ -125,6 +125,7 @@ After installing, set `API_KEY_ID`, `API_KEY_SECRET`, and optionally mount/worki
       "command": "docker",
       "args": [
         "run",
+        "--pull=always",
         "--rm",
         "-i",
         "--mount",
@@ -176,6 +177,7 @@ When using custom CA certificate bundles, you must configure both:
       "command": "docker",
       "args": [
         "run",
+        "--pull=always",
         "--rm",
         "-i",
         "--mount",
