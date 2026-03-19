@@ -38,6 +38,8 @@ logger = logging.getLogger(__name__)
 
 
 class TestManager(Manager):
+    __test__ = False
+
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
         self.path_mapper = PathMapperFactory.create_strategy()
@@ -101,7 +103,7 @@ class TestManager(Manager):
         if test_result.error:
             return test_result
         else:
-            test_deleted_result =  await api_request(
+            test_deleted_result = await api_request(
                 self.token,
                 "DELETE",
                 f"{TESTS_ENDPOINT}/{test_id}"
@@ -163,7 +165,8 @@ class TestManager(Manager):
                 })
 
     @require_confirmation(operation=Operations.CREATE)
-    async def upload_assets(self, test_id: Optional[int], file_paths: Optional[List[str]], main_script: Optional[str] = None) -> Dict[
+    async def upload_assets(self, test_id: Optional[int], file_paths: Optional[List[str]],
+                            main_script: Optional[str] = None) -> Dict[
         str, Any]:
         if not isinstance(test_id, int) or test_id < 1:
             return {"error": "Missing or invalid required argument 'test_id'. Expected integer."}
@@ -419,6 +422,7 @@ class TestManager(Manager):
             f"{TESTS_ENDPOINT}/{performance_test.test_id}",
             result_formatter=format_tests,
             json=configuration_body)
+
 
 def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
