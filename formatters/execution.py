@@ -31,10 +31,10 @@ def _build_execution_url(execution_id: Optional[int]) -> str:
 
 def _calculate_error_rate(errors_count: int, total_count: int, existing_rate: float = 0.0) -> float:
     """Calculate error rate percentage if not already provided."""
-    if existing_rate > 0:
+    if existing_rate and existing_rate > 0:
         return existing_rate
-    if total_count > 0 and errors_count > 0:
-        return (errors_count / total_count * 100)
+    if total_count and total_count > 0 and errors_count > 0:
+        return (errors_count / total_count) * 100
     return 0.0
 
 
@@ -69,6 +69,7 @@ def format_executions_detailed(executions: List[Any], params: Optional[dict] = N
                 ended=get_date_time_iso(execution.get("ended")),
                 project_id=execution.get("projectId"),
                 execution_status=execution.get("reportStatus", "unset"),
+                archived=execution.get("dumped", False),
                 execution_status_detailed=None
             )
         )
@@ -99,28 +100,28 @@ def format_executions_status(statuses: List[Any], params: Optional[dict] = None)
 def format_summary_report(summary_data: List[Any], params: Optional[dict] = None) -> List[SummaryReport]:
     """
     Format summary report data from BlazeMeter API into a structured, AI-friendly format.
-    
+
     The API returns summary data in a nested structure: [[{summary_data}]]
     This function extracts and normalizes the data, adding context and clear field names.
     """
     formatted_reports = []
     execution_id = params.get("execution_id") if params else None
     execution_name = params.get("execution_name") if params else None
-    
+
     # Handle nested structure: summary_data is typically [[{...}]]
     summary_list = summary_data
     if summary_data and isinstance(summary_data[0], list):
         summary_list = summary_data[0]
-    
+
     for summary_item in summary_list:
         if not isinstance(summary_item, dict):
             continue
-            
+
         # Extract the actual summary data (usually nested in 'summary' array)
         summary_array = summary_item.get("summary", [])
         if not summary_array:
             continue
-            
+
         # Get the overall metrics (usually the first item with id="ALL" or the first item)
         overall_data = None
         for item in summary_array:
@@ -128,19 +129,19 @@ def format_summary_report(summary_data: List[Any], params: Optional[dict] = None
                 if item.get("id") == "ALL" or item.get("lb") == "ALL":
                     overall_data = item
                     break
-        
+
         # Fallback to first item if no "ALL" found
         if not overall_data and summary_array:
             overall_data = summary_array[0] if isinstance(summary_array[0], dict) else None
-        
+
         if not overall_data:
             continue
-        
+
         # Extract metrics with safe defaults
         hits = overall_data.get("hits", 0)
         failed = overall_data.get("failed", 0)
         error_rate = _calculate_error_rate(failed, hits)
-        
+
         metrics = SummaryReportMetrics(
             total_requests=hits,
             total_errors=failed,
@@ -158,7 +159,7 @@ def format_summary_report(summary_data: List[Any], params: Optional[dict] = None
             total_bytes=overall_data.get("bytes", 0),
             max_concurrent_users=overall_data.get("maxUsers", overall_data.get("concurrency", 0))
         )
-        
+
         report = SummaryReport(
             execution_id=execution_id or 0,
             execution_name=execution_name,
@@ -166,9 +167,9 @@ def format_summary_report(summary_data: List[Any], params: Optional[dict] = None
             overall_metrics=metrics,
             context=_get_summary_context()
         )
-        
+
         formatted_reports.append(report)
-    
+
     return formatted_reports
 
 
@@ -279,7 +280,6 @@ def format_request_stats(request_stats_data: List[Any], params: Optional[dict] =
         request_stats=formatted_stats,
         context=_get_request_stats_context()
     )
-    
     formatted_reports.append(report)
     return formatted_reports
 
