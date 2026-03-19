@@ -378,42 +378,17 @@ class ExecutionManager(Manager):
         error_result = await report_manager.read_error(execution_id)
         stats_result = await report_manager.read_request_stats(execution_id)
 
-        report_errors = {}
-        if summary_result.error:
-            report_errors["summary"] = summary_result.error
-        if error_result.error:
-            report_errors["error"] = error_result.error
-        if stats_result.error:
-            report_errors["request_stats"] = stats_result.error
-
-        all_failed = len(report_errors) == 3
-        if all_failed:
-            return BaseResult(
-                error=(
-                    f"Failed to fetch all reports for execution {execution_id}. "
-                    f"Errors: summary={report_errors['summary']}; "
-                    f"error={report_errors['error']}; "
-                    f"request_stats={report_errors['request_stats']}"
-                )
-            )
-
         result_payload = {
             "summary": summary_result.result if not summary_result.error else None,
             "error": error_result.result if not error_result.error else None,
             "request_stats": stats_result.result if not stats_result.error else None,
-            "report_errors": report_errors or None,
         }
-
-        warnings = None
-        if report_errors:
-            failed_reports = ", ".join(report_errors.keys())
-            warnings = [
-                f"Some reports could not be retrieved for execution {execution_id}: {failed_reports}."
-            ]
 
         return BaseResult(
             result=[result_payload],
-            warning=warnings
+            error=", ".join({summary_result.error, error_result.error, stats_result.error} - {None}),
+            info=list({summary_result.info, error_result.info, stats_result.info} - {None}),
+            warning=list({summary_result.warning, error_result.warning, stats_result.warning} - {None}),
         )
 
     @staticmethod
