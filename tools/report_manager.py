@@ -19,7 +19,7 @@ from mcp.server.fastmcp import Context
 
 from config.blazemeter import EXECUTIONS_ENDPOINT
 from config.token import BzmToken
-from formatters.execution import format_summary_report, format_request_stats
+from formatters.execution import format_summary_report, format_request_stats, format_error_report
 from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
@@ -34,8 +34,7 @@ class ReportManager(Manager):
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
 
-    @staticmethod
-    def _extract_execution_name(execution_result: BaseResult) -> Optional[str]:
+    def _extract_execution_name(self, execution_result: BaseResult) -> Optional[str]:
         """Extract execution name from execution result if available."""
         if execution_result.result and len(execution_result.result) > 0:
             exec_data = execution_result.result[0]
@@ -49,7 +48,6 @@ class ReportManager(Manager):
                 execution_result.result[0].get("result").archived)
 
     async def read_summary(self, master_id: int):
-        # Check if it's valid or allowed
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
             return execution_result
@@ -62,7 +60,6 @@ class ReportManager(Manager):
         # Extract execution name from execution result if available
         execution_name = self._extract_execution_name(execution_result)
 
-        # Get summary data from API with formatter
         return await api_request(
             self.token,
             "GET",
@@ -76,14 +73,15 @@ class ReportManager(Manager):
 
     async def read_error(self, master_id: int):
         """
-        Get error report for a given master_id with client-side paging.
-        Always returns paged results for AI efficiency.
+        Get error report for a given master_id with formatted, AI-friendly structure.
+        Includes execution metadata and explanatory context about error metrics.
         """
         # Check if it's valid or allowed
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
             return execution_result
 
+        execution_name = self._extract_execution_name(execution_result)
         if self._evaluate_archived(execution_result):
             return BaseResult(
                 error=EXECUTION_ARCHIVED_MSG,
@@ -92,7 +90,12 @@ class ReportManager(Manager):
         return await api_request(
             self.token,
             "GET",
-            f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/errorsreport/data"
+            f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/errorsreport/data",
+            result_formatter=format_error_report,
+            result_formatter_params={
+                "execution_id": master_id,
+                "execution_name": execution_name
+            }
         )
 
     async def read_request_stats(self, master_id: int):
@@ -100,18 +103,15 @@ class ReportManager(Manager):
         Get request statistics report for a given master_id with formatted, AI-friendly structure.
         Includes execution metadata and explanatory context about metrics per endpoint.
         """
-        # Check if it's valid or allowed
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
             return execution_result
 
+        execution_name = self._extract_execution_name(execution_result)
         if self._evaluate_archived(execution_result):
             return BaseResult(
                 error=EXECUTION_ARCHIVED_MSG,
             )
-
-        # Extract execution name from execution result if available
-        execution_name = self._extract_execution_name(execution_result)
 
         # Get request stats data from API with formatter
         return await api_request(
