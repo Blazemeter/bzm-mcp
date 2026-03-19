@@ -15,7 +15,7 @@ limitations under the License.
 """
 import pytest
 
-from formatters.execution import format_request_stats, format_summary_report
+from formatters.execution import format_request_stats, format_summary_report, format_error_report
 
 
 class TestFormatRequestStats:
@@ -146,3 +146,90 @@ class TestFormatSummaryReport:
         assert metrics.average_bytes_per_request == 1024.5
         assert metrics.total_bytes == 5122500
         assert metrics.max_concurrent_users == 50
+
+class TestFormatErrorReport:
+
+    def test_format_error_report_basic(self):
+        api_data = [
+            {
+                "labelId": "login-label",
+                "name": "Login",
+                "errors": [
+                    {"rc": "500", "m": "Internal Server Error", "count": 3},
+                ],
+                "assertions": [
+                    {
+                        "name": "Response contains success",
+                        "failureMessage": "Text 'success' not found",
+                        "failures": 2,
+                    }
+                ],
+                "failedEmbeddedResources": [
+                    {
+                        "rc": "404",
+                        "rm": "Not Found",
+                        "count": 1,
+                    }
+                ],
+                "urls": [
+                    {
+                        "url": "https://example.com/login",
+                        "count": 4,
+                    }
+                ],
+            }
+        ]
+
+        result = format_error_report(
+            api_data,
+            {
+                "execution_id": 999,
+                "execution_name": "Error Report Execution",
+            },
+        )
+
+        # One report with correct metadata and context
+        assert len(result) == 1
+        report = result[0]
+        assert report.execution_id == 999
+        assert report.execution_name == "Error Report Execution"
+        assert report.context is not None
+        assert len(report.context) > 0
+        assert "ERROR REPORT METRICS EXPLANATION" in report.context
+
+        # Label errors structure
+        assert len(report.label_errors) == 1
+        label = report.label_errors[0]
+        assert label.label_id == "login-label"
+        assert label.label_name == "Login"
+
+        # HTTP errors
+        assert len(label.http_errors) == 1
+        http_error = label.http_errors[0]
+        assert http_error.response_code == "500"
+        assert http_error.response_message == "Internal Server Error"
+        assert http_error.error_count == 3
+
+        # Assertion errors
+        assert len(label.assertion_errors) == 1
+        assertion = label.assertion_errors[0]
+        assert assertion.assertion_name == "Response contains success"
+        assert assertion.failure_message == "Text 'success' not found"
+        assert assertion.failures == 2
+
+        # Failed embedded resources
+        assert len(label.failed_embedded_resources) == 1
+        resource = label.failed_embedded_resources[0]
+        assert resource.response_code == "404"
+        assert resource.response_message == "Not Found"
+        assert resource.resource_count == 1
+
+        # Failed URLs
+        assert len(label.failed_urls) == 1
+        failed_url = label.failed_urls[0]
+        assert failed_url.url == "https://example.com/login"
+        assert failed_url.failure_count == 4
+
+        # Totals
+        assert label.total_errors_for_label == 3 + 2 + 1 + 4
+        assert report.total_errors == 3 + 2 + 1 + 4
