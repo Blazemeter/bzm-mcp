@@ -34,12 +34,13 @@ class ExecutionManager(Manager):
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
 
-    async def _request_log_analyzer_api(self, method: str, execution_id: int, json_body: Optional[Dict[str, Any]] = None) -> BaseResult:
+    async def _request_log_analyzer_api(self, method: str, execution_id: int,
+                                        json_body: Optional[Dict[str, Any]] = None) -> BaseResult:
         if not self.token:
             return BaseResult(
                 error="No API token. Set BLAZEMETER_API_KEY env var with file path or API_KEY_ID and API_KEY_SECRET secrets."
             )
-        
+
         url = f"https://log-analyzer.blazemeter.com/analyzer/{execution_id}"
         headers = {
             "Authorization": self.token.as_basic_auth(),
@@ -47,7 +48,7 @@ class ExecutionManager(Manager):
             "Accept": "application/json",
             "Content-Type": "application/json"
         }
-        
+
         try:
             async with httpx.AsyncClient(http2=True, timeout=timeout) as client:
                 resp = await self._make_analyzer_http_request(client, method, url, headers, json_body)
@@ -58,7 +59,9 @@ class ExecutionManager(Manager):
         except Exception as e:
             return BaseResult(error=f"Error calling Log Analyzer API: {str(e)}")
 
-    async def _make_analyzer_http_request(self, client: httpx.AsyncClient, method: str, url: str, headers: Dict[str, str], json_body: Optional[Dict[str, Any]]) -> httpx.Response:
+    async def _make_analyzer_http_request(self, client: httpx.AsyncClient, method: str, url: str,
+                                          headers: Dict[str, str],
+                                          json_body: Optional[Dict[str, Any]]) -> httpx.Response:
         if method == "GET":
             return await client.get(url, headers=headers)
         if method == "POST":
@@ -67,14 +70,14 @@ class ExecutionManager(Manager):
 
     def _parse_analyzer_response(self, resp: httpx.Response) -> BaseResult:
         content_type = resp.headers.get("content-type", "")
-        
+
         if "application/json" not in content_type.lower():
             return BaseResult(result=[resp.text], error=None)
-        
+
         response_dict = resp.json()
         if not isinstance(response_dict, dict):
             return BaseResult(result=[response_dict], error=None)
-        
+
         analyzer_data = response_dict.get("data", response_dict)
         error = analyzer_data.get("error") if isinstance(analyzer_data, dict) else None
         return BaseResult(result=[analyzer_data], error=error)
@@ -171,6 +174,7 @@ class ExecutionManager(Manager):
             "- If 'ended' is not null: The test has completed (has a timestamp indicating when it finished).\n"
             "\n"
             "Always verify that the 'ended' field is not null before retrieving final reports to ensure the test has fully completed and all data is available.\n"
+            "When it is archived, it is not possible to read the detailed execution information.\n"
         )
 
     async def list(self, test_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
@@ -220,12 +224,12 @@ class ExecutionManager(Manager):
     def _extract_execution_element(self, execution_response: BaseResult, execution_id: int):
         if not execution_response.result:
             return self._execution_not_found_error(execution_id)
-        
+
         result_dict = execution_response.result[0]
         execution_element = result_dict.get("result")
         if not execution_element:
             return self._execution_not_found_error(execution_id)
-        
+
         return execution_element
 
     @staticmethod
@@ -238,7 +242,7 @@ class ExecutionManager(Manager):
 
     async def _get_or_trigger_analysis(self, execution_id: int) -> BaseResult:
         analyzer_response = await self._request_log_analyzer_api("GET", execution_id)
-        
+
         if self._should_trigger_new_analysis(analyzer_response):
             post_response = await self._request_log_analyzer_api("POST", execution_id)
             if post_response.error:
@@ -251,16 +255,16 @@ class ExecutionManager(Manager):
     def _should_trigger_new_analysis(analyzer_response: BaseResult) -> bool:
         if analyzer_response.error:
             return True
-        
+
         if not analyzer_response.result:
             return False
-        
+
         analyzer_data = analyzer_response.result[0]
         return isinstance(analyzer_data, dict) and analyzer_data.get("status") == "not_started"
 
     def _parse_analysis_state(self, analyzer_response: BaseResult):
         analyzer_data = self._extract_analyzer_data(analyzer_response)
-        
+
         if not analyzer_data:
             return {
                 "is_ready": False,
@@ -273,21 +277,21 @@ class ExecutionManager(Manager):
             return BaseResult(error=f"Analysis error: {error}")
 
         readiness = self._determine_analysis_readiness(analyzer_data)
-        
+
         if not readiness.get("status_message") or not readiness["status_message"].strip():
             readiness["status_message"] = "Analysis status unknown"
-        
+
         return readiness
 
     @staticmethod
     def _extract_analyzer_data(analyzer_response: BaseResult) -> Optional[Dict[str, Any]]:
         if not analyzer_response.result:
             return None
-        
+
         analyzer_data = analyzer_response.result[0]
         if not isinstance(analyzer_data, dict):
             return None
-        
+
         return analyzer_data
 
     @staticmethod
@@ -310,10 +314,10 @@ class ExecutionManager(Manager):
     def _determine_analysis_readiness(analyzer_data: Dict[str, Any]) -> Dict[str, Any]:
         status = analyzer_data.get("status", "").strip().lower()
         progress = analyzer_data.get("progress", 0)
-        
+
         result_field = analyzer_data.get("result")
         results = ExecutionManager._normalize_results(result_field)
-        
+
         if status == "finished":
             if results:
                 return ExecutionManager._build_analysis_response(
@@ -322,18 +326,18 @@ class ExecutionManager(Manager):
             return ExecutionManager._build_analysis_response(
                 True, "Analysis complete with no issues found", []
             )
-        
+
         if status in ["not_started", "running"]:
             progress_str = f" ({progress}%)" if progress else ""
             return ExecutionManager._build_analysis_response(
                 False, f"Analysis {status}{progress_str}", None
             )
-        
+
         if not status:
             return ExecutionManager._build_analysis_response(
                 True, "Analysis complete", results
             )
-        
+
         return ExecutionManager._build_analysis_response(
             True, f"Analysis {status}", results
         )
@@ -365,7 +369,7 @@ class ExecutionManager(Manager):
                 f"Status: {status_message}\n"
                 "Please wait a moment and check again using the 'ai_analysis' action.\n"
                 "The analysis will be available once processing is complete."
-        )
+            )
 
 
 def register(mcp, token: Optional[BzmToken]):
@@ -436,7 +440,10 @@ Hints:
                             "summary": summary_result.result or None,
                             "error": error_result.result or None,
                             "request_stats": stats_result.result or None
-                        }]
+                        }],
+                        error=", ".join({summary_result.error, error_result.error, stats_result.error} - {None}),
+                        info=list({summary_result.info, error_result.info, stats_result.info} - {None}),
+                        warning=list({summary_result.warning, error_result.warning, stats_result.warning} - {None}),
                     )
                 case "read_anomalies_stats":
                     return await report_manager.read_anomalies_stats(args["execution_id"])
