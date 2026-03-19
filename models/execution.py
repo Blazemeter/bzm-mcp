@@ -50,6 +50,7 @@ class TestExecutionDetailed(TestExecution):
         description="Indicates the ending status of the test execution. Value can be pass, fail, unset, error, abort, or noData")
     execution_status_detailed: Optional[TestExecutionStatus] = Field(
         "Indicates the current status of the test execution.")
+    archived: Optional[bool] = Field(description="If the execution report was archived", default=None)
 
 
 class SummaryReportMetrics(BaseModel):
