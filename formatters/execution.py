@@ -13,13 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Any, List, Optional, Dict
+from typing import Any, List, Optional
 
 from config.blazemeter import BZM_BASE_URL
 from models.execution import (
     TestExecution, TestExecutionDetailed, TestExecutionStatus, TestExecutionStatuses,
     SummaryReport, SummaryReportMetrics,
-    RequestStatsReport, RequestStatMetrics
+    RequestStatsReport, RequestStatMetrics,
+    ErrorReport, LabelErrors, HttpError, AssertionError, FailedEmbeddedResource, FailedUrl
 )
 from tools.utils import get_date_time_iso
 
@@ -203,21 +204,22 @@ def _get_common_interpretation_guidance() -> str:
 def _get_summary_context() -> str:
     """Provide context about summary report metrics for AI interpretation."""
     return (
-        "SUMMARY REPORT METRICS EXPLANATION:\n"
-        "This summary report provides overall performance metrics for a test execution.\n\n"
-        "KEY METRICS:\n"
-        "- total_requests: Total number of HTTP requests executed\n"
-        "- total_errors: Number of requests that failed (non-2xx/3xx responses or timeouts)\n"
-        "- error_rate_percent: Percentage of failed requests (total_errors / total_requests * 100)\n"
-        + _get_common_metrics_explanation() +
-        "- total_duration_seconds: How long the test ran\n"
-        "- max_concurrent_users: Peak number of simultaneous virtual users\n"
-        "- average_bytes_per_request: Average response size in bytes\n"
-        "- total_bytes: Total bytes transferred\n\n"
-        "INTERPRETATION GUIDANCE:\n"
-        + _get_common_interpretation_guidance() +
-        "- Use request_stats for per-endpoint breakdown (available via read_request_stats action)\n\n"
-        "For more details about the summary report, consult the BlazeMeter skill blazemeter-performance-testing and read the related reporting resource\n"
+            "SUMMARY REPORT METRICS EXPLANATION:\n"
+            "This summary report provides overall performance metrics for a test execution.\n\n"
+            "KEY METRICS:\n"
+            "- total_requests: Total number of HTTP requests executed\n"
+            "- total_errors: Number of requests that failed (non-2xx/3xx responses or timeouts)\n"
+            "- error_rate_percent: Percentage of failed requests (total_errors / total_requests * 100)\n"
+            + _get_common_metrics_explanation() +
+            "- total_duration_seconds: How long the test ran\n"
+            "- max_concurrent_users: Peak number of simultaneous virtual users\n"
+            "- average_bytes_per_request: Average response size in bytes\n"
+            "- total_bytes: Total bytes transferred\n\n"
+            "INTERPRETATION GUIDANCE:\n"
+            + _get_common_interpretation_guidance() +
+            "- Use request_stats for per-endpoint breakdown (available via read_request_stats action)\n\n"
+            "For more details about the summary report, consult the BlazeMeter skill blazemeter-performance-testing and read the related reporting resource\n"
+            "**CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.\n"
     )
 
 
@@ -231,22 +233,22 @@ def format_request_stats(request_stats_data: List[Any], params: Optional[dict] =
     formatted_reports = []
     execution_id = params.get("execution_id") if params else None
     execution_name = params.get("execution_name") if params else None
-    
+
     # Handle case where data might be nested
     stats_list = request_stats_data
     if request_stats_data and isinstance(request_stats_data[0], list):
         stats_list = request_stats_data[0]
-    
+
     formatted_stats = []
     for stat_item in stats_list:
         if not isinstance(stat_item, dict):
             continue
-        
+
         # Calculate error rate if not provided
         samples = stat_item.get("samples", 0)
         errors_count = stat_item.get("errorsCount", 0)
         errors_rate = _calculate_error_rate(errors_count, samples, stat_item.get("errorsRate", 0))
-        
+
         metrics = RequestStatMetrics(
             label_id=stat_item.get("labelId", ""),
             label_name=stat_item.get("labelName", "Unknown"),
@@ -263,15 +265,280 @@ def format_request_stats(request_stats_data: List[Any], params: Optional[dict] =
             avg_bytes=round(stat_item.get("avgBytes", 0), 2),
             avg_throughput_per_second=round(stat_item.get("avgThroughput", 0), 2),
             median_response_time_ms=stat_item.get("medianResponseTime", 0),
-            geometric_mean_response_time_ms=round(stat_item.get("geoMeanResponseTime"), 2) if stat_item.get("geoMeanResponseTime") is not None else None,
+            geometric_mean_response_time_ms=round(stat_item.get("geoMeanResponseTime"), 2) if stat_item.get(
+                "geoMeanResponseTime") is not None else None,
             errors_count=errors_count,
             errors_rate_percent=round(errors_rate, 2),
             concurrency=stat_item.get("concurrency", 0),
             has_label_passed_thresholds=stat_item.get("hasLabelPassedThresholds")
         )
-        
+
         formatted_stats.append(metrics)
+
+    # Create report with all stats and context
+    report = RequestStatsReport(
+        execution_id=execution_id or 0,
+        execution_name=execution_name,
+        execution_url=_build_execution_url(execution_id),
+        request_stats=formatted_stats,
+        context=_get_request_stats_context()
+    )
+
+    formatted_reports.append(report)
+    return formatted_reports
+
+
+def _get_request_stats_context() -> str:
+    """Provide context about request stats report metrics for AI interpretation."""
+    return (
+            "REQUEST STATS REPORT METRICS EXPLANATION:\n"
+            "This report provides performance metrics for each request label/endpoint in the test execution.\n\n"
+            "KEY METRICS PER ENDPOINT:\n"
+            "- label_id: Unique identifier for the request label\n"
+            "- label_name: Name of the endpoint/request (e.g., 'Login', 'Homepage', 'View Product')\n"
+            "- samples: Total number of requests executed for this endpoint\n"
+            + _get_common_metrics_explanation() +
+            "- avg_latency_ms: Average network latency (time to first byte) for this endpoint\n"
+            "- standard_deviation_ms: Measure of response time variability (higher = more inconsistent)\n"
+            "- duration_seconds: Duration of the test period for this endpoint\n"
+            "- avg_bytes: Average response size in bytes for this endpoint\n"
+            "- geometric_mean_response_time_ms: Geometric mean response time (less affected by outliers than arithmetic mean, useful for skewed distributions)\n"
+            "- concurrency: Number of concurrent users hitting this endpoint\n"
+            "- has_label_passed_thresholds: Indicates whether this endpoint passed configured performance thresholds (null if thresholds not configured)\n\n"
+            "INTERPRETATION GUIDANCE:\n"
+            "- Compare avg_response_time_ms across endpoints to identify slow endpoints\n"
+            + _get_common_interpretation_guidance() +
+            "- Standard deviation indicates consistency: lower = more consistent, higher = more variable\n"
+            "- Use this report to drill down into specific endpoint performance issues\n"
+            "- The 'ALL' label (if present) shows aggregated metrics across all endpoints\n"
+            "**CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.\n"
+    )
+
+
+def format_error_report(error_data: List[Any], params: Optional[dict] = None) -> List[ErrorReport]:
+    """
+    Format error report data from BlazeMeter API into a structured, AI-friendly format.
     
+    The API returns error data as a list of label objects, each containing arrays of:
+    - errors: HTTP errors with response codes and messages
+    - assertions: Assertion failures
+    - failedEmbeddedResources: Failed CSS/JS/images
+    - urls: Failed URLs
+    This function normalizes field names and adds context for AI interpretation.
+    """
+    formatted_reports = []
+    execution_id = params.get("execution_id") if params else None
+    execution_name = params.get("execution_name") if params else None
+
+    label_list = error_data
+    if error_data and isinstance(error_data[0], list):
+        label_list = error_data[0]
+
+    formatted_label_errors = []
+    total_errors = 0
+
+    for label_item in label_list:
+        if not isinstance(label_item, dict):
+            continue
+
+        label_id = label_item.get("labelId", "")
+        label_name = label_item.get("name", label_item.get("_id", "Unknown"))
+
+        # Process HTTP errors
+        http_errors = []
+        errors_array = label_item.get("errors", [])
+        for error_obj in errors_array:
+            if isinstance(error_obj, dict):
+                http_errors.append(HttpError(
+                    response_code=error_obj.get("rc") if error_obj.get("rc") else None,
+                    response_message=error_obj.get("m", ""),
+                    error_count=error_obj.get("count", 0)
+                ))
+                total_errors += error_obj.get("count", 0)
+
+        # Process assertion errors
+        assertion_errors = []
+        assertions_array = label_item.get("assertions", [])
+        for assertion_obj in assertions_array:
+            if isinstance(assertion_obj, dict):
+                failures = assertion_obj.get("failures", 0)
+                assertion_errors.append(AssertionError(
+                    assertion_name=assertion_obj.get("name", ""),
+                    failure_message=assertion_obj.get("failureMessage", ""),
+                    failures=failures
+                ))
+                total_errors += failures
+
+        # Process failed embedded resources
+        failed_resources = []
+        failed_embedded_array = label_item.get("failedEmbeddedResources", [])
+        for resource_obj in failed_embedded_array:
+            if isinstance(resource_obj, dict):
+                resource_count = resource_obj.get("count", 0)
+                failed_resources.append(FailedEmbeddedResource(
+                    response_code=resource_obj.get("rc", ""),
+                    response_message=resource_obj.get("rm", ""),
+                    resource_count=resource_count
+                ))
+                total_errors += resource_count
+
+        # Process failed URLs
+        failed_urls = []
+        urls_array = label_item.get("urls", [])
+        for url_obj in urls_array:
+            if isinstance(url_obj, dict):
+                url_count = url_obj.get("count", 0)
+                failed_urls.append(FailedUrl(
+                    url=url_obj.get("url", ""),
+                    failure_count=url_count
+                ))
+                total_errors += url_count
+
+        # Calculate total errors for this label
+        label_total = sum(e.error_count for e in http_errors) + \
+                      sum(a.failures for a in assertion_errors) + \
+                      sum(r.resource_count for r in failed_resources) + \
+                      sum(u.failure_count for u in failed_urls)
+
+        label_error = LabelErrors(
+            label_id=label_id,
+            label_name=label_name,
+            http_errors=http_errors,
+            assertion_errors=assertion_errors,
+            failed_embedded_resources=failed_resources,
+            failed_urls=failed_urls,
+            total_errors_for_label=label_total
+        )
+
+        formatted_label_errors.append(label_error)
+
+    # Create report with all label errors and context
+    report = ErrorReport(
+        execution_id=execution_id or 0,
+        execution_name=execution_name,
+        execution_url=_build_execution_url(execution_id),
+        label_errors=formatted_label_errors,
+        total_errors=total_errors,
+        context=_get_error_report_context()
+    )
+
+    formatted_reports.append(report)
+    return formatted_reports
+
+
+def _get_error_report_context() -> str:
+    """Provide context about error report metrics for AI interpretation."""
+    return (
+        "ERROR REPORT METRICS EXPLANATION:\n"
+        "This report lists errors that occurred during test execution, grouped by endpoint/label.\n\n"
+
+        "STRUCTURE:\n"
+        "The report contains label_errors entries. Each entry represents errors for a specific endpoint and includes four arrays:\n"
+        "1. http_errors – HTTP response code errors\n"
+        "2. assertion_errors – Custom assertion failures\n"
+        "3. failed_embedded_resources – Failed CSS, JavaScript, or image resources\n"
+        "4. failed_urls – Failed URL requests\n\n"
+
+        "KEY METRICS PER LABEL:\n"
+        "- label_id: request label/endpoint\n"
+        "- label_name: Endpoint/request name\n"
+        "- total_errors_for_label: Total errors for this label (HTTP + assertions + embedded resources + URLs)\n\n"
+
+        "HTTP ERRORS:\n"
+        "- response_code: HTTP status code (e.g., '404', '500', '401'; empty string may indicate transaction/connection errors)\n"
+        "- response_message: Server error message\n"
+        "- error_count: Number of occurrences\n\n"
+
+        "ASSERTION ERRORS:\n"
+        "- assertion_name: Failed assertion name\n"
+        "- failure_message: Reason for the failure\n"
+        "- failures: Number of occurrences\n\n"
+
+        "FAILED EMBEDDED RESOURCES:\n"
+        "- response_code: HTTP status code\n"
+        "- response_message: Error message\n"
+        "- resource_count: Number of failed loads\n\n"
+
+        "FAILED URLS:\n"
+        "- url: Failed URL\n"
+        "- failure_count: Number of failures\n\n"
+
+        "OVERALL METRIC:\n"
+        "- total_errors: Sum of all errors across labels and types\n\n"
+
+        "INTERPRETATION GUIDANCE:\n"
+        "- 'ALL' label aggregates errors across endpoints for overall analysis\n"
+        "- Group by response_code to identify HTTP patterns (4xx client errors, 5xx server errors)\n"
+        "- Group by label_name to identify endpoints with the most failures\n"
+        "- Empty response_code often indicates transaction or connection issues\n"
+        "- High counts suggest systemic problems rather than isolated failures\n"
+        "- Failed embedded resources may cause UI issues but not necessarily functional failures\n"
+        "- Assertion errors indicate validation failures; review failure_message for expected conditions\n"
+        "- Compare total_errors with total_requests from the summary report to calculate error rate\n"
+        "- Same response_code across labels suggests widespread issues; different codes in one label may indicate intermittent problems\n\n"
+
+        "SKILL CATEGORIES FOR RESOLVING ERRORS:\n"
+        "- blazemeter-performance-testing: Analyze error patterns and assertion failures\n"
+        "- blazemeter-integrations: Troubleshoot scripts, authentication errors (401), and integrations\n"
+        "- blazemeter-api-reference: Understand API error codes and response formats\n\n"
+
+        "For deeper troubleshooting, consult the BlazeMeter skill blazemeter-performance-testing and related reporting resources.\n"
+        "**CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.\n"
+    )
+
+
+def format_request_stats(request_stats_data: List[Any], params: Optional[dict] = None) -> List[RequestStatsReport]:
+    """
+    Format request statistics data from BlazeMeter API into a structured, AI-friendly format.
+    
+    The API returns request stats as a list of objects, one per endpoint/label.
+    This function normalizes field names and adds context for AI interpretation.
+    """
+    formatted_reports = []
+    execution_id = params.get("execution_id") if params else None
+    execution_name = params.get("execution_name") if params else None
+
+    # Handle case where data might be nested
+    stats_list = request_stats_data
+    if request_stats_data and isinstance(request_stats_data[0], list):
+        stats_list = request_stats_data[0]
+
+    formatted_stats = []
+    for stat_item in stats_list:
+        if not isinstance(stat_item, dict):
+            continue
+
+        # Calculate error rate if not provided
+        samples = stat_item.get("samples", 0)
+        errors_count = stat_item.get("errorsCount", 0)
+        errors_rate = _calculate_error_rate(errors_count, samples, stat_item.get("errorsRate", 0))
+
+        metrics = RequestStatMetrics(
+            label_id=stat_item.get("labelId", ""),
+            label_name=stat_item.get("labelName", "Unknown"),
+            samples=samples,
+            avg_response_time_ms=round(stat_item.get("avgResponseTime", 0), 2),
+            percentile_90_ms=stat_item.get("90line", 0),
+            percentile_95_ms=stat_item.get("95line", 0),
+            percentile_99_ms=stat_item.get("99line", 0),
+            min_response_time_ms=stat_item.get("minResponseTime", 0),
+            max_response_time_ms=stat_item.get("maxResponseTime", 0),
+            avg_latency_ms=round(stat_item.get("avgLatency", 0), 2),
+            standard_deviation_ms=round(stat_item.get("stDev", 0), 2),
+            duration_seconds=stat_item.get("duration", 0),
+            avg_bytes=round(stat_item.get("avgBytes", 0), 2),
+            avg_throughput_per_second=round(stat_item.get("avgThroughput", 0), 2),
+            median_response_time_ms=stat_item.get("medianResponseTime", 0),
+            geometric_mean_response_time_ms=round(stat_item.get("geoMeanResponseTime"), 2) if stat_item.get(
+                "geoMeanResponseTime") is not None else None,
+            errors_count=errors_count,
+            errors_rate_percent=round(errors_rate, 2),
+            concurrency=stat_item.get("concurrency", 0),
+            has_label_passed_thresholds=stat_item.get("hasLabelPassedThresholds")
+        )
+
+        formatted_stats.append(metrics)
+
     # Create report with all stats and context
     report = RequestStatsReport(
         execution_id=execution_id or 0,
@@ -287,24 +554,25 @@ def format_request_stats(request_stats_data: List[Any], params: Optional[dict] =
 def _get_request_stats_context() -> str:
     """Provide context about request stats report metrics for AI interpretation."""
     return (
-        "REQUEST STATS REPORT METRICS EXPLANATION:\n"
-        "This report provides performance metrics for each request label/endpoint in the test execution.\n\n"
-        "KEY METRICS PER ENDPOINT:\n"
-        "- label_id: Unique identifier for the request label\n"
-        "- label_name: Name of the endpoint/request (e.g., 'Login', 'Homepage', 'View Product')\n"
-        "- samples: Total number of requests executed for this endpoint\n"
-        + _get_common_metrics_explanation() +
-        "- avg_latency_ms: Average network latency (time to first byte) for this endpoint\n"
-        "- standard_deviation_ms: Measure of response time variability (higher = more inconsistent)\n"
-        "- duration_seconds: Duration of the test period for this endpoint\n"
-        "- avg_bytes: Average response size in bytes for this endpoint\n"
-        "- geometric_mean_response_time_ms: Geometric mean response time (less affected by outliers than arithmetic mean, useful for skewed distributions)\n"
-        "- concurrency: Number of concurrent users hitting this endpoint\n"
-        "- has_label_passed_thresholds: Indicates whether this endpoint passed configured performance thresholds (null if thresholds not configured)\n\n"
-        "INTERPRETATION GUIDANCE:\n"
-        "- Compare avg_response_time_ms across endpoints to identify slow endpoints\n"
-        + _get_common_interpretation_guidance() +
-        "- Standard deviation indicates consistency: lower = more consistent, higher = more variable\n"
-        "- Use this report to drill down into specific endpoint performance issues\n"
-        "- The 'ALL' label (if present) shows aggregated metrics across all endpoints\n"
+            "REQUEST STATS REPORT METRICS EXPLANATION:\n"
+            "This report provides performance metrics for each request label/endpoint in the test execution.\n\n"
+            "KEY METRICS PER ENDPOINT:\n"
+            "- label_id: Unique identifier for the request label\n"
+            "- label_name: Name of the endpoint/request (e.g., 'Login', 'Homepage', 'View Product')\n"
+            "- samples: Total number of requests executed for this endpoint\n"
+            + _get_common_metrics_explanation() +
+            "- avg_latency_ms: Average network latency (time to first byte) for this endpoint\n"
+            "- standard_deviation_ms: Measure of response time variability (higher = more inconsistent)\n"
+            "- duration_seconds: Duration of the test period for this endpoint\n"
+            "- avg_bytes: Average response size in bytes for this endpoint\n"
+            "- geometric_mean_response_time_ms: Geometric mean response time (less affected by outliers than arithmetic mean, useful for skewed distributions)\n"
+            "- concurrency: Number of concurrent users hitting this endpoint\n"
+            "- has_label_passed_thresholds: Indicates whether this endpoint passed configured performance thresholds (null if thresholds not configured)\n\n"
+            "INTERPRETATION GUIDANCE:\n"
+            "- Compare avg_response_time_ms across endpoints to identify slow endpoints\n"
+            + _get_common_interpretation_guidance() +
+            "- Standard deviation indicates consistency: lower = more consistent, higher = more variable\n"
+            "- Use this report to drill down into specific endpoint performance issues\n"
+            "- The 'ALL' label (if present) shows aggregated metrics across all endpoints\n"
+            "**CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.\n"
     )
