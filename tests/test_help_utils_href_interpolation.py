@@ -59,3 +59,61 @@ class TestHelpUtilsHrefInterpolation:
 
         assert "[Start](https://help.blazemeter.com/docs/start.html)" in rendered
         assert "{href}" not in rendered
+
+
+class TestHelpUtilsHtmlSanitization:
+    def test_javascript_href_case_insensitive_blocked(self):
+        element = lxml.html.fromstring("<p><a href='JAVASCRIPT:alert(1)'>click</a></p>")
+
+        rendered = process_inline_elements(element, as_html=True)
+
+        assert "JAVASCRIPT:" not in rendered
+        assert "alert" not in rendered
+
+    def test_javascript_href_mixed_case_blocked(self):
+        element = lxml.html.fromstring("<p><a href='JavaScript:void(0)'>click</a></p>")
+
+        rendered = process_inline_elements(element, as_html=True)
+
+        assert "JavaScript:" not in rendered
+
+    def test_html_special_chars_escaped_in_link_text(self):
+        element = lxml.html.fromstring("<p><a href='https://example.com'>A &amp; B</a></p>")
+
+        rendered = process_inline_elements(element, as_html=True)
+
+        assert "<a href='https://example.com'>A &amp; B</a>" in rendered
+        assert "<script>" not in rendered
+
+    def test_html_special_chars_escaped_in_href(self):
+        element = lxml.html.fromstring("<p><a href=\"https://example.com?a=1&amp;b=2\">link</a></p>")
+
+        rendered = process_inline_elements(element, as_html=True)
+
+        assert "&#x27;" not in rendered or "&amp;" in rendered
+        assert "<script>" not in rendered
+
+    def test_html_special_chars_escaped_in_bold(self):
+        element = lxml.html.fromstring("<p><b>&lt;script&gt;alert(1)&lt;/script&gt;</b></p>")
+
+        rendered = process_inline_elements(element, as_html=True)
+
+        assert "<script>" not in rendered
+        assert "&lt;script&gt;" in rendered
+
+    def test_html_special_chars_escaped_in_italic(self):
+        element = lxml.html.fromstring("<p><i>&lt;img src=x onerror=alert(1)&gt;</i></p>")
+
+        rendered = process_inline_elements(element, as_html=True)
+
+        # The tag brackets must be escaped so the content cannot be interpreted as HTML
+        assert "<img" not in rendered
+        assert "&lt;" in rendered
+
+    def test_html_special_chars_escaped_in_code(self):
+        element = lxml.html.fromstring("<p><code>&lt;script&gt;</code></p>")
+
+        rendered = process_inline_elements(element, as_html=True)
+
+        assert "<script>" not in rendered
+        assert "&lt;script&gt;" in rendered
