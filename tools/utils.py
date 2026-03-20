@@ -51,11 +51,21 @@ timeout = httpx.Timeout(
     pool=60.0
 )
 project_root = Path(__file__).resolve().parent.parent
-# Match Windows absolute paths (backslash or forward slash; latter may appear on POSIX)
+# Match Windows absolute paths (backslash or forward slash; latter may appear on POSIX).
+# Negative lookbehind ensures we don't match URL protocols like https:// (where the
+# letter before ':' is preceded by more letters, e.g. 'http' in 'https://').
 windows_abs_path_pattern = re.compile(
-    r"[A-Za-z]:[\\/](?:[^\\\n\r\t\"']+[\\/])*[^\\\n\r\t\"']*"
+    r"(?<![A-Za-z])[A-Za-z]:[\\/](?:[^\\\n\r\t\"']+[\\/])*[^\\\n\r\t\"']*"
 )
-unix_abs_path_pattern = re.compile(r"/(?:Users|home|var|tmp|opt|srv|etc)/[^\n\r\t\"']+")
+unix_abs_path_pattern = re.compile(
+    r"/(?:"
+    r"Users|home|root"           # User home directories (macOS, Linux)
+    r"|var|tmp|etc|opt|srv"      # Standard Linux directories
+    r"|mnt|run|media"            # Mount points and runtime (Linux)
+    r"|app|data"                 # Common Docker container directories
+    r"|System|Library|Applications|private|Volumes"  # macOS directories
+    r")/[^\n\r\t\"']+"
+)
 
 
 def sanitize_path(path_value: str) -> str:

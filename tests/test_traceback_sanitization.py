@@ -110,3 +110,104 @@ class TestTracebackSanitization:
         assert "ValueError: inner" in sanitized
         assert r"C:\secret\runtime\chain.py" not in sanitized
         assert "chain.py" in sanitized
+
+    def test_sanitized_traceback_hides_mnt_paths(self):
+        try:
+            _raise_with_custom_filename("/mnt/secrets/private_script.py")
+        except RuntimeError as exc:
+            sanitized = format_sanitized_traceback(exc)
+
+        assert "/mnt/secrets/private_script.py" not in sanitized
+        assert "private_script.py" in sanitized
+
+    def test_sanitized_traceback_hides_run_secrets_paths(self):
+        try:
+            _raise_with_custom_filename("/run/secrets/api_key.py")
+        except RuntimeError as exc:
+            sanitized = format_sanitized_traceback(exc)
+
+        assert "/run/secrets/api_key.py" not in sanitized
+        assert "api_key.py" in sanitized
+
+    def test_sanitized_traceback_hides_root_paths(self):
+        try:
+            _raise_with_custom_filename("/root/.config/credentials.py")
+        except RuntimeError as exc:
+            sanitized = format_sanitized_traceback(exc)
+
+        assert "/root/.config/credentials.py" not in sanitized
+        assert "credentials.py" in sanitized
+
+    def test_sanitized_traceback_hides_app_paths(self):
+        try:
+            _raise_with_custom_filename("/app/config/settings.py")
+        except RuntimeError as exc:
+            sanitized = format_sanitized_traceback(exc)
+
+        assert "/app/config/settings.py" not in sanitized
+        assert "settings.py" in sanitized
+
+    def test_sanitized_traceback_hides_var_paths(self):
+        try:
+            _raise_with_custom_filename("/var/lib/secrets/token.py")
+        except RuntimeError as exc:
+            sanitized = format_sanitized_traceback(exc)
+
+        assert "/var/lib/secrets/token.py" not in sanitized
+        assert "token.py" in sanitized
+
+    def test_sanitized_traceback_hides_etc_paths(self):
+        try:
+            _raise_with_custom_filename("/etc/credentials/config.py")
+        except RuntimeError as exc:
+            sanitized = format_sanitized_traceback(exc)
+
+        assert "/etc/credentials/config.py" not in sanitized
+        assert "config.py" in sanitized
+
+    def test_sanitized_traceback_hides_data_paths(self):
+        try:
+            _raise_with_custom_filename("/data/secrets/private.py")
+        except RuntimeError as exc:
+            sanitized = format_sanitized_traceback(exc)
+
+        assert "/data/secrets/private.py" not in sanitized
+        assert "private.py" in sanitized
+
+    @pytest.mark.skipif(os.name == "nt", reason="macOS paths not relevant on Windows")
+    def test_sanitized_traceback_hides_macos_users_paths(self):
+        try:
+            _raise_with_custom_filename("/Users/david/secrets/private.py")
+        except RuntimeError as exc:
+            sanitized = format_sanitized_traceback(exc)
+
+        assert "/Users/david/secrets/private.py" not in sanitized
+        assert "private.py" in sanitized
+
+    @pytest.mark.skipif(os.name == "nt", reason="macOS paths not relevant on Windows")
+    def test_sanitized_traceback_hides_macos_library_paths(self):
+        try:
+            _raise_with_custom_filename("/Library/Application Support/config.py")
+        except RuntimeError as exc:
+            sanitized = format_sanitized_traceback(exc)
+
+        assert "/Library/Application Support/config.py" not in sanitized
+
+    @pytest.mark.skipif(os.name == "nt", reason="macOS paths not relevant on Windows")
+    def test_sanitized_traceback_hides_macos_private_paths(self):
+        try:
+            _raise_with_custom_filename("/private/tmp/secret_script.py")
+        except RuntimeError as exc:
+            sanitized = format_sanitized_traceback(exc)
+
+        assert "/private/tmp/secret_script.py" not in sanitized
+        assert "secret_script.py" in sanitized
+
+    def test_sanitized_traceback_does_not_redact_url_paths(self):
+        # URL path segments like /api/v4/tests should not be mangled
+        try:
+            raise RuntimeError("Request failed for url 'https://a.blazemeter.com/api/v4/tests'")
+        except RuntimeError as exc:
+            sanitized = format_sanitized_traceback(exc)
+
+        assert "/api/v4/tests" in sanitized
