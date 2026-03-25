@@ -311,7 +311,7 @@ class TestFormatAnomaliesStats:
         assert report.affected_labels == ["Login Page"]
         assert len(report.anomalies) == 2
         a0 = report.anomalies[0]
-        assert a0.kpi_display_name == "Average response time"
+        assert a0.kpi_name == "Average response time"
         assert a0.max_spike_height == 5112.42
         a1 = report.anomalies[1]
-        assert a1.kpi_display_name == "99th percentile response time"
+        assert a1.kpi_name == "99th percentile response time"
