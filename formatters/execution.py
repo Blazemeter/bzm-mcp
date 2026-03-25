@@ -514,7 +514,7 @@ def _get_anomalies_detection_context() -> str:
         "- anomaly_count: Total anomalies when statistics are available; 0 means none detected. "
         "Null only when statistics_unavailable (unknown to this tool).\n"
         "- affected_labels: Distinct label (transaction) names that had at least one anomaly.\n"
-        "- anomalies: Each row is one anomaly: label_name, kpi_code / kpi_display_name, time window (Unix + ISO), "
+        "- anomalies: Each row is one anomaly: label_id, label_name, kpi_name, start_time/end_time (ISO 8601), "
         "max_spike_height (spike severity for that KPI in that window).\n"
         "- statistics_unavailable_reason: Human-readable explanation when details cannot be shown.\n\n"
         "INTERPRETATION:\n"
@@ -595,15 +595,11 @@ def format_anomalies_stats(raw: List[Any], params: Optional[dict] = None) -> Lis
             en = row.get("endTime")
             details.append(
                 AnomalyDetail(
-                    anomaly_id=str(row.get("anomalyId", "")),
                     label_id=str(row.get("labelId", "")),
                     label_name=str(row.get("labelName", "")),
-                    kpi_display_name=_kpi_code_to_display_name(kpi),
-                    created_ms=int(row.get("created", 0) or 0),
-                    start_time_unix=int(st) if st is not None else 0,
-                    end_time_unix=int(en) if en is not None else 0,
-                    start_time_iso=get_date_time_iso(int(st)) if st is not None else None,
-                    end_time_iso=get_date_time_iso(int(en)) if en is not None else None,
+                    kpi_name=_kpi_code_to_display_name(kpi),
+                    start_time=get_date_time_iso(int(st)) if st is not None else None,
+                    end_time=get_date_time_iso(int(en)) if en is not None else None,
                     max_spike_height=float(row.get("maxSpikeHeight", 0) or 0),
                 )
             )

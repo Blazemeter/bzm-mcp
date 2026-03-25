@@ -177,25 +177,17 @@ class ErrorReport(BaseModel):
 
 class AnomalyDetail(BaseModel):
     """One detected performance anomaly for a label and KPI (response-time metric)."""
-    anomaly_id: str = Field(description="Unique anomaly identifier from BlazeMeter")
     label_id: str = Field(description="Request label identifier the anomaly applies to")
     label_name: str = Field(description="Human-readable label/transaction name")
-    kpi_display_name: str = Field(
-        description="Short human-readable name for kpi_code (e.g. average response time, 95th percentile response time)"
+    kpi_name: str = Field(
+        description="Human-readable KPI name for this anomaly (e.g. average response time, 99th percentile response time)"
     )
-    created_ms: int = Field(description="When the anomaly record was created, as Unix time in milliseconds")
-    start_time_unix: int = Field(
-        description="Start of the anomalous time window in the test, Unix seconds (epoch)"
-    )
-    end_time_unix: int = Field(
-        description="End of the anomalous time window in the test, Unix seconds (epoch)"
-    )
-    start_time_iso: Optional[str] = Field(
-        description="start_time_unix as ISO 8601 local datetime string for readability",
+    start_time: Optional[str] = Field(
+        description="Start of the anomaly time window as ISO 8601 local datetime string",
         default=None,
     )
-    end_time_iso: Optional[str] = Field(
-        description="end_time_unix as ISO 8601 local datetime string for readability",
+    end_time: Optional[str] = Field(
+        description="End of the anomaly time window as ISO 8601 local datetime string",
         default=None,
     )
     max_spike_height: float = Field(
