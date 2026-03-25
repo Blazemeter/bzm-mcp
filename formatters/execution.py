@@ -488,16 +488,18 @@ def _get_error_report_context() -> str:
     )
 
 
+KPI_CODE_TO_DISPLAY_NAME = {
+    "avg_rt": "Average response time",
+    "pec50_rt": "50th percentile response time",
+    "pec90_rt": "90th percentile response time",
+    "pec95_rt": "95th percentile response time",
+    "pec99_rt": "99th percentile response time",
+}
+
+
 def _kpi_code_to_display_name(kpi_code: str) -> str:
     """Map BlazeMeter anomaly KPI codes to short display names for the LLM."""
-    mapping = {
-        "avg_rt": "Average response time",
-        "pec50_rt": "50th percentile response time",
-        "pec90_rt": "90th percentile response time",
-        "pec95_rt": "95th percentile response time",
-        "pec99_rt": "99th percentile response time",
-    }
-    return mapping.get(kpi_code, kpi_code)
+    return KPI_CODE_TO_DISPLAY_NAME.get(kpi_code, kpi_code)
 
 
 def _get_anomalies_detection_context() -> str:
