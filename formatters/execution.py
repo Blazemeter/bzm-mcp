@@ -596,10 +596,8 @@ def format_anomalies_stats(raw: List[Any], params: Optional[dict] = None) -> Lis
             details.append(
                 AnomalyDetail(
                     anomaly_id=str(row.get("anomalyId", "")),
-                    master_id=str(row.get("masterId", "")),
                     label_id=str(row.get("labelId", "")),
                     label_name=str(row.get("labelName", "")),
-                    kpi_code=kpi,
                     kpi_display_name=_kpi_code_to_display_name(kpi),
                     created_ms=int(row.get("created", 0) or 0),
                     start_time_unix=int(st) if st is not None else 0,

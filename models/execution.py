@@ -178,15 +178,8 @@ class ErrorReport(BaseModel):
 class AnomalyDetail(BaseModel):
     """One detected performance anomaly for a label and KPI (response-time metric)."""
     anomaly_id: str = Field(description="Unique anomaly identifier from BlazeMeter")
-    master_id: str = Field(description="Execution (master) ID this anomaly belongs to")
     label_id: str = Field(description="Request label identifier the anomaly applies to")
     label_name: str = Field(description="Human-readable label/transaction name")
-    kpi_code: str = Field(
-        description=(
-            "Raw KPI key from the API (e.g. avg_rt, pec50_rt, pec90_rt, pec95_rt, pec99_rt). "
-            "Maps to response-time statistics used for anomaly detection."
-        )
-    )
     kpi_display_name: str = Field(
         description="Short human-readable name for kpi_code (e.g. average response time, 95th percentile response time)"
     )
