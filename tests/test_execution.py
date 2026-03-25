@@ -15,7 +15,12 @@ limitations under the License.
 """
 import pytest
 
-from formatters.execution import format_request_stats, format_summary_report, format_error_report
+from formatters.execution import (
+    format_request_stats,
+    format_summary_report,
+    format_error_report,
+    format_anomalies_stats,
+)
 
 
 class TestFormatRequestStats:
@@ -233,3 +238,82 @@ class TestFormatErrorReport:
         # Totals
         assert label.total_errors_for_label == 3 + 2 + 1 + 4
         assert report.total_errors == 3 + 2 + 1 + 4
+
+
+class TestFormatAnomaliesStats:
+
+    def test_statistics_unavailable_empty_api_result(self):
+        result = format_anomalies_stats([], {"execution_id": 123, "execution_name": "Test"})
+
+        assert len(result) == 1
+        report = result[0]
+        assert report.anomaly_detection_status == "statistics_unavailable"
+        assert report.anomaly_count is None
+        assert report.anomalies == []
+        assert report.statistics_unavailable_reason is not None
+        assert "ANOMALY DETECTION RESPONSE" in report.context
+
+    def test_no_anomalies(self):
+        api = [
+            {
+                "anomalyCount": 0,
+                "affectedLabel": [],
+                "anomalies": [],
+            }
+        ]
+        result = format_anomalies_stats(api, {"execution_id": 456, "execution_name": "No anomalies run"})
+
+        assert len(result) == 1
+        report = result[0]
+        assert report.anomaly_detection_status == "no_anomalies"
+        assert report.anomaly_count == 0
+        assert report.affected_labels == []
+        assert report.anomalies == []
+        assert report.statistics_unavailable_reason is None
+
+    def test_anomalies_with_details(self):
+        api = [
+            {
+                "anomalyCount": 2,
+                "affectedLabel": ["Login Page"],
+                "anomalies": {
+                    "id1": {
+                        "anomalyId": "id1",
+                        "masterId": "81627918",
+                        "labelId": "lbl1",
+                        "created": 1774026305007,
+                        "kpi": "avg_rt",
+                        "startTime": 1774026170,
+                        "endTime": 1774026324,
+                        "maxSpikeHeight": 5112.42,
+                        "labelName": "Login Page",
+                    },
+                    "id2": {
+                        "anomalyId": "id2",
+                        "masterId": "81627918",
+                        "labelId": "lbl1",
+                        "created": 1774026305007,
+                        "kpi": "pec99_rt",
+                        "startTime": 1774026170,
+                        "endTime": 1774026322,
+                        "maxSpikeHeight": 5447.52,
+                        "labelName": "Login Page",
+                    },
+                },
+            }
+        ]
+        result = format_anomalies_stats(api, {"execution_id": 81627918, "execution_name": "With anomalies"})
+
+        assert len(result) == 1
+        report = result[0]
+        assert report.anomaly_detection_status == "anomalies_with_details"
+        assert report.anomaly_count == 2
+        assert report.affected_labels == ["Login Page"]
+        assert len(report.anomalies) == 2
+        a0 = report.anomalies[0]
+        assert a0.kpi_code == "avg_rt"
+        assert a0.kpi_display_name == "Average response time"
+        assert a0.max_spike_height == 5112.42
+        a1 = report.anomalies[1]
+        assert a1.kpi_code == "pec99_rt"
+        assert a1.kpi_display_name == "99th percentile response time"
