@@ -20,7 +20,8 @@ from models.execution import (
     TestExecution, TestExecutionDetailed, TestExecutionStatus, TestExecutionStatuses,
     SummaryReport, SummaryReportMetrics,
     RequestStatsReport, RequestStatMetrics,
-    ErrorReport, LabelErrors, HttpError, AssertionError, FailedEmbeddedResource, FailedUrl
+    ErrorReport, LabelErrors, HttpError, AssertionError, FailedEmbeddedResource, FailedUrl,
+    AnomalyDetail, AnomalyDetectionReport,
 )
 from tools.utils import get_date_time_iso
 
@@ -485,6 +486,150 @@ def _get_error_report_context() -> str:
         "For deeper troubleshooting, consult the BlazeMeter skill blazemeter-performance-testing and related reporting resources.\n"
         "**CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.\n"
     )
+
+
+def _kpi_code_to_display_name(kpi_code: str) -> str:
+    """Map BlazeMeter anomaly KPI codes to short display names for the LLM."""
+    mapping = {
+        "avg_rt": "Average response time",
+        "pec50_rt": "50th percentile response time",
+        "pec90_rt": "90th percentile response time",
+        "pec95_rt": "95th percentile response time",
+        "pec99_rt": "99th percentile response time",
+    }
+    return mapping.get(kpi_code, kpi_code)
+
+
+def _get_anomalies_detection_context() -> str:
+    """Context for interpreting anomaly stats and routing the LLM to skills."""
+    return (
+        "ANOMALY DETECTION RESPONSE — FIELD DEFINITIONS FOR THE LLM:\n"
+        "- anomaly_detection_status: "
+        "'no_anomalies' = API returned counts and anomaly_count is 0. "
+        "'anomalies_with_details' = API returned counts and a list of anomalies with KPIs and time windows. "
+        "'statistics_unavailable' = API returned no stats object (empty result); this token/account cannot retrieve "
+        "anomaly statistics (e.g. free tier or anomaly detection not enabled). Do not invent counts.\n"
+        "- anomaly_count: Total anomalies when statistics are available; 0 means none detected. "
+        "Null only when statistics_unavailable (unknown to this tool).\n"
+        "- affected_labels: Distinct label (transaction) names that had at least one anomaly.\n"
+        "- anomalies: Each row is one anomaly: label_name, kpi_code / kpi_display_name, time window (Unix + ISO), "
+        "max_spike_height (spike severity for that KPI in that window).\n"
+        "- statistics_unavailable_reason: Human-readable explanation when details cannot be shown.\n\n"
+        "INTERPRETATION:\n"
+        "- Prefer Timeline report in BlazeMeter UI to see anomalies visually; correlate with errors and KPIs.\n"
+        "- Multiple rows per label_name are normal (one per KPI).\n"
+        "- When statistics_unavailable: state clearly that anomaly details are not available for this account/session; "
+        "suggest checking workspace/plan or help on anomaly detection.\n\n"
+        "SKILL ROUTING:\n"
+        "- blazemeter-performance-testing: reporting.md (Timeline, anomaly testing), interpreting KPIs and next steps.\n"
+        "- blazemeter-administration: workspaces-projects.md (who can enable anomaly detection).\n\n"
+        "**CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.\n"
+    )
+
+
+def format_anomalies_stats(raw: List[Any], params: Optional[dict] = None) -> List[AnomalyDetectionReport]:
+    """
+    Normalize /anomalies/stats API payloads into a single structured report.
+
+    The API may return:
+    - An empty list when anomaly statistics are not available for the account.
+    - A dict with anomalyCount, affectedLabel, and anomalies (object map or empty list when count is 0).
+    """
+    execution_id = params.get("execution_id") if params else None
+    execution_name = params.get("execution_name") if params else None
+    eid = execution_id or 0
+
+    if not raw:
+        return [
+            AnomalyDetectionReport(
+                execution_id=eid,
+                execution_name=execution_name,
+                execution_url=_build_execution_url(execution_id),
+                anomaly_detection_status="statistics_unavailable",
+                anomaly_count=None,
+                affected_labels=[],
+                anomalies=[],
+                statistics_unavailable_reason=(
+                    "BlazeMeter returned no anomaly statistics for this execution. "
+                    "This usually means anomaly detection is not available for your account or workspace "
+                    "(for example a limited plan), or the feature is disabled. Per-anomaly details cannot be shown."
+                ),
+                context=_get_anomalies_detection_context(),
+            )
+        ]
+
+    payload = raw[0]
+    if not isinstance(payload, dict):
+        return [
+            AnomalyDetectionReport(
+                execution_id=eid,
+                execution_name=execution_name,
+                execution_url=_build_execution_url(execution_id),
+                anomaly_detection_status="statistics_unavailable",
+                anomaly_count=None,
+                affected_labels=[],
+                anomalies=[],
+                statistics_unavailable_reason=(
+                    "Unexpected anomaly statistics payload; could not parse structured anomaly data."
+                ),
+                context=_get_anomalies_detection_context(),
+            )
+        ]
+
+    count = int(payload.get("anomalyCount", 0) or 0)
+    affected = payload.get("affectedLabel") or []
+    if not isinstance(affected, list):
+        affected = []
+
+    anomalies_raw = payload.get("anomalies")
+    details: List[AnomalyDetail] = []
+
+    if isinstance(anomalies_raw, dict):
+        for _key, row in anomalies_raw.items():
+            if not isinstance(row, dict):
+                continue
+            kpi = row.get("kpi") or ""
+            st = row.get("startTime")
+            en = row.get("endTime")
+            details.append(
+                AnomalyDetail(
+                    anomaly_id=str(row.get("anomalyId", "")),
+                    master_id=str(row.get("masterId", "")),
+                    label_id=str(row.get("labelId", "")),
+                    label_name=str(row.get("labelName", "")),
+                    kpi_code=kpi,
+                    kpi_display_name=_kpi_code_to_display_name(kpi),
+                    created_ms=int(row.get("created", 0) or 0),
+                    start_time_unix=int(st) if st is not None else 0,
+                    end_time_unix=int(en) if en is not None else 0,
+                    start_time_iso=get_date_time_iso(int(st)) if st is not None else None,
+                    end_time_iso=get_date_time_iso(int(en)) if en is not None else None,
+                    max_spike_height=float(row.get("maxSpikeHeight", 0) or 0),
+                )
+            )
+    elif isinstance(anomalies_raw, list) and not anomalies_raw:
+        pass
+
+    if count == 0 and not details:
+        status = "no_anomalies"
+    elif details or count > 0:
+        status = "anomalies_with_details"
+    else:
+        status = "no_anomalies"
+
+    return [
+        AnomalyDetectionReport(
+            execution_id=eid,
+            execution_name=execution_name,
+            execution_url=_build_execution_url(execution_id),
+            anomaly_detection_status=status,
+            anomaly_count=count,
+            affected_labels=affected,
+            anomalies=details,
+            statistics_unavailable_reason=None,
+            context=_get_anomalies_detection_context(),
+        )
+    ]
 
 
 def format_request_stats(request_stats_data: List[Any], params: Optional[dict] = None) -> List[RequestStatsReport]:

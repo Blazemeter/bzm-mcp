@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -173,3 +173,82 @@ class ErrorReport(BaseModel):
     label_errors: List[LabelErrors] = Field(description="List of errors grouped by label/endpoint")
     total_errors: int = Field(description="Total number of errors across all labels and error types")
     context: str = Field(description="Explanatory context about the error report format and metrics")
+
+
+class AnomalyDetail(BaseModel):
+    """One detected performance anomaly for a label and KPI (response-time metric)."""
+    anomaly_id: str = Field(description="Unique anomaly identifier from BlazeMeter")
+    master_id: str = Field(description="Execution (master) ID this anomaly belongs to")
+    label_id: str = Field(description="Request label identifier the anomaly applies to")
+    label_name: str = Field(description="Human-readable label/transaction name")
+    kpi_code: str = Field(
+        description=(
+            "Raw KPI key from the API (e.g. avg_rt, pec50_rt, pec90_rt, pec95_rt, pec99_rt). "
+            "Maps to response-time statistics used for anomaly detection."
+        )
+    )
+    kpi_display_name: str = Field(
+        description="Short human-readable name for kpi_code (e.g. average response time, 95th percentile response time)"
+    )
+    created_ms: int = Field(description="When the anomaly record was created, as Unix time in milliseconds")
+    start_time_unix: int = Field(
+        description="Start of the anomalous time window in the test, Unix seconds (epoch)"
+    )
+    end_time_unix: int = Field(
+        description="End of the anomalous time window in the test, Unix seconds (epoch)"
+    )
+    start_time_iso: Optional[str] = Field(
+        description="start_time_unix as ISO 8601 local datetime string for readability",
+        default=None,
+    )
+    end_time_iso: Optional[str] = Field(
+        description="end_time_unix as ISO 8601 local datetime string for readability",
+        default=None,
+    )
+    max_spike_height: float = Field(
+        description="Magnitude of the detected spike for this KPI in the anomaly window (API-specific unit, comparable within the same KPI)"
+    )
+
+
+class AnomalyDetectionReport(BaseModel):
+    """Structured anomaly detection response for a test execution (BlazeMeter /anomalies/stats)."""
+    execution_id: int = Field(description="The execution (master) ID this anomaly report belongs to")
+    execution_name: Optional[str] = Field(description="The execution display name when available", default=None)
+    execution_url: str = Field(description="URL to open this execution in the BlazeMeter UI")
+    anomaly_detection_status: Literal["no_anomalies", "anomalies_with_details", "statistics_unavailable"] = Field(
+        description=(
+            "Scenario for the LLM: "
+            "'no_anomalies' — API returned counts and anomalyCount is 0; no performance anomalies detected. "
+            "'anomalies_with_details' — API returned counts and per-anomaly rows; the account can view anomaly details. "
+            "'statistics_unavailable' — API returned an empty result list (feature not enabled for the account or insufficient "
+            "privilege); per-anomaly breakdown is not exposed to this token."
+        )
+    )
+    anomaly_count: Optional[int] = Field(
+        description=(
+            "Number of anomalies detected when statistics are available; 0 means none. "
+            "Null when statistics_unavailable (empty API result) so the true count is unknown to this integration."
+        ),
+        default=None,
+    )
+    affected_labels: List[str] = Field(
+        description="Distinct label names that had at least one anomaly (empty if none or unavailable)",
+        default_factory=list,
+    )
+    anomalies: List[AnomalyDetail] = Field(
+        description="Per-anomaly rows when anomaly_detection_status is anomalies_with_details; otherwise empty",
+        default_factory=list,
+    )
+    statistics_unavailable_reason: Optional[str] = Field(
+        description=(
+            "When anomaly_detection_status is statistics_unavailable, explains why (e.g. anomaly statistics not returned; "
+            "upgrade or account configuration). Null when statistics are available."
+        ),
+        default=None,
+    )
+    context: str = Field(
+        description=(
+            "Narrative and field-level guidance for the LLM: how to interpret anomaly_detection_status, when to suggest "
+            "BlazeMeter skills (e.g. Timeline report, anomaly help), and how to use anomaly_count vs anomalies."
+        )
+    )
