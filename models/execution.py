@@ -175,10 +175,16 @@ class ErrorReport(BaseModel):
     context: str = Field(description="Explanatory context about the error report format and metrics")
 
 
+class AffectedLabel(BaseModel):
+    """One distinct label that had at least one anomaly (summary list)."""
+    ref_id: int = Field(description="Incremental label reference id starting at 1")
+    label_id: str = Field(description="BlazeMeter request label identifier (labelId)")
+    label_name: str = Field(description="Human-readable label/transaction name")
+
+
 class AnomalyDetail(BaseModel):
     """One detected performance anomaly for a label and KPI (response-time metric)."""
-    label_id: str = Field(description="Request label identifier the anomaly applies to")
-    label_name: str = Field(description="Human-readable label/transaction name")
+    ref_id: int = Field(description="Reference id to match the corresponding label in affected_labels")
     kpi_name: str = Field(
         description="Human-readable KPI name for this anomaly (e.g. average response time, 99th percentile response time)"
     )
@@ -216,8 +222,8 @@ class AnomalyDetectionReport(BaseModel):
         ),
         default=None,
     )
-    affected_labels: List[str] = Field(
-        description="Distinct label names that had at least one anomaly (empty if none or unavailable)",
+    affected_labels: List[AffectedLabel] = Field(
+        description="Distinct labels that had at least one anomaly, each with ref_id, label_id, and label_name (empty if none or unavailable)",
         default_factory=list,
     )
     anomalies: List[AnomalyDetail] = Field(
