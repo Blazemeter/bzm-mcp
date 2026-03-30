@@ -182,12 +182,17 @@ class AffectedLabel(BaseModel):
     label_name: str = Field(description="Human-readable label/transaction name")
 
 
+class AffectedKpi(BaseModel):
+    """One distinct KPI (response-time metric) that had at least one anomaly."""
+    kpi_ref_id: int = Field(description="Incremental KPI reference id starting at 1")
+    kpi_id: str = Field(description="Raw KPI key from the API (e.g. avg_rt, pec99_rt)")
+    kpi_name: str = Field(description="Human-readable KPI name for this kpi_id")
+
+
 class AnomalyDetail(BaseModel):
     """One detected performance anomaly for a label and KPI (response-time metric)."""
     ref_id: int = Field(description="Reference id to match the corresponding label in affected_labels")
-    kpi_name: str = Field(
-        description="Human-readable KPI name for this anomaly (e.g. average response time, 99th percentile response time)"
-    )
+    kpi_ref_id: int = Field(description="Reference id to match the corresponding KPI in kpi_affected")
     start_time: Optional[str] = Field(
         description="Start of the anomaly time window as ISO 8601 local datetime string",
         default=None,
@@ -226,8 +231,12 @@ class AnomalyDetectionReport(BaseModel):
         description="Distinct labels that had at least one anomaly, each with ref_id, label_id, and label_name (empty if none or unavailable)",
         default_factory=list,
     )
+    kpi_affected: List[AffectedKpi] = Field(
+        description="Distinct KPIs that had at least one anomaly, each with kpi_ref_id, kpi_id, and kpi_name (empty if none or unavailable)",
+        default_factory=list,
+    )
     anomalies: List[AnomalyDetail] = Field(
-        description="Per-anomaly rows when anomaly_detection_status is anomalies_with_details; otherwise empty",
+        description="Per-anomaly rows when anomaly_detection_status is anomalies_with_details; use ref_id and kpi_ref_id to correlate; otherwise empty",
         default_factory=list,
     )
     statistics_unavailable_reason: Optional[str] = Field(

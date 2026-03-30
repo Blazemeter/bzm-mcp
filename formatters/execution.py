@@ -21,6 +21,7 @@ from models.execution import (
     SummaryReport, SummaryReportMetrics,
     RequestStatsReport, RequestStatMetrics,
     ErrorReport, LabelErrors, HttpError, AssertionError, FailedEmbeddedResource, FailedUrl,
+    AffectedKpi,
     AffectedLabel,
     AnomalyDetail,
     AnomalyDetectionReport,
@@ -540,6 +541,29 @@ def _collect_affected_labels(affected_names: List[str], anomalies_raw: Any) -> L
     return out
 
 
+def _collect_kpi_affected(anomalies_raw: Any) -> tuple[List[AffectedKpi], dict[str, int]]:
+    """Distinct KPIs from anomaly rows with incremental kpi_ref_id; returns list and kpi_id -> kpi_ref_id lookup."""
+    rows = anomalies_raw if isinstance(anomalies_raw, dict) else {}
+    out: List[AffectedKpi] = []
+    seen: set[str] = set()
+    for row in rows.values():
+        if not isinstance(row, dict):
+            continue
+        kid = str(row.get("kpi") or "")
+        if not kid or kid in seen:
+            continue
+        seen.add(kid)
+        out.append(
+            AffectedKpi(
+                kpi_ref_id=len(out) + 1,
+                kpi_id=kid,
+                kpi_name=_kpi_code_to_display_name(kid),
+            )
+        )
+    lookup = {item.kpi_id: item.kpi_ref_id for item in out}
+    return out, lookup
+
+
 def _get_anomalies_detection_context() -> str:
     """Context for interpreting anomaly stats and routing the LLM to skills."""
     return (
@@ -552,7 +576,8 @@ def _get_anomalies_detection_context() -> str:
         "- anomaly_count: Total anomalies when statistics are available; 0 means none detected. "
         "Null only when statistics_unavailable (unknown to this tool).\n"
         "- affected_labels: Distinct labels with ref_id, label_id and label_name that had at least one anomaly.\n"
-        "- anomalies: Each row is one anomaly: ref_id, kpi_name, start_time/end_time (ISO 8601), "
+        "- kpi_affected: Distinct KPIs with kpi_ref_id, kpi_id (API key) and kpi_name (human-readable).\n"
+        "- anomalies: Each row is one anomaly: ref_id (label), kpi_ref_id (KPI), start_time/end_time (ISO 8601), "
         "max_spike_height (spike severity for that KPI in that window).\n"
         "- statistics_unavailable_reason: Human-readable explanation when details cannot be shown.\n\n"
         "INTERPRETATION:\n"
@@ -588,6 +613,7 @@ def format_anomalies_stats(raw: List[Any], params: Optional[dict] = None) -> Lis
                 anomaly_detection_status="statistics_unavailable",
                 anomaly_count=None,
                 affected_labels=[],
+                kpi_affected=[],
                 anomalies=[],
                 statistics_unavailable_reason=(
                     "BlazeMeter returned no anomaly statistics for this execution. "
@@ -608,6 +634,7 @@ def format_anomalies_stats(raw: List[Any], params: Optional[dict] = None) -> Lis
                 anomaly_detection_status="statistics_unavailable",
                 anomaly_count=None,
                 affected_labels=[],
+                kpi_affected=[],
                 anomalies=[],
                 statistics_unavailable_reason=(
                     "Unexpected anomaly statistics payload; could not parse structured anomaly data."
@@ -624,6 +651,7 @@ def format_anomalies_stats(raw: List[Any], params: Optional[dict] = None) -> Lis
     anomalies_raw = payload.get("anomalies")
     affected_names = [str(x) for x in affected]
     affected_labels = _collect_affected_labels(affected_names, anomalies_raw)
+    kpi_affected, kpi_lookup = _collect_kpi_affected(anomalies_raw)
 
     details: List[AnomalyDetail] = []
     ref_lookup = {item.label_id: item.ref_id for item in affected_labels if item.label_id}
@@ -633,16 +661,17 @@ def format_anomalies_stats(raw: List[Any], params: Optional[dict] = None) -> Lis
         for _key, row in anomalies_raw.items():
             if not isinstance(row, dict):
                 continue
-            kpi = row.get("kpi") or ""
+            kpi = str(row.get("kpi") or "")
             st = row.get("startTime")
             en = row.get("endTime")
             lid = str(row.get("labelId", ""))
             lname = str(row.get("labelName", ""))
             ref_id = (ref_lookup.get(lid) or ref_lookup.get(lname)) or 0
+            kpi_ref_id = kpi_lookup.get(kpi) or 0
             details.append(
                 AnomalyDetail(
                     ref_id=ref_id,
-                    kpi_name=_kpi_code_to_display_name(kpi),
+                    kpi_ref_id=kpi_ref_id,
                     start_time=get_date_time_iso(int(st)) if st is not None else None,
                     end_time=get_date_time_iso(int(en)) if en is not None else None,
                     max_spike_height=float(row.get("maxSpikeHeight", 0) or 0),
@@ -666,6 +695,7 @@ def format_anomalies_stats(raw: List[Any], params: Optional[dict] = None) -> Lis
             anomaly_detection_status=status,
             anomaly_count=count,
             affected_labels=affected_labels,
+            kpi_affected=kpi_affected,
             anomalies=details,
             statistics_unavailable_reason=None,
             context=_get_anomalies_detection_context(),

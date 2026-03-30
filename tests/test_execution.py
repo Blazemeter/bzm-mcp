@@ -312,11 +312,15 @@ class TestFormatAnomaliesStats:
         assert report.affected_labels[0].ref_id == 1
         assert report.affected_labels[0].label_id == "lbl1"
         assert report.affected_labels[0].label_name == "Login Page"
+        assert len(report.kpi_affected) == 2
+        k0, k1 = report.kpi_affected[0], report.kpi_affected[1]
+        assert k0.kpi_ref_id == 1 and k0.kpi_id == "avg_rt" and k0.kpi_name == "Average response time"
+        assert k1.kpi_ref_id == 2 and k1.kpi_id == "pec99_rt" and k1.kpi_name == "99th percentile response time"
         assert len(report.anomalies) == 2
         a0 = report.anomalies[0]
         assert a0.ref_id == 1
-        assert a0.kpi_name == "Average response time"
+        assert a0.kpi_ref_id == 1
         assert a0.max_spike_height == 5112.42
         a1 = report.anomalies[1]
         assert a1.ref_id == 1
-        assert a1.kpi_name == "99th percentile response time"
+        assert a1.kpi_ref_id == 2
