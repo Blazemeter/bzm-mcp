@@ -512,7 +512,7 @@ def _first_label_id_for_name(anomalies: dict, label_name: str) -> str:
     return ""
 
 
-def _collect_affected_labels(affected_names: List[str], anomalies_raw: Any) -> List[AffectedLabel]:
+def _collect_labels_affected(affected_names: List[str], anomalies_raw: Any) -> List[AffectedLabel]:
     """Build distinct affected labels with label_id resolved from anomaly rows when possible."""
     rows = anomalies_raw if isinstance(anomalies_raw, dict) else {}
     out: List[AffectedLabel] = []
@@ -575,7 +575,7 @@ def _get_anomalies_detection_context() -> str:
         "anomaly statistics (e.g. free tier or anomaly detection not enabled). Do not invent counts.\n"
         "- anomaly_count: Total anomalies when statistics are available; 0 means none detected. "
         "Null only when statistics_unavailable (unknown to this tool).\n"
-        "- affected_labels: Distinct labels with ref_id, label_id and label_name that had at least one anomaly.\n"
+        "- labels_affected: Distinct labels with ref_id, label_id and label_name that had at least one anomaly.\n"
         "- kpi_affected: Distinct KPIs with kpi_ref_id, kpi_id (API key) and kpi_name (human-readable).\n"
         "- anomalies: Each row is one anomaly: ref_id (label), kpi_ref_id (KPI), start_time/end_time (ISO 8601), "
         "max_spike_height (spike severity for that KPI in that window).\n"
@@ -612,7 +612,7 @@ def format_anomalies_stats(raw: List[Any], params: Optional[dict] = None) -> Lis
                 execution_url=_build_execution_url(execution_id),
                 anomaly_detection_status="statistics_unavailable",
                 anomaly_count=None,
-                affected_labels=[],
+                labels_affected=[],
                 kpi_affected=[],
                 anomalies=[],
                 statistics_unavailable_reason=(
@@ -633,7 +633,7 @@ def format_anomalies_stats(raw: List[Any], params: Optional[dict] = None) -> Lis
                 execution_url=_build_execution_url(execution_id),
                 anomaly_detection_status="statistics_unavailable",
                 anomaly_count=None,
-                affected_labels=[],
+                labels_affected=[],
                 kpi_affected=[],
                 anomalies=[],
                 statistics_unavailable_reason=(
@@ -650,12 +650,12 @@ def format_anomalies_stats(raw: List[Any], params: Optional[dict] = None) -> Lis
 
     anomalies_raw = payload.get("anomalies")
     affected_names = [str(x) for x in affected]
-    affected_labels = _collect_affected_labels(affected_names, anomalies_raw)
+    labels_affected = _collect_labels_affected(affected_names, anomalies_raw)
     kpi_affected, kpi_lookup = _collect_kpi_affected(anomalies_raw)
 
     details: List[AnomalyDetail] = []
-    ref_lookup = {item.label_id: item.ref_id for item in affected_labels if item.label_id}
-    ref_lookup.update({item.label_name: item.ref_id for item in affected_labels if item.label_name})
+    ref_lookup = {item.label_id: item.ref_id for item in labels_affected if item.label_id}
+    ref_lookup.update({item.label_name: item.ref_id for item in labels_affected if item.label_name})
 
     if isinstance(anomalies_raw, dict):
         for _key, row in anomalies_raw.items():
@@ -694,7 +694,7 @@ def format_anomalies_stats(raw: List[Any], params: Optional[dict] = None) -> Lis
             execution_url=_build_execution_url(execution_id),
             anomaly_detection_status=status,
             anomaly_count=count,
-            affected_labels=affected_labels,
+            labels_affected=labels_affected,
             kpi_affected=kpi_affected,
             anomalies=details,
             statistics_unavailable_reason=None,

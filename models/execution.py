@@ -191,7 +191,7 @@ class AffectedKpi(BaseModel):
 
 class AnomalyDetail(BaseModel):
     """One detected performance anomaly for a label and KPI (response-time metric)."""
-    ref_id: int = Field(description="Reference id to match the corresponding label in affected_labels")
+    ref_id: int = Field(description="Reference id to match the corresponding label in labels_affected")
     kpi_ref_id: int = Field(description="Reference id to match the corresponding KPI in kpi_affected")
     start_time: Optional[str] = Field(
         description="Start of the anomaly time window as ISO 8601 local datetime string",
@@ -227,7 +227,7 @@ class AnomalyDetectionReport(BaseModel):
         ),
         default=None,
     )
-    affected_labels: List[AffectedLabel] = Field(
+    labels_affected: List[AffectedLabel] = Field(
         description="Distinct labels that had at least one anomaly, each with ref_id, label_id, and label_name (empty if none or unavailable)",
         default_factory=list,
     )
