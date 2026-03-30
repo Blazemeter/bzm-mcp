@@ -267,7 +267,7 @@ class TestFormatAnomaliesStats:
         report = result[0]
         assert report.anomaly_detection_status == "no_anomalies"
         assert report.anomaly_count == 0
-        assert report.affected_labels == []
+        assert report.labels_affected == []
         assert report.anomalies == []
         assert report.statistics_unavailable_reason is None
 
@@ -308,10 +308,10 @@ class TestFormatAnomaliesStats:
         report = result[0]
         assert report.anomaly_detection_status == "anomalies_with_details"
         assert report.anomaly_count == 2
-        assert len(report.affected_labels) == 1
-        assert report.affected_labels[0].ref_id == 1
-        assert report.affected_labels[0].label_id == "lbl1"
-        assert report.affected_labels[0].label_name == "Login Page"
+        assert len(report.labels_affected) == 1
+        assert report.labels_affected[0].ref_id == 1
+        assert report.labels_affected[0].label_id == "lbl1"
+        assert report.labels_affected[0].label_name == "Login Page"
         assert len(report.kpi_affected) == 2
         k0, k1 = report.kpi_affected[0], report.kpi_affected[1]
         assert k0.kpi_ref_id == 1 and k0.kpi_id == "avg_rt" and k0.kpi_name == "Average response time"
