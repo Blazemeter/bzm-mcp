@@ -505,63 +505,110 @@ def _kpi_code_to_display_name(kpi_code: str) -> str:
     return KPI_CODE_TO_DISPLAY_NAME.get(kpi_code, kpi_code)
 
 
-def _first_label_id_for_name(anomalies: dict, label_name: str) -> str:
-    for row in anomalies.values():
-        if isinstance(row, dict) and str(row.get("labelName", "")) == label_name:
-            return str(row.get("labelId", ""))
-    return ""
+def _parse_anomalies_dict(
+    rows: dict[str, Any],
+    affected_names: List[str],
+) -> tuple[List[AffectedLabel], List[AffectedKpi], List[AnomalyDetail]]:
+    """
+    Build labels_affected, kpi_affected, and per-row details from anomaly rows.
+    """
+    use_affected_list = bool(affected_names)
 
+    name_to_id: dict[str, str] = {}
+    kpi_affected: List[AffectedKpi] = []
+    seen_kpi: set[str] = set()
+    kpi_lookup: dict[str, int] = {}
 
-def _collect_labels_affected(affected_names: List[str], anomalies_raw: Any) -> List[AffectedLabel]:
-    """Build distinct affected labels with label_id resolved from anomaly rows when possible."""
-    rows = anomalies_raw if isinstance(anomalies_raw, dict) else {}
-    out: List[AffectedLabel] = []
-    seen: set[str] = set()
+    labels_affected: List[AffectedLabel] = []
+    seen_labels: set[str] = set()
+    ref_lookup: dict[str, int] = {}
 
-    def _add(label_id: str, label_name: str) -> None:
-        key = label_id if label_id else label_name
-        if not key or key in seen:
-            return
-        seen.add(key)
-        out.append(AffectedLabel(ref_id=len(out) + 1, label_id=label_id, label_name=label_name))
-
-    if affected_names:
-        for name in affected_names:
-            lid = _first_label_id_for_name(rows, name) if rows else ""
-            _add(lid, name)
-        return out
+    details: List[AnomalyDetail] = []
+    pending: list[tuple[str, str, str, Any, Any, float]] = []
 
     for row in rows.values():
         if not isinstance(row, dict):
             continue
+
         lid = str(row.get("labelId", ""))
         lname = str(row.get("labelName", ""))
-        _add(lid, lname)
+        if lname and lname not in name_to_id:
+            name_to_id[lname] = lid
 
-    return out
+        if not use_affected_list:
+            key = lid if lid else lname
+            if key and key not in seen_labels:
+                seen_labels.add(key)
+                ref = len(labels_affected) + 1
+                labels_affected.append(
+                    AffectedLabel(
+                        ref_id=ref, 
+                        label_id=lid, 
+                        label_name=lname
+                    )
+                )
+                if lid:
+                    ref_lookup[lid] = ref
+                if lname:
+                    ref_lookup[lname] = ref
 
-
-def _collect_kpi_affected(anomalies_raw: Any) -> tuple[List[AffectedKpi], dict[str, int]]:
-    """Distinct KPIs from anomaly rows with incremental kpi_ref_id; returns list and kpi_id -> kpi_ref_id lookup."""
-    rows = anomalies_raw if isinstance(anomalies_raw, dict) else {}
-    out: List[AffectedKpi] = []
-    seen: set[str] = set()
-    for row in rows.values():
-        if not isinstance(row, dict):
-            continue
-        kid = str(row.get("kpi") or "")
-        if not kid or kid in seen:
-            continue
-        seen.add(kid)
-        out.append(
-            AffectedKpi(
-                kpi_ref_id=len(out) + 1,
-                kpi_id=kid,
-                kpi_name=_kpi_code_to_display_name(kid),
+        kpi = str(row.get("kpi") or "")
+        if kpi and kpi not in seen_kpi:
+            seen_kpi.add(kpi)
+            kpi_ref = len(kpi_affected) + 1
+            kpi_affected.append(
+                AffectedKpi(
+                    kpi_ref_id=kpi_ref,
+                    kpi_id=kpi,
+                    kpi_name=_kpi_code_to_display_name(kpi),
+                )
             )
-        )
-    lookup = {item.kpi_id: item.kpi_ref_id for item in out}
-    return out, lookup
+            kpi_lookup[kpi] = kpi_ref
+
+        st = row.get("startTime")
+        en = row.get("endTime")
+        spike = float(row.get("maxSpikeHeight", 0) or 0)
+
+        if use_affected_list:
+            pending.append((lid, lname, kpi, st, en, spike))
+        else:
+            details.append(
+                AnomalyDetail(
+                    ref_id=(ref_lookup.get(lid) or ref_lookup.get(lname)) or 0,
+                    kpi_ref_id=kpi_lookup.get(kpi) or 0,
+                    start_time=get_date_time_iso(int(st)) if st is not None else None,
+                    end_time=get_date_time_iso(int(en)) if en is not None else None,
+                    max_spike_height=spike,
+                )
+            )
+
+    if use_affected_list:
+        seen_labels = set()
+        for name in affected_names:
+            lid = name_to_id.get(name, "") or ""
+            key = lid if lid else name
+            if not key or key in seen_labels:
+                continue
+            seen_labels.add(key)
+            ref = len(labels_affected) + 1
+            labels_affected.append(AffectedLabel(ref_id=ref, label_id=lid, label_name=name))
+            if lid:
+                ref_lookup[lid] = ref
+            if name:
+                ref_lookup[name] = ref
+
+        details = [
+            AnomalyDetail(
+                ref_id=(ref_lookup.get(lid) or ref_lookup.get(lname)) or 0,
+                kpi_ref_id=kpi_lookup.get(kpi) or 0,
+                start_time=get_date_time_iso(int(st)) if st is not None else None,
+                end_time=get_date_time_iso(int(en)) if en is not None else None,
+                max_spike_height=spike,
+            )
+            for lid, lname, kpi, st, en, spike in pending
+        ]
+
+    return labels_affected, kpi_affected, details
 
 
 def _get_anomalies_detection_context() -> str:
@@ -650,35 +697,8 @@ def format_anomalies_stats(raw: List[Any], params: Optional[dict] = None) -> Lis
 
     anomalies_raw = payload.get("anomalies")
     affected_names = [str(x) for x in affected]
-    labels_affected = _collect_labels_affected(affected_names, anomalies_raw)
-    kpi_affected, kpi_lookup = _collect_kpi_affected(anomalies_raw)
-
-    details: List[AnomalyDetail] = []
-    ref_lookup = {item.label_id: item.ref_id for item in labels_affected if item.label_id}
-    ref_lookup.update({item.label_name: item.ref_id for item in labels_affected if item.label_name})
-
-    if isinstance(anomalies_raw, dict):
-        for _key, row in anomalies_raw.items():
-            if not isinstance(row, dict):
-                continue
-            kpi = str(row.get("kpi") or "")
-            st = row.get("startTime")
-            en = row.get("endTime")
-            lid = str(row.get("labelId", ""))
-            lname = str(row.get("labelName", ""))
-            ref_id = (ref_lookup.get(lid) or ref_lookup.get(lname)) or 0
-            kpi_ref_id = kpi_lookup.get(kpi) or 0
-            details.append(
-                AnomalyDetail(
-                    ref_id=ref_id,
-                    kpi_ref_id=kpi_ref_id,
-                    start_time=get_date_time_iso(int(st)) if st is not None else None,
-                    end_time=get_date_time_iso(int(en)) if en is not None else None,
-                    max_spike_height=float(row.get("maxSpikeHeight", 0) or 0),
-                )
-            )
-    elif isinstance(anomalies_raw, list) and not anomalies_raw:
-        pass
+    rows = anomalies_raw if isinstance(anomalies_raw, dict) else {}
+    labels_affected, kpi_affected, details = _parse_anomalies_dict(rows, affected_names)
 
     if count == 0 and not details:
         status = "no_anomalies"
