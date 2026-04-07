@@ -47,12 +47,6 @@ class ProjectManager(Manager):
             return project_result
         project_element = project_result.result[0]
 
-        # Check if it's valid or allowed
-        workspace_result = await bridge.read_workspace(self.token, self.ctx, project_element.workspace_id)
-        if workspace_result.error:
-            return workspace_result
-
-        # Get the amount of test
         project_element.tests_count = await bridge.count_project_tests(self.token, self.ctx, project_id)
         return project_result
 
@@ -61,11 +55,6 @@ class ProjectManager(Manager):
             return BaseResult(error="Missing or invalid required argument 'workspace_id'. Expected integer.")
         if not isinstance(limit, int) or not isinstance(offset, int):
             return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
-
-        # Check if it's valid or allowed
-        workspace_result = await bridge.read_workspace(self.token, self.ctx, workspace_id)
-        if workspace_result.error:
-            return workspace_result
 
         parameters = {
             "workspaceId": workspace_id,

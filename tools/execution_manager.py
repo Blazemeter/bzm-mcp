@@ -103,11 +103,6 @@ class ExecutionManager(Manager):
         if not isinstance(test_id, int) or test_id < 1:
             return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
 
-        # Check if it's valid or allowed
-        test_result = await bridge.read_test(self.token, self.ctx, test_id)
-        if test_result.error:
-            return test_result
-
         parameters = {"delayedStart": delayed_start_ready}
         start_body = {"isDebugRun": is_debug_run}
         return await api_request(
@@ -134,10 +129,6 @@ class ExecutionManager(Manager):
             return execution_response
 
         execution_element = execution_response.result[0]
-
-        project_result = await bridge.read_project(self.token, self.ctx, execution_element.project_id)
-        if project_result.error:
-            return project_result
 
         status_response = await self._fetch_execution_status(execution_id)
         if status_response.error:
@@ -188,10 +179,6 @@ class ExecutionManager(Manager):
             return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
         if not isinstance(limit, int) or not isinstance(offset, int):
             return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
-
-        test_result = await bridge.read_test(self.token, self.ctx, test_id)
-        if test_result.error:
-            return test_result
 
         parameters = {
             "testId": test_id,

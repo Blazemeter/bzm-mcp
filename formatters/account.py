@@ -27,7 +27,6 @@ def format_accounts(accounts, params: Optional[dict] = None) -> List[Account]:
                 account_id=account.get("id"),
                 account_name=account.get("name", "Unknown"),
                 description=account.get("description", ""),
-                ai_consent=account.get("aiConsent", None),
                 created=get_date_time_iso(account.get("created")),
                 updated=get_date_time_iso(account.get("updated")),
             )
