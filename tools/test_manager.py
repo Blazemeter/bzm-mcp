@@ -60,23 +60,12 @@ class TestManager(Manager):
                 error="Missing or invalid required argument 'test_id'. Expected integer."
             )
 
-        test_result = await api_request(
+        return await api_request(
             self.token,
             "GET",
             f"{TESTS_ENDPOINT}/{test_id}",
             result_formatter=format_tests,
         )
-        if test_result.error:
-            return test_result
-        else:
-            # Check if it's valid or allowed
-            project_result = await bridge.read_project(
-                self.token, self.ctx, test_result.result[0].project_id
-            )
-            if project_result.error:
-                return project_result
-            else:
-                return test_result
 
     @require_confirmation(operation=Operations.CREATE)
     async def create(
@@ -90,11 +79,6 @@ class TestManager(Manager):
             return BaseResult(
                 error="Missing or invalid required argument 'project_id'. Expected integer."
             )
-
-        # Check if it's valid or allowed
-        project_result = await bridge.read_project(self.token, self.ctx, project_id)
-        if project_result.error:
-            return project_result
 
         test_body = {
             "name": test_name,
@@ -364,7 +348,6 @@ class TestManager(Manager):
         project_id: Optional[int],
         limit: int = 50,
         offset: int = 0,
-        control_ai_consent: bool = True,
     ) -> BaseResult:
         if not isinstance(project_id, int) or project_id < 1:
             return BaseResult(
@@ -374,12 +357,6 @@ class TestManager(Manager):
             return BaseResult(
                 error="Invalid arguments 'limit'/'offset'. Expected integers."
             )
-
-        if control_ai_consent:
-            # Check if it's valid or allowed
-            project_result = await bridge.read_project(self.token, self.ctx, project_id)
-            if project_result.error:
-                return project_result
 
         parameters = {
             "projectId": project_id,

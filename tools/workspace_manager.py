@@ -24,15 +24,10 @@ from config.token import BzmToken
 from formatters.workspace import format_workspaces, format_workspaces_detailed, format_workspaces_locations
 from models.manager import Manager
 from models.result import BaseResult
-from tools import bridge
 from tools.utils import api_request, format_sanitized_traceback
 
 
 class WorkspaceManager(Manager):
-
-    # Note: It's allowed to list all the user workspaces without AI consent
-    # the format_workspaces only expose minimum information to user
-    # The read operation verify permissions and don't allow to share details.
 
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
@@ -47,27 +42,13 @@ class WorkspaceManager(Manager):
             f"{WORKSPACES_ENDPOINT}/{workspace_id}",
             result_formatter=format_workspaces_detailed
         )
-        if workspace_result.error:
-            return workspace_result
-        else:
-            # Check if it's valid or allowed
-            account_result = await bridge.read_account(self.token, self.ctx,
-                                                       workspace_result.result[0].account_id)
-            if account_result.error:
-                return account_result
-            else:
-                return workspace_result
+        return workspace_result
 
     async def list(self, account_id: Optional[int], limit: int = 50, offset: int = 0) -> BaseResult:
         if not isinstance(account_id, int) or account_id < 1:
             return BaseResult(error="Missing or invalid required argument 'account_id'. Expected integer.")
         if not isinstance(limit, int) or not isinstance(offset, int):
             return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
-
-        # Check if it's valid or allowed
-        account_data = await bridge.read_account(self.token, self.ctx, account_id)
-        if account_data.error:
-            return account_data
 
         parameters = {
             "accountId": account_id,
@@ -97,16 +78,7 @@ class WorkspaceManager(Manager):
             result_formatter=format_workspaces_locations,
             result_formatter_params={"purpose": purpose}
         )
-        if locations_result.error:
-            return locations_result
-        else:
-            # Check if it's valid or allowed
-            account_result = await bridge.read_account(self.token, self.ctx,
-                                                       locations_result.result[0]["account_id"])
-            if account_result.error:
-                return account_result
-            else:
-                return locations_result
+        return locations_result
 
 def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
