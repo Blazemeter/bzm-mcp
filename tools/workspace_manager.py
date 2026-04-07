@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import traceback
 from typing import Any, Dict, Optional
 
 import httpx
@@ -26,7 +25,7 @@ from formatters.workspace import format_workspaces, format_workspaces_detailed, 
 from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
-from tools.utils import api_request
+from tools.utils import api_request, format_sanitized_traceback
 
 
 class WorkspaceManager(Manager):
@@ -38,7 +37,9 @@ class WorkspaceManager(Manager):
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
 
-    async def read(self, workspace_id: int) -> BaseResult:
+    async def read(self, workspace_id: Optional[int]) -> BaseResult:
+        if not isinstance(workspace_id, int) or workspace_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'workspace_id'. Expected integer.")
 
         workspace_result = await api_request(
             self.token,
@@ -57,7 +58,11 @@ class WorkspaceManager(Manager):
             else:
                 return workspace_result
 
-    async def list(self, account_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
+    async def list(self, account_id: Optional[int], limit: int = 50, offset: int = 0) -> BaseResult:
+        if not isinstance(account_id, int) or account_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'account_id'. Expected integer.")
+        if not isinstance(limit, int) or not isinstance(offset, int):
+            return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
 
         # Check if it's valid or allowed
         account_data = await bridge.read_account(self.token, self.ctx, account_id)
@@ -79,7 +84,11 @@ class WorkspaceManager(Manager):
             params=parameters
         )
 
-    async def read_locations(self, workspace_id: int, purpose: str = "load") -> BaseResult:
+    async def read_locations(self, workspace_id: Optional[int], purpose: str = "load") -> BaseResult:
+        if not isinstance(workspace_id, int) or workspace_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'workspace_id'. Expected integer.")
+        if not isinstance(purpose, str) or not purpose.strip():
+            return BaseResult(error="Invalid argument 'purpose'. Expected non-empty string.")
 
         locations_result = await api_request(
             self.token,
@@ -98,7 +107,6 @@ class WorkspaceManager(Manager):
                 return account_result
             else:
                 return locations_result
-
 
 def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
@@ -133,22 +141,23 @@ Hints:
         try:
             match action:
                 case "read":
-                    return await workspace_manager.read(args["workspace_id"])
+                    return await workspace_manager.read(args.get("workspace_id"))
                 case "list":
-                    return await workspace_manager.list(args["account_id"], args.get("limit", 50),
-                                                        args.get("offset", 0))
+                    return await workspace_manager.list(
+                        args.get("account_id"), args.get("limit", 50), args.get("offset", 0)
+                    )
                 case "read_locations":
-                    return await workspace_manager.read_locations(args["workspace_id"], args.get("purpose", "load"))
+                    return await workspace_manager.read_locations(args.get("workspace_id"), args.get("purpose", "load"))
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in workspace manager tool"
                     )
         except httpx.HTTPStatusError:
             return BaseResult(
-                error=f"Error: {traceback.format_exc()}"
+                error=f"Error: {format_sanitized_traceback()}"
             )
         except Exception:
             return BaseResult(
-                error=f"""Error: {traceback.format_exc()}
+                error=f"""Error: {format_sanitized_traceback()}
                           If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
             )

@@ -1,9 +1,9 @@
 name: Build Binaries
 
 on:
-  push:
-    branches: ['main']
-  pull_request:
+  workflow_run:
+    workflows: ["Tests"]
+    types: [completed]
     branches: ['main']
   workflow_dispatch:
 
@@ -13,6 +13,7 @@ permissions:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     strategy:
       matrix:
         include:
@@ -33,7 +34,7 @@ jobs:
             arch: amd64
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     
     - name: Build binary (Linux in Ubuntu 25.10 container)
       if: matrix.name == 'linux'
@@ -66,7 +67,7 @@ jobs:
     
     - name: Setup uv for Windows/macOS
       if: matrix.name != 'linux'
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v7
     
     - name: Build binary (Windows/macOS native)
       if: matrix.name != 'linux'
@@ -77,7 +78,7 @@ jobs:
         uv run build.py
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: bzm-mcp-${{ matrix.name }}-${{ matrix.arch }}
         path: dist/
@@ -88,12 +89,12 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
     # Use REPO_PUSH_PAT (user PAT with bypass allowance) to push dist/ to main when branch protection blocks GITHUB_TOKEN.
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         token: ${{ secrets.REPO_PUSH_PAT || secrets.GITHUB_TOKEN }}
 
     - name: Download all artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         path: artifacts/
     

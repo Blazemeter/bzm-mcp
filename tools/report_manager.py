@@ -71,11 +71,14 @@ class ReportManager(Manager):
             }
         )
 
-    async def read_error(self, master_id: int):
+    async def read_error(self, master_id: Optional[int]):
         """
         Get error report for a given master_id with formatted, AI-friendly structure.
         Includes execution metadata and explanatory context about error metrics.
         """
+        if not isinstance(master_id, int) or master_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
+
         # Check if it's valid or allowed
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
@@ -98,11 +101,15 @@ class ReportManager(Manager):
             }
         )
 
-    async def read_request_stats(self, master_id: int):
+    async def read_request_stats(self, master_id: Optional[int]):
         """
         Get request statistics report for a given master_id with formatted, AI-friendly structure.
         Includes execution metadata and explanatory context about metrics per endpoint.
         """
+        if not isinstance(master_id, int) or master_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
+
+        # Check if it's valid or allowed
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
             return execution_result
@@ -125,11 +132,14 @@ class ReportManager(Manager):
             }
         )
 
-    async def read_anomalies_stats(self, master_id: int):
+    async def read_anomalies_stats(self, master_id: Optional[int]):
         """
         Get anomaly statistics for a given master_id (test execution).
         Returns anomaly count, affected labels, and per-anomaly details (KPI, time range, max spike).
         """
+        if not isinstance(master_id, int) or master_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
+
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
             return execution_result

@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import traceback
 from typing import Optional, Dict, Any
 
 import httpx
@@ -26,7 +25,7 @@ from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
 from tools.report_manager import ReportManager
-from tools.utils import api_request, timeout, user_agent
+from tools.utils import api_request, timeout, user_agent, format_sanitized_traceback, require_confirmation, Operations
 
 
 class ExecutionManager(Manager):
@@ -98,8 +97,12 @@ class ExecutionManager(Manager):
             except:
                 return BaseResult(error=f"HTTP {status_code}: {e.response.text[:200]}")
 
-    async def start(self, test_id: int, delayed_start_ready: bool = True,
+    @require_confirmation(operation=Operations.CREATE)
+    async def start(self, test_id: Optional[int], delayed_start_ready: bool = True,
                     is_debug_run: bool = False) -> BaseResult:
+        if not isinstance(test_id, int) or test_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
+
         # Check if it's valid or allowed
         test_result = await bridge.read_test(self.token, self.ctx, test_id)
         if test_result.error:
@@ -116,7 +119,10 @@ class ExecutionManager(Manager):
             json=start_body
         )
 
-    async def read(self, execution_id: int) -> BaseResult:
+    async def read(self, execution_id: Optional[int]) -> BaseResult:
+        if not isinstance(execution_id, int) or execution_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
+
         execution_response = await api_request(
             self.token,
             "GET",
@@ -147,7 +153,7 @@ class ExecutionManager(Manager):
         return BaseResult(result=[result])
 
     async def _fetch_execution_status(self, execution_id: int) -> BaseResult:
-        parameters = {"level ": 200, "events": False}
+        parameters = {"level": 200, "events": False}
         return await api_request(
             self.token,
             "GET",
@@ -177,7 +183,12 @@ class ExecutionManager(Manager):
             "When it is archived, it is not possible to read the detailed execution information.\n"
         )
 
-    async def list(self, test_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
+    async def list(self, test_id: Optional[int], limit: int = 50, offset: int = 0) -> BaseResult:
+        if not isinstance(test_id, int) or test_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
+        if not isinstance(limit, int) or not isinstance(offset, int):
+            return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
+
         test_result = await bridge.read_test(self.token, self.ctx, test_id)
         if test_result.error:
             return test_result
@@ -197,7 +208,10 @@ class ExecutionManager(Manager):
             params=parameters
         )
 
-    async def ai_analysis(self, execution_id: int) -> BaseResult:
+    async def ai_analysis(self, execution_id: Optional[int]) -> BaseResult:
+        if not isinstance(execution_id, int) or execution_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
+
         execution_response = await self.read(execution_id)
         if execution_response.error:
             return execution_response
@@ -355,6 +369,28 @@ class ExecutionManager(Manager):
         }
         return BaseResult(result=[result])
 
+    async def read_all_reports(self, execution_id: Optional[int]) -> BaseResult:
+        if not isinstance(execution_id, int) or execution_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
+
+        report_manager = ReportManager(self.token, self.ctx)
+        summary_result = await report_manager.read_summary(execution_id)
+        error_result = await report_manager.read_error(execution_id)
+        stats_result = await report_manager.read_request_stats(execution_id)
+
+        result_payload = {
+            "summary": summary_result.result if not summary_result.error else None,
+            "error": error_result.result if not error_result.error else None,
+            "request_stats": stats_result.result if not stats_result.error else None,
+        }
+
+        return BaseResult(
+            result=[result_payload],
+            error=", ".join({summary_result.error, error_result.error, stats_result.error} - {None}),
+            info=list({summary_result.info, error_result.info, stats_result.info} - {None}),
+            warning=list({summary_result.warning, error_result.warning, stats_result.warning} - {None}),
+        )
+
     @staticmethod
     def _get_analysis_context_message(is_ready: bool, status_message: str) -> str:
         if is_ready:
@@ -420,44 +456,36 @@ Hints:
         try:
             match action:
                 case "start":
-                    return await test_manager.start(args["test_id"])
+                    return await test_manager.start(args.get("test_id"))
                 case "read":
-                    return await test_manager.read(args["execution_id"])
+                    return await test_manager.read(args.get("execution_id"))
                 case "list":
-                    return await test_manager.list(args["test_id"])
-                case "read_summary":
-                    return await report_manager.read_summary(args["execution_id"])
-                case "read_errors":
-                    return await report_manager.read_error(args["execution_id"])
-                case "read_request_stats":
-                    return await report_manager.read_request_stats(args["execution_id"])
-                case "read_all_reports":
-                    summary_result = await report_manager.read_summary(args["execution_id"])
-                    error_result = await report_manager.read_error(args["execution_id"])
-                    stats_result = await report_manager.read_request_stats(args["execution_id"])
-                    return BaseResult(
-                        result=[{
-                            "summary": summary_result.result or None,
-                            "error": error_result.result or None,
-                            "request_stats": stats_result.result or None
-                        }],
-                        error=", ".join({summary_result.error, error_result.error, stats_result.error} - {None}),
-                        info=list({summary_result.info, error_result.info, stats_result.info} - {None}),
-                        warning=list({summary_result.warning, error_result.warning, stats_result.warning} - {None}),
+                    return await test_manager.list(
+                        args.get("test_id"),
+                        args.get("limit", 50),
+                        args.get("offset", 0),
                     )
+                case "read_summary":
+                    return await report_manager.read_summary(args.get("execution_id"))
+                case "read_errors":
+                    return await report_manager.read_error(args.get("execution_id"))
+                case "read_request_stats":
+                    return await report_manager.read_request_stats(args.get("execution_id"))
+                case "read_all_reports":
+                    return await test_manager.read_all_reports(args.get("execution_id"))
                 case "read_anomalies_stats":
-                    return await report_manager.read_anomalies_stats(args["execution_id"])
+                    return await report_manager.read_anomalies_stats(args.get("execution_id"))
                 case "ai_analysis":
-                    return await test_manager.ai_analysis(args["execution_id"])
+                    return await test_manager.ai_analysis(args.get("execution_id"))
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in test execution manager tool"
                     )
         except httpx.HTTPStatusError:
             return BaseResult(
-                error=f"Error: {traceback.format_exc()}"
+                error=f"Error: {format_sanitized_traceback()}"
             )
         except Exception:
             return BaseResult(
-                error=f"Error: {traceback.format_exc()}\n{SUPPORT_MESSAGE}"
+                error=f"Error: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}"
             )

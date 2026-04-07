@@ -16,7 +16,6 @@ limitations under the License.
 import asyncio
 import logging
 import os
-import traceback
 from pathlib import Path
 from typing import Any, Dict
 from typing import Optional, List
@@ -26,24 +25,28 @@ from mcp.server.fastmcp import Context
 
 from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
 from config.path_mapper import PathMapperFactory
+from config.security import detect_sensitive_upload_path_reason
 from config.token import BzmToken
 from formatters.test import format_tests
 from models.manager import Manager
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
 from tools import bridge
-from tools.utils import api_request, require_confirmation, Operations
+from tools.utils import api_request, require_confirmation, Operations, format_sanitized_traceback
 
 logger = logging.getLogger(__name__)
 
 
 class TestManager(Manager):
+    __test__ = False
 
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
         self.path_mapper = PathMapperFactory.create_strategy()
 
-    async def read(self, test_id: int) -> BaseResult:
+    async def read(self, test_id: Optional[int]) -> BaseResult:
+        if not isinstance(test_id, int) or test_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
 
         test_result = await api_request(
             self.token,
@@ -62,7 +65,11 @@ class TestManager(Manager):
                 return test_result
 
     @require_confirmation(operation=Operations.CREATE)
-    async def create(self, test_name: str, project_id: int) -> BaseResult:
+    async def create(self, test_name: Optional[str], project_id: Optional[int]) -> BaseResult:
+        if not isinstance(test_name, str) or not test_name.strip():
+            return BaseResult(error="Missing or invalid required argument 'test_name'. Expected non-empty string.")
+        if not isinstance(project_id, int) or project_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'project_id'. Expected integer.")
 
         # Check if it's valid or allowed
         project_result = await bridge.read_project(self.token, self.ctx, project_id)
@@ -88,12 +95,15 @@ class TestManager(Manager):
         )
 
     @require_confirmation(operation=Operations.DELETE)
-    async def delete(self, test_id: int) -> BaseResult:
+    async def delete(self, test_id: Optional[int]) -> BaseResult:
+        if not isinstance(test_id, int) or test_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
+
         test_result = await self.read(test_id)
         if test_result.error:
             return test_result
         else:
-            test_deleted_result =  await api_request(
+            test_deleted_result = await api_request(
                 self.token,
                 "DELETE",
                 f"{TESTS_ENDPOINT}/{test_id}"
@@ -106,10 +116,30 @@ class TestManager(Manager):
                 test_deleted_result.result = [f"Test {test_id} Deleted Successfully"]
                 return test_deleted_result
 
-    @staticmethod
-    def _validate_files(file_paths: List[str], valid_files: List[str], invalid_files: List[str]):
+    @classmethod
+    def _detect_sensitive_path_reason(cls, file_path: str) -> Optional[str]:
+        return detect_sensitive_upload_path_reason(file_path)
+
+    @classmethod
+    def _validate_files(cls, file_paths: List[str], valid_files: List[str], invalid_files: List[str],
+                        blocked_files: List[Dict[str, str]]):
+        # Security design note:
+        # Uploads are intentionally allowed from any user working location (not restricted to one workspace root),
+        # because users may execute tests from different local projects or folders.
+        # The destination is BlazeMeter-managed infrastructure, and sensitive-origin filtering is enforced by
+        # detect_sensitive_upload_path_reason() to prevent accidental leakage of system/secret files.
+        # UNC paths are intentionally supported by design. Any sensitive data exposed through shared UNC
+        # locations is an administrative responsibility of the UNC share owners/administrators.
         for file_path in file_paths:
             logger.debug(f"Checking file: {file_path}")
+            sensitive_reason = cls._detect_sensitive_path_reason(file_path)
+            if sensitive_reason:
+                logger.warning(f"Blocked sensitive file path: {file_path} ({sensitive_reason})")
+                blocked_files.append({
+                    "file": file_path,
+                    "reason": sensitive_reason,
+                })
+                continue
             if os.path.exists(file_path) and os.path.isfile(file_path):
                 logger.debug(f"File exists: {file_path}")
                 valid_files.append(file_path)
@@ -135,8 +165,13 @@ class TestManager(Manager):
                 })
 
     @require_confirmation(operation=Operations.CREATE)
-    async def upload_assets(self, test_id: int, file_paths: List[str], main_script: Optional[str] = None) -> Dict[
+    async def upload_assets(self, test_id: Optional[int], file_paths: Optional[List[str]],
+                            main_script: Optional[str] = None) -> Dict[
         str, Any]:
+        if not isinstance(test_id, int) or test_id < 1:
+            return {"error": "Missing or invalid required argument 'test_id'. Expected integer."}
+        if not isinstance(file_paths, list) or not file_paths:
+            return {"error": "Missing or invalid required argument 'file_paths'. Expected non-empty list."}
 
         # Check if it's valid or allowed
         test_data = await self.read(test_id)
@@ -158,17 +193,20 @@ class TestManager(Manager):
 
         valid_files = []
         invalid_files = []
+        blocked_files = []
 
-        self._validate_files(mapped_file_paths, valid_files, invalid_files)
+        self._validate_files(mapped_file_paths, valid_files, invalid_files, blocked_files)
 
         logger.debug(f"Valid files: {valid_files}")
         logger.debug(f"Invalid files: {invalid_files}")
+        logger.debug(f"Blocked files: {blocked_files}")
 
         if not valid_files:
             logger.error("No valid files found to upload")
             return {
                 "error": "No valid files found to upload",
-                "invalid_files": invalid_files
+                "invalid_files": invalid_files,
+                "blocked_files": blocked_files
             }
 
         logger.debug("Starting concurrent uploads")
@@ -192,6 +230,7 @@ class TestManager(Manager):
             "successful_uploads": successful_uploads,
             "failed_uploads": failed_uploads,
             "invalid_files": invalid_files,
+            "blocked_files": blocked_files,
             "config_update": config_update_result
         }
 
@@ -227,7 +266,7 @@ class TestManager(Manager):
 
         except Exception as e:
             logger.error(f"Exception in _upload_single_file: {e}")
-            logger.error(f"Traceback: {traceback.format_exc()}")
+            logger.error(f"Traceback: {format_sanitized_traceback(e)}")
             raise Exception(f"Failed to upload {file_path}: {str(e)}")
 
     async def _update_test_configuration(self, test_id: int, main_script_path: str) -> BaseResult:
@@ -281,8 +320,12 @@ class TestManager(Manager):
 
         return script_types.get(extension, 'unknown')
 
-    async def list(self, project_id: int, limit: int = 50,
+    async def list(self, project_id: Optional[int], limit: int = 50,
                    offset: int = 0, control_ai_consent: bool = True) -> BaseResult:
+        if not isinstance(project_id, int) or project_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'project_id'. Expected integer.")
+        if not isinstance(limit, int) or not isinstance(offset, int):
+            return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
 
         if control_ai_consent:
             # Check if it's valid or allowed
@@ -336,10 +379,12 @@ class TestManager(Manager):
             for location, percent in test_data_override["locationsPercents"].items():
                 locations_concurrency[location] = int(percent * concurrency / 100)
 
-            for location, users in locations_concurrency.items():
-                if users == 0:
-                    locations_concurrency[location] = 1  # Default behaviour on BlazeMeter
-                break
+            # Fallback behavior: int(percent * concurrency / 100) can truncate to 0 for low loads.
+            # To avoid ending with all locations at 0 users, we guarantee at least 1 user only on
+            # the first location when that first computed value is 0.
+            first_location = next(iter(locations_concurrency), None)
+            if first_location is not None and locations_concurrency[first_location] == 0:
+                locations_concurrency[first_location] = 1  # Default behaviour on BlazeMeter
 
             test_data_override["locations"] = locations_concurrency
 
@@ -429,13 +474,13 @@ Hints:
         try:
             match action:
                 case "read":
-                    return await test_manager.read(args["test_id"])
+                    return await test_manager.read(args.get("test_id"))
                 case "create":
-                    return await test_manager.create(args["test_name"], args["project_id"])
+                    return await test_manager.create(args.get("test_name"), args.get("project_id"))
                 case "delete":
-                    return await test_manager.delete(args["test_id"])
+                    return await test_manager.delete(args.get("test_id"))
                 case "list":
-                    return await test_manager.list(args["project_id"], args.get("limit", 50), args.get("offset", 0))
+                    return await test_manager.list(args.get("project_id"), args.get("limit", 50), args.get("offset", 0))
                 case "configure_load":
                     performance_test = PerformanceTestObject.from_args(args)
                     return await test_manager.configure(performance_test)
@@ -443,22 +488,24 @@ Hints:
                     performance_test = PerformanceTestObject.from_args(args)
                     return await test_manager.configure(performance_test)
                 case "upload_assets":
-                    return BaseResult(
-                        result=[await test_manager.upload_assets(
-                            args["test_id"],
-                            args["file_paths"],
-                            args.get("main_script"))]
+                    upload_result = await test_manager.upload_assets(
+                        args.get("test_id"),
+                        args.get("file_paths"),
+                        args.get("main_script"),
                     )
+                    if isinstance(upload_result, dict) and upload_result.get("error"):
+                        return BaseResult(error=upload_result["error"])
+                    return BaseResult(result=[upload_result])
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in tests manager tool"
                     )
         except httpx.HTTPStatusError:
             return BaseResult(
-                error=f"Error: {traceback.format_exc()}"
+                error=f"Error: {format_sanitized_traceback()}"
             )
         except Exception:
             return BaseResult(
-                error=f"""Error: {traceback.format_exc()}
+                error=f"""Error: {format_sanitized_traceback()}
                           If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
             )

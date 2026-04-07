@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import html
 import json
 import re
 from urllib.parse import urljoin
@@ -126,14 +127,14 @@ def process_inline_elements(element, base_url=None, as_html=False):
             if href and base_url:
                 href = urljoin(base_url, href)
 
-            if text.lower() in ['copy', 'link', ''] or 'javascript:' in href:
+            if text.lower() in ['copy', 'link', ''] or 'javascript:' in href.lower():
                 if child.tail:
                     parts.append(child.tail)
                 continue
 
             if text and href:
                 if as_html:
-                    parts.append(f"<a href='{{href}}'>{text}</a>")
+                    parts.append(f"<a href='{html.escape(href, quote=True)}'>{html.escape(text)}</a>")
                 else:
                     parts.append(f"[{text}]({href})")
             elif text:
@@ -148,21 +149,21 @@ def process_inline_elements(element, base_url=None, as_html=False):
             text = child.text_content().strip()
             if text:
                 if as_html:
-                    parts.append(f"<b>{text}</b>")
+                    parts.append(f"<b>{html.escape(text)}</b>")
                 else:
                     parts.append(f"**{text}**")
         elif tag in ['em', 'i']:
             text = child.text_content().strip()
             if text:
                 if as_html:
-                    parts.append(f"<i>{text}</i>")
+                    parts.append(f"<i>{html.escape(text)}</i>")
                 else:
                     parts.append(f"*{text}*")
         elif tag == 'code':
             text = child.text_content().strip()
             if text:
                 if as_html:
-                    parts.append(f"<code>{text}</code>")
+                    parts.append(f"<code>{html.escape(text)}</code>")
                 else:
                     parts.append(f"`{text}`")
         else:

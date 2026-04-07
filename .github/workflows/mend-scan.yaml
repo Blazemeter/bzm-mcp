@@ -1,19 +1,23 @@
 name: Mend CLI Scan
 
 on:
+  workflow_run:
+    workflows: ["Tests"]
+    types: [completed]
   workflow_dispatch:
   push:
 
 
 jobs:
   mend-scan:
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }} 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v7
 
       - name: Create venv and sync packages
         run: |

@@ -30,9 +30,9 @@ class BzmToken:
 
     def __init__(self, token_id: str, token_secret: str):
         if not token_id or not isinstance(token_id, str):
-            raise BzmTokenError(f"Invalid Token ID: {token_id!r}")
+            raise BzmTokenError("Invalid Token ID format: expected non-empty string")
         if not token_secret or not isinstance(token_secret, str):
-            raise BzmTokenError(f"Invalid Token secret: {token_secret!r}")
+            raise BzmTokenError("Invalid Token secret format: expected non-empty string")
 
         self.id = token_id
         self.secret = token_secret
@@ -68,5 +68,5 @@ class BzmToken:
         return f"Basic {token_b64}"
 
     def __repr__(self):
-        return f"<BzmToken id={self.id!r} secret={'*'*8}>" 
+        return "<BzmToken id=******** secret=********>"
 
