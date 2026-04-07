@@ -511,20 +511,31 @@ def _parse_anomalies_dict(
 ) -> tuple[List[AffectedLabel], List[AffectedKpi], List[AnomalyDetail]]:
     """
     Build labels_affected, kpi_affected, and per-row details from anomaly rows.
-    """
-    use_affected_list = bool(affected_names)
 
-    name_to_id: dict[str, str] = {}
+    This parser is intentionally label_id-first: dedupe, ref assignment, and detail linking
+    are all keyed by label_id. affected_names is accepted for interface compatibility but
+    does not drive ordering or filtering.
+    """
+    _ = affected_names
+
     kpi_affected: List[AffectedKpi] = []
     seen_kpi: set[str] = set()
     kpi_lookup: dict[str, int] = {}
 
     labels_affected: List[AffectedLabel] = []
-    seen_labels: set[str] = set()
     ref_lookup: dict[str, int] = {}
+    seen_lids: set[str] = set()
 
     details: List[AnomalyDetail] = []
-    pending: list[tuple[str, str, str, Any, Any, float]] = []
+
+    def anomaly_detail(lid: str, kpi: str, st: Any, en: Any, spike: float) -> AnomalyDetail:
+        return AnomalyDetail(
+            ref_id=ref_lookup.get(lid, 0),
+            kpi_ref_id=kpi_lookup.get(kpi) or 0,
+            start_time=get_date_time_iso(int(st)) if st is not None else None,
+            end_time=get_date_time_iso(int(en)) if en is not None else None,
+            max_spike_height=spike,
+        )
 
     for row in rows.values():
         if not isinstance(row, dict):
@@ -532,25 +543,12 @@ def _parse_anomalies_dict(
 
         lid = str(row.get("labelId", ""))
         lname = str(row.get("labelName", ""))
-        if lname and lname not in name_to_id:
-            name_to_id[lname] = lid
 
-        if not use_affected_list:
-            key = lid if lid else lname
-            if key and key not in seen_labels:
-                seen_labels.add(key)
-                ref = len(labels_affected) + 1
-                labels_affected.append(
-                    AffectedLabel(
-                        ref_id=ref, 
-                        label_id=lid, 
-                        label_name=lname
-                    )
-                )
-                if lid:
-                    ref_lookup[lid] = ref
-                if lname:
-                    ref_lookup[lname] = ref
+        if lid and lid not in seen_lids:
+            seen_lids.add(lid)
+            ref = len(labels_affected) + 1
+            labels_affected.append(AffectedLabel(ref_id=ref, label_id=lid, label_name=lname))
+            ref_lookup[lid] = ref
 
         kpi = str(row.get("kpi") or "")
         if kpi and kpi not in seen_kpi:
@@ -568,45 +566,7 @@ def _parse_anomalies_dict(
         st = row.get("startTime")
         en = row.get("endTime")
         spike = float(row.get("maxSpikeHeight", 0) or 0)
-
-        if use_affected_list:
-            pending.append((lid, lname, kpi, st, en, spike))
-        else:
-            details.append(
-                AnomalyDetail(
-                    ref_id=(ref_lookup.get(lid) or ref_lookup.get(lname)) or 0,
-                    kpi_ref_id=kpi_lookup.get(kpi) or 0,
-                    start_time=get_date_time_iso(int(st)) if st is not None else None,
-                    end_time=get_date_time_iso(int(en)) if en is not None else None,
-                    max_spike_height=spike,
-                )
-            )
-
-    if use_affected_list:
-        seen_labels = set()
-        for name in affected_names:
-            lid = name_to_id.get(name, "") or ""
-            key = lid if lid else name
-            if not key or key in seen_labels:
-                continue
-            seen_labels.add(key)
-            ref = len(labels_affected) + 1
-            labels_affected.append(AffectedLabel(ref_id=ref, label_id=lid, label_name=name))
-            if lid:
-                ref_lookup[lid] = ref
-            if name:
-                ref_lookup[name] = ref
-
-        details = [
-            AnomalyDetail(
-                ref_id=(ref_lookup.get(lid) or ref_lookup.get(lname)) or 0,
-                kpi_ref_id=kpi_lookup.get(kpi) or 0,
-                start_time=get_date_time_iso(int(st)) if st is not None else None,
-                end_time=get_date_time_iso(int(en)) if en is not None else None,
-                max_spike_height=spike,
-            )
-            for lid, lname, kpi, st, en, spike in pending
-        ]
+        details.append(anomaly_detail(lid, kpi, st, en, spike))
 
     return labels_affected, kpi_affected, details
 
