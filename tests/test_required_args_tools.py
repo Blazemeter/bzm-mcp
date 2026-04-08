@@ -88,6 +88,21 @@ class TestRequiredArgumentsForTools:
         assert result.error is not None
         assert "file_paths" in result.error
 
+    def test_tests_configure_failure_criteria_requires_enabled_and_rules(self):
+        mcp = FakeMcp()
+        register_tests_tool(mcp, token=None)
+        tool = mcp.tools[f"{TOOLS_PREFIX}_tests"]
+
+        result = asyncio.run(tool("configure_failure_criteria", {"test_id": 123}, ctx=None))
+        assert result.error is not None
+        assert "enabled" in result.error
+
+        result = asyncio.run(
+            tool("configure_failure_criteria", {"test_id": 123, "enabled": True}, ctx=None)
+        )
+        assert result.error is not None
+        assert "rules" in result.error
+
     def test_execution_read_requires_execution_id(self):
         mcp = FakeMcp()
         register_execution_tool(mcp, token=None)
