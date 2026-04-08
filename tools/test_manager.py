@@ -27,7 +27,12 @@ from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
 from config.path_mapper import PathMapperFactory
 from config.security import detect_sensitive_upload_path_reason
 from config.token import BzmToken
+from formatters.failure_criteria_labels import failure_criteria_meta_payload
 from formatters.test import format_tests
+from models.failure_criteria import (
+    failure_criteria_from_configure_args,
+    merge_failure_criteria_into_configuration_dict,
+)
 from models.manager import Manager
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
@@ -423,6 +428,37 @@ class TestManager(Manager):
             result_formatter=format_tests,
             json=configuration_body)
 
+    @require_confirmation(operation=Operations.UPDATE)
+    async def configure_failure_criteria(self, args: Dict[str, Any]) -> BaseResult:
+        """Replace failure criteria for a test via PATCH configuration (preserves plugins.jmeter)."""
+        test_id = args.get("test_id")
+        if not isinstance(test_id, int) or test_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
+        try:
+            fc = failure_criteria_from_configure_args(args)
+        except ValueError as e:
+            return BaseResult(error=str(e))
+
+        test_data = await self.read(test_id)
+        if test_data.error:
+            return test_data
+
+        configuration = test_data.result[0].configuration
+        if not isinstance(configuration, dict):
+            configuration = {}
+        merged_configuration = merge_failure_criteria_into_configuration_dict(configuration, fc)
+        return await api_request(
+            self.token,
+            "PATCH",
+            f"{TESTS_ENDPOINT}/{test_id}",
+            result_formatter=format_tests,
+            json={"configuration": merged_configuration},
+        )
+
+    async def failure_criteria_meta(self, args: Dict[str, Any]) -> BaseResult:
+        """Return the full KPI and condition catalog for building configure_failure_criteria rules (no API call)."""
+        return BaseResult(result=[failure_criteria_meta_payload()])
+
 
 def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
@@ -433,6 +469,7 @@ Actions:
 - read: Read a test. Get the detailed information of a test.
     args(dict): Dictionary with the following required parameters:
         test_id (int): The only required parameter. The id of the test to read.
+    When presenting failure_criteria to the user, use meta.general_labels, meta.rule_field_labels, meta.kpi_labels, and meta.condition_labels for readable text; avoid leading with raw kpi ids or op codes.
 - create: Create a new test. Do not create a test if the user has not confirmed the location for validation of workspace, project and account.
     args(dict): Dictionary with the following required parameters:
         test_name (str): The required name of the test to create.
@@ -445,6 +482,7 @@ Actions:
         project_id (int): The id of the project to list tests from.
         limit (int, default=10, valid=[1 to 50]): The number of tests to list.
         offset (int, default=0): Number of tests to skip.
+    Each listed test may include failure_criteria; when describing it to the user, use meta labels like read (see read action).
 - configure_load: Configure the load of a test for the given test id. The test id is the only required parameter. 
              The test will be configured based on the following parameters only if user confirms the configuration:
     args(dict): Dictionary with the following parameters:
@@ -465,8 +503,40 @@ Actions:
         test_id (int): The id of the test to upload assets to.
         file_paths (list): List of full file paths to upload.
         main_script (str, optional): Path to the main script file. If provided, will update test configuration to use this script.
+- failure_criteria_meta: Read-only catalog: overview (layers), top_level_tool_args, rule_fields, general, general_labels, rule_field_labels, kpis, conditions. Field names align with reading and configuring tests. No BlazeMeter API call.
+    args(dict): Optional; may be empty {}. Unknown keys are ignored.
+- configure_failure_criteria: Set failure criteria (BlazeMeter configuration.enableFailureCriteria and configuration.plugins.thresholds). Replaces the full rules list for the test.
+    args(dict): Dictionary with the following parameters:
+        test_id (int): Required. The test id.
+        enabled (bool): Required. Master switch for the Failure Criteria section (API enableFailureCriteria).
+        rules (list): Required. List of rule objects; use an empty list to clear all rules. Each object may include:
+            kpi (str): Required per rule. API metric field name (`field`). Documented values (product may offer more):
+                responseTime.avg, responseTime.min, responseTime.max, responseTime.std,
+                responseTime.percentile.0, responseTime.percentile.50, responseTime.percentile.90,
+                responseTime.percentile.95, responseTime.percentile.99,
+                latency.avg, connectTime.avg, size.count, size.avg, size.rate,
+                hits.count, hits.avg, hits.rate, duration.count,
+                errors.count, errors.percent, errors.rate
+            label (str, default=ALL): Label scope for the metric (default ALL labels).
+            condition (str or null): API operator (`op`). Allowed string values:
+                lt (Less than), gt (Greater than), eq (Equal to), ne (Not equal to),
+                lte (Less than or equal to), gte (Greater than or equal to).
+                Omit the key or use JSON null for no operator (incomplete / initial state).
+            value (str): Threshold as string (numeric text, e.g. "500", "1"; may be empty until set).
+            offset_percent (str, default=0.0): Baseline offset percentage string (API offsetPercentage).
+            stop_test_on_violation (bool, default=false): Stop Test on violation (API stopTestOnViolation); product expects 1-min slide window when used.
+            sliding_window (bool, default=false): 1-min slide window eval for this rule (API slidingWindow). Per-row "1-min slide window eval"; bulk "Enable 1-min slide window eval for all" means every rule has sliding_window true.
+            ignore_rampup (bool, optional): Per-rule ignore ramp-up when the API includes it on the item.
+            is_empty (bool, default=false): Incomplete row flag (API isEmpty).
+        ignore_rampup (bool, optional): Container-level "Ignore failure criteria during ramp-up" (advanced); omit to keep existing value on merge.
+        sliding_window_for_all (bool, optional): If set, sets every rule's sliding_window to this value after parsing rules (bulk convenience).
+        from_taurus (bool, optional): plugins.thresholds.fromTaurus; omit to preserve existing.
+        criteria_overridden_in_interface (bool, optional): Threshold-block metadata (maps to plugins.thresholds when merging); omit to preserve existing.
+    Reading a test and configuring failure criteria use the same field names; BlazeMeter’s REST JSON is only used in HTTP calls inside the server.
 Hints:
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
+- Before configure_failure_criteria, prefer failure_criteria_meta for kpi/condition codes and labels, then read if you must merge with existing rules.
+- For configure_failure_criteria, call read first and merge client-side if you must keep existing rules; providing rules replaces all criteria rows for that test.
 """
     )
     async def tests(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
@@ -496,6 +566,10 @@ Hints:
                     if isinstance(upload_result, dict) and upload_result.get("error"):
                         return BaseResult(error=upload_result["error"])
                     return BaseResult(result=[upload_result])
+                case "configure_failure_criteria":
+                    return await test_manager.configure_failure_criteria(args)
+                case "failure_criteria_meta":
+                    return await test_manager.failure_criteria_meta(args)
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in tests manager tool"

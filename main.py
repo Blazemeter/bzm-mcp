@@ -126,7 +126,7 @@ A comprehensive integration tool that provides AI assistants with full programma
 ## User Confirmation Required
 
 - **ALWAYS ask for explicit user confirmation** before performing any action that creates, modifies, or alters anything in the user's BlazeMeter configurations, accounts, workspaces, projects or tests.
-- **Actions requiring confirmation**: Creating tests, configuring load/locations, uploading assets, starting executions, or any other write/modify operations.
+- **Actions requiring confirmation**: Creating tests, configuring load/locations/failure criteria, uploading assets, starting executions, or any other write/modify operations.
 - **How to request**: Clearly state what action you're about to perform and on which workspace/project. Wait for user approval before proceeding.
 
 ## Proactive Knowledge Consultation
@@ -150,6 +150,7 @@ A comprehensive integration tool that provides AI assistants with full programma
 - **Never modify without confirmation**: Always ask before creating, modifying, or altering anything in BlazeMeter.
 - **Always confirm context**: Always identify and confirm workspace/project before operations.
 - **Proactive Troubleshooting**: Use the skills for troubleshooting any detected issues.
+- **Failure criteria**: The same field names appear when you read a test and when you configure failure criteria (`failure_criteria` on the test); the server handles BlazeMeter’s REST format internally. Use `failure_criteria_meta` for field definitions and KPI/condition catalogs. When describing criteria to the user, use `meta.general_labels`, `meta.rule_field_labels`, `meta.kpi_labels`, and `meta.condition_labels`; use raw metric and operator ids only inside tool calls. Use `configure_failure_criteria` only after user confirmation; it replaces all rules unless you merge from a prior read.
     """
     mcp = FastMCP("blazemeter-mcp", instructions=instructions, log_level=cast(LOG_LEVELS, log_level))
     register_confirm_mode(confirm_mode)
