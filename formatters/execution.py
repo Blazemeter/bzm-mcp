@@ -650,7 +650,7 @@ def format_anomalies_stats(raw: List[Any], params: Optional[dict] = None) -> Lis
             )
         ]
 
-    count = int(payload.get("anomalyCount", 0) or 0)
+    count = int(payload.get("anomalyCount", 0))
     affected = payload.get("affectedLabel") or []
     if not isinstance(affected, list):
         affected = []
