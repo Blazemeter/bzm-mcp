@@ -247,9 +247,18 @@ class TestFormatAnomaliesStats:
 
         assert len(result) == 1
         report = result[0]
-        assert report.anomaly_detection_status == "statistics_unavailable"
-        assert report.anomaly_count is None
-        assert report.anomalies == []
+        expected_report_subset = {
+            "anomaly_detection_status": "statistics_unavailable",
+            "anomaly_count": None,
+            "anomalies": [],
+        }
+        assert report.model_dump(
+            include={
+                "anomaly_detection_status": True,
+                "anomaly_count": True,
+                "anomalies": True,
+            }
+        ) == expected_report_subset
         assert report.statistics_unavailable_reason is not None
         assert "ANOMALY DETECTION RESPONSE" in report.context
 
@@ -265,11 +274,22 @@ class TestFormatAnomaliesStats:
 
         assert len(result) == 1
         report = result[0]
-        assert report.anomaly_detection_status == "no_anomalies"
-        assert report.anomaly_count == 0
-        assert report.labels_affected == []
-        assert report.anomalies == []
-        assert report.statistics_unavailable_reason is None
+        expected_report_subset = {
+            "anomaly_detection_status": "no_anomalies",
+            "anomaly_count": 0,
+            "labels_affected": [],
+            "anomalies": [],
+            "statistics_unavailable_reason": None,
+        }
+        assert report.model_dump(
+            include={
+                "anomaly_detection_status": True,
+                "anomaly_count": True,
+                "labels_affected": True,
+                "anomalies": True,
+                "statistics_unavailable_reason": True,
+            }
+        ) == expected_report_subset
 
     def test_anomalies_with_details(self):
         api = [
@@ -303,6 +323,7 @@ class TestFormatAnomaliesStats:
             }
         ]
         result = format_anomalies_stats(api, {"execution_id": 81627918, "execution_name": "With anomalies"})
+        report = result[0]
 
         expected_report_subset = {
             "anomaly_detection_status": "anomalies_with_details",
