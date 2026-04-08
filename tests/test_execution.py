@@ -304,23 +304,27 @@ class TestFormatAnomaliesStats:
         ]
         result = format_anomalies_stats(api, {"execution_id": 81627918, "execution_name": "With anomalies"})
 
-        assert len(result) == 1
-        report = result[0]
-        assert report.anomaly_detection_status == "anomalies_with_details"
-        assert report.anomaly_count == 2
-        assert len(report.labels_affected) == 1
-        assert report.labels_affected[0].ref_id == 1
-        assert report.labels_affected[0].label_id == "lbl1"
-        assert report.labels_affected[0].label_name == "Login Page"
-        assert len(report.kpi_affected) == 2
-        k0, k1 = report.kpi_affected[0], report.kpi_affected[1]
-        assert k0.kpi_ref_id == 1 and k0.kpi_id == "avg_rt" and k0.kpi_name == "Average response time"
-        assert k1.kpi_ref_id == 2 and k1.kpi_id == "pec99_rt" and k1.kpi_name == "99th percentile response time"
-        assert len(report.anomalies) == 2
-        a0 = report.anomalies[0]
-        assert a0.ref_id == 1
-        assert a0.kpi_ref_id == 1
-        assert a0.max_spike_height == 5112.42
-        a1 = report.anomalies[1]
-        assert a1.ref_id == 1
-        assert a1.kpi_ref_id == 2
+        expected_report_subset = {
+            "anomaly_detection_status": "anomalies_with_details",
+            "anomaly_count": 2,
+            "labels_affected": [
+                {"ref_id": 1, "label_id": "lbl1", "label_name": "Login Page"},
+            ],
+            "kpi_affected": [
+                {"kpi_ref_id": 1, "kpi_id": "avg_rt", "kpi_name": "Average response time"},
+                {"kpi_ref_id": 2, "kpi_id": "pec99_rt", "kpi_name": "99th percentile response time"},
+            ],
+            "anomalies": [
+                {"ref_id": 1, "kpi_ref_id": 1, "max_spike_height": 5112.42},
+                {"ref_id": 1, "kpi_ref_id": 2, "max_spike_height": 5447.52},
+            ],
+        }
+        assert report.model_dump(
+            include={
+                "anomaly_detection_status": True,
+                "anomaly_count": True,
+                "labels_affected": {"__all__": {"ref_id", "label_id", "label_name"}},
+                "kpi_affected": {"__all__": {"kpi_ref_id", "kpi_id", "kpi_name"}},
+                "anomalies": {"__all__": {"ref_id", "kpi_ref_id", "max_spike_height"}},
+            }
+        ) == expected_report_subset
