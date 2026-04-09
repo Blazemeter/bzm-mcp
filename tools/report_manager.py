@@ -19,7 +19,12 @@ from mcp.server.fastmcp import Context
 
 from config.blazemeter import EXECUTIONS_ENDPOINT
 from config.token import BzmToken
-from formatters.execution import format_summary_report, format_request_stats, format_error_report
+from formatters.execution import (
+    format_summary_report,
+    format_request_stats,
+    format_error_report,
+    format_anomalies_stats,
+)
 from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
@@ -135,7 +140,9 @@ class ReportManager(Manager):
     async def read_anomalies_stats(self, master_id: Optional[int]):
         """
         Get anomaly statistics for a given master_id (test execution).
-        Returns anomaly count, affected labels, and per-anomaly details (KPI, time range, max spike).
+
+        Returns a structured report: no anomalies, full per-anomaly details when permitted, or
+        statistics_unavailable when the API returns no stats (e.g. account without anomaly access).
         """
         if not isinstance(master_id, int) or master_id < 1:
             return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
@@ -149,8 +156,15 @@ class ReportManager(Manager):
                 error=EXECUTION_ARCHIVED_MSG,
             )
 
+        execution_name = self._extract_execution_name(execution_result)
+
         return await api_request(
             self.token,
             "GET",
             f"{EXECUTIONS_ENDPOINT}/{master_id}/anomalies/stats",
+            result_formatter=format_anomalies_stats,
+            result_formatter_params={
+                "execution_id": master_id,
+                "execution_name": execution_name,
+            },
         )

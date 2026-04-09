@@ -15,7 +15,12 @@ limitations under the License.
 """
 import pytest
 
-from formatters.execution import format_request_stats, format_summary_report, format_error_report
+from formatters.execution import (
+    format_request_stats,
+    format_summary_report,
+    format_error_report,
+    format_anomalies_stats,
+)
 
 
 class TestFormatRequestStats:
@@ -233,3 +238,114 @@ class TestFormatErrorReport:
         # Totals
         assert label.total_errors_for_label == 3 + 2 + 1 + 4
         assert report.total_errors == 3 + 2 + 1 + 4
+
+
+class TestFormatAnomaliesStats:
+
+    def test_statistics_unavailable_empty_api_result(self):
+        result = format_anomalies_stats([], {"execution_id": 123, "execution_name": "Test"})
+
+        assert len(result) == 1
+        report = result[0]
+        expected_report_subset = {
+            "anomaly_detection_status": "statistics_unavailable",
+            "anomaly_count": None,
+            "anomalies": [],
+        }
+        assert report.model_dump(
+            include={
+                "anomaly_detection_status": True,
+                "anomaly_count": True,
+                "anomalies": True,
+            }
+        ) == expected_report_subset
+        assert report.statistics_unavailable_reason is not None
+        assert "ANOMALY DETECTION RESPONSE" in report.context
+
+    def test_no_anomalies(self):
+        api = [
+            {
+                "anomalyCount": 0,
+                "affectedLabel": [],
+                "anomalies": [],
+            }
+        ]
+        result = format_anomalies_stats(api, {"execution_id": 456, "execution_name": "No anomalies run"})
+
+        assert len(result) == 1
+        report = result[0]
+        expected_report_subset = {
+            "anomaly_detection_status": "no_anomalies",
+            "anomaly_count": 0,
+            "labels_affected": [],
+            "anomalies": [],
+            "statistics_unavailable_reason": None,
+        }
+        assert report.model_dump(
+            include={
+                "anomaly_detection_status": True,
+                "anomaly_count": True,
+                "labels_affected": True,
+                "anomalies": True,
+                "statistics_unavailable_reason": True,
+            }
+        ) == expected_report_subset
+
+    def test_anomalies_with_details(self):
+        api = [
+            {
+                "anomalyCount": 2,
+                "affectedLabel": ["Login Page"],
+                "anomalies": {
+                    "id1": {
+                        "anomalyId": "id1",
+                        "masterId": "81627918",
+                        "labelId": "lbl1",
+                        "created": 1774026305007,
+                        "kpi": "avg_rt",
+                        "startTime": 1774026170,
+                        "endTime": 1774026324,
+                        "maxSpikeHeight": 5112.42,
+                        "labelName": "Login Page",
+                    },
+                    "id2": {
+                        "anomalyId": "id2",
+                        "masterId": "81627918",
+                        "labelId": "lbl1",
+                        "created": 1774026305007,
+                        "kpi": "pec99_rt",
+                        "startTime": 1774026170,
+                        "endTime": 1774026322,
+                        "maxSpikeHeight": 5447.52,
+                        "labelName": "Login Page",
+                    },
+                },
+            }
+        ]
+        result = format_anomalies_stats(api, {"execution_id": 81627918, "execution_name": "With anomalies"})
+        report = result[0]
+
+        expected_report_subset = {
+            "anomaly_detection_status": "anomalies_with_details",
+            "anomaly_count": 2,
+            "labels_affected": [
+                {"ref_id": 1, "label_id": "lbl1", "label_name": "Login Page"},
+            ],
+            "kpi_affected": [
+                {"kpi_ref_id": 1, "kpi_id": "avg_rt", "kpi_name": "Average response time"},
+                {"kpi_ref_id": 2, "kpi_id": "pec99_rt", "kpi_name": "99th percentile response time"},
+            ],
+            "anomalies": [
+                {"ref_id": 1, "kpi_ref_id": 1, "max_spike_height": 5112.42},
+                {"ref_id": 1, "kpi_ref_id": 2, "max_spike_height": 5447.52},
+            ],
+        }
+        assert report.model_dump(
+            include={
+                "anomaly_detection_status": True,
+                "anomaly_count": True,
+                "labels_affected": {"__all__": {"ref_id", "label_id", "label_name"}},
+                "kpi_affected": {"__all__": {"kpi_ref_id", "kpi_id", "kpi_name"}},
+                "anomalies": {"__all__": {"ref_id", "kpi_ref_id", "max_spike_height"}},
+            }
+        ) == expected_report_subset
