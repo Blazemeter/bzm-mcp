@@ -21,6 +21,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import urllib.parse
 from pathlib import Path
 from typing import Literal, cast
@@ -100,32 +101,46 @@ def _hyperlink(url: str, label: str) -> str:
     return f"\033]8;;{url}\033\\{label}\033]8;;\033\\"
 
 
+def open_win_url_silent(url):
+    bat_content = f"@echo off\nexplorer \"{url}\" >nul 2>&1"
+    bat_path = os.path.join(tempfile.gettempdir(), "silent_open.bat")
+
+    with open(bat_path, "w", encoding="utf-8") as f:
+        f.write(bat_content)
+
+    # ejecutar bat con el archivo como argumento
+    subprocess.Popen(
+        [bat_path],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        stdin=subprocess.DEVNULL,
+        creationflags=subprocess.CREATE_NO_WINDOW
+    )
+
+
 def _open_url_in_default_browser(url: str) -> bool:
     """
     Open a URL with the OS default handler (browser), same pattern as desktop
-    file/URL associations: Windows startfile, macOS open, Linux xdg-open.
+    file/URL associations: Windows explorer, macOS open, Linux xdg-open.
 
     Returns False on failure; callers should print the install address for manual use.
     """
     try:
+        argument = url
         if sys.platform.startswith("win"):
-            os.startfile(url)  # noqa: S606
+            open_win_url_silent(url)
+            return True
         elif sys.platform.startswith("darwin"):
-            subprocess.run(
-                ["open", url],
-                check=True,
-                timeout=60,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+            open_command = "open"
         else:
-            subprocess.run(
-                ["xdg-open", url],
-                check=True,
-                timeout=60,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+            open_command = "xdg-open"
+        subprocess.run(
+            [open_command, argument],
+            check=True,
+            timeout=60,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
         return True
     except (OSError, subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
         return False
@@ -169,7 +184,7 @@ def _claude_mcp_add_json_payload(server_entry: dict) -> dict:
 
 
 def _try_claude_mcp_add_json(
-    server_entry: dict, canonical_name: str = MCP_SERVER_DISPLAY_NAME
+        server_entry: dict, canonical_name: str = MCP_SERVER_DISPLAY_NAME
 ) -> tuple[bool, str | None]:
     """
     Register this server via Claude Code (`claude mcp add-json --scope user`).
