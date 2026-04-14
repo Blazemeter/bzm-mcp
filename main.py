@@ -23,6 +23,7 @@ import subprocess
 import sys
 import tempfile
 import urllib.parse
+import webbrowser
 from pathlib import Path
 from typing import Literal, cast
 
@@ -101,14 +102,14 @@ def _hyperlink(url: str, label: str) -> str:
     return f"\033]8;;{url}\033\\{label}\033]8;;\033\\"
 
 
-def open_win_url_silent(url):
-    bat_content = f"@echo off\nexplorer \"{url}\" >nul 2>&1"
+def _open_win_url_silent(url):
+    escape_url = url.replace("%", "%%")
+    bat_content = f"@echo off\nexplorer \"{escape_url}\" >nul 2>&1"
     bat_path = os.path.join(tempfile.gettempdir(), "silent_open.bat")
 
     with open(bat_path, "w", encoding="utf-8") as f:
         f.write(bat_content)
 
-    # ejecutar bat con el archivo como argumento
     subprocess.Popen(
         [bat_path],
         stdout=subprocess.DEVNULL,
@@ -128,7 +129,7 @@ def _open_url_in_default_browser(url: str) -> bool:
     try:
         argument = url
         if sys.platform.startswith("win"):
-            open_win_url_silent(url)
+            _open_win_url_silent(url)
             return True
         elif sys.platform.startswith("darwin"):
             open_command = "open"
