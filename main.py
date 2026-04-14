@@ -43,7 +43,7 @@ MCP_SERVER_DISPLAY_NAME = "BlazeMeter MCP"
 CLAUDE_CODE_MCP_INSTALL_SCOPE = "user"
 
 # URLs for adding this MCP server in each client (install redirects or docs)
-CURSOR_INSTALL_BASE = "https://cursor.com/en/install-mcp"
+CURSOR_INSTALL_BASE = "cursor://anysphere.cursor-deeplink/mcp/install"
 VSCODE_INSTALL_BASE = "https://insiders.vscode.dev/redirect/mcp/install"
 
 
@@ -74,8 +74,12 @@ def _cursor_install_url(server_config: dict, canonical_name: str = MCP_SERVER_DI
     """Build a Cursor one-click install URL from a server config (command, args, env)."""
     name = _mcp_server_name_for_cursor_and_vscode(canonical_name)
     raw = json.dumps(server_config, separators=(",", ":"))
-    b64 = base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
-    return f"{CURSOR_INSTALL_BASE}?config={urllib.parse.quote(b64)}&name={urllib.parse.quote(name)}"
+    b64 = base64.b64encode(raw.encode()).decode()
+    return (
+        f"{CURSOR_INSTALL_BASE}"
+        f"?name={urllib.parse.quote(name)}"
+        f"&config={urllib.parse.quote(b64, safe='')}"
+    )
 
 
 def _vscode_install_url(server_config: dict, canonical_name: str = MCP_SERVER_DISPLAY_NAME) -> str:
@@ -267,8 +271,7 @@ def _prompt_install_wizard(server_entry: dict) -> None:
 
         if n in (1, 2):
             print(
-                f" The next step completes setup in {client_label} using your system's "
-                "default application for that client's install request."
+                f" The next step will open {client_label} directly to install this MCP server."
             )
         else:
             print(
