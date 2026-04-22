@@ -28,3 +28,11 @@ class Test(BaseModel):
     project_id: int = Field(description="The Project ID")
     configuration: Dict[str, Any] = Field(description="Contains all the advanced BlazeMeter related configurations")
     override_executions: List[Optional[Any]] = Field(description="The test settings used when running the test in BlazeMeter")
+    failure_criteria: Dict[str, Any] = Field(
+        description=(
+            "Failure criteria: field names match configure_failure_criteria (enabled, rules, …) "
+            "plus meta (general_labels, rule_field_labels, kpi_labels, condition_labels for display). "
+            "BlazeMeter REST property names are used only inside the server. For user-facing text, "
+            "use meta labels; keep raw kpi/op ids for tool parameters only."
+        ),
+    )

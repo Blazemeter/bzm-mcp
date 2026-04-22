@@ -437,7 +437,9 @@ Actions:
 - read_all_reports: get all reports (summary, error, and request statistics) for a given execution ID.
     args(dict): Dictionary with the following required parameters:
         execution_id (int): The execution ID to get all reports for.
-- read_anomalies_stats: get anomaly statistics for a test execution (count, affected labels, per-anomaly KPI/time/spike details).
+- read_anomalies_stats: get anomaly detection results for a test execution. Response includes anomaly_detection_status
+    (no_anomalies | anomalies_with_details | statistics_unavailable), counts, affected labels, per-anomaly KPI/time windows,
+    and LLM context. When statistics_unavailable, details are not exposed for this account.
     args(dict): Dictionary with the following required parameters:
         execution_id (int): The execution (master) ID to get anomaly stats for.
 - ai_analysis: Trigger AI analysis for an execution and get dynamic responses based on polling results.
