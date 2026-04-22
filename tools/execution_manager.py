@@ -260,11 +260,31 @@ class ExecutionManager(Manager):
                 }
             },
             {
-            "runDateFrom": {
-                "$gte": start_time,
-                "$lte": end_time
+                "runDateFrom": {
+                    "$gte": start_time,
+                    "$lte": end_time
+                }
             }
-        }]
+        ]
+        workspace_id_list_values = args.get("workspace_id_list", [])
+        if len(workspace_id_list_values) > 0:
+            filters.append({"workspace.id": {"$in": workspace_id_list_values}})
+
+        cloud_provider_name_list_values = args.get("cloud_provider_name_list", [])
+        if len(cloud_provider_name_list_values) > 0:
+            filters.append({"locations.provider": {"$in": cloud_provider_name_list_values}})
+
+        created_by_id_list_values = args.get("created_by_id_list", [])
+        if len(created_by_id_list_values) > 0:
+            filters.append({"userId": {"$in": created_by_id_list_values}})
+
+        locations_id_list_values = args.get("locations_id_list", [])
+        if len(locations_id_list_values) > 0:
+            filters.append({"locations.id": {"$in": locations_id_list_values}})
+
+        project_id_list_values = args.get("project_id_list", [])
+        if len(project_id_list_values) > 0:
+            filters.append({"projectId": {"$in": project_id_list_values}})
 
         filter_request_body = {
             "entity": "master",
@@ -331,19 +351,19 @@ class ExecutionManager(Manager):
 
         filters_fields_map = {
             "workspace_id_list": ["workspace.accountId", "workspace.id", "workspace.name"],
-            "cloud_provider_list": ["locations.provider"],
-            "created_by_list": ["owner.id", "owner.displayName"],
-            "locations_list": ["locations.id", "locations.title"],
-            "project_list": ["project.id", "project.name", "project.workspaceId"],
-            "tags_list": ["tags.id", "tags.label", "tags.workspaceId"]
+            "cloud_provider_name_list": ["locations.provider"],
+            "created_by_id_list": ["owner.id", "owner.displayName"],
+            "locations_id_list": ["locations.id", "locations.title"],
+            "project_id_list": ["project.id", "project.name", "project.workspaceId"],
+            "tag_id_list": ["tags.id", "tags.label", "tags.workspaceId"]
         }
         result_entity_map = {
             "workspace_id_list": "workspace",
-            "cloud_provider_list": "provider",
-            "created_by_list": "owner",
-            "locations_list": "location",
-            "project_list": "project",
-            "tags_list": "tags",
+            "cloud_provider_name_list": "provider",
+            "created_by_id_list": "owner",
+            "locations_id_list": "location",
+            "project_id_list": "project",
+            "tag_id_list": "tags",
         }
         result_field_map = {
             "workspace.accountId": "account_id",
@@ -376,8 +396,8 @@ class ExecutionManager(Manager):
         # Get the metadata for each filter name using the search api
         filter_values = {}
         filter_not_found = []
-        valid_filters = ['workspace_id_list', 'cloud_provider_list', 'created_by_list', 'locations_list',
-                         'project_list', 'tags_list']
+        valid_filters = ['workspace_id_list', 'cloud_provider_name_list', 'created_by_id_list', 'locations_id_list',
+                         'project_id_list', 'tag_id_list']
         for filter_name in filter_names:
             if filter_name in valid_filters:
                 filter_entity = result_entity_map[filter_name]
@@ -632,18 +652,22 @@ Actions:
     args(dict): Dictionary with the following optional filter parameters:
         account_id (int, mandatory): The id of the account to use.
         execution_name (str): A case and diacritic insensitive search (ilike) for execution name (also known as report name).
-        workspace_id_list (list[str], values= use first search_filter_values tool with 'workspace_id_list'): The workspace IDs to filter the execution results.
+        workspace_id_list (list[int], values= use first search_filter_values tool with 'workspace_id_list'): The workspace IDs to filter the execution results.
         time_frame (str, default='latest', values['latest','last24','lastWeek','lastMonth', 'custom']): 
             The time frame to filter the execution results. 
             latest=Today, last24=Last 24 hours, lastWeek=Last 7 days, lastMonth=Last 30 days, custom= Custom Filter Range (use start_time and end_time).
         start_time (str): The start time in ISO format (only when time_frame is 'custom').
         end_time (str): The end time in ISO format (only when time_frame is 'custom').
+        cloud_provider_name_list (list[str], values= use first search_filter_values tool with 'cloud_provider_name_list'): The provider name to filter.
+        created_by_id_list (list[int], values= use first search_filter_values tool with 'created_by_id_list'): The user id that ran the execution to filter.
+        locations_id_list (list[str], values= use first search_filter_values tool with 'locations_id_list'): The location id to filter.
+        project_id_list (list[int], values= use first search_filter_values tool with 'project_id_list'): The project id to filter.
         page_index (int, default=1), The current page number. If the result mention has_next_page in true, asks the user if they want to see the next page. 
 
 - search_filter_values: List the values needed for search filters
     args(dict): Dictionary with the following required filter parameters:
         account_id (int, mandatory): The id of the account to use.
-        filter_names (list[str], values=['workspace_id_list', 'cloud_provider_list', 'created_by_list', 'locations_list', 'project_list', 'tags_list']): The filter name list.
+        filter_names (list[str], values=['workspace_id_list', 'cloud_provider_name_list', 'created_by_id_list', 'locations_id_list', 'project_id_list']): The filter name list.
         
 - read_summary: get the summary report for a given execution ID.
     args(dict): Dictionary with the following required parameters:
