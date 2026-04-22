@@ -13,19 +13,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Optional, Dict, Any
+from datetime import datetime, timedelta, time
+from typing import Any, Dict, List, Optional
 
 import httpx
 from mcp.server.fastmcp import Context
 
-from config.blazemeter import TOOLS_PREFIX, EXECUTIONS_ENDPOINT, SUPPORT_MESSAGE
+from config.blazemeter import TOOLS_PREFIX, EXECUTIONS_ENDPOINT, SUPPORT_MESSAGE, SEARCH_ENDPOINT, BZM_BASE_URL
 from config.token import BzmToken
 from formatters.execution import format_executions, format_executions_detailed, format_executions_status
 from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
 from tools.report_manager import ReportManager
-from tools.utils import api_request, timeout, user_agent, format_sanitized_traceback, require_confirmation, Operations
+from tools.utils import api_request, timeout, user_agent, format_sanitized_traceback, require_confirmation, Operations, \
+    get_date_time_iso
 
 
 class ExecutionManager(Manager):
@@ -206,6 +208,207 @@ class ExecutionManager(Manager):
             f"{EXECUTIONS_ENDPOINT}",
             result_formatter=format_executions,
             params=parameters
+        )
+
+    async def search(self, args: dict[str, Any]) -> BaseResult:
+
+        # Check if it's valid or allowed
+        account_id = args.get("account_id")
+        if not isinstance(account_id, int) or account_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'account_id'. Expected integer.")
+        account_data = await bridge.read_account(self.token, self.ctx, account_id)
+        if account_data.error:
+            return account_data
+
+        # Paging
+        page_size = 50
+        page_index = args.get("page_index", 1)
+        skip = (page_size * page_index) - page_size
+
+        # Compute Time Filters
+        time_frame = args.get("time_frame", "latest")
+        start_time_str = args.get("start_time", "")
+        end_time_str = args.get("end_time", "")
+
+        now_dt = datetime.now()
+        start_time_dt = now_dt
+        if time_frame == "latest":
+            start_time_dt = start_time_dt - timedelta(days=0)
+        elif time_frame == "last24":
+            start_time_dt = start_time_dt - timedelta(days=1)
+        elif time_frame == "lastWeek":
+            start_time_dt = start_time_dt - timedelta(days=7)
+        elif time_frame == "lastMonth":
+            start_time_dt = start_time_dt - timedelta(days=30)
+        elif time_frame == "custom":
+            start_time_dt = datetime.fromisoformat(start_time_str)
+        start_time_dt = start_time_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_time = int(start_time_dt.timestamp())
+        end_time_dt = datetime.combine(now_dt.date(), time(23, 59, 59))
+        end_time = int(end_time_dt.timestamp())
+        if time_frame == "custom":
+            end_time_dt = datetime.fromisoformat(end_time_str)
+            end_time_dt = end_time_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_time = int(end_time_dt.timestamp())
+
+        execution_name = args.get("execution_name", "")
+
+        filters = [
+            {
+                "name": {
+                    "$ilike": f"{execution_name}"
+                }
+            },
+            {
+            "runDateFrom": {
+                "$gte": start_time,
+                "$lte": end_time
+            }
+        }]
+
+        filter_request_body = {
+            "entity": "master",
+            "fields": ["*", "owner.*", "project.*", "locations.*", "workspace.*", "tags.*", "runner.*"],
+            "accountId": account_id,
+            "workspaceId": None,
+            "filters": {"$and": filters},
+            "ordering": [{"runDateFrom": -1}],
+            "distinct": "true",
+            "skip": skip, "limit": page_size,
+            "platform": "performance",
+        }
+        search_result = []
+        filter_result = await api_request(
+            self.token,
+            "POST",
+            f"{SEARCH_ENDPOINT}",
+            json=filter_request_body
+        )
+        for element in filter_result.result:
+            execution_id = element.get("id")
+            formated_element = {
+                "execution_id": execution_id,
+                "execution_name": element.get("name"),
+                "created": get_date_time_iso(element.get("runDateFrom")),
+                "ended": get_date_time_iso(element.get("runDateTo")),
+                "updated": get_date_time_iso(element.get("updated")),
+                "users": element.get("numVirtualUsers"),
+                "project_id": element.get("project").get("id"),
+                "project_name": element.get("project").get("name"),
+                "duration": element.get("duration"),
+                "user_id": element.get("runner").get("id"),
+                "user_display_name": element.get("runner").get("displayName"),
+                "workspace_id": element.get("workspace").get("id"),
+                "workspace_name": element.get("workspace").get("name"),
+                "engines": element.get("numEngines"),
+                "execution_url": f"{BZM_BASE_URL}/app/#/masters/{execution_id}",
+            }
+            locations = element.get("locations")
+            locations = [] if locations is None else locations
+            locations_titles = []
+            locations_ids = []
+            for location in locations:
+                locations_ids.append(location.get("id"))
+                locations_titles.append(location.get("title"))
+            formated_element["locations_titles"] = ",".join(locations_titles)
+            formated_element["locations_ids"] = ",".join(locations_ids)
+
+            search_result.append(formated_element)
+        error = None
+        warnings = None
+        return BaseResult(
+            result=search_result,
+            error=error,
+            warning=warnings,
+        )
+
+    async def search_filter_values(self, account_id: str, filter_names: List[str]) -> BaseResult:
+
+        # Check if it's valid or allowed
+        account_data = await bridge.read_account(self.token, self.ctx, account_id)
+        if account_data.error:
+            return account_data
+
+        filters_fields_map = {
+            "workspace_id_list": ["workspace.accountId", "workspace.id", "workspace.name"],
+            "cloud_provider_list": ["locations.provider"],
+            "created_by_list": ["owner.id", "owner.displayName"],
+            "locations_list": ["locations.id", "locations.title"],
+            "project_list": ["project.id", "project.name", "project.workspaceId"],
+            "tags_list": ["tags.id", "tags.label", "tags.workspaceId"]
+        }
+        result_entity_map = {
+            "workspace_id_list": "workspace",
+            "cloud_provider_list": "provider",
+            "created_by_list": "owner",
+            "locations_list": "location",
+            "project_list": "project",
+            "tags_list": "tags",
+        }
+        result_field_map = {
+            "workspace.accountId": "account_id",
+            "workspace.id": "workspace_id",
+            "workspace.name": "workspace_name",
+            "provider.provider": "provider_name",
+            "owner.id": "user_id",
+            "owner.displayName": "display_name",
+            "location.id": "location_id",
+            "location.title": "location_title",
+            "project.id": "project_id",
+            "project.name": "project_name",
+            "project.workspaceId": "workspace_id",
+            "tags.id": "tags_id",
+            "tags.label": "tags_label",
+            "tags.workspaceId": "workspace_id",
+        }
+        filter_request_body_template = {
+            "entity": "master",
+            "fields": None,
+            "accountId": account_id,
+            "workspaceId": None,
+            "filters": {"$and": []},
+            "ordering": [],
+            "format": "flat",
+            "distinct": "true",
+            "skip": 0, "limit": 999,
+            "platform": "performance",
+        }
+        # Get the metadata for each filter name using the search api
+        filter_values = {}
+        filter_not_found = []
+        valid_filters = ['workspace_id_list', 'cloud_provider_list', 'created_by_list', 'locations_list',
+                         'project_list', 'tags_list']
+        for filter_name in filter_names:
+            if filter_name in valid_filters:
+                filter_entity = result_entity_map[filter_name]
+                filter_request_body = filter_request_body_template.copy()
+                filter_request_body["fields"] = filters_fields_map[filter_name]
+                filter_result = await api_request(
+                    self.token,
+                    "POST",
+                    f"{SEARCH_ENDPOINT}",
+                    json=filter_request_body
+                )
+                filter_result_formated = []
+                for element in filter_result.result:
+                    element_formated = {}
+                    for k, v in element.items():
+                        new_k = result_field_map[f"{filter_entity}.{k}"]
+                        element_formated[new_k] = v
+                    filter_result_formated.append(element_formated)
+                filter_values[filter_name] = filter_result_formated
+            else:
+                filter_not_found.append(filter_name)
+        error = None
+        warnings = None
+        if len(filter_not_found) > 0:
+            error = f"Error, invalid filter_names values: {','.join(filter_not_found)}"
+            warnings = [f"Make sure to use valid filter_names values: {','.join(valid_filters)}"]
+        return BaseResult(
+            result=[filter_values],
+            error=error,
+            warning=warnings,
+            has_more=False,
         )
 
     async def ai_analysis(self, execution_id: Optional[int]) -> BaseResult:
@@ -425,6 +628,23 @@ Actions:
         test_id (int): The id of the test to list the execution from
         limit (int, default=10, valid=[1 to 50]): The number of test executions to list.
         offset (int, default=0): Number of test executions to skip.       
+- search: Search all executions
+    args(dict): Dictionary with the following optional filter parameters:
+        account_id (int, mandatory): The id of the account to use.
+        execution_name (str): A case and diacritic insensitive search (ilike) for execution name (also known as report name).
+        workspace_id_list (list[str], values= use first search_filter_values tool with 'workspace_id_list'): The workspace IDs to filter the execution results.
+        time_frame (str, default='latest', values['latest','last24','lastWeek','lastMonth', 'custom']): 
+            The time frame to filter the execution results. 
+            latest=Today, last24=Last 24 hours, lastWeek=Last 7 days, lastMonth=Last 30 days, custom= Custom Filter Range (use start_time and end_time).
+        start_time (str): The start time in ISO format (only when time_frame is 'custom').
+        end_time (str): The end time in ISO format (only when time_frame is 'custom').
+        page_index (int, default=1), The current page number. If the result mention has_next_page in true, asks the user if they want to see the next page. 
+
+- search_filter_values: List the values needed for search filters
+    args(dict): Dictionary with the following required filter parameters:
+        account_id (int, mandatory): The id of the account to use.
+        filter_names (list[str], values=['workspace_id_list', 'cloud_provider_list', 'created_by_list', 'locations_list', 'project_list', 'tags_list']): The filter name list.
+        
 - read_summary: get the summary report for a given execution ID.
     args(dict): Dictionary with the following required parameters:
         execution_id (int): The execution ID to get the summary report for.
@@ -467,6 +687,10 @@ Hints:
                         args.get("limit", 50),
                         args.get("offset", 0),
                     )
+                case "search":
+                    return await test_manager.search(args)
+                case "search_filter_values":
+                    return await test_manager.search_filter_values(args.get("account_id"), args.get("filter_names", []))
                 case "read_summary":
                     return await report_manager.read_summary(args.get("execution_id"))
                 case "read_errors":
