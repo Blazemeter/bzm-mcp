@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from datetime import datetime, timedelta, time
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -26,6 +25,7 @@ from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
 from tools.report_manager import ReportManager
+from tools.search_utils import search, compute_start_end_filter
 from tools.utils import api_request, timeout, user_agent, format_sanitized_traceback, require_confirmation, Operations, \
     get_date_time_iso
 
@@ -225,35 +225,15 @@ class ExecutionManager(Manager):
         page_index = args.get("page_index", 1)
         skip = (page_size * page_index) - page_size
 
-        # Compute Time Filters
-        time_frame = args.get("time_frame", "latest")
-        start_time_str = args.get("start_time", "")
-        end_time_str = args.get("end_time", "")
-
-        now_dt = datetime.now()
-        start_time_dt = now_dt
-        if time_frame == "latest":
-            start_time_dt = start_time_dt - timedelta(days=0)
-        elif time_frame == "last24":
-            start_time_dt = start_time_dt - timedelta(days=1)
-        elif time_frame == "lastWeek":
-            start_time_dt = start_time_dt - timedelta(days=7)
-        elif time_frame == "lastMonth":
-            start_time_dt = start_time_dt - timedelta(days=30)
-        elif time_frame == "custom":
-            start_time_dt = datetime.fromisoformat(start_time_str)
-        start_time_dt = start_time_dt.replace(hour=0, minute=0, second=0, microsecond=0)
-        start_time = int(start_time_dt.timestamp())
-        end_time_dt = datetime.combine(now_dt.date(), time(23, 59, 59))
-        end_time = int(end_time_dt.timestamp())
-        if time_frame == "custom":
-            end_time_dt = datetime.fromisoformat(end_time_str)
-            end_time_dt = end_time_dt.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_time = int(end_time_dt.timestamp())
+        start_time, end_time = compute_start_end_filter(
+            args.get("time_frame", "latest"),
+            args.get("start_time", ""),
+            args.get("end_time", "")
+        )
 
         execution_name = args.get("execution_name", "")
 
-        filters = [
+        filters_list = [
             {
                 "name": {
                     "$ilike": f"{execution_name}"
@@ -268,42 +248,39 @@ class ExecutionManager(Manager):
         ]
         workspace_id_list_values = args.get("workspace_id_list", [])
         if len(workspace_id_list_values) > 0:
-            filters.append({"workspace.id": {"$in": workspace_id_list_values}})
+            filters_list.append({"workspace.id": {"$in": workspace_id_list_values}})
 
         cloud_provider_name_list_values = args.get("cloud_provider_name_list", [])
         if len(cloud_provider_name_list_values) > 0:
-            filters.append({"locations.provider": {"$in": cloud_provider_name_list_values}})
+            filters_list.append({"locations.provider": {"$in": cloud_provider_name_list_values}})
 
         created_by_id_list_values = args.get("created_by_id_list", [])
         if len(created_by_id_list_values) > 0:
-            filters.append({"userId": {"$in": created_by_id_list_values}})
+            filters_list.append({"userId": {"$in": created_by_id_list_values}})
 
         locations_id_list_values = args.get("locations_id_list", [])
         if len(locations_id_list_values) > 0:
-            filters.append({"locations.id": {"$in": locations_id_list_values}})
+            filters_list.append({"locations.id": {"$in": locations_id_list_values}})
 
         project_id_list_values = args.get("project_id_list", [])
         if len(project_id_list_values) > 0:
-            filters.append({"projectId": {"$in": project_id_list_values}})
+            filters_list.append({"projectId": {"$in": project_id_list_values}})
 
-        filter_request_body = {
-            "entity": "master",
-            "fields": ["*", "owner.*", "project.*", "locations.*", "workspace.*", "tags.*", "runner.*"],
-            "accountId": account_id,
-            "workspaceId": None,
-            "filters": {"$and": filters},
-            "ordering": [{"runDateFrom": -1}],
-            "distinct": "true",
-            "skip": skip, "limit": page_size,
-            "platform": "performance",
-        }
-        search_result = []
-        filter_result = await api_request(
-            self.token,
-            "POST",
-            f"{SEARCH_ENDPOINT}",
-            json=filter_request_body
+        fields = ["*", "owner.*", "project.*", "locations.*", "workspace.*", "tags.*", "runner.*"]
+        filters = {"$and": filters_list}
+        ordering = [{"runDateFrom": -1}]
+
+        filter_result = await search(
+            self.token, account_id,
+            "master",
+            fields,
+            filters,
+            ordering,
+            skip, page_size,
+            "performance"
         )
+
+        search_result = []
         for element in filter_result.result:
             execution_id = element.get("id")
             formated_element = {
@@ -342,7 +319,7 @@ class ExecutionManager(Manager):
             warning=warnings,
         )
 
-    async def search_filter_values(self, account_id: str, filter_names: List[str]) -> BaseResult:
+    async def search_filter_values(self, account_id: int, filter_names: List[str]) -> BaseResult:
 
         # Check if it's valid or allowed
         account_data = await bridge.read_account(self.token, self.ctx, account_id)
@@ -365,6 +342,23 @@ class ExecutionManager(Manager):
             "project_id_list": "project",
             "tag_id_list": "tags",
         }
+
+        operators_list = [
+            'duration_list',
+        ]
+        filter_value_info = {
+            'duration_list': {"type": "int", "description": "duration value in seconds"}
+        }
+
+        operators_values_map = {
+            "=": {"op": "$eq", "name": "equal"},
+            "!=": {"op": "$ne", "name": "not equal"},
+            "<": {"op": "$lt", "name": "less than"},
+            "<=": {"op": "$lte", "name": "less than or equal"},
+            ">": {"op": "$gt", "name": "greater than"},
+            ">=": {"op": "$gte", "name": "greater than or equal"},
+        }
+
         result_field_map = {
             "workspace.accountId": "account_id",
             "workspace.id": "workspace_id",
@@ -397,26 +391,35 @@ class ExecutionManager(Manager):
         filter_values = {}
         filter_not_found = []
         valid_filters = ['workspace_id_list', 'cloud_provider_name_list', 'created_by_id_list', 'locations_id_list',
-                         'project_id_list', 'tag_id_list']
+                         'project_id_list', 'tag_id_list', 'duration_list']
         for filter_name in filter_names:
             if filter_name in valid_filters:
-                filter_entity = result_entity_map[filter_name]
-                filter_request_body = filter_request_body_template.copy()
-                filter_request_body["fields"] = filters_fields_map[filter_name]
-                filter_result = await api_request(
-                    self.token,
-                    "POST",
-                    f"{SEARCH_ENDPOINT}",
-                    json=filter_request_body
-                )
-                filter_result_formated = []
-                for element in filter_result.result:
-                    element_formated = {}
-                    for k, v in element.items():
-                        new_k = result_field_map[f"{filter_entity}.{k}"]
-                        element_formated[new_k] = v
-                    filter_result_formated.append(element_formated)
-                filter_values[filter_name] = filter_result_formated
+                # Detect operator or list values type
+                if filter_name in operators_list:
+                    operators = [{"operator": op, "name": operators_values_map[op]["name"]} for op in
+                                 operators_values_map.keys()]
+                    filter_values[filter_name] = {
+                        "operator_list": operators,
+                        "value": filter_value_info[filter_name]
+                    }
+                else:
+                    filter_entity = result_entity_map[filter_name]
+                    filter_request_body = filter_request_body_template.copy()
+                    filter_request_body["fields"] = filters_fields_map[filter_name]
+                    filter_result = await api_request(
+                        self.token,
+                        "POST",
+                        f"{SEARCH_ENDPOINT}",
+                        json=filter_request_body
+                    )
+                    filter_result_formated = []
+                    for element in filter_result.result:
+                        element_formated = {}
+                        for k, v in element.items():
+                            new_k = result_field_map[f"{filter_entity}.{k}"]
+                            element_formated[new_k] = v
+                        filter_result_formated.append(element_formated)
+                    filter_values[filter_name] = filter_result_formated
             else:
                 filter_not_found.append(filter_name)
         error = None
@@ -654,21 +657,20 @@ Actions:
         execution_name (str): A case and diacritic insensitive search (ilike) for execution name (also known as report name).
         workspace_id_list (list[int], values= use first search_filter_values tool with 'workspace_id_list'): The workspace IDs to filter the execution results.
         time_frame (str, default='latest', values['latest','last24','lastWeek','lastMonth', 'custom']): 
-            The time frame to filter the execution results. 
+            The time frame to filter the execution results by run date. 
             latest=Today, last24=Last 24 hours, lastWeek=Last 7 days, lastMonth=Last 30 days, custom= Custom Filter Range (use start_time and end_time).
-        start_time (str): The start time in ISO format (only when time_frame is 'custom').
-        end_time (str): The end time in ISO format (only when time_frame is 'custom').
+        start_time (str): The start time of run date in ISO format (only when time_frame is 'custom').
+        end_time (str): The end time of run date in ISO format (only when time_frame is 'custom').
         cloud_provider_name_list (list[str], values= use first search_filter_values tool with 'cloud_provider_name_list'): The provider name to filter.
         created_by_id_list (list[int], values= use first search_filter_values tool with 'created_by_id_list'): The user id that ran the execution to filter.
         locations_id_list (list[str], values= use first search_filter_values tool with 'locations_id_list'): The location id to filter.
         project_id_list (list[int], values= use first search_filter_values tool with 'project_id_list'): The project id to filter.
+        duration_list (list[dict[str,str]], values = use first search_filter_values tool with 'duration_list'): The duration filter, operator in key and value in value.
         page_index (int, default=1), The current page number. If the result mention has_next_page in true, asks the user if they want to see the next page. 
-
 - search_filter_values: List the values needed for search filters
     args(dict): Dictionary with the following required filter parameters:
         account_id (int, mandatory): The id of the account to use.
-        filter_names (list[str], values=['workspace_id_list', 'cloud_provider_name_list', 'created_by_id_list', 'locations_id_list', 'project_id_list']): The filter name list.
-        
+        filter_names (list[str], values=['workspace_id_list', 'cloud_provider_name_list', 'created_by_id_list', 'locations_id_list', 'project_id_list', 'duration_list']): The filter name list.
 - read_summary: get the summary report for a given execution ID.
     args(dict): Dictionary with the following required parameters:
         execution_id (int): The execution ID to get the summary report for.
