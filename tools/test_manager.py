@@ -483,6 +483,25 @@ Actions:
         limit (int, default=10, valid=[1 to 50]): The number of tests to list.
         offset (int, default=0): Number of tests to skip.
     Each listed test may include failure_criteria; when describing it to the user, use meta labels like read (see read action).
+- search: Search all executions
+    args(dict): Dictionary with the following optional filter parameters:
+        account_id (int, mandatory): The id of the account to use.
+        test_name (str): A case and diacritic insensitive search (ilike) for test name (also known as report name).
+        workspace_id_list (list[int], values= use first search_filter_values tool with 'workspace_id_list'): The workspace IDs to filter the execution results.
+        time_frame (str, default='latest', values['latest','last24','lastWeek','lastMonth', 'custom']): 
+            The time frame to filter the test results by create date. 
+            latest=Today, last24=Last 24 hours, lastWeek=Last 7 days, lastMonth=Last 30 days, custom= Custom Filter Range (use start_time and end_time).
+        start_time (str): The start time for create date in ISO format (only when time_frame is 'custom').
+        end_time (str): The end time for create date in ISO format (only when time_frame is 'custom').
+        cloud_provider_name_list (list[str], values= use first search_filter_values tool with 'cloud_provider_name_list'): The provider name to filter.
+        created_by_id_list (list[int], values= use first search_filter_values tool with 'created_by_id_list'): The user id that ran the execution to filter.
+        locations_id_list (list[str], values= use first search_filter_values tool with 'locations_id_list'): The location id to filter.
+        project_id_list (list[int], values= use first search_filter_values tool with 'project_id_list'): The project id to filter.
+        page_index (int, default=1), The current page number. If the result mention has_next_page in true, asks the user if they want to see the next page. 
+- search_filter_values: List the values needed for search filters
+    args(dict): Dictionary with the following required filter parameters:
+        account_id (int, mandatory): The id of the account to use.
+        filter_names (list[str], values=['workspace_id_list', 'cloud_provider_name_list', 'created_by_id_list', 'locations_id_list', 'project_id_list']): The filter name list.
 - configure_load: Configure the load of a test for the given test id. The test id is the only required parameter. 
              The test will be configured based on the following parameters only if user confirms the configuration:
     args(dict): Dictionary with the following parameters:
