@@ -36,7 +36,7 @@ from models.failure_criteria import (
 from models.manager import Manager
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
-from tools import bridge
+from tools import bridge, search_utils
 from tools.utils import api_request, require_confirmation, Operations, format_sanitized_traceback
 
 logger = logging.getLogger(__name__)
@@ -353,6 +353,28 @@ class TestManager(Manager):
             params=parameters
         )
 
+    async def search(self, args: dict[str, Any]) -> BaseResult:
+
+        # Check if it's valid or allowed
+        account_id = args.get("account_id")
+        if not isinstance(account_id, int) or account_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'account_id'. Expected integer.")
+        account_data = await bridge.read_account(self.token, self.ctx, account_id)
+        if account_data.error:
+            return account_data
+
+        return await search_utils.test_execution_search("test-union", self.token, account_id, args)
+
+    async def search_filter_values(self, account_id: int, filter_names: List[str]) -> BaseResult:
+
+        # Check if it's valid or allowed
+        account_data = await bridge.read_account(self.token, self.ctx, account_id)
+        if account_data.error:
+            return account_data
+
+        return await search_utils.test_execution_search_filter_values("test-union", account_id, self.token,
+                                                                      filter_names)
+
     @staticmethod
     def _normalize_configuration_override(configuration: dict, test_data_override: dict) -> dict:
         # Switch between iteration and duration
@@ -497,11 +519,14 @@ Actions:
         created_by_id_list (list[int], values= use first search_filter_values tool with 'created_by_id_list'): The user id that ran the execution to filter.
         locations_id_list (list[str], values= use first search_filter_values tool with 'locations_id_list'): The location id to filter.
         project_id_list (list[int], values= use first search_filter_values tool with 'project_id_list'): The project id to filter.
+        duration_list (list[dict[str,str]], values = use first search_filter_values tool with 'duration_list'): The duration filter, operator as key and value as value. Example: [{">=", 5}].
+        number_of_engines_list (list[dict[str,str]], values = use first search_filter_values tool with 'number_of_engines_list'): The number of engines filter, operator as key and value as value. Example: [{">=", 5}].
+        virtual_users_list (list[dict[str,str]], values = use first search_filter_values tool with 'virtual_users_list'): The number of virtual users filter, operator as key and value as value. Example: [{">=", 5}].
         page_index (int, default=1), The current page number. If the result mention has_next_page in true, asks the user if they want to see the next page. 
 - search_filter_values: List the values needed for search filters
     args(dict): Dictionary with the following required filter parameters:
         account_id (int, mandatory): The id of the account to use.
-        filter_names (list[str], values=['workspace_id_list', 'cloud_provider_name_list', 'created_by_id_list', 'locations_id_list', 'project_id_list']): The filter name list.
+        filter_names (list[str], values=['workspace_id_list', 'cloud_provider_name_list', 'created_by_id_list', 'locations_id_list', 'project_id_list', 'duration_list', 'number_of_engines_list', 'virtual_users_list']): The filter name list.
 - configure_load: Configure the load of a test for the given test id. The test id is the only required parameter. 
              The test will be configured based on the following parameters only if user confirms the configuration:
     args(dict): Dictionary with the following parameters:
@@ -570,6 +595,10 @@ Hints:
                     return await test_manager.delete(args.get("test_id"))
                 case "list":
                     return await test_manager.list(args.get("project_id"), args.get("limit", 50), args.get("offset", 0))
+                case "search":
+                    return await test_manager.search(args)
+                case "search_filter_values":
+                    return await test_manager.search_filter_values(args.get("account_id"), args.get("filter_names", []))
                 case "configure_load":
                     performance_test = PerformanceTestObject.from_args(args)
                     return await test_manager.configure(performance_test)
