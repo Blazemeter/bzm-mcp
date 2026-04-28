@@ -25,7 +25,8 @@ from formatters.workspace import format_workspaces, format_workspaces_detailed, 
 from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
-from tools.utils import api_request, format_sanitized_traceback
+from tools.utils import api_request, format_sanitized_traceback, run_as_task, normalize_action_args, tool_result, \
+    validate_required_args, ttl_cache_method
 
 
 class WorkspaceManager(Manager):
@@ -37,9 +38,9 @@ class WorkspaceManager(Manager):
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
 
-    async def read(self, workspace_id: Optional[int]) -> BaseResult:
-        if not isinstance(workspace_id, int) or workspace_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'workspace_id'. Expected integer.")
+    @ttl_cache_method(ttl_seconds=30)
+    @run_as_task()
+    async def read(self, workspace_id: int) -> BaseResult:
 
         workspace_result = await api_request(
             self.token,
@@ -58,11 +59,8 @@ class WorkspaceManager(Manager):
             else:
                 return workspace_result
 
-    async def list(self, account_id: Optional[int], limit: int = 50, offset: int = 0) -> BaseResult:
-        if not isinstance(account_id, int) or account_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'account_id'. Expected integer.")
-        if not isinstance(limit, int) or not isinstance(offset, int):
-            return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
+    @run_as_task()
+    async def list(self, account_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
 
         # Check if it's valid or allowed
         account_data = await bridge.read_account(self.token, self.ctx, account_id)
@@ -84,11 +82,8 @@ class WorkspaceManager(Manager):
             params=parameters
         )
 
-    async def read_locations(self, workspace_id: Optional[int], purpose: str = "load") -> BaseResult:
-        if not isinstance(workspace_id, int) or workspace_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'workspace_id'. Expected integer.")
-        if not isinstance(purpose, str) or not purpose.strip():
-            return BaseResult(error="Invalid argument 'purpose'. Expected non-empty string.")
+    @run_as_task()
+    async def read_locations(self, workspace_id: int, purpose: str = "load") -> BaseResult:
 
         locations_result = await api_request(
             self.token,
@@ -108,6 +103,7 @@ class WorkspaceManager(Manager):
             else:
                 return locations_result
 
+
 def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_workspaces",
@@ -115,39 +111,54 @@ def register(mcp, token: Optional[BzmToken]):
 Operations on workspaces.
 Actions: 
 - read: Read a workspace. Get the detailed information of a workspace.
-    args(dict): Dictionary with the following required parameters:
-        workspace_id (int): The id of the workspace.
+    args(dict): Dictionary with the following parameters:
+        workspace_id (int, required): The id of the workspace.
 - list: List all workspaces. 
-    args(dict): Dictionary with the following required parameters:
-        account_id (int): The id of the account to list the workspaces from
-        limit (int, default=10, valid=[1 to 50]): The number of workspaces to list.
-        offset (int, default=0): Number of workspaces to skip.
+    args(dict): Dictionary with the following parameters:
+        account_id (int, required): The id of the account to list workspaces from.
+        limit (int, optional, default=50, valid=[1 to 50 when result_format=auto/raw, 1000 when result_format=dataframe]): Max workspaces to return.
+        offset (int, optional, default=0): Number of workspaces to skip.
 - read_locations: get the location list for a given workspace ID.
-    args(dict): Dictionary with the following required parameters:
-        workspace_id (int): The id of the workspace.
-        purpose (str, default="load", valid=["load", "functional", "grid", "mock"]): The purpose filter.
+    args(dict): Dictionary with the following parameters:
+        workspace_id (int, required): The id of the workspace.
+        purpose (str, optional, default="load", valid=["load", "functional", "grid", "mock"]): The purpose filter.
 Hints:
 - For available locations and available billing usage use the 'read' action for a particular workspace.
+- Optional result formatting in args: `result_format` = `auto` (default), `dataframe` (force dataframe), `raw` (disable dataframe materialization).
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
 """
     )
+    @tool_result()
     async def workspace(
-            action: str = Field(description="The action id to execute"),
-            args: Dict[str, Any] = Field(description="Dictionary with parameters"),
+            arguments: Dict[str, Any] = Field(
+                description="Tool arguments: action, args, and any action-specific params", default=None),
             ctx: Context = Field(description="Context object providing access to MCP capabilities")
     ) -> BaseResult:
-
+        action, args = normalize_action_args(arguments)
+        if not action:
+            return BaseResult(error="Missing required argument 'action' within tool arguments.")
         workspace_manager = WorkspaceManager(token, ctx)
         try:
             match action:
                 case "read":
+                    if validation_error := validate_required_args(action, args, ["workspace_id"]):
+                        return validation_error
                     return await workspace_manager.read(args.get("workspace_id"))
                 case "list":
-                    return await workspace_manager.list(
-                        args.get("account_id"), args.get("limit", 50), args.get("offset", 0)
-                    )
+                    if validation_error := validate_required_args(action, args, ["account_id"]):
+                        return validation_error
+                    return await workspace_manager.list(args.get("account_id"), args.get("limit", 50),
+                                                        args.get("offset", 0))
                 case "read_locations":
-                    return await workspace_manager.read_locations(args.get("workspace_id"), args.get("purpose", "load"))
+                    if validation_error := validate_required_args(action, args, ["workspace_id"]):
+                        return validation_error
+                    purpose_raw = args.get("purpose", "load")
+                    purpose = (
+                        purpose_raw.strip()
+                        if isinstance(purpose_raw, str) and purpose_raw.strip()
+                        else "load"
+                    )
+                    return await workspace_manager.read_locations(args.get("workspace_id"), purpose)
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in workspace manager tool"

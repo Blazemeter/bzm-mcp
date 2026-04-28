@@ -23,7 +23,9 @@ from config.token import BzmToken
 from models.manager import Manager
 from models.result import BaseResult
 from tools.billing_utils import calculate_test_cost
-from tools.utils import format_sanitized_traceback
+from tools.utils import format_sanitized_traceback, normalize_action_args, tool_result, validate_non_empty_str_arg, \
+    validate_required_args, \
+    run_as_task
 
 
 class BillingManager(Manager):
@@ -31,8 +33,12 @@ class BillingManager(Manager):
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
 
+    @run_as_task()
     async def calculate_cost_from_config(self, args: Dict) -> BaseResult:
-        result = calculate_test_cost(args)
+        try:
+            result = calculate_test_cost(args)
+        except ValueError as e:
+            return BaseResult(error=str(e))
         return BaseResult(result=[
             {
                 "cost": result,
@@ -53,8 +59,8 @@ Operations on Billing.
 Actions: 
 - calculate_cost_from_config: Calculate the cost of a test based on test configuration and workspace allowance type.
 args(dict): Dictionary with the following parameters:
-    allowance_type (str, required, valid=["credits", "virtualUserHours", "actualThreads", "serverHours", "functionalRequests"]): The workspace allowance.
-    test_type (str, required, default="performance", valid=["performance", "browser_performance", "gui_functional", "api_monitoring", "service_virtualization"]): Type of test.
+    allowance_type (str, required, non-empty, valid=["credits", "virtualUserHours", "actualThreads", "serverHours", "functionalRequests"]): The workspace allowance.
+    test_type (str, optional, default="performance", valid=["performance", "browser_performance", "gui_functional", "api_monitoring", "service_virtualization"]): Type of test.
     concurrency (int, required for performance/browser_performance): Maximum concurrent virtual users/threads.
     duration_minutes (float, required for performance/browser_performance/gui_functional): Test duration in minutes.
     iterations (int, optional, alternative to duration_minutes): Number of iterations.
@@ -82,14 +88,23 @@ Hints:
 - Test Data usage increases cost by 50% for all test types.
 - Server hours calculation can use provided number_of_servers or estimate based on concurrency (~1000 users per engine).
 - All calculations are based on official BlazeMeter documentation (blazemeter-usage-billing skill).
+- Optional result formatting in args: `result_format` = `auto` (default), `dataframe` (force dataframe), `raw` (disable dataframe materialization).
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
 """
     )
-    async def billing(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
+    @tool_result()
+    async def billing(arguments: Dict[str, Any] = None, ctx: Context = None) -> BaseResult:
+        action, args = normalize_action_args(arguments)
+        if not action:
+            return BaseResult(error="Missing required argument 'action' within tool arguments.")
         billing_manager = BillingManager(token, ctx)
         try:
             match action:
                 case "calculate_cost_from_config":
+                    if validation_error := validate_required_args(action, args, ["allowance_type"]):
+                        return validation_error
+                    if err := validate_non_empty_str_arg(action, args, "allowance_type"):
+                        return err
                     return await billing_manager.calculate_cost_from_config(args)
                 case _:
                     return BaseResult(

@@ -279,7 +279,9 @@ class TestFailureCriteriaMetaAction:
         mcp = _FakeMcpForTests()
         register_tests_tool(mcp, token=None)
         tool = mcp.tools[f"{TOOLS_PREFIX}_tests"]
-        result = asyncio.run(tool("failure_criteria_meta", {}, ctx=None))
+        result = asyncio.run(
+            tool({"action": "failure_criteria_meta", "args": {}}, ctx=None)
+        )
         assert result.error is None
         payload = result.result[0]
         assert "top_level_tool_args" in payload

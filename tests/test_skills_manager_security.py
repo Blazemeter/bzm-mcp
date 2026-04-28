@@ -44,14 +44,16 @@ def isolated_skills_resources(tmp_path, monkeypatch):
 
 class TestSkillsManagerListResourcesErrors:
     def test_list_skill_resources_returns_controlled_error_for_invalid_skill_name(self, isolated_skills_resources):
-        result = asyncio.run(SkillsManager.list_skill_resources("../safe-skill"))
+        manager = SkillsManager(token=None, ctx=None)
+        result = asyncio.run(manager.list_skill_resources("../safe-skill"))
 
         assert result.error is not None
         assert "Invalid skill name" in result.error
         assert result.result is None
 
     def test_list_skill_resources_returns_controlled_error_for_missing_skill(self, isolated_skills_resources):
-        result = asyncio.run(SkillsManager.list_skill_resources("unknown-skill"))
+        manager = SkillsManager(token=None, ctx=None)
+        result = asyncio.run(manager.list_skill_resources("unknown-skill"))
 
         assert result.error is not None
         assert "Skill folder not found" in result.error

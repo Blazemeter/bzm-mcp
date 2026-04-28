@@ -25,7 +25,8 @@ from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge, search_utils
 from tools.report_manager import ReportManager
-from tools.utils import api_request, timeout, user_agent, format_sanitized_traceback, require_confirmation, Operations
+from tools.utils import api_request, timeout, user_agent, format_sanitized_traceback, require_confirmation, Operations, \
+    run_as_task, normalize_action_args, validate_required_args, tool_result
 
 
 class ExecutionManager(Manager):
@@ -97,12 +98,9 @@ class ExecutionManager(Manager):
             except:
                 return BaseResult(error=f"HTTP {status_code}: {e.response.text[:200]}")
 
-    @require_confirmation(operation=Operations.CREATE)
-    async def start(self, test_id: Optional[int], delayed_start_ready: bool = True,
+    @run_as_task()
+    async def start(self, test_id: int, delayed_start_ready: bool = True,
                     is_debug_run: bool = False) -> BaseResult:
-        if not isinstance(test_id, int) or test_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
-
         # Check if it's valid or allowed
         test_result = await bridge.read_test(self.token, self.ctx, test_id)
         if test_result.error:
@@ -119,10 +117,8 @@ class ExecutionManager(Manager):
             json=start_body
         )
 
-    async def read(self, execution_id: Optional[int]) -> BaseResult:
-        if not isinstance(execution_id, int) or execution_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
-
+    @run_as_task()
+    async def read(self, execution_id: int) -> BaseResult:
         execution_response = await api_request(
             self.token,
             "GET",
@@ -183,12 +179,8 @@ class ExecutionManager(Manager):
             "When it is archived, it is not possible to read the detailed execution information.\n"
         )
 
-    async def list(self, test_id: Optional[int], limit: int = 50, offset: int = 0) -> BaseResult:
-        if not isinstance(test_id, int) or test_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
-        if not isinstance(limit, int) or not isinstance(offset, int):
-            return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
-
+    @run_as_task()
+    async def list(self, test_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
         test_result = await bridge.read_test(self.token, self.ctx, test_id)
         if test_result.error:
             return test_result
@@ -229,10 +221,8 @@ class ExecutionManager(Manager):
 
         return await search_utils.test_execution_search_filter_values("master", account_id, self.token, filter_names)
 
-    async def ai_analysis(self, execution_id: Optional[int]) -> BaseResult:
-        if not isinstance(execution_id, int) or execution_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
-
+    @run_as_task()
+    async def ai_analysis(self, execution_id: int) -> BaseResult:
         execution_response = await self.read(execution_id)
         if execution_response.error:
             return execution_response
@@ -442,13 +432,13 @@ Actions:
     args(dict): Dictionary with the following required parameters:
         execution_id (int): The execution ID to get the information.
 - list: List all executions for a test ID. 
-    args(dict): Dictionary with the following required parameters:
-        test_id (int): The id of the test to list the execution from
-        limit (int, default=10, valid=[1 to 50]): The number of test executions to list.
-        offset (int, default=0): Number of test executions to skip.       
-- search: Search all executions
-    args(dict): Dictionary with the following optional filter parameters:
-        account_id (int, mandatory): The id of the account to use.
+    args(dict): Dictionary with the following parameters:
+        test_id (int, required): The id of the test whose executions to list.
+        limit (int, optional, default=50, valid=[1 to 50 when result_format=auto/raw, 1000 when result_format=dataframe]): Max executions to return.
+        offset (int, optional, default=0): Number of executions to skip.       
+- search: Search executions (master reports). Requires an account scope; all other filters are optional.
+    args(dict): Dictionary with the following parameters:
+        account_id (int, required): Account id for the search scope.
         execution_name (str): A case and diacritic insensitive search (ilike) for execution name (also known as report name).
         workspace_id_list (list[int], values= use first search_filter_values tool with 'workspace_id_list'): The workspace IDs to filter the execution results.
         time_frame (str, default='latest', values['latest','last24','lastWeek','lastMonth', 'custom']): 
@@ -465,8 +455,8 @@ Actions:
         virtual_users_list (list[dict[str,str]], values = use first search_filter_values tool with 'virtual_users_list'): The number of virtual users filter, operator as key and value as value. Example: [{">=", 5}].
         page_index (int, default=1), The current page number. If the result mention has_next_page in true, asks the user if they want to see the next page. 
 - search_filter_values: List the values needed for search filters
-    args(dict): Dictionary with the following required filter parameters:
-        account_id (int, mandatory): The id of the account to use.
+    args(dict): Dictionary with the following required parameters:
+        account_id (int, required): The id of the account to use.
         filter_names (list[str], values=['workspace_id_list', 'cloud_provider_name_list', 'created_by_id_list', 'locations_id_list', 'project_id_list', 'duration_list', 'number_of_engines_list', 'virtual_users_list']): The filter name list.
 - read_summary: get the summary report for a given execution ID.
     args(dict): Dictionary with the following required parameters:
@@ -491,41 +481,87 @@ Actions:
     The action will check if the execution is running or finished, then either retrieve existing analysis status
     or create a new analysis entry. It provides dynamic responses indicating whether the analysis is ready or still processing.
 Hints:
+- Optional result formatting in args: `result_format` = `auto` (default), `dataframe` (force dataframe), `raw` (disable dataframe materialization).
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
 """
     )
-    async def execution(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
+    @tool_result()
+    async def execution(arguments: Dict[str, Any] = None, ctx: Context = None) -> BaseResult:
+        action, args = normalize_action_args(arguments)
+        if not action:
+            return BaseResult(error="Missing required argument 'action' within tool arguments.")
         execution_manager = ExecutionManager(token, ctx)
         report_manager = ReportManager(token, ctx)
 
         try:
             match action:
                 case "start":
+                    if validation_error := validate_required_args(action, args, ["test_id"]):
+                        return validation_error
                     return await execution_manager.start(args.get("test_id"))
                 case "read":
+                    if validation_error := validate_required_args(action, args, ["execution_id"]):
+                        return validation_error
                     return await execution_manager.read(args.get("execution_id"))
                 case "list":
+                    if validation_error := validate_required_args(action, args, ["test_id"]):
+                        return validation_error
                     return await execution_manager.list(
                         args.get("test_id"),
                         args.get("limit", 50),
                         args.get("offset", 0),
                     )
                 case "search":
+                    if validation_error := validate_required_args(action, args, ["account_id"]):
+                        return validation_error
                     return await execution_manager.search(args)
                 case "search_filter_values":
-                    return await execution_manager.search_filter_values(args.get("account_id"),
-                                                                        args.get("filter_names", []))
+                    if validation_error := validate_required_args(action, args, ["account_id", "filter_names"]):
+                        return validation_error
+                    filter_names = args.get("filter_names")
+                    if not isinstance(filter_names, list) or len(filter_names) == 0:
+                        return BaseResult(
+                            error=(
+                                f"Missing required args for action '{action}': filter_names must be a non-empty list "
+                                f"within 'args'. Required args: filter_names (list[str], non-empty)."
+                            )
+                        )
+                    return await execution_manager.search_filter_values(
+                        args.get("account_id"), filter_names
+                    )
                 case "read_summary":
+                    if validation_error := validate_required_args(action, args, ["execution_id"]):
+                        return validation_error
                     return await report_manager.read_summary(args.get("execution_id"))
                 case "read_errors":
+                    if validation_error := validate_required_args(action, args, ["execution_id"]):
+                        return validation_error
                     return await report_manager.read_error(args.get("execution_id"))
                 case "read_request_stats":
+                    if validation_error := validate_required_args(action, args, ["execution_id"]):
+                        return validation_error
                     return await report_manager.read_request_stats(args.get("execution_id"))
                 case "read_all_reports":
-                    return await execution_manager.read_all_reports(args.get("execution_id"))
+                    if validation_error := validate_required_args(action, args, ["execution_id"]):
+                        return validation_error
+                    execution_id = args.get("execution_id")
+                    summary_result = await report_manager.read_summary(execution_id)
+                    error_result = await report_manager.read_error(execution_id)
+                    stats_result = await report_manager.read_request_stats(execution_id)
+                    return BaseResult(
+                        result=[{
+                            "summary": summary_result.result or None,
+                            "error": error_result.result or None,
+                            "request_stats": stats_result.result or None
+                        }]
+                    )
                 case "read_anomalies_stats":
+                    if validation_error := validate_required_args(action, args, ["execution_id"]):
+                        return validation_error
                     return await report_manager.read_anomalies_stats(args.get("execution_id"))
                 case "ai_analysis":
+                    if validation_error := validate_required_args(action, args, ["execution_id"]):
+                        return validation_error
                     return await execution_manager.ai_analysis(args.get("execution_id"))
                 case _:
                     return BaseResult(

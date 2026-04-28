@@ -24,7 +24,8 @@ from formatters.project import format_projects
 from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
-from tools.utils import api_request, format_sanitized_traceback
+from tools.utils import api_request, format_sanitized_traceback, ttl_cache_method, run_as_task, normalize_action_args, \
+    tool_result, validate_required_args
 
 
 class ProjectManager(Manager):
@@ -32,10 +33,9 @@ class ProjectManager(Manager):
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
 
-    async def read(self, project_id: Optional[int]) -> BaseResult:
-        if not isinstance(project_id, int) or project_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'project_id'. Expected integer.")
-
+    @ttl_cache_method(ttl_seconds=30)
+    @run_as_task()
+    async def read(self, project_id: int, include_tests_count: bool = True) -> BaseResult:
         project_result = await api_request(
             self.token,
             "GET",
@@ -52,15 +52,13 @@ class ProjectManager(Manager):
         if workspace_result.error:
             return workspace_result
 
-        # Get the amount of test
-        project_element.tests_count = await bridge.count_project_tests(self.token, self.ctx, project_id)
+        if include_tests_count:
+            # Optional enrichment; can be disabled for fast hierarchy validation paths.
+            project_element.tests_count = await bridge.count_project_tests(self.token, self.ctx, project_id)
         return project_result
 
-    async def list(self, workspace_id: Optional[int], limit: int = 50, offset: int = 0) -> BaseResult:
-        if not isinstance(workspace_id, int) or workspace_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'workspace_id'. Expected integer.")
-        if not isinstance(limit, int) or not isinstance(offset, int):
-            return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
+    @run_as_task()
+    async def list(self, workspace_id: int, limit: int = 50, offset: int = 0) -> BaseResult:
 
         # Check if it's valid or allowed
         workspace_result = await bridge.read_workspace(self.token, self.ctx, workspace_id)
@@ -82,6 +80,7 @@ class ProjectManager(Manager):
             params=parameters
         )
 
+
 def register(mcp, token: Optional[BzmToken]):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_project",
@@ -90,27 +89,38 @@ Operations on projects.
 Use this when a user needs to select a project for test allocation.
 Actions:
 - read: Read a Project. Obtain information about a particular project.
-    args(dict): Dictionary with the following required parameters:
-        project_id (int): The id of the project to get information.
+    args(dict): Dictionary with the following parameters:
+        project_id (int, required): The id of the project to get information.
 - list: List all projects. 
-    args(dict): Dictionary with the following required parameters:
-        workspace_id (int): The id of the workspace to list projects from.
-        limit (int, default=10, valid=[1 to 50]): The number of projects to list.
-        offset (int, default=0): Number of projects to skip.
+    args(dict): Dictionary with the following parameters:
+        workspace_id (int, required): The id of the workspace to list projects from.
+        limit (int, optional, default=50, valid=[1 to 50 when result_format=auto/raw, 1000 when result_format=dataframe]): Max projects to return.
+        offset (int, optional, default=0): Number of projects to skip.
 Hints:
 - For a particular project, go directly to the read action (you don't need account or workspace information).
 - Reading also allows you to obtain the number of tests the project has without having to use a list to count.
+- Optional result formatting in args: `result_format` = `auto` (default), `dataframe` (force dataframe), `raw` (disable dataframe materialization).
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
 """
     )
-    async def project(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
+    @tool_result()
+    async def project(arguments: Dict[str, Any] = None, ctx: Context = None) -> BaseResult:
+        action, args = normalize_action_args(arguments)
+        if not action:
+            return BaseResult(error="Missing required argument 'action' within tool arguments.")
         project_manager = ProjectManager(token, ctx)
         try:
             match action:
                 case "read":
+                    if validation_error := validate_required_args(action, args, ["project_id"]):
+                        return validation_error
                     return await project_manager.read(args.get("project_id"))
                 case "list":
-                    return await project_manager.list(args.get("workspace_id"), args.get("limit", 10), args.get("offset", 0))
+                    if validation_error := validate_required_args(action, args, ["workspace_id"]):
+                        return validation_error
+                    limit = args.get("limit", 50)
+                    offset = args.get("offset", 0)
+                    return await project_manager.list(args.get("workspace_id"), limit, offset)
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in project manager tool"

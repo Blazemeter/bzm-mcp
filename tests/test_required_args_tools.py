@@ -18,11 +18,13 @@ import asyncio
 
 from config.blazemeter import TOOLS_PREFIX
 from tools.account_manager import register as register_account_tool
+from tools.billing_manager import register as register_billing_tool
 from tools.execution_manager import register as register_execution_tool
 from tools.help_manager import register as register_help_tool
 from tools.project_manager import register as register_project_tool
 from tools.skills_manager import register as register_skills_tool
 from tools.test_manager import register as register_tests_tool
+from tools.tools_manager import register as register_tools_tool
 from tools.workspace_manager import register as register_workspaces_tool
 
 
@@ -48,7 +50,7 @@ class TestRequiredArgumentsForTools:
         register_account_tool(mcp, token=None)
         tool = mcp.tools[f"{TOOLS_PREFIX}_account"]
 
-        result = asyncio.run(tool("read", {}, ctx=None))
+        result = asyncio.run(tool({"action": "read", "args": {}}, ctx=None))
         assert result.error is not None
         assert "account_id" in result.error
 
@@ -57,7 +59,7 @@ class TestRequiredArgumentsForTools:
         register_workspaces_tool(mcp, token=None)
         tool = mcp.tools[f"{TOOLS_PREFIX}_workspaces"]
 
-        result = asyncio.run(tool("list", {}, ctx=None))
+        result = asyncio.run(tool({"action": "list", "args": {}}, ctx=None))
         assert result.error is not None
         assert "account_id" in result.error
 
@@ -66,7 +68,7 @@ class TestRequiredArgumentsForTools:
         register_project_tool(mcp, token=None)
         tool = mcp.tools[f"{TOOLS_PREFIX}_project"]
 
-        result = asyncio.run(tool("read", {}, ctx=None))
+        result = asyncio.run(tool({"action": "read", "args": {}}, ctx=None))
         assert result.error is not None
         assert "project_id" in result.error
 
@@ -75,7 +77,9 @@ class TestRequiredArgumentsForTools:
         register_tests_tool(mcp, token=None)
         tool = mcp.tools[f"{TOOLS_PREFIX}_tests"]
 
-        result = asyncio.run(tool("create", {"project_id": 123}, ctx=None))
+        result = asyncio.run(
+            tool({"action": "create", "args": {"project_id": 123}}, ctx=None)
+        )
         assert result.error is not None
         assert "test_name" in result.error
 
@@ -84,7 +88,23 @@ class TestRequiredArgumentsForTools:
         register_tests_tool(mcp, token=None)
         tool = mcp.tools[f"{TOOLS_PREFIX}_tests"]
 
-        result = asyncio.run(tool("upload_assets", {"test_id": 123}, ctx=None))
+        result = asyncio.run(
+            tool({"action": "upload_assets", "args": {"test_id": 123}}, ctx=None)
+        )
+        assert result.error is not None
+        assert "file_paths" in result.error
+
+    def test_tests_upload_assets_requires_non_empty_file_paths(self):
+        mcp = FakeMcp()
+        register_tests_tool(mcp, token=None)
+        tool = mcp.tools[f"{TOOLS_PREFIX}_tests"]
+
+        result = asyncio.run(
+            tool(
+                {"action": "upload_assets", "args": {"test_id": 123, "file_paths": []}},
+                ctx=None,
+            )
+        )
         assert result.error is not None
         assert "file_paths" in result.error
 
@@ -93,12 +113,23 @@ class TestRequiredArgumentsForTools:
         register_tests_tool(mcp, token=None)
         tool = mcp.tools[f"{TOOLS_PREFIX}_tests"]
 
-        result = asyncio.run(tool("configure_failure_criteria", {"test_id": 123}, ctx=None))
+        result = asyncio.run(
+            tool(
+                {"action": "configure_failure_criteria", "args": {"test_id": 123}},
+                ctx=None,
+            )
+        )
         assert result.error is not None
         assert "enabled" in result.error
 
         result = asyncio.run(
-            tool("configure_failure_criteria", {"test_id": 123, "enabled": True}, ctx=None)
+            tool(
+                {
+                    "action": "configure_failure_criteria",
+                    "args": {"test_id": 123, "enabled": True},
+                },
+                ctx=None,
+            )
         )
         assert result.error is not None
         assert "rules" in result.error
@@ -108,7 +139,7 @@ class TestRequiredArgumentsForTools:
         register_execution_tool(mcp, token=None)
         tool = mcp.tools[f"{TOOLS_PREFIX}_execution"]
 
-        result = asyncio.run(tool("read", {}, ctx=None))
+        result = asyncio.run(tool({"action": "read", "args": {}}, ctx=None))
         assert result.error is not None
         assert "execution_id" in result.error
 
@@ -117,7 +148,7 @@ class TestRequiredArgumentsForTools:
         register_execution_tool(mcp, token=None)
         tool = mcp.tools[f"{TOOLS_PREFIX}_execution"]
 
-        result = asyncio.run(tool("read_summary", {}, ctx=None))
+        result = asyncio.run(tool({"action": "read_summary", "args": {}}, ctx=None))
         assert result.error is not None
         assert "execution_id" in result.error
 
@@ -126,7 +157,18 @@ class TestRequiredArgumentsForTools:
         register_skills_tool(mcp, token=None)
         tool = mcp.tools[f"{TOOLS_PREFIX}_skills"]
 
-        result = asyncio.run(tool("read_skill", {}, ctx=None))
+        result = asyncio.run(tool({"action": "read_skill", "args": {}}, ctx=None))
+        assert result.error is not None
+        assert "skill_name" in result.error
+
+    def test_skills_list_skill_resources_requires_skill_name(self):
+        mcp = FakeMcp()
+        register_skills_tool(mcp, token=None)
+        tool = mcp.tools[f"{TOOLS_PREFIX}_skills"]
+
+        result = asyncio.run(
+            tool({"action": "list_skill_resources", "args": {}}, ctx=None)
+        )
         assert result.error is not None
         assert "skill_name" in result.error
 
@@ -135,7 +177,9 @@ class TestRequiredArgumentsForTools:
         register_skills_tool(mcp, token=None)
         tool = mcp.tools[f"{TOOLS_PREFIX}_skills"]
 
-        result = asyncio.run(tool("read_skill_resource_uri", {}, ctx=None))
+        result = asyncio.run(
+            tool({"action": "read_skill_resource_uri", "args": {}}, ctx=None)
+        )
         assert result.error is not None
         assert "skill_resource_uri" in result.error
 
@@ -144,16 +188,41 @@ class TestRequiredArgumentsForTools:
         register_skills_tool(mcp, token=None)
         tool = mcp.tools[f"{TOOLS_PREFIX}_skills"]
 
-        result = asyncio.run(tool("read_skill_resource_uri_list", {}, ctx=None))
+        result = asyncio.run(
+            tool({"action": "read_skill_resource_uri_list", "args": {}}, ctx=None)
+        )
         assert result.error is not None
         assert "skill_resource_uri_list" in result.error
 
-    def test_help_read_help_info_requires_help_id_list(self):
+    def test_help_read_help_info_requires_category_subcategory_and_help_ids(self):
         mcp = FakeMcp()
         register_help_tool(mcp, token=None)
         tool = mcp.tools[f"{TOOLS_PREFIX}_help"]
 
-        result = asyncio.run(tool("read_help_info", {}, ctx=None))
+        result = asyncio.run(tool({"action": "read_help_info", "args": {}}, ctx=None))
+        assert result.error is not None
+        assert "category_id" in result.error
+        assert "subcategory_id" in result.error
+        assert "help_id_list" in result.error
+
+    def test_help_read_help_info_requires_non_empty_help_id_list(self):
+        mcp = FakeMcp()
+        register_help_tool(mcp, token=None)
+        tool = mcp.tools[f"{TOOLS_PREFIX}_help"]
+
+        result = asyncio.run(
+            tool(
+                {
+                    "action": "read_help_info",
+                    "args": {
+                        "category_id": "root_category",
+                        "subcategory_id": "guide",
+                        "help_id_list": [],
+                    },
+                },
+                ctx=None,
+            )
+        )
         assert result.error is not None
         assert "help_id_list" in result.error
 
@@ -162,6 +231,35 @@ class TestRequiredArgumentsForTools:
         register_help_tool(mcp, token=None)
         tool = mcp.tools[f"{TOOLS_PREFIX}_help"]
 
-        result = asyncio.run(tool("list_help_category_content", {}, ctx=None))
+        result = asyncio.run(
+            tool({"action": "list_help_category_content", "args": {}}, ctx=None)
+        )
         assert result.error is not None
         assert "subcategory_id_list" in result.error
+
+
+class TestRequiredArgumentsBillingAndTools:
+    def test_billing_calculate_cost_requires_allowance_type(self):
+        mcp = FakeMcp()
+        register_billing_tool(mcp, token=None)
+        tool = mcp.tools[f"{TOOLS_PREFIX}_billing"]
+
+        result = asyncio.run(
+            tool({"action": "calculate_cost_from_config", "args": {}}, ctx=None)
+        )
+        assert result.error is not None
+        assert "allowance_type" in result.error
+
+    def test_tools_dataframes_query_requires_non_empty_sql(self):
+        mcp = FakeMcp()
+        register_tools_tool(mcp, token=None)
+        tool = mcp.tools[f"{TOOLS_PREFIX}_tools"]
+
+        result = asyncio.run(
+            tool(
+                {"action": "dataframes_query", "args": {"sql": "   "}},
+                ctx=None,
+            )
+        )
+        assert result.error is not None
+        assert "sql" in result.error

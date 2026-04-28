@@ -24,7 +24,8 @@ from config.token import BzmToken
 from formatters.user import format_users
 from models.manager import Manager
 from models.result import BaseResult
-from tools.utils import api_request, format_sanitized_traceback
+from tools.utils import api_request, format_sanitized_traceback, ttl_cache_method, run_as_task, normalize_action_args, \
+    tool_result
 
 
 class UserManager(Manager):
@@ -32,6 +33,8 @@ class UserManager(Manager):
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
 
+    @ttl_cache_method(ttl_seconds=30)
+    @run_as_task()
     async def read(self) -> BaseResult:
         return await api_request(
             self.token,
@@ -50,15 +53,18 @@ Actions:
 - read: Read a current user information from BlazeMeter.
 Hints:
 - For default account, workspace and project, use the 'read' action. 
+- Optional result formatting in args: `result_format` = `auto` (default), `dataframe` (force dataframe), `raw` (disable dataframe materialization).
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
 """
     )
+    @tool_result()
     async def user(
-            action: str = Field(description="The action id to execute"),
-            args: Dict[str, Any] = Field(description="Dictionary with parameters"),
+            arguments: Dict[str, Any] = Field(description="Tool arguments: action, args, and any action-specific params", default=None),
             ctx: Context = Field(description="Context object providing access to MCP capabilities")
     ) -> BaseResult:
-
+        action, args = normalize_action_args(arguments)
+        if not action:
+            return BaseResult(error="Missing required argument 'action' within tool arguments.")
         user_manager = UserManager(token, ctx)
         try:
             match action:

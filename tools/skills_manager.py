@@ -25,7 +25,15 @@ from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE
 from config.token import BzmToken
 from models.manager import Manager
 from models.result import BaseResult
-from tools.utils import format_sanitized_traceback
+from tools.utils import (
+    format_sanitized_traceback,
+    run_as_task,
+    execute_batch_calls,
+    tool_result,
+    normalize_action_args,
+    validate_non_empty_str_arg,
+    validate_required_args,
+)
 from tools.skills_utils import list_skills, read_skill_definition, read_skill_file, parse_skill_uri, \
     is_skill_uri, list_skill_resources_uri
 
@@ -35,7 +43,6 @@ from tools.skills_utils import list_skills, read_skill_definition, read_skill_fi
 
 class SkillsManager(Manager):
     skills = None  # Static to share between different instance of SkillsManager
-    MAX_BATCH_CONCURRENCY = 100
     CONTENT_TRUST = "trusted"
     CONTENT_TRUST_NOTE = (
         "Skills content is sourced from curated repository resources and is trusted by design."
@@ -44,8 +51,8 @@ class SkillsManager(Manager):
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
 
-    @staticmethod
-    async def list_skills() -> BaseResult:
+    @run_as_task()
+    async def list_skills(self) -> BaseResult:
         errors = []
         if SkillsManager.skills is None:
             skills, errors = list_skills()
@@ -58,13 +65,8 @@ class SkillsManager(Manager):
             error=errors[0] if errors and len(errors) > 0 else None  # Only the first error
         )
 
-    @staticmethod
-    async def read_skill(skill_name: Optional[str]) -> BaseResult:
-        if not isinstance(skill_name, str) or not skill_name.strip():
-            return BaseResult(
-                error="Missing required argument 'skill_name'. Please specify a non-empty skill name."
-            )
-        skill_name = skill_name.strip()
+    @run_as_task()
+    async def read_skill(self, skill_name: str) -> BaseResult:
         skill_content, error = read_skill_definition(skill_name)
         # Trust policy note for future audits:
         # Skills and their resources are curated project artifacts and considered trusted by design.
@@ -79,8 +81,7 @@ class SkillsManager(Manager):
             error=error
         )
 
-    @staticmethod
-    async def read_skill_file_path(skill_name: str, file_path: str) -> BaseResult:
+    async def read_skill_file_path(self, skill_name: str, file_path: str) -> BaseResult:
         skill_content, error = read_skill_file(skill_name, file_path)
         return BaseResult(
             result=[{
@@ -93,18 +94,9 @@ class SkillsManager(Manager):
             error=error
         )
 
-    @staticmethod
-    async def list_skill_resources(skill_name: Optional[str]) -> BaseResult:
-        if not isinstance(skill_name, str) or not skill_name.strip():
-            return BaseResult(
-                error="Missing required argument 'skill_name'. Please specify a non-empty skill name."
-            )
-        skill_name = skill_name.strip()
-        try:
-            skill_resources = list_skill_resources_uri(skill_name)
-        except ValueError as e:
-            return BaseResult(error=str(e))
-
+    @run_as_task()
+    async def list_skill_resources(self, skill_name: str) -> BaseResult:
+        skill_resources = list_skill_resources_uri(skill_name)
         return BaseResult(
             result=[{
                 "skill_name": skill_name,
@@ -116,13 +108,8 @@ class SkillsManager(Manager):
             has_more=False,
         )
 
-    @staticmethod
-    async def read_skill_resource_uri(skill_uri: Optional[str]) -> BaseResult:
-        if not isinstance(skill_uri, str) or not skill_uri.strip():
-            return BaseResult(
-                error="Missing required argument 'skill_resource_uri'. Please specify a non-empty skill URI."
-            )
-        skill_uri = skill_uri.strip()
+    @run_as_task()
+    async def read_skill_resource_uri(self, skill_uri: str) -> BaseResult:
         if is_skill_uri(skill_uri):
             skill_name, file_path = parse_skill_uri(skill_uri)
             skill_content, error = read_skill_file(skill_name, file_path)
@@ -141,14 +128,10 @@ class SkillsManager(Manager):
                 error=f"Invalid Skill URI: {skill_uri}"
             )
 
-    @staticmethod
-    async def read_skill_resource_uri_list(skill_uri_list: Optional[List[str]]) -> BaseResult:
-        if not isinstance(skill_uri_list, list) or not skill_uri_list:
-            return BaseResult(
-                error="Missing required argument 'skill_resource_uri_list'. Please provide a non-empty list of skill URIs."
-            )
+    @run_as_task()
+    async def read_skill_resource_uri_list(self, skill_uri_list: List[str]) -> BaseResult:
         results = await asyncio.gather(
-            *(SkillsManager.read_skill_resource_uri(skill_uri) for skill_uri in skill_uri_list)
+            *(self.read_skill_resource_uri(skill_uri) for skill_uri in skill_uri_list)
         )
         return BaseResult(
             result=results,
@@ -165,6 +148,25 @@ def register(mcp, token: Optional[BzmToken]):
             return error
         return content
 
+    async def _dispatch_batch_skills(batch_calls: Any, ctx: Context):
+        async def _process_skills_batch_call(call: Dict[str, Any]) -> BaseResult:
+            if not isinstance(call, dict):
+                return BaseResult(error="Each batch call must be a dict with 'action' and optional 'args'.")
+            sub_action = call.get("action", "")
+            raw_sub_args = call.get("args", {})
+            sub_args = dict(raw_sub_args) if isinstance(raw_sub_args, dict) else {}
+            try:
+                return await skills({"action": sub_action, "args": sub_args}, ctx)
+            except httpx.HTTPStatusError:
+                return BaseResult(error=f"HTTP error in sub-action {sub_action}: {format_sanitized_traceback()}")
+            except Exception:
+                return BaseResult(error=f"Error in sub-action {sub_action}: {format_sanitized_traceback()}")
+
+        return await execute_batch_calls(
+            batch_calls,
+            _process_skills_batch_call,
+        )
+
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_skills",
         description="""
@@ -175,78 +177,78 @@ Actions:
 - list_skills: List all the Skills available to learn.
 - read_skill: Read detailed information about a specific skill_name.
     args(dict): Dictionary with the following required parameters:
-        skill_name (str): The skill name.
+        skill_name (str, required, non-empty): The skill name.
 - list_skill_resources: List all the Skills Resources available to learn.
     args(dict): Dictionary with the following required parameters:
-        skill_name (str): The skill name.
+        skill_name (str, required, non-empty): The skill name.
 - read_skill_resource_uri: Read file content based on a Skill Resource URI (blazemeter-skill-{skill_name}://{resource_path}).
     args(dict): Dictionary with the following required parameters:
-        skill_resource_uri (str): The skill URI.
+        skill_resource_uri (str, required, non-empty): The skill URI.
 - read_skill_resource_uri_list: Read file content based on a Skill Resource URI list (['blazemeter-skill-{skill_name}://{resource_path}', ...]).
     args(dict): Dictionary with the following required parameters:
-        skill_resource_uri_list (List[str]): The skill URI list.
+        skill_resource_uri_list (List[str], required, non-empty): The skill URI list.
 - batch: Execute multiple actions in one call.
     args(dict): Dictionary with the following required parameters:
         batch_calls (List[Dict]): List of Actions dictionaries (excluding the action batch), each with 'action' (str) and 'args' (Dict).
 Hints:
 - Always generates the url attributes as a link in markdown format (like command_url).
 - **CRITICAL**: For multiple actions, always use the 'batch' action.
+- **IMPORTANT**: `batch` sub-actions execute directly (no forced task mode); responses are returned inline in this same call.
+- Optional result formatting in args: `result_format` = `auto` (default), `dataframe` (force dataframe), `raw` (disable dataframe materialization).
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
 """
     )
+    @tool_result(excluded_actions={"batch"})
     async def skills(
-            action: str = Field(description="The action id to execute"),
-            args: Dict[str, Any] = Field(description="Dictionary with parameters", default=None),
+            arguments: Dict[str, Any] = Field(description="Tool arguments: action, args, and any action-specific params", default=None),
             ctx: Context = Field(description="Context object providing access to MCP capabilities")
     ) -> BaseResult:
-        if args is None:
-            args = {}
-
+        action, args = normalize_action_args(arguments)
+        if not action:
+            return BaseResult(error="Missing required argument 'action' within tool arguments.")
         skills_manager = SkillsManager(token, ctx)
         try:
             match action:
                 case "list_skills":
                     return await skills_manager.list_skills()
                 case "read_skill":
-                    return await skills_manager.read_skill(args.get("skill_name"))
+                    if validation_error := validate_required_args(action, args, ["skill_name"]):
+                        return validation_error
+                    if err := validate_non_empty_str_arg(action, args, "skill_name"):
+                        return err
+                    return await skills_manager.read_skill(str(args.get("skill_name")).strip())
                 case "list_skill_resources":
-                    return await skills_manager.list_skill_resources(args.get("skill_name"))
+                    if validation_error := validate_required_args(action, args, ["skill_name"]):
+                        return validation_error
+                    if err := validate_non_empty_str_arg(action, args, "skill_name"):
+                        return err
+                    return await skills_manager.list_skill_resources(str(args.get("skill_name")).strip())
                 case "read_skill_resource_uri":
-                    return await skills_manager.read_skill_resource_uri(args.get("skill_resource_uri"))
+                    if validation_error := validate_required_args(action, args, ["skill_resource_uri"]):
+                        return validation_error
+                    if err := validate_non_empty_str_arg(action, args, "skill_resource_uri"):
+                        return err
+                    return await skills_manager.read_skill_resource_uri(
+                        str(args.get("skill_resource_uri")).strip()
+                    )
                 case "read_skill_resource_uri_list":
-                    return await skills_manager.read_skill_resource_uri_list(args.get("skill_resource_uri_list"))
-                case "batch":
-                    batch_calls = args.get("batch_calls", [])
-                    if not isinstance(batch_calls, list) or not batch_calls:
+                    if validation_error := validate_required_args(action, args, ["skill_resource_uri_list"]):
+                        return validation_error
+                    skill_resource_uri_list = args.get("skill_resource_uri_list", [])
+                    if (
+                        not isinstance(skill_resource_uri_list, list)
+                        or len(skill_resource_uri_list) == 0
+                    ):
                         return BaseResult(
-                            error="batch_calls must be a non-empty list of dicts with 'action' and 'args'")
-
-                    semaphore = asyncio.Semaphore(SkillsManager.MAX_BATCH_CONCURRENCY)
-
-                    async def process_call(call: Dict[str, Any]) -> BaseResult | List[BaseResult]:
-                        sub_action = call.get("action", "")
-                        sub_args = call.get("args", {})
-                        async with semaphore:
-                            try:
-                                # Recursively call the skills function itself
-                                return await skills(sub_action, sub_args, ctx)
-                            except httpx.HTTPStatusError:
-                                return BaseResult(
-                                    error=f"HTTP error in sub-action {sub_action}: {format_sanitized_traceback()}"
-                                )
-                            except Exception:
-                                return BaseResult(
-                                    error=f"Error in sub-action {sub_action}: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}")
-
-                    # Parallel execution with asyncio.gather
-                    results = await asyncio.gather(*[process_call(call) for call in batch_calls],
-                                                   return_exceptions=True)
-                    # Handle any exceptions returned
-                    processed_results = [
-                        r if not isinstance(r, Exception) else BaseResult(error=f"Unhandled exception: {str(r)}")
-                        for r in results
-                    ]
-                    return BaseResult(result=processed_results)
+                            error=(
+                                f"Missing required args for action '{action}': skill_resource_uri_list must be a "
+                                f"non-empty list within 'args'. Required args: skill_resource_uri_list (list[str], "
+                                f"non-empty)."
+                            )
+                        )
+                    return await skills_manager.read_skill_resource_uri_list(skill_resource_uri_list)
+                case "batch":
+                    return await _dispatch_batch_skills(args.get("batch_calls", []), ctx)
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in skills manager tool"
