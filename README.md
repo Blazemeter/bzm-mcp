@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/blazemeter-bzm-mcp-badge.png)](https://mseep.ai/app/blazemeter-bzm-mcp)
+
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/blazemeter/bzm-mcp/total?style=for-the-badge&link=https%3A%2F%2Fgithub.com%2FBlazemeter%2Fbzm-mcp%2Freleases)
 [![GHCR Pulls](https://ghcr-badge.elias.eu.org/shield/Blazemeter/bzm-mcp/bzm-mcp?style=for-the-badge)](https://github.com/Blazemeter/bzm-mcp/pkgs/container/bzm-mcp)
 ---
