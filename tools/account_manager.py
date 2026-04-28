@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from typing import Optional, Dict, Any
+
 import httpx
 from mcp.server.fastmcp import Context
 
@@ -22,7 +23,14 @@ from config.token import BzmToken
 from formatters.account import format_accounts
 from models.manager import Manager
 from models.result import BaseResult
-from tools.utils import api_request, format_sanitized_traceback
+from tools.utils import (
+    api_request,
+    normalize_action_args,
+    run_as_task,
+    tool_result,
+    ttl_cache_method,
+    validate_required_args, format_sanitized_traceback,
+)
 
 
 class AccountManager(Manager):
@@ -34,10 +42,9 @@ class AccountManager(Manager):
     def __init__(self, token: Optional[BzmToken], ctx: Context):
         super().__init__(token, ctx)
 
-    async def read(self, account_id: Optional[int]) -> BaseResult:
-        if not isinstance(account_id, int) or account_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'account_id'. Expected integer.")
-
+    @ttl_cache_method(ttl_seconds=30)
+    @run_as_task()
+    async def read(self, account_id: int) -> BaseResult:
         account_result = await api_request(
             self.token,
             "GET",
@@ -55,9 +62,8 @@ class AccountManager(Manager):
             else:
                 return account_result
 
+    @run_as_task()
     async def list(self, limit: int = 50, offset: int = 0) -> BaseResult:
-        if not isinstance(limit, int) or not isinstance(offset, int):
-            return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
 
         # Note: Not it's needed to control AI consent at this level
 
@@ -75,6 +81,7 @@ class AccountManager(Manager):
             params=parameters
         )
 
+
 def register(mcp, token: Optional[BzmToken]) -> None:
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_account",
@@ -83,23 +90,30 @@ Operations on account users.
 Use this when a user needs to select a account.
 Actions:
 - read: Read a Account. Get the information of a account.
-    args(dict): Dictionary with the following required parameters:
-        account_id (int): The id of the account to get information.
+    args(dict): Dictionary with the following parameters:
+        account_id (int, required): The id of the account to get information.
 - list: List all accounts. 
-    args(dict): Dictionary with the following required parameters:
-        limit (int, default=10, valid=[1 to 50]): The number of tests to list.
-        offset (int, default=0): Number of tests to skip.
+    args(dict): Dictionary with optional pagination (all other keys ignored for this action):
+        limit (int, optional, default=50, valid=[1 to 50 when result_format=auto/raw, 1000 when result_format=dataframe]): Max number of accounts to return.
+        offset (int, optional, default=0): Number of accounts to skip.
 Hints:
 - If you need to get the default account, use the project id to get the workspace and with that the account.
 - Use the read operation if AI consent information is needed. The AI Consent it's located at account level.
+- Optional result formatting in args: `result_format` = `auto` (default), `dataframe` (force dataframe), `raw` (disable dataframe materialization).
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
 """
     )
-    async def account(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
+    @tool_result()
+    async def account(arguments: Dict[str, Any] = None, ctx: Context = None) -> BaseResult:
+        action, args = normalize_action_args(arguments)
+        if not action:
+            return BaseResult(error="Missing required argument 'action' within tool arguments.")
         account_manager = AccountManager(token, ctx)
         try:
             match action:
                 case "read":
+                    if validation_error := validate_required_args(action, args, ["account_id"]):
+                        return validation_error
                     return await account_manager.read(args.get("account_id"))
                 case "list":
                     return await account_manager.list(args.get("limit", 50), args.get("offset", 0))

@@ -29,7 +29,8 @@ from formatters.help import format_help_info
 from models.manager import Manager
 from models.result import BaseResult
 from tools.help_utils import convert_js_to_py_dict
-from tools.utils import http_request, format_sanitized_traceback
+from tools.utils import http_request, format_sanitized_traceback, run_as_task, tool_result, normalize_action_args, \
+    execute_batch_calls, validate_required_args, validate_non_empty_str_arg
 
 
 class HelpManager(Manager):
@@ -37,7 +38,6 @@ class HelpManager(Manager):
     help_items_index = {}
     help_index_nodes = {}
     help_content_cache = {}
-    MAX_BATCH_CONCURRENCY = 100
     CONTENT_TRUST = "trusted"
     CONTENT_TRUST_NOTE = (
         "Help content is sourced from curated BlazeMeter documentation domains and is trusted by design."
@@ -136,6 +136,7 @@ class HelpManager(Manager):
             help_tree['root_category'] = help_tree.pop('')  # Assign a name to the root category
         HelpManager.help_tree = help_tree
 
+    @run_as_task()
     async def list_help_categories(self) -> BaseResult:
         if HelpManager.help_tree is None:
             await self._load_help_tree()
@@ -151,11 +152,8 @@ class HelpManager(Manager):
             info=["A list of subcategories is provided for each category"]
         )
 
+    @run_as_task()
     async def list_help_category_content(self, category_id: str, subcategory_id_list: List[str]) -> BaseResult:
-        if not isinstance(subcategory_id_list, list) or not subcategory_id_list:
-            return BaseResult(
-                error="Missing required argument 'subcategory_id_list'. Please provide a non-empty list."
-            )
         if HelpManager.help_tree is None:
             await self._load_help_tree()
         results = []
@@ -229,6 +227,7 @@ class HelpManager(Manager):
 
         return help_object
 
+    @run_as_task()
     async def read_help_info(self, category_id: str, subcategory_id: str, help_id_list: List[str]) -> BaseResult:
         if not isinstance(help_id_list, list) or not help_id_list:
             return BaseResult(
@@ -255,6 +254,25 @@ class HelpManager(Manager):
 
 
 def register(mcp, token: Optional[BzmToken]):
+    async def _dispatch_batch_help(batch_calls: Any, ctx: Context):
+        async def _process_help_batch_call(call: Dict[str, Any]) -> BaseResult:
+            if not isinstance(call, dict):
+                return BaseResult(error="Each batch call must be a dict with 'action' and optional 'args'.")
+            sub_action = call.get("action", "")
+            raw_sub_args = call.get("args", {})
+            sub_args = dict(raw_sub_args) if isinstance(raw_sub_args, dict) else {}
+            try:
+                return await help_main({"action": sub_action, "args": sub_args}, ctx)
+            except httpx.HTTPStatusError:
+                return BaseResult(error=f"HTTP error in sub-action {sub_action}: {format_sanitized_traceback()}")
+            except Exception:
+                return BaseResult(error=f"Error in sub-action {sub_action}: {format_sanitized_traceback()}")
+
+        return await execute_batch_calls(
+            batch_calls,
+            _process_help_batch_call,
+        )
+
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_help",
         description="""
@@ -264,83 +282,84 @@ use the `batch` action instead of making separate calls.
 Actions:
 - list_help_categories: List all category_ids and for each of them list their subcategory_ids.
 - list_help_category_content: List all help_id list related with a category_id and subcategory_id.
+    args(dict): Dictionary with the following parameters:
+        category_id (str, optional, default when omitted: `home`): The category id.
+        subcategory_id_list (List[str], required): The subcategory id list.
+- read_help_info: Read the content of a help_id providing category_id, subcategory_id and help_id_list.
     args(dict): Dictionary with the following required parameters:
-        category_id (str): The category id.
-        subcategory_id_list (List[str]): The subcategory id list.
-- read_help_info: Read the content of a help_id providing category_id, subcategory_id and help_id
-    args(dict): Dictionary with the following required parameters:
-        category_id (str): The category id.
-        subcategory_id (str): The sub-category id.
-        help_id_list (List[str]): The help id list to read.
+        category_id (str): The category id (non-empty after trim).
+        subcategory_id (str): The sub-category id (required; may be empty string to resolve as `self` in the help tree).
+        help_id_list (List[str]): Non-empty list of help ids to read.
 - batch: Execute multiple actions in one call.
     args(dict): Dictionary with the following required parameters:
         batch_calls (List[Dict]): List of Actions dictionaries (excluding the action batch), each with 'action' (str) and 'args' (Dict).
 Hints:
 - Always generates the url attributes as a link in markdown format (like command_url).
 - **CRITICAL**: For multiple actions, always use the 'batch' action.
+- **IMPORTANT**: `batch` sub-actions execute directly (no forced task mode); responses are returned inline in this same call.
+- Optional result formatting in args: `result_format` = `auto` (default), `dataframe` (force dataframe), `raw` (disable dataframe materialization).
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
 """
     )
+    @tool_result(excluded_actions={"batch"})
     async def help_main(
-            action: str = Field(description="The action id to execute"),
-            args: Dict[str, Any] = Field(description="Dictionary with parameters", default=None),
+            arguments: Dict[str, Any] = Field(
+                description="Tool arguments: action, args, and any action-specific params", default=None),
             ctx: Context = Field(description="Context object providing access to MCP capabilities")
     ) -> BaseResult:
-        if args is None:
-            args = {}
-
+        action, args = normalize_action_args(arguments)
+        if not action:
+            return BaseResult(error="Missing required argument 'action' within tool arguments.")
         help_manager = HelpManager(token, ctx)
         try:
             match action:
                 case "list_help_categories":
                     return await help_manager.list_help_categories()
                 case "list_help_category_content":
+                    if validation_error := validate_required_args(action, args, ["subcategory_id_list"]):
+                        return validation_error
+                    category_raw = args.get("category_id", "home")
+                    category_id = (
+                        category_raw.strip()
+                        if isinstance(category_raw, str) and category_raw.strip()
+                        else "home"
+                    )
                     return await help_manager.list_help_category_content(
-                        args.get("category_id", "home"),
-                        args.get("subcategory_id_list")
+                        category_id,
+                        args.get("subcategory_id_list", []),
                     )
                 case "read_help_info":
+                    if validation_error := validate_required_args(
+                        action, args, ["category_id", "subcategory_id", "help_id_list"]
+                    ):
+                        return validation_error
+                    if err := validate_non_empty_str_arg(action, args, "category_id"):
+                        return err
+                    subcategory_id = args.get("subcategory_id")
+                    help_id_list = args.get("help_id_list")
+                    if not isinstance(subcategory_id, str):
+                        return BaseResult(
+                            error=(
+                                f"Missing required args for action '{action}': subcategory_id must be a string "
+                                f"within 'args'. Required args: subcategory_id."
+                            )
+                        )
+                    if not isinstance(help_id_list, list) or len(help_id_list) == 0:
+                        return BaseResult(
+                            error=(
+                                f"Missing required args for action '{action}': help_id_list must be a non-empty list "
+                                f"within 'args'. Required args: help_id_list (list[str], non-empty)."
+                            )
+                        )
                     return await help_manager.read_help_info(
-                        args.get("category_id", "home"),
-                        args.get("subcategory_id", ""),
-                        args.get("help_id_list")
+                        str(args.get("category_id")).strip(), subcategory_id, help_id_list
                     )
                 case "batch":
                     # Make sure this initialization doesn't run in parallel
                     if HelpManager.help_tree is None:
                         await help_manager._load_help_tree()
 
-                    batch_calls = args.get("batch_calls", [])
-                    if not isinstance(batch_calls, list) or not batch_calls:
-                        return BaseResult(
-                            error="batch_calls must be a non-empty list of dicts with 'action' and 'args'")
-
-                    semaphore = asyncio.Semaphore(HelpManager.MAX_BATCH_CONCURRENCY)
-
-                    async def process_call(call: Dict[str, Any]) -> BaseResult | List[BaseResult]:
-                        sub_action = call.get("action", "")
-                        sub_args = call.get("args", {})
-                        async with semaphore:
-                            try:
-                                # Recursively call the help function itself
-                                return await help_main(sub_action, sub_args, ctx)
-                            except httpx.HTTPStatusError:
-                                return BaseResult(
-                                    error=f"HTTP error in sub-action {sub_action}: {format_sanitized_traceback()}"
-                                )
-                            except Exception:
-                                return BaseResult(
-                                    error=f"Error in sub-action {sub_action}: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}")
-
-                    # Parallel execution with asyncio.gather
-                    results = await asyncio.gather(*[process_call(call) for call in batch_calls],
-                                                   return_exceptions=True)
-                    # Handle any exceptions returned
-                    processed_results = [
-                        r if not isinstance(r, Exception) else BaseResult(error=f"Unhandled exception: {str(r)}")
-                        for r in results
-                    ]
-                    return BaseResult(result=processed_results)
+                    return await _dispatch_batch_help(args.get("batch_calls", []), ctx)
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in help manager tool"

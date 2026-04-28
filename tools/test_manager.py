@@ -37,7 +37,8 @@ from models.manager import Manager
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
 from tools import bridge, search_utils
-from tools.utils import api_request, require_confirmation, Operations, format_sanitized_traceback
+from tools.utils import api_request, require_confirmation, Operations, format_sanitized_traceback, run_as_task, \
+    normalize_action_args, validate_non_empty_str_arg, validate_required_args, tool_result, ttl_cache_method
 
 logger = logging.getLogger(__name__)
 
@@ -49,9 +50,9 @@ class TestManager(Manager):
         super().__init__(token, ctx)
         self.path_mapper = PathMapperFactory.create_strategy()
 
-    async def read(self, test_id: Optional[int]) -> BaseResult:
-        if not isinstance(test_id, int) or test_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
+    @ttl_cache_method(ttl_seconds=30)
+    @run_as_task()
+    async def read(self, test_id: int) -> BaseResult:
 
         test_result = await api_request(
             self.token,
@@ -70,11 +71,8 @@ class TestManager(Manager):
                 return test_result
 
     @require_confirmation(operation=Operations.CREATE)
-    async def create(self, test_name: Optional[str], project_id: Optional[int]) -> BaseResult:
-        if not isinstance(test_name, str) or not test_name.strip():
-            return BaseResult(error="Missing or invalid required argument 'test_name'. Expected non-empty string.")
-        if not isinstance(project_id, int) or project_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'project_id'. Expected integer.")
+    @run_as_task()
+    async def create(self, test_name: str, project_id: int) -> BaseResult:
 
         # Check if it's valid or allowed
         project_result = await bridge.read_project(self.token, self.ctx, project_id)
@@ -100,10 +98,8 @@ class TestManager(Manager):
         )
 
     @require_confirmation(operation=Operations.DELETE)
-    async def delete(self, test_id: Optional[int]) -> BaseResult:
-        if not isinstance(test_id, int) or test_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
-
+    @run_as_task()
+    async def delete(self, test_id: int) -> BaseResult:
         test_result = await self.read(test_id)
         if test_result.error:
             return test_result
@@ -170,13 +166,9 @@ class TestManager(Manager):
                 })
 
     @require_confirmation(operation=Operations.CREATE)
-    async def upload_assets(self, test_id: Optional[int], file_paths: Optional[List[str]],
-                            main_script: Optional[str] = None) -> Dict[
+    @run_as_task()
+    async def upload_assets(self, test_id: int, file_paths: List[str], main_script: Optional[str] = None) -> Dict[
         str, Any]:
-        if not isinstance(test_id, int) or test_id < 1:
-            return {"error": "Missing or invalid required argument 'test_id'. Expected integer."}
-        if not isinstance(file_paths, list) or not file_paths:
-            return {"error": "Missing or invalid required argument 'file_paths'. Expected non-empty list."}
 
         # Check if it's valid or allowed
         test_data = await self.read(test_id)
@@ -325,32 +317,67 @@ class TestManager(Manager):
 
         return script_types.get(extension, 'unknown')
 
-    async def list(self, project_id: Optional[int], limit: int = 50,
-                   offset: int = 0, control_ai_consent: bool = True) -> BaseResult:
-        if not isinstance(project_id, int) or project_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'project_id'. Expected integer.")
-        if not isinstance(limit, int) or not isinstance(offset, int):
-            return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
+    @run_as_task()
+    async def list(
+            self,
+            project_id_list: List[int],
+            limit: int = 50,
+            offset: int = 0,
+            control_ai_consent: bool = True
+    ) -> BaseResult:
+        if not project_id_list or not isinstance(project_id_list, list):
+            return BaseResult(
+                error="Missing required args for action 'list': project_id_list must be a non-empty list of project IDs.")
+        project_ids = [int(pid) for pid in project_id_list if pid is not None]
+        if not project_ids:
+            return BaseResult(
+                error="Missing required args for action 'list': project_id_list must be a non-empty list of project IDs.")
+
+        # Preserve order while deduplicating.
+        project_ids = list(dict.fromkeys(project_ids))
 
         if control_ai_consent:
-            # Check if it's valid or allowed
-            project_result = await bridge.read_project(self.token, self.ctx, project_id)
-            if project_result.error:
-                return project_result
+            for pid in project_ids:
+                project_result = await bridge.read_project(self.token, self.ctx, pid)
+                if project_result.error:
+                    return project_result
 
-        parameters = {
-            "projectId": project_id,
-            "limit": limit,
-            "skip": offset,
-            "sort[]": "-updated"
-        }
+        async def _list_project(pid: int) -> BaseResult:
+            parameters = {
+                "projectId": pid,
+                "limit": limit,
+                "skip": offset,
+                "sort[]": "-updated"
+            }
+            return await api_request(
+                self.token,
+                "GET",
+                f"{TESTS_ENDPOINT}",
+                result_formatter=format_tests,
+                params=parameters
+            )
 
-        return await api_request(
-            self.token,
-            "GET",
-            f"{TESTS_ENDPOINT}",
-            result_formatter=format_tests,
-            params=parameters
+        if len(project_ids) == 1:
+            return await _list_project(project_ids[0])
+
+        responses = await asyncio.gather(*[_list_project(pid) for pid in project_ids])
+        for response in responses:
+            if response.error:
+                return response
+
+        merged_result = []
+        has_more = False
+        for response in responses:
+            merged_result.extend(response.result or [])
+            has_more = has_more or bool(response.has_more)
+
+        return BaseResult(
+            result=merged_result,
+            total=len(merged_result),
+            has_more=has_more,
+            info=[
+                f"Merged tests list from {len(project_ids)} projects into one unified result."
+            ]
         )
 
     async def search(self, args: dict[str, Any]) -> BaseResult:
@@ -418,6 +445,7 @@ class TestManager(Manager):
         return test_data_override
 
     @require_confirmation(operation=Operations.UPDATE)
+    @run_as_task()
     async def configure(self, performance_test: PerformanceTestObject) -> BaseResult:
         if not performance_test.is_valid():
             raise ValueError("PerformanceTestObject must have a valid test_id")
@@ -494,20 +522,21 @@ Actions:
     When presenting failure_criteria to the user, use meta.general_labels, meta.rule_field_labels, meta.kpi_labels, and meta.condition_labels for readable text; avoid leading with raw kpi ids or op codes.
 - create: Create a new test. Do not create a test if the user has not confirmed the location for validation of workspace, project and account.
     args(dict): Dictionary with the following required parameters:
-        test_name (str): The required name of the test to create.
-        project_id (int): The id of the project to list tests from.
+        test_name (str, required, non-empty): The required name of the test to create.
+        project_id (int): The id of the project where the new test will be created.
 - delete: Delete a test.
     args(dict): Dictionary with the following required parameters:
         test_id (int): The only required parameter. The id of the test to be deleted.
-- list: List all tests. 
-    args(dict): Dictionary with the following required parameters:
-        project_id (int): The id of the project to list tests from.
-        limit (int, default=10, valid=[1 to 50]): The number of tests to list.
-        offset (int, default=0): Number of tests to skip.
+- list: List all tests from one or more projects. Results are merged into a single unified payload.
+    args(dict): Dictionary with required and optional parameters:
+        project_id_list (list[int], required): List of project IDs to list and merge tests from. Must be non-empty.
+        project_id (int, optional): Accepted as alias for project_id_list when listing from a single project. Use project_id_list for multiple projects.
+        limit (int, optional, default=50, valid=[1 to 50 when result_format=auto/raw, 1000 when result_format=dataframe]): The number of tests to list.
+        offset (int, optional, default=0): Number of tests to skip.
     Each listed test may include failure_criteria; when describing it to the user, use meta labels like read (see read action).
-- search: Search all executions
-    args(dict): Dictionary with the following optional filter parameters:
-        account_id (int, mandatory): The id of the account to use.
+- search: Search tests (reports / executions metadata as exposed by the tests API). Requires an account scope; all other filters are optional.
+    args(dict): Dictionary with the following parameters:
+        account_id (int, required): Account id for the search scope.
         test_name (str): A case and diacritic insensitive search (ilike) for test name (also known as report name).
         workspace_id_list (list[int], values= use first search_filter_values tool with 'workspace_id_list'): The workspace IDs to filter the execution results.
         time_frame (str, default='latest', values['latest','last24','lastWeek','lastMonth', 'custom']): 
@@ -524,13 +553,13 @@ Actions:
         virtual_users_list (list[dict[str,str]], values = use first search_filter_values tool with 'virtual_users_list'): The number of virtual users filter, operator as key and value as value. Example: [{">=", 5}].
         page_index (int, default=1), The current page number. If the result mention has_next_page in true, asks the user if they want to see the next page. 
 - search_filter_values: List the values needed for search filters
-    args(dict): Dictionary with the following required filter parameters:
-        account_id (int, mandatory): The id of the account to use.
+    args(dict): Dictionary with the following required parameters:
+        account_id (int, required): The id of the account to use.
         filter_names (list[str], values=['workspace_id_list', 'cloud_provider_name_list', 'created_by_id_list', 'locations_id_list', 'project_id_list', 'duration_list', 'number_of_engines_list', 'virtual_users_list']): The filter name list.
 - configure_load: Configure the load of a test for the given test id. The test id is the only required parameter. 
              The test will be configured based on the following parameters only if user confirms the configuration:
     args(dict): Dictionary with the following parameters:
-        test_id (int): The only required parameter. The id of the test to configure.
+        test_id (int, required): The id of the test to configure.
         iterations (int, default=1, infinite=-1): The number of iterations to run the test with. Don't use if hold-for is provided.
         hold-for (str, default=1m): The length of time the test will run at the peak concurrency. Values can be provided in m (minutes) only. Don't use if iterations is provided.
         concurrency (int, default=20, disable=0, max=500000): The number of concurrent virtual users simulated to run. For example, 20 will set the test to run with 20 concurrent users. To disable it set to 0.
@@ -540,17 +569,17 @@ Actions:
 - configure_locations: Configure the distribution of a test for given test id. The test id is the only required parameter. 
              The test will be configured based on the following parameters only if user confirms the configuration:
     args(dict): Dictionary with the following parameters:
-        test_id (int): The only required parameter. The id of the test to configure.
+        test_id (int, required): The id of the test to configure.
         locations (list[str]): List of all locations with their percentage distribution of user load in a key value format "location_id=percent_value". Example: ["us-east4-a=25", "us-east1-b=25", "us-west1-a=25", "us-central1-a=25"]
 - upload_assets: Upload main script test as well as multiple related assets to a test. Supports .zip, .csv, .jmx, .yaml and other file types.
     args(dict): Dictionary with the following required parameters:
         test_id (int): The id of the test to upload assets to.
-        file_paths (list): List of full file paths to upload.
+        file_paths (list[str], required, non-empty): List of full file paths to upload.
         main_script (str, optional): Path to the main script file. If provided, will update test configuration to use this script.
 - failure_criteria_meta: Read-only catalog: overview (layers), top_level_tool_args, rule_fields, general, general_labels, rule_field_labels, kpis, conditions. Field names align with reading and configuring tests. No BlazeMeter API call.
     args(dict): Optional; may be empty {}. Unknown keys are ignored.
 - configure_failure_criteria: Set failure criteria (BlazeMeter configuration.enableFailureCriteria and configuration.plugins.thresholds). Replaces the full rules list for the test.
-    args(dict): Dictionary with the following parameters:
+    args(dict): Dictionary with the following parameters (test_id, enabled, and rules are required keys; rules may be an empty list to clear):
         test_id (int): Required. The test id.
         enabled (bool): Required. Master switch for the Failure Criteria section (API enableFailureCriteria).
         rules (list): Required. List of rule objects; use an empty list to clear all rules. Each object may include:
@@ -578,43 +607,105 @@ Actions:
         criteria_overridden_in_interface (bool, optional): Threshold-block metadata (maps to plugins.thresholds when merging); omit to preserve existing.
     Reading a test and configuring failure criteria use the same field names; BlazeMeter’s REST JSON is only used in HTTP calls inside the server.
 Hints:
+- Optional result formatting in args: `result_format` = `auto` (default), `dataframe` (force dataframe), `raw` (disable dataframe materialization).
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
 - Before configure_failure_criteria, prefer failure_criteria_meta for kpi/condition codes and labels, then read if you must merge with existing rules.
 - For configure_failure_criteria, call read first and merge client-side if you must keep existing rules; providing rules replaces all criteria rows for that test.
 """
     )
-    async def tests(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
+    @tool_result()
+    async def tests(arguments: Dict[str, Any] = None, ctx: Context = None) -> BaseResult:
+        action, args = normalize_action_args(arguments)
+        if not action:
+            return BaseResult(error="Missing required argument 'action' within tool arguments.")
         test_manager = TestManager(token, ctx)
         try:
             match action:
                 case "read":
+                    if validation_error := validate_required_args(action, args, ["test_id"]):
+                        return validation_error
                     return await test_manager.read(args.get("test_id"))
                 case "create":
-                    return await test_manager.create(args.get("test_name"), args.get("project_id"))
+                    if validation_error := validate_required_args(action, args, ["test_name", "project_id"]):
+                        return validation_error
+                    if err := validate_non_empty_str_arg(action, args, "test_name"):
+                        return err
+                    return await test_manager.create(
+                        str(args.get("test_name")).strip(), args.get("project_id")
+                    )
                 case "delete":
+                    if validation_error := validate_required_args(action, args, ["test_id"]):
+                        return validation_error
                     return await test_manager.delete(args.get("test_id"))
                 case "list":
-                    return await test_manager.list(args.get("project_id"), args.get("limit", 50), args.get("offset", 0))
+                    # Accept project_id (singular) as alias for project_id_list when listing from one project
+                    if "project_id_list" not in args and args.get("project_id") is not None:
+                        args = dict(args)
+                        args["project_id_list"] = [args["project_id"]]
+                    if validation_error := validate_required_args(action, args, ["project_id_list"]):
+                        return validation_error
+                    project_id_list = args.get("project_id_list")
+                    if not isinstance(project_id_list, list) or not project_id_list:
+                        return BaseResult(
+                            error="Missing required args for action 'list': project_id_list must be a non-empty list of project IDs within 'args'. "
+                                  "Required args: project_id_list (list[int], non-empty)."
+                        )
+                    return await test_manager.list(
+                        project_id_list,
+                        args.get("limit", 50),
+                        args.get("offset", 0)
+                    )
                 case "search":
+                    if validation_error := validate_required_args(action, args, ["account_id"]):
+                        return validation_error
                     return await test_manager.search(args)
                 case "search_filter_values":
-                    return await test_manager.search_filter_values(args.get("account_id"), args.get("filter_names", []))
+                    if validation_error := validate_required_args(action, args, ["account_id", "filter_names"]):
+                        return validation_error
+                    filter_names = args.get("filter_names")
+                    if not isinstance(filter_names, list) or len(filter_names) == 0:
+                        return BaseResult(
+                            error=(
+                                f"Missing required args for action '{action}': filter_names must be a non-empty list "
+                                f"within 'args'. Required args: filter_names (list[str], non-empty)."
+                            )
+                        )
+                    return await test_manager.search_filter_values(
+                        args.get("account_id"), filter_names
+                    )
                 case "configure_load":
+                    if validation_error := validate_required_args(action, args, ["test_id"]):
+                        return validation_error
                     performance_test = PerformanceTestObject.from_args(args)
                     return await test_manager.configure(performance_test)
                 case "configure_locations":
+                    if validation_error := validate_required_args(action, args, ["test_id"]):
+                        return validation_error
                     performance_test = PerformanceTestObject.from_args(args)
                     return await test_manager.configure(performance_test)
                 case "upload_assets":
+                    if validation_error := validate_required_args(action, args, ["test_id", "file_paths"]):
+                        return validation_error
+                    file_paths = args.get("file_paths")
+                    if not isinstance(file_paths, list) or len(file_paths) == 0:
+                        return BaseResult(
+                            error=(
+                                f"Missing required args for action '{action}': file_paths must be a non-empty list "
+                                f"within 'args'. Required args: file_paths (list[str], non-empty)."
+                            )
+                        )
                     upload_result = await test_manager.upload_assets(
                         args.get("test_id"),
                         args.get("file_paths"),
-                        args.get("main_script"),
-                    )
+                        args.get("main_script"))
                     if isinstance(upload_result, dict) and upload_result.get("error"):
                         return BaseResult(error=upload_result["error"])
                     return BaseResult(result=[upload_result])
                 case "configure_failure_criteria":
+                    if validation_error := validate_required_args(
+                        action, args, ["test_id", "enabled", "rules"]
+                    ):
+                        return validation_error
                     return await test_manager.configure_failure_criteria(args)
                 case "failure_criteria_meta":
                     return await test_manager.failure_criteria_meta(args)

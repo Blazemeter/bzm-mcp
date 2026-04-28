@@ -93,3 +93,17 @@ def format_tests(tests: List[Any], params: Optional[dict] = None) -> List[Test]:
             )
         )
     return formatted_tests
+
+
+def format_tests_minimal(tests: List[Any], params: Optional[dict] = None) -> List[dict]:
+    formatted_tests = []
+    for test in tests:
+        formatted_tests.append({
+            "test_id": test.get("id"),
+            "test_name": test.get("name", "Unknown"),
+            "description": test.get("description", ""),
+            "created": get_date_time_iso(test.get("created")),
+            "updated": get_date_time_iso(test.get("updated")),
+            "project_id": test.get("projectId"),
+        })
+    return formatted_tests

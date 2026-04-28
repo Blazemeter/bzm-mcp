@@ -28,9 +28,14 @@ async def read_account(token: BzmToken, ctx: Context, account_id: int) -> BaseRe
     return await AccountManager(token, ctx).read(account_id)
 
 
-async def read_project(token: BzmToken, ctx: Context, project_id: int) -> BaseResult:
+async def read_project(
+        token: BzmToken,
+        ctx: Context,
+        project_id: int,
+        include_tests_count: bool = False
+) -> BaseResult:
     from tools.project_manager import ProjectManager
-    return await ProjectManager(token, ctx).read(project_id)
+    return await ProjectManager(token, ctx).read(project_id, include_tests_count=include_tests_count)
 
 
 async def read_workspace(token: BzmToken, ctx: Context, workspace_id: int) -> BaseResult:
@@ -46,7 +51,7 @@ async def read_test(token: BzmToken, ctx: Context, test_id: int) -> BaseResult:
 async def count_project_tests(token: BzmToken, ctx: Context, project_id: int) -> int:
     from tools.test_manager import TestManager
     return (
-        await TestManager(token, ctx).list(project_id=project_id, limit=1, offset=0, control_ai_consent=False)).total
+        await TestManager(token, ctx).list(project_id_list=[project_id], limit=1, offset=0, control_ai_consent=False)).total
 
 
 async def read_execution(token: BzmToken, ctx: Context, execution_id: int) -> BaseResult:

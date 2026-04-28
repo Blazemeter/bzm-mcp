@@ -28,7 +28,7 @@ from formatters.execution import (
 from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
-from tools.utils import api_request
+from tools.utils import api_request, run_as_task
 
 EXECUTION_ARCHIVED_MSG = ("Execution report is archived. It is not possible to read execution "
                           "information from an archived execution.")
@@ -52,6 +52,7 @@ class ReportManager(Manager):
         return (execution_result.result and len(execution_result.result) > 0 and
                 execution_result.result[0].get("result").archived)
 
+    @run_as_task()
     async def read_summary(self, master_id: int):
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
@@ -76,14 +77,12 @@ class ReportManager(Manager):
             }
         )
 
-    async def read_error(self, master_id: Optional[int]):
+    @run_as_task()
+    async def read_error(self, master_id: int):
         """
         Get error report for a given master_id with formatted, AI-friendly structure.
         Includes execution metadata and explanatory context about error metrics.
         """
-        if not isinstance(master_id, int) or master_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
-
         # Check if it's valid or allowed
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
@@ -106,14 +105,12 @@ class ReportManager(Manager):
             }
         )
 
-    async def read_request_stats(self, master_id: Optional[int]):
+    @run_as_task()
+    async def read_request_stats(self, master_id: int):
         """
         Get request statistics report for a given master_id with formatted, AI-friendly structure.
         Includes execution metadata and explanatory context about metrics per endpoint.
         """
-        if not isinstance(master_id, int) or master_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
-
         # Check if it's valid or allowed
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
@@ -137,16 +134,14 @@ class ReportManager(Manager):
             }
         )
 
-    async def read_anomalies_stats(self, master_id: Optional[int]):
+    @run_as_task()
+    async def read_anomalies_stats(self, master_id: int):
         """
         Get anomaly statistics for a given master_id (test execution).
 
         Returns a structured report: no anomalies, full per-anomaly details when permitted, or
         statistics_unavailable when the API returns no stats (e.g. account without anomaly access).
         """
-        if not isinstance(master_id, int) or master_id < 1:
-            return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
-
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
             return execution_result
