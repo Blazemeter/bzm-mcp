@@ -643,6 +643,7 @@ def get_sql_capabilities() -> Dict[str, Any]:
         "unsupported_functions": [
             {"name": "STRUCT_EXTRACT", "reason": "Not recognized in this SQL context."},
             {"name": "TO_JSON", "reason": "Not recognized in this SQL context."},
+            {"name": "TYPEOF", "reason": "Not recognized in this SQL context."},
         ],
         "unsupported_or_unstable_patterns": [
             "Complex chained nested access with mixed subscript and dot notation in a single expression",
@@ -712,6 +713,7 @@ def get_sql_capabilities() -> Dict[str, Any]:
             "Validate each CTE with a small LIMIT before composing final query",
             "For multi-dataframe analysis, use schema groups first, then perform targeted per-dataframe inspection only when needed.",
             "To get the maximum value between a scalar field and all values in a nested list per record, use UNNEST on the list, then GROUP BY and GREATEST(MAX(list.field), MAX(scalar)).",
+            "Before UNION ALL, normalize each branch to the same concrete type your next step expects (e.g. INTEGER year, not “string then parse after union”).",
         ],
         "known_engine_pitfalls": [
             "CTE + JOIN resolution may treat same-name keys as ambiguous even when aliases are present; rename join keys in the UNNEST stage (base_*/src_*) to guarantee deterministic resolution",
