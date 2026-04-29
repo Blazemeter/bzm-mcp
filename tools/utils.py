@@ -13,6 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import secrets
+
 """
 Simple utilities for BlazeMeter MCP tools.
 """
@@ -42,10 +44,6 @@ from config.security import validate_http_request_endpoint
 from config.token import BzmToken
 from config.version import __version__
 from models.result import BaseResult, HttpBaseResult, ToolResult
-from tools.async_task_manager import submit_task, get_task_record, remove_task, task_snapshot
-from tools.dataframe_manager import (
-    materialize_large_result_if_needed,
-)
 
 so = platform.system()  # "Windows", "Linux", "Darwin"
 version = platform.version()  # kernel / build version
@@ -77,6 +75,14 @@ unix_abs_path_pattern = re.compile(
     r")/[^\n\r\t\"']+"
 )
 
+SIMPLE_ID_ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz"
+SIMPLE_ID_LENGTH = 8
+
+def generate_simple_id() -> str:
+    return "".join(secrets.choice(SIMPLE_ID_ALPHABET) for _ in range(SIMPLE_ID_LENGTH))
+
+def normalize_simple_id(simple_id: str) -> str:
+    return str(simple_id).strip().lower()
 
 def sanitize_path(path_value: str) -> str:
     if not path_value:
@@ -717,6 +723,9 @@ async def execute_with_task_management(
         time_to_live_ms: Optional[int] = None,
         fast_response_threshold_seconds: float = 5.0
 ) -> BaseResult:
+    # Deferred import avoids circular dependency: utils → async_task_manager → dataframe_manager → utils.
+    from tools.async_task_manager import submit_task, get_task_record, remove_task, task_snapshot
+
     wait_started = time.monotonic()
     try:
         task_id = submit_task(action_payload, coro_factory, time_to_live_ms=time_to_live_ms)
@@ -900,6 +909,8 @@ def tool_result(excluded_actions: Optional[set[str]] = None):
                     if result_format == "raw":
                         final_result = result
                     else:
+                        from tools.dataframe_manager import materialize_large_result_if_needed
+
                         final_result = await materialize_large_result_if_needed(
                             base_result=result,
                             origin_manager=func.__name__,

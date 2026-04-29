@@ -16,7 +16,6 @@ limitations under the License.
 
 import asyncio
 import logging
-import secrets
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -24,6 +23,10 @@ from typing import Any, Awaitable, Callable, Dict, Optional
 
 from models.result import BaseResult
 from tools.dataframe_manager import materialize_large_result_if_needed
+from tools.utils import generate_simple_id, SIMPLE_ID_ALPHABET, SIMPLE_ID_LENGTH, normalize_simple_id
+
+# Crockford-like base32 alphabet used by generate_simple_id / task ids (tests assert against this).
+TASK_ID_ALPHABET = SIMPLE_ID_ALPHABET
 
 STATUS_WORKING = "working"
 STATUS_PARKING = "parking"
@@ -35,8 +38,7 @@ STATUS_CANCELLED = "cancelled"
 TERMINAL_STATES = {STATUS_COMPLETED, STATUS_FAILED, STATUS_CANCELLED}
 ACTIVE_STATES = {STATUS_PARKING, STATUS_WORKING, STATUS_INPUT_REQUIRED}
 MAX_PARALLEL_TASKS = 10
-TASK_ID_ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz"
-TASK_ID_LENGTH = 8
+
 TASK_ID_MAX_ATTEMPTS = 10
 
 logger = logging.getLogger(__name__)
@@ -94,7 +96,6 @@ class TaskRecord:
 
 _tasks: Dict[str, TaskRecord] = {}
 
-
 def _to_iso(timestamp: float) -> str:
     return datetime.fromtimestamp(timestamp).isoformat()
 
@@ -105,12 +106,8 @@ def _normalize_result(result: Any) -> BaseResult:
     return BaseResult(result=[result])
 
 
-def _normalize_task_id(task_id: str) -> str:
-    return str(task_id).strip().lower()
-
-
 def _generate_task_id() -> str:
-    return "".join(secrets.choice(TASK_ID_ALPHABET) for _ in range(TASK_ID_LENGTH))
+    return generate_simple_id()
 
 
 def _allocate_task_id() -> str:
@@ -120,13 +117,14 @@ def _allocate_task_id() -> str:
             return candidate
 
     logger.error(
-        "Unable to allocate unique 8-char task id after 10 attempts. "
-        "attempts=%s id_length=%s alphabet=crockford32 active_pool_size=%s",
+        "Unable to allocate task id. attempts=%s id_length=%s alphabet=crockford32 active_pool_size=%s",
         TASK_ID_MAX_ATTEMPTS,
-        TASK_ID_LENGTH,
+        SIMPLE_ID_LENGTH,
         len(_tasks),
     )
-    raise RuntimeError("Unable to allocate unique 8-char task id after 10 attempts.")
+    raise RuntimeError(
+        f"Unable to allocate unique {SIMPLE_ID_LENGTH}-char task id after {TASK_ID_MAX_ATTEMPTS} attempts."
+    )
 
 
 async def _task_runner(task_record: TaskRecord, coro_factory: Callable[[], Awaitable[Any]]):
@@ -171,9 +169,9 @@ async def _task_runner(task_record: TaskRecord, coro_factory: Callable[[], Await
 
 
 def submit_task(
-    action: Dict[str, Any],
-    coro_factory: Callable[[], Awaitable[Any]],
-    time_to_live_ms: Optional[int] = None
+        action: Dict[str, Any],
+        coro_factory: Callable[[], Awaitable[Any]],
+        time_to_live_ms: Optional[int] = None
 ) -> str:
     now = time.time()
     task_id = _allocate_task_id()
@@ -194,13 +192,11 @@ def submit_task(
 
 
 def get_task_record(task_id: str) -> Optional[TaskRecord]:
-    normalized_task_id = _normalize_task_id(task_id)
-    return _tasks.get(normalized_task_id)
+    return _tasks.get(normalize_simple_id(task_id))
 
 
 def remove_task(task_id: str) -> bool:
-    normalized_task_id = _normalize_task_id(task_id)
-    return _tasks.pop(normalized_task_id, None) is not None
+    return _tasks.pop(normalize_simple_id(task_id), None) is not None
 
 
 def task_snapshot(task_record: TaskRecord, include_result: bool = False) -> Dict[str, Any]:
@@ -241,7 +237,7 @@ def is_active_status(status: str) -> bool:
 
 
 def cancel_task(task_id: str) -> Optional[TaskRecord]:
-    normalized_task_id = _normalize_task_id(task_id)
+    normalized_task_id = normalize_simple_id(task_id)
     task_record = _tasks.get(normalized_task_id)
     if not task_record:
         return None

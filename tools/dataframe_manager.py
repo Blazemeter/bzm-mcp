@@ -16,17 +16,24 @@ limitations under the License.
 import asyncio
 import hashlib
 import json
+import logging
 import re
 import uuid
 from dataclasses import dataclass, asdict
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any, Dict, List, Optional
 
 import polars as pl
-from models.result import BaseResult
 
+from models.result import BaseResult
+from tools.utils import generate_simple_id, SIMPLE_ID_LENGTH
+
+logger = logging.getLogger(__name__)
 
 DATAFRAME_JSON_SIZE_THRESHOLD = 8000
+
+DATAFRAME_ID_MAX_ATTEMPTS = 10
+
 _dataframes: Dict[str, "DataFrameRecord"] = {}
 _write_lock = asyncio.Lock()
 _sql_context = pl.SQLContext()
@@ -85,23 +92,23 @@ def build_dataframe_from_result(result: List[Any]) -> pl.DataFrame:
 
     # matrix envelope: [{"columns":[...], "rows":[...]}]
     if (
-        isinstance(normalized, list)
-        and len(normalized) == 1
-        and isinstance(normalized[0], dict)
-        and set(normalized[0].keys()) == {"columns", "rows"}
-        and isinstance(normalized[0]["columns"], list)
-        and isinstance(normalized[0]["rows"], list)
+            isinstance(normalized, list)
+            and len(normalized) == 1
+            and isinstance(normalized[0], dict)
+            and set(normalized[0].keys()) == {"columns", "rows"}
+            and isinstance(normalized[0]["columns"], list)
+            and isinstance(normalized[0]["rows"], list)
     ):
         matrix = normalized[0]
         return pl.DataFrame(matrix["rows"], schema=[str(c) for c in matrix["columns"]], orient="row")
 
     # columnar envelope: [{"colA":[...], "colB":[...]}]
     if (
-        isinstance(normalized, list)
-        and len(normalized) == 1
-        and isinstance(normalized[0], dict)
-        and normalized[0]
-        and all(isinstance(v, list) for v in normalized[0].values())
+            isinstance(normalized, list)
+            and len(normalized) == 1
+            and isinstance(normalized[0], dict)
+            and normalized[0]
+            and all(isinstance(v, list) for v in normalized[0].values())
     ):
         col_lengths = {len(v) for v in normalized[0].values()}
         if len(col_lengths) == 1:
@@ -119,9 +126,9 @@ def build_dataframe_from_result(result: List[Any]) -> pl.DataFrame:
 
 
 def auto_flatten_wide(
-    df: pl.DataFrame,
-    max_passes: int = 30,
-    sep: str = "__",
+        df: pl.DataFrame,
+        max_passes: int = 30,
+        sep: str = "__",
 ) -> pl.DataFrame:
     """
     Flatten nested structures in a DataFrame for SQL queryability.
@@ -211,11 +218,11 @@ def _canonicalize_top_schema(schema_rows: List[Dict[str, str]]) -> List[Dict[str
 
 
 async def register_dataframe(
-    result: List[Any],
-    origin_manager: str,
-    origin_action: str,
-    json_size_chars: int,
-    flatten: bool = True,
+        result: List[Any],
+        origin_manager: str,
+        origin_action: str,
+        json_size_chars: int,
+        flatten: bool = True,
 ) -> Dict[str, Any]:
     dataframe = build_dataframe_from_result(result)
     return await _register_dataframe_instance(
@@ -223,24 +230,39 @@ async def register_dataframe(
     )
 
 
+def _allocate_dataframe_id() -> str:
+    for _ in range(DATAFRAME_ID_MAX_ATTEMPTS):
+        candidate = generate_simple_id()
+        if candidate not in _dataframes:
+            return candidate
+
+    logger.error(
+        "Unable to allocate dataframe id. attempts=%s id_length=%s active_pool_size=%s",
+        DATAFRAME_ID_MAX_ATTEMPTS,
+        SIMPLE_ID_LENGTH,
+        len(_dataframes),
+    )
+    raise RuntimeError(f"Unable to allocate dataframe id after {DATAFRAME_ID_MAX_ATTEMPTS} attempts.")
+
+
 async def _register_dataframe_instance(
-    dataframe: pl.DataFrame,
-    origin_manager: str,
-    origin_action: str,
-    json_size_chars: int,
-    flatten: bool = True,
+        dataframe: pl.DataFrame,
+        origin_manager: str,
+        origin_action: str,
+        json_size_chars: int,
+        flatten: bool = True,
 ) -> Dict[str, Any]:
     if flatten:
         try:
             dataframe = auto_flatten_wide(dataframe)
         except Exception:
             pass  # Keep original dataframe if flattening fails
-    dataframe_id = str(uuid.uuid4())
-    table_name = f"df_{dataframe_id.replace('-', '_')}"
+    dataframe_id = _allocate_dataframe_id()
+    table_name = f"df_{dataframe_id}"
     record = DataFrameRecord(
         dataframe_id=dataframe_id,
         table_name=table_name,
-        created_at=datetime.utcnow().isoformat(),
+        created_at=datetime.now(UTC).isoformat(),
         origin_manager=origin_manager,
         origin_action=origin_action,
         rows=dataframe.height,
@@ -257,19 +279,19 @@ async def _register_dataframe_instance(
 
 
 async def materialize_large_result_if_needed(
-    base_result: BaseResult,
-    origin_manager: str,
-    origin_action: str,
-    force: bool = False
+        base_result: BaseResult,
+        origin_manager: str,
+        origin_action: str,
+        force: bool = False
 ) -> BaseResult:
     if not isinstance(base_result, BaseResult) or base_result.error or base_result.result is None:
         return base_result
     if (
-        isinstance(base_result.result, list)
-        and len(base_result.result) == 1
-        and isinstance(base_result.result[0], dict)
-        and base_result.result[0].get("stored_as_dataframe") is True
-        and base_result.result[0].get("dataframe_id")
+            isinstance(base_result.result, list)
+            and len(base_result.result) == 1
+            and isinstance(base_result.result[0], dict)
+            and base_result.result[0].get("stored_as_dataframe") is True
+            and base_result.result[0].get("dataframe_id")
     ):
         # Avoid rematerializing a payload that is already a dataframe reference.
         return base_result
@@ -774,4 +796,3 @@ def get_sql_capabilities() -> Dict[str, Any]:
             "https://docs.pola.rs/py-polars/html/reference/sql/set_operations.html"
         ],
     }
-
