@@ -644,6 +644,7 @@ def get_sql_capabilities() -> Dict[str, Any]:
             {"name": "STRUCT_EXTRACT", "reason": "Not recognized in this SQL context."},
             {"name": "TO_JSON", "reason": "Not recognized in this SQL context."},
             {"name": "TYPEOF", "reason": "Not recognized in this SQL context."},
+            {"name": "generate_series", "reason": "Not recognized in this SQL context."},
         ],
         "unsupported_or_unstable_patterns": [
             "Complex chained nested access with mixed subscript and dot notation in a single expression",
@@ -665,6 +666,7 @@ def get_sql_capabilities() -> Dict[str, Any]:
             "Try-fast: attempting the simplest path first and retrying on failure instead of reasoning through the design before executing",
             "Not considering all values in a nested list when searching for max/min, which can miss important extreme values",
             "Using only the first element of a nested list instead of aggregating over all its values",
+            "Using ANSI date literals (DATE '2026-03-30') inside VALUES clause",
         ],
         "query_rules": [
             "CRITICAL: Before writing queries that combine 2 or more dataframes, run dataframes_schema_groups first to validate schema compatibility across all involved dataframes.",
@@ -683,6 +685,9 @@ def get_sql_capabilities() -> Dict[str, Any]:
             "Multi-dataframe nested flow: dataframes_sql_help -> dataframes_schema_groups -> targeted dataframes_get -> staged CTE (UNNEST -> aggregate -> join-back) -> final query.",
             "If schema groups returns a CRITICAL variation warning, call dataframes_sql_help again immediately before writing the final query.",
             "Direct nested access is allowed only when each required nested column has exactly one variation across all relevant dataframes in schema groups.",
+            "For date literals in VALUES → always use: CAST('YYYY-MM-DD' AS DATE)",
+            "DATE('YYYY-MM-DD') is also supported and often cleaner",
+            "Never use: DATE '2026-03-30' inside VALUES",
         ],
         "nested_unnest_intro": (
             "To query and aggregate data from a list of structs (e.g., override_executions), use UNNEST in a CTE to flatten the list, "
@@ -722,6 +727,9 @@ def get_sql_capabilities() -> Dict[str, Any]:
             "Nested schema drift across tables can break field resolution",
             "UNION over nested struct/list columns is fragile; normalize to scalar output first",
             "Direct list aggregation over nested overrides is brittle; UNNEST + MAX + join-back is more reliable",
+            "VALUES clause is very strict: does not accept DATE '2026-03-30' literal. Must use CAST('2026-03-30' AS DATE) or DATE('2026-03-30')",
+            "Temporal literals inside VALUES frequently cause 'expects literals' errors",
+            "CAST to DATE/DATETIME is more reliable than the typed literal syntax in Polars SQL"
         ],
         "nested_query_recipe": [
             "Base table CTE",
