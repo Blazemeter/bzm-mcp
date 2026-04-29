@@ -18,7 +18,6 @@ import hashlib
 import json
 import logging
 import re
-import uuid
 from dataclasses import dataclass, asdict
 from datetime import datetime, UTC
 from typing import Any, Dict, List, Optional
@@ -641,10 +640,44 @@ def get_sql_capabilities() -> Dict[str, Any]:
             "SUM", "TAN", "TAND", "UNNEST", "UPPER", "VARIANCE"
         ],
         "unsupported_functions": [
-            {"name": "STRUCT_EXTRACT", "reason": "Not recognized in this SQL context."},
-            {"name": "TO_JSON", "reason": "Not recognized in this SQL context."},
-            {"name": "TYPEOF", "reason": "Not recognized in this SQL context."},
-            {"name": "generate_series", "reason": "Not recognized in this SQL context."},
+            "GENERATE_SERIES",
+            "STRING_AGG",
+            "GROUP_CONCAT",
+            "LISTAGG",
+            "PERCENTILE_CONT",
+            "PERCENTILE_DISC",
+            "NTILE",
+            "CUME_DIST",
+            "PERCENT_RANK",
+            "WIDTH_BUCKET",
+            "JSON_EXTRACT",
+            "JSON_EXTRACT_PATH",
+            "JSON_EXTRACT_STRING",
+            "TO_JSON",
+            "TYPEOF",
+            "STRUCT_EXTRACT",
+            "MONTHS_BETWEEN",
+            "MODE",
+            "ROLLUP",
+            "CUBE",
+            "GROUPING SETS",
+        ],
+        "limited_or_unstable_functions": [
+            {"name": "LAG",
+             "reason": "Unstable, especially with complex CTEs or multiple windows. Avoid when possible."},
+            {"name": "LEAD",
+             "reason": "Unstable, especially with complex CTEs or multiple windows. Avoid when possible."},
+            {"name": "DATE_TRUNC",
+             "reason": "Partial and inconsistent support. Better to use DATE_PART combined with CAST or manual date arithmetic."},
+            {"name": "RANK",
+             "reason": "Partial support through window functions. Results may differ from PostgreSQL/BigQuery."},
+            {"name": "DENSE_RANK",
+             "reason": "Partial support through window functions. Results may differ from PostgreSQL/BigQuery."},
+            {"name": "ROW_NUMBER",
+             "reason": "Works in simple cases but can be unstable with complex queries or multiple CTEs."},
+            {"name": "FIRST_VALUE", "reason": "Limited support as window function."},
+            {"name": "LAST_VALUE", "reason": "Limited support as window function."},
+            {"name": "NTH_VALUE", "reason": "Very limited and unstable support."}
         ],
         "unsupported_or_unstable_patterns": [
             "Complex chained nested access with mixed subscript and dot notation in a single expression",
