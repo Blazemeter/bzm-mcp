@@ -1,0 +1,85 @@
+name: Commit Dist Artifacts
+
+# Publishes binaries built by "Build Binaries" back into dist/ on main.
+
+on:
+  workflow_run:
+    workflows: ["Build Binaries"]
+    types: [completed]
+    branches: ['main']
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  commit-artifacts:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        token: ${{ secrets.REPO_PUSH_PAT || secrets.GITHUB_TOKEN }}
+
+    - name: Download all artifacts from triggering Build Binaries run
+      uses: actions/download-artifact@v7
+      with:
+        path: artifacts/
+        run-id: ${{ github.event.workflow_run.id }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Organize artifacts into dist/
+      shell: bash
+      run: |
+        mkdir -p dist/
+        # upload-artifact does not preserve the executable bit, so reapply it manually:
+        # https://github.com/actions/download-artifact?tab=readme-ov-file#limitations
+
+        if [ -d "artifacts/bzm-mcp-linux-amd64" ]; then
+          cp artifacts/bzm-mcp-linux-amd64/* dist/
+          chmod +x dist/bzm-mcp-linux-amd64
+          echo "Copied Linux AMD64 binary"
+        fi
+        if [ -d "artifacts/bzm-mcp-linux-arm64" ]; then
+          cp artifacts/bzm-mcp-linux-arm64/* dist/
+          chmod +x dist/bzm-mcp-linux-arm64
+          echo "Copied Linux ARM64 binary"
+        fi
+        if [ -d "artifacts/bzm-mcp-windows-amd64" ]; then
+          cp artifacts/bzm-mcp-windows-amd64/* dist/
+          echo "Copied Windows AMD64 binary"
+        fi
+        if [ -d "artifacts/bzm-mcp-macos-arm64" ]; then
+          cp -r artifacts/bzm-mcp-macos-arm64/* dist/
+          if [ -d "dist/bzm-mcp-arm64.app" ]; then
+            echo "Found macOS ARM64 .app bundle"
+          else
+            chmod +x dist/bzm-mcp-macos-arm64 2>/dev/null || true
+            echo "Copied macOS ARM64 binary"
+          fi
+        fi
+        if [ -d "artifacts/bzm-mcp-macos-amd64" ]; then
+          cp -r artifacts/bzm-mcp-macos-amd64/* dist/
+          if [ -d "dist/bzm-mcp-amd64.app" ]; then
+            echo "Found macOS AMD64 .app bundle"
+          else
+            chmod +x dist/bzm-mcp-macos-amd64 2>/dev/null || true
+            echo "Copied macOS AMD64 binary"
+          fi
+        fi
+
+        echo "Final dist/ contents:"
+        ls -la dist/ || echo "No dist/ directory found"
+
+    - name: Commit all artifacts to repository
+      shell: bash
+      run: |
+        git config --local user.email "actions@github.com"
+        git config --local user.name "GitHub Actions"
+        git add dist/
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "[skip ci] Update all binary artifacts"
+          git push
+        fi
