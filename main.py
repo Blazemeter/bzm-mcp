@@ -436,7 +436,10 @@ A comprehensive integration tool that provides AI assistants with full programma
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="bzm-mcp")
+    parser = argparse.ArgumentParser(
+        prog="bzm-mcp",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
 
     parser.add_argument(
         "--version",
@@ -459,9 +462,9 @@ def main():
 
     parser.add_argument(
         "--confirm",
-        type=ConfirmMode,
-        choices=list(ConfirmMode),
-        default=ConfirmMode.DELETE,
+        type=lambda s: s.strip().upper(),
+        choices=tuple(ConfirmMode.__members__),
+        default=ConfirmMode.DELETE.name,
         help=(
             "Confirmation mode:\n"
             "  DELETE  - Confirm delete operations only (default)\n"
@@ -474,7 +477,7 @@ def main():
 
     if args.mcp:
         init_logging(args.log_level)
-        run(log_level=args.log_level.upper(), confirm_mode=args.confirm)
+        run(log_level=args.log_level.upper(), confirm_mode=ConfirmMode[args.confirm])
     else:
 
         logo_ascii = (
