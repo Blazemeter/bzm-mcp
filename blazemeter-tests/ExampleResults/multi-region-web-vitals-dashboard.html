@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi-Region Web Vitals Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg:#f7fafc; --surface:#fff; --ink:#1f2937; --muted:#5b6b7b; --line:#dbe4ef;
+      --good:#0f9d58; --warn:#f4b400; --bad:#db4437; --blue:#0b5fa5;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"Avenir Next","Segoe UI",sans-serif; color:var(--ink);
+      background: radial-gradient(1000px 400px at 0% 0%, #eaf4ff 0%, transparent 65%), var(--bg); }
+    .wrap { max-width: 1240px; margin: 0 auto; padding: 24px 18px 40px; }
+    .hero { background: linear-gradient(135deg,#0b3d66,#0b5fa5); color:#fff; border-radius:16px; padding:20px; }
+    .hero h1 { margin:0 0 8px; font-size:1.5rem; }
+    .hero p { margin:0; color:#dbeeff; }
+    .grid { display:grid; gap:14px; }
+    .kpis { margin-top:14px; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); }
+    .panels { margin-top:14px; grid-template-columns: repeat(auto-fit,minmax(360px,1fr)); }
+    .card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow: 0 8px 18px rgba(13,64,112,.08); }
+    .card h2 { margin:0 0 10px; font-size:1rem; }
+    .kpi-title { margin:0; font-size:.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .kpi-value { margin:6px 0 2px; font-size:1.45rem; font-weight:700; }
+    .pill { display:inline-block; padding:3px 8px; border-radius:999px; font-size:.74rem; font-weight:700; }
+    .good { color:#0a7f47; background:#e6f7ee; } .warn { color:#9a7100; background:#fff2d2; } .bad { color:#b13228; background:#ffe6e3; }
+    table { width:100%; border-collapse:collapse; font-size:.92rem; }
+    th,td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); }
+    th { color:var(--muted); }
+    canvas { width:100% !important; height:300px !important; }
+    select { border:1px solid var(--line); border-radius:8px; padding:6px; background:#fff; }
+    .footer { margin-top:10px; color:var(--muted); font-size:.84rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>Web Vitals Multi-Region Dashboard</h1>
+      <p>Analyzed 4 CSV files in .github/Vitals with cross-region comparison, trend over time, and recommendations.</p>
+    </section>
+
+    <section class="grid kpis" id="kpiGrid"></section>
+
+    <section class="grid panels">
+      <article class="card">
+        <h2>Regional Comparison: Median LCP / TTFB / CLS p75</h2>
+        <canvas id="regionBars"></canvas>
+      </article>
+      <article class="card">
+        <h2>Trend Over Time By Region</h2>
+        <label for="metricPick">Metric:</label>
+        <select id="metricPick">
+          <option value="lcp_avg">Avg LCP (ms)</option>
+          <option value="ttfb_avg">Avg TTFB (ms)</option>
+          <option value="cls_avg">Avg CLS</option>
+          <option value="fcp_avg">Avg FCP (ms)</option>
+          <option value="requests_total">Total Requests</option>
+          <option value="size_total">Total Size (MB)</option>
+          <option value="page_load_avg">Avg Page Load Time (ms)</option>
+        </select>
+        <canvas id="trendChart"></canvas>
+      </article>
+      <article class="card">
+        <h2>First Vs Last Run Delta By Region</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Region</th>
+              <th>LCP Δ</th>
+              <th>TTFB Δ</th>
+              <th>CLS Δ</th>
+              <th>Page Load Δ</th>
+              <th>Direction</th>
+            </tr>
+          </thead>
+          <tbody id="deltaRows"></tbody>
+        </table>
+      </article>
+      <article class="card">
+        <h2>Summary Recommendations</h2>
+        <ul id="recList"></ul>
+        <p class="footer">Generated: 2026-05-19</p>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    const data = {"africa": {"file": "africa-web-vitals-report.csv", "rows": 41, "start": "2026-05-19T12:35:52.710Z", "end": "2026-05-19T12:40:40.966Z", "runs": [{"run": 1, "start": "2026-05-19T12:35:52.710Z", "end": "2026-05-19T12:36:13.194Z", "samples": 5, "lcp_avg": 1020.0, "ttfb_avg": 610.6, "cls_avg": 0.023, "fcp_avg": 1020.0, "inp_avg": 56.0, "requests_total": 725.0, "size_total": 19.25, "page_load_avg": 4887.48}, {"run": 2, "start": "2026-05-19T12:36:26.019Z", "end": "2026-05-19T12:36:44.099Z", "samples": 5, "lcp_avg": 278.4, "ttfb_avg": 67.6, "cls_avg": 0.126, "fcp_avg": 278.4, "inp_avg": 52.0, "requests_total": 716.0, "size_total": 19.94, "page_load_avg": 4989.14}, {"run": 3, "start": "2026-05-19T12:36:58.217Z", "end": "2026-05-19T12:37:16.377Z", "samples": 5, "lcp_avg": 320.8, "ttfb_avg": 118.12, "cls_avg": 0.126, "fcp_avg": 320.8, "inp_avg": 44.0, "requests_total": 726.0, "size_total": 19.99, "page_load_avg": 4985.62}, {"run": 4, "start": "2026-05-19T12:37:29.468Z", "end": "2026-05-19T12:37:46.615Z", "samples": 5, "lcp_avg": 264.0, "ttfb_avg": 65.58, "cls_avg": 0.124, "fcp_avg": 264.0, "inp_avg": 60.0, "requests_total": 712.0, "size_total": 19.94, "page_load_avg": 4440.12}, {"run": 5, "start": "2026-05-19T12:38:33.289Z", "end": "2026-05-19T12:38:51.413Z", "samples": 5, "lcp_avg": 321.6, "ttfb_avg": 120.14, "cls_avg": 0.126, "fcp_avg": 321.6, "inp_avg": 56.0, "requests_total": 723.0, "size_total": 19.9, "page_load_avg": 4992.54}, {"run": 6, "start": "2026-05-19T12:39:04.981Z", "end": "2026-05-19T12:39:23.119Z", "samples": 5, "lcp_avg": 343.2, "ttfb_avg": 140.84, "cls_avg": 0.126, "fcp_avg": 343.2, "inp_avg": 44.0, "requests_total": 716.0, "size_total": 19.93, "page_load_avg": 4905.42}, {"run": 7, "start": "2026-05-19T12:39:36.762Z", "end": "2026-05-19T12:39:54.764Z", "samples": 5, "lcp_avg": 294.4, "ttfb_avg": 99.48, "cls_avg": 0.124, "fcp_avg": 294.4, "inp_avg": 40.0, "requests_total": 720.0, "size_total": 19.9, "page_load_avg": 4923.06}, {"run": 8, "start": "2026-05-19T12:40:08.616Z", "end": "2026-05-19T12:40:26.881Z", "samples": 5, "lcp_avg": 455.2, "ttfb_avg": 172.1, "cls_avg": 0.126, "fcp_avg": 455.2, "inp_avg": 44.0, "requests_total": 722.0, "size_total": 19.92, "page_load_avg": 5035.6}, {"run": 9, "start": "2026-05-19T12:40:40.966Z", "end": "2026-05-19T12:40:40.966Z", "samples": 1, "lcp_avg": 528.0, "ttfb_avg": 252.2, "cls_avg": 0.288, "fcp_avg": 528.0, "inp_avg": 72.0, "requests_total": 296.0, "size_total": 12.54, "page_load_avg": 6481.6}], "overall": {"LCP_ms": {"count": 41, "avg": 415.024, "median": 324.0, "p75": 512.0, "p95": 736.0, "max": 1460.0}, "INP_ms": {"count": 17, "avg": 50.824, "median": 48.0, "p75": 56.0, "p95": 72.0, "max": 72.0}, "CLS": {"count": 41, "avg": 0.117, "median": 0.122, "p75": 0.122, "p95": 0.288, "max": 0.288}, "TTFB_ms": {"count": 41, "avg": 176.207, "median": 69.6, "p75": 252.2, "p95": 341.7, "max": 1043.1}, "FCP_ms": {"count": 41, "avg": 415.024, "median": 324.0, "p75": 512.0, "p95": 736.0, "max": 1460.0}, "TTI_ms": {"count": 41, "avg": 669.476, "median": 497.9, "p75": 878.6, "p95": 1358.3, "max": 1468.8}, "pageLoadTime_ms": {"count": 41, "avg": 4933.573, "median": 4828.0, "p75": 5233.9, "p95": 6438.1, "max": 6481.6}, "requestCount": {"count": 41, "avg": 147.707, "median": 127.0, "p75": 157.0, "p95": 306.0, "max": 307.0}, "totalPageSizeMB": {"count": 41, "avg": 4.178, "median": 2.35, "p75": 2.86, "p95": 13.18, "max": 13.22}}, "steps": [{"step": "Browse Products", "samples": 8, "lcp_median": 226.0, "cls_p75": 0.1216, "ttfb_median": 67.05, "request_avg": 129.75, "size_avg": 2.92}, {"step": "Digital IP Management", "samples": 8, "lcp_median": 226.0, "cls_p75": 0.1216, "ttfb_median": 67.05, "request_avg": 10.5, "size_avg": 0.0}, {"step": "Explore IPLM", "samples": 8, "lcp_median": 312.0, "cls_p75": 0.0903, "ttfb_median": 67.3, "request_avg": 155.0, "size_avg": 2.36}, {"step": "Main Landing Page", "samples": 9, "lcp_median": 352.0, "cls_p75": 0.2881, "ttfb_median": 73.4, "request_avg": 301.111, "size_avg": 12.788}, {"step": "What\u2019s New", "samples": 8, "lcp_median": 412.0, "cls_p75": 0.0077, "ttfb_median": 80.15, "request_avg": 123.0, "size_avg": 1.748}]}, "euwest": {"file": "euwest-web-vitals-report.csv", "rows": 71, "start": "2026-05-19T12:35:52.643Z", "end": "2026-05-19T12:40:38.647Z", "runs": [{"run": 1, "start": "2026-05-19T12:35:52.643Z", "end": "2026-05-19T12:36:12.501Z", "samples": 6, "lcp_avg": 1112.667, "ttfb_avg": 735.117, "cls_avg": 0.113, "fcp_avg": 1112.667, "inp_avg": 216.0, "requests_total": 702.0, "size_total": 20.64, "page_load_avg": 2811.783}, {"run": 2, "start": "2026-05-19T12:36:20.440Z", "end": "2026-05-19T12:36:37.316Z", "samples": 6, "lcp_avg": 318.667, "ttfb_avg": 26.2, "cls_avg": 0.114, "fcp_avg": 318.667, "inp_avg": 96.0, "requests_total": 676.0, "size_total": 19.45, "page_load_avg": 2009.883}, {"run": 3, "start": "2026-05-19T12:36:45.252Z", "end": "2026-05-19T12:37:01.355Z", "samples": 6, "lcp_avg": 291.333, "ttfb_avg": 27.733, "cls_avg": 0.113, "fcp_avg": 291.333, "inp_avg": 76.0, "requests_total": 672.0, "size_total": 19.89, "page_load_avg": 2011.467}, {"run": 4, "start": "2026-05-19T12:37:09.345Z", "end": "2026-05-19T12:37:26.400Z", "samples": 6, "lcp_avg": 306.667, "ttfb_avg": 25.867, "cls_avg": 0.113, "fcp_avg": 306.667, "inp_avg": 148.0, "requests_total": 666.0, "size_total": 19.36, "page_load_avg": 2071.033}, {"run": 5, "start": "2026-05-19T12:37:34.378Z", "end": "2026-05-19T12:37:51.876Z", "samples": 6, "lcp_avg": 380.0, "ttfb_avg": 31.05, "cls_avg": 0.112, "fcp_avg": 380.0, "inp_avg": 88.0, "requests_total": 672.0, "size_total": 20.07, "page_load_avg": 2271.85}, {"run": 6, "start": "2026-05-19T12:38:00.197Z", "end": "2026-05-19T12:38:16.612Z", "samples": 6, "lcp_avg": 294.667, "ttfb_avg": 34.2, "cls_avg": 0.161, "fcp_avg": 294.667, "inp_avg": 164.0, "requests_total": 671.0, "size_total": 19.9, "page_load_avg": 2041.317}, {"run": 7, "start": "2026-05-19T12:38:24.501Z", "end": "2026-05-19T12:38:41.295Z", "samples": 6, "lcp_avg": 345.333, "ttfb_avg": 27.117, "cls_avg": 0.111, "fcp_avg": 345.333, "inp_avg": 152.0, "requests_total": 670.0, "size_total": 19.63, "page_load_avg": 2019.933}, {"run": 8, "start": "2026-05-19T12:38:49.228Z", "end": "2026-05-19T12:39:05.990Z", "samples": 6, "lcp_avg": 388.0, "ttfb_avg": 29.45, "cls_avg": 0.077, "fcp_avg": 388.0, "inp_avg": 124.0, "requests_total": 670.0, "size_total": 19.44, "page_load_avg": 2022.833}, {"run": 9, "start": "2026-05-19T12:39:13.942Z", "end": "2026-05-19T12:39:31.235Z", "samples": 6, "lcp_avg": 350.667, "ttfb_avg": 31.85, "cls_avg": 0.113, "fcp_avg": 350.667, "inp_avg": 144.0, "requests_total": 673.0, "size_total": 20.07, "page_load_avg": 2174.883}, {"run": 10, "start": "2026-05-19T12:39:39.210Z", "end": "2026-05-19T12:39:55.958Z", "samples": 6, "lcp_avg": 444.667, "ttfb_avg": 30.35, "cls_avg": 0.028, "fcp_avg": 444.667, "inp_avg": 124.0, "requests_total": 665.0, "size_total": 19.45, "page_load_avg": 2074.75}, {"run": 11, "start": "2026-05-19T12:40:03.779Z", "end": "2026-05-19T12:40:21.628Z", "samples": 6, "lcp_avg": 375.333, "ttfb_avg": 28.75, "cls_avg": 0.112, "fcp_avg": 375.333, "inp_avg": 160.0, "requests_total": 667.0, "size_total": 19.62, "page_load_avg": 2269.217}, {"run": 12, "start": "2026-05-19T12:40:29.677Z", "end": "2026-05-19T12:40:38.647Z", "samples": 5, "lcp_avg": 300.0, "ttfb_avg": 31.98, "cls_avg": 0.118, "fcp_avg": 300.0, "inp_avg": 148.0, "requests_total": 656.0, "size_total": 20.59, "page_load_avg": 1786.24}], "overall": {"LCP_ms": {"count": 71, "avg": 410.535, "median": 356.0, "p75": 416.0, "p95": 890.0, "max": 1508.0}, "INP_ms": {"count": 24, "avg": 136.667, "median": 112.0, "p75": 202.0, "p95": 228.4, "max": 312.0}, "CLS": {"count": 71, "avg": 0.107, "median": 0.09, "p75": 0.122, "p95": 0.288, "max": 0.337}, "TTFB_ms": {"count": 71, "avg": 89.099, "median": 32.2, "p75": 36.05, "p95": 423.6, "max": 1271.8}, "FCP_ms": {"count": 71, "avg": 410.535, "median": 356.0, "p75": 416.0, "p95": 890.0, "max": 1508.0}, "TTI_ms": {"count": 71, "avg": 702.394, "median": 566.9, "p75": 837.05, "p95": 1256.55, "max": 1724.3}, "pageLoadTime_ms": {"count": 71, "avg": 2135.28, "median": 1366.9, "p75": 3392.2, "p95": 4315.3, "max": 4460.1}, "requestCount": {"count": 71, "avg": 113.521, "median": 120.0, "p75": 144.0, "p95": 256.5, "max": 259.0}, "totalPageSizeMB": {"count": 71, "avg": 3.354, "median": 2.26, "p75": 2.62, "p95": 13.2, "max": 13.85}}, "steps": [{"step": "Browse Products", "samples": 12, "lcp_median": 284.0, "cls_p75": 0.1216, "ttfb_median": 32.0, "request_avg": 120.75, "size_avg": 2.743}, {"step": "Digital IP Management", "samples": 12, "lcp_median": 284.0, "cls_p75": 0.1216, "ttfb_median": 32.0, "request_avg": 13.833, "size_avg": 0.023}, {"step": "Explore IPLM", "samples": 12, "lcp_median": 392.0, "cls_p75": 0.0903, "ttfb_median": 33.15, "request_avg": 144.25, "size_avg": 2.325}, {"step": "Main Landing Page", "samples": 12, "lcp_median": 388.0, "cls_p75": 0.2881, "ttfb_median": 34.05, "request_avg": 255.25, "size_avg": 12.97}, {"step": "Perforce Software Popup Tab", "samples": 11, "lcp_median": 260.0, "cls_p75": 0.0561, "ttfb_median": 13.3, "request_avg": 18.636, "size_avg": 0.02}, {"step": "What\u2019s New", "samples": 12, "lcp_median": 328.0, "cls_p75": 0.0077, "ttfb_median": 33.55, "request_avg": 120.5, "size_avg": 1.763}]}, "sydney": {"file": "sydney-web-vitals-report.csv", "rows": 45, "start": "2026-05-19T12:36:03.399Z", "end": "2026-05-19T12:40:43.715Z", "runs": [{"run": 1, "start": "2026-05-19T12:36:03.399Z", "end": "2026-05-19T12:36:19.389Z", "samples": 5, "lcp_avg": 881.6, "ttfb_avg": 230.0, "cls_avg": 0.022, "fcp_avg": 881.6, "inp_avg": 184.0, "requests_total": 729.0, "size_total": 19.74, "page_load_avg": 4125.62}, {"run": 2, "start": "2026-05-19T12:36:32.908Z", "end": "2026-05-19T12:36:48.438Z", "samples": 5, "lcp_avg": 600.8, "ttfb_avg": 34.22, "cls_avg": 0.081, "fcp_avg": 600.8, "inp_avg": 124.0, "requests_total": 723.0, "size_total": 20.55, "page_load_avg": 4238.68}, {"run": 3, "start": "2026-05-19T12:37:06.279Z", "end": "2026-05-19T12:37:22.104Z", "samples": 5, "lcp_avg": 430.4, "ttfb_avg": 31.72, "cls_avg": 0.125, "fcp_avg": 430.4, "inp_avg": 88.0, "requests_total": 718.0, "size_total": 19.55, "page_load_avg": 4309.28}, {"run": 4, "start": "2026-05-19T12:37:39.826Z", "end": "2026-05-19T12:37:55.759Z", "samples": 5, "lcp_avg": 548.0, "ttfb_avg": 30.06, "cls_avg": 0.126, "fcp_avg": 548.0, "inp_avg": 108.0, "requests_total": 720.0, "size_total": 20.55, "page_load_avg": 4389.36}, {"run": 5, "start": "2026-05-19T12:38:12.676Z", "end": "2026-05-19T12:38:28.174Z", "samples": 5, "lcp_avg": 474.4, "ttfb_avg": 30.98, "cls_avg": 0.076, "fcp_avg": 474.4, "inp_avg": 84.0, "requests_total": 713.0, "size_total": 19.85, "page_load_avg": 3800.82}, {"run": 6, "start": "2026-05-19T12:38:47.496Z", "end": "2026-05-19T12:39:02.605Z", "samples": 5, "lcp_avg": 468.0, "ttfb_avg": 32.6, "cls_avg": 0.126, "fcp_avg": 468.0, "inp_avg": 88.0, "requests_total": 715.0, "size_total": 19.63, "page_load_avg": 4210.86}, {"run": 7, "start": "2026-05-19T12:39:19.983Z", "end": "2026-05-19T12:39:35.118Z", "samples": 5, "lcp_avg": 436.0, "ttfb_avg": 29.64, "cls_avg": 0.126, "fcp_avg": 436.0, "inp_avg": 128.0, "requests_total": 715.0, "size_total": 20.26, "page_load_avg": 4266.38}, {"run": 8, "start": "2026-05-19T12:39:54.109Z", "end": "2026-05-19T12:40:09.460Z", "samples": 5, "lcp_avg": 538.4, "ttfb_avg": 28.66, "cls_avg": 0.077, "fcp_avg": 538.4, "inp_avg": 120.0, "requests_total": 718.0, "size_total": 19.66, "page_load_avg": 4238.46}, {"run": 9, "start": "2026-05-19T12:40:28.138Z", "end": "2026-05-19T12:40:43.715Z", "samples": 5, "lcp_avg": 494.4, "ttfb_avg": 30.12, "cls_avg": 0.126, "fcp_avg": 494.4, "inp_avg": 148.0, "requests_total": 714.0, "size_total": 19.55, "page_load_avg": 4192.38}], "overall": {"LCP_ms": {"count": 45, "avg": 541.333, "median": 500.0, "p75": 596.0, "p95": 911.2, "max": 1144.0}, "INP_ms": {"count": 18, "avg": 119.111, "median": 108.0, "p75": 160.0, "p95": 187.6, "max": 208.0}, "CLS": {"count": 45, "avg": 0.098, "median": 0.09, "p75": 0.122, "p95": 0.288, "max": 0.288}, "TTFB_ms": {"count": 45, "avg": 53.111, "median": 30.1, "p75": 34.4, "p95": 226.1, "max": 243.1}, "FCP_ms": {"count": 45, "avg": 541.333, "median": 500.0, "p75": 596.0, "p95": 911.2, "max": 1144.0}, "TTI_ms": {"count": 45, "avg": 988.947, "median": 834.8, "p75": 939.1, "p95": 1657.76, "max": 2437.7}, "pageLoadTime_ms": {"count": 45, "avg": 4196.871, "median": 3835.2, "p75": 4047.4, "p95": 6943.0, "max": 7201.7}, "requestCount": {"count": 45, "avg": 143.667, "median": 125.0, "p75": 154.0, "p95": 310.6, "max": 315.0}, "totalPageSizeMB": {"count": 45, "avg": 3.985, "median": 2.41, "p75": 2.71, "p95": 13.376, "max": 13.68}}, "steps": [{"step": "Browse Products", "samples": 9, "lcp_median": 440.0, "cls_p75": 0.1216, "ttfb_median": 29.6, "request_avg": 124.778, "size_avg": 2.777}, {"step": "Digital IP Management", "samples": 9, "lcp_median": 440.0, "cls_p75": 0.1216, "ttfb_median": 29.6, "request_avg": 10.889, "size_avg": 0.0}, {"step": "Explore IPLM", "samples": 9, "lcp_median": 592.0, "cls_p75": 0.0903, "ttfb_median": 34.4, "request_avg": 153.667, "size_avg": 2.397}, {"step": "Main Landing Page", "samples": 9, "lcp_median": 492.0, "cls_p75": 0.2881, "ttfb_median": 31.4, "request_avg": 308.333, "size_avg": 13.014}, {"step": "What\u2019s New", "samples": 9, "lcp_median": 596.0, "cls_p75": 0.0077, "ttfb_median": 30.1, "request_avg": 120.667, "size_avg": 1.739}]}, "useast": {"file": "useast-web-vitals-report.csv", "rows": 72, "start": "2026-05-19T12:35:53.524Z", "end": "2026-05-19T12:40:45.994Z", "runs": [{"run": 1, "start": "2026-05-19T12:35:53.524Z", "end": "2026-05-19T12:36:12.572Z", "samples": 6, "lcp_avg": 866.0, "ttfb_avg": 493.48, "cls_avg": 0.029, "fcp_avg": 866.0, "inp_avg": 116.0, "requests_total": 685.0, "size_total": 20.08, "page_load_avg": 2495.233}, {"run": 2, "start": "2026-05-19T12:36:20.491Z", "end": "2026-05-19T12:36:37.379Z", "samples": 6, "lcp_avg": 342.667, "ttfb_avg": 36.55, "cls_avg": 0.113, "fcp_avg": 342.667, "inp_avg": 156.0, "requests_total": 667.0, "size_total": 19.4, "page_load_avg": 2052.25}, {"run": 3, "start": "2026-05-19T12:36:45.229Z", "end": "2026-05-19T12:37:02.619Z", "samples": 6, "lcp_avg": 328.0, "ttfb_avg": 36.8, "cls_avg": 0.113, "fcp_avg": 328.0, "inp_avg": 148.0, "requests_total": 670.0, "size_total": 20.38, "page_load_avg": 2081.467}, {"run": 4, "start": "2026-05-19T12:37:10.333Z", "end": "2026-05-19T12:37:27.394Z", "samples": 6, "lcp_avg": 306.0, "ttfb_avg": 40.56, "cls_avg": 0.113, "fcp_avg": 306.0, "inp_avg": 152.0, "requests_total": 668.0, "size_total": 19.63, "page_load_avg": 2077.033}, {"run": 5, "start": "2026-05-19T12:37:35.096Z", "end": "2026-05-19T12:37:52.041Z", "samples": 6, "lcp_avg": 278.0, "ttfb_avg": 31.74, "cls_avg": 0.112, "fcp_avg": 278.0, "inp_avg": 92.0, "requests_total": 676.0, "size_total": 20.07, "page_load_avg": 2047.233}, {"run": 6, "start": "2026-05-19T12:37:59.867Z", "end": "2026-05-19T12:38:16.672Z", "samples": 6, "lcp_avg": 334.667, "ttfb_avg": 32.067, "cls_avg": 0.113, "fcp_avg": 334.667, "inp_avg": 136.0, "requests_total": 672.0, "size_total": 20.88, "page_load_avg": 2088.283}, {"run": 7, "start": "2026-05-19T12:38:24.451Z", "end": "2026-05-19T12:38:42.125Z", "samples": 6, "lcp_avg": 313.333, "ttfb_avg": 38.96, "cls_avg": 0.122, "fcp_avg": 313.333, "inp_avg": 168.0, "requests_total": 663.0, "size_total": 19.9, "page_load_avg": 2123.367}, {"run": 8, "start": "2026-05-19T12:38:50.261Z", "end": "2026-05-19T12:39:07.143Z", "samples": 6, "lcp_avg": 337.333, "ttfb_avg": 31.86, "cls_avg": 0.113, "fcp_avg": 337.333, "inp_avg": 140.0, "requests_total": 663.0, "size_total": 19.37, "page_load_avg": 2026.233}, {"run": 9, "start": "2026-05-19T12:39:15.013Z", "end": "2026-05-19T12:39:31.964Z", "samples": 6, "lcp_avg": 306.0, "ttfb_avg": 34.98, "cls_avg": 0.112, "fcp_avg": 306.0, "inp_avg": 184.0, "requests_total": 675.0, "size_total": 19.65, "page_load_avg": 2031.133}, {"run": 10, "start": "2026-05-19T12:39:39.535Z", "end": "2026-05-19T12:39:56.738Z", "samples": 6, "lcp_avg": 406.0, "ttfb_avg": 35.817, "cls_avg": 0.113, "fcp_avg": 406.0, "inp_avg": 140.0, "requests_total": 670.0, "size_total": 19.65, "page_load_avg": 2150.1}, {"run": 11, "start": "2026-05-19T12:40:04.872Z", "end": "2026-05-19T12:40:21.130Z", "samples": 6, "lcp_avg": 324.0, "ttfb_avg": 39.667, "cls_avg": 0.112, "fcp_avg": 324.0, "inp_avg": 100.0, "requests_total": 668.0, "size_total": 19.56, "page_load_avg": 2042.0}, {"run": 12, "start": "2026-05-19T12:40:28.942Z", "end": "2026-05-19T12:40:45.994Z", "samples": 6, "lcp_avg": 348.0, "ttfb_avg": 65.52, "cls_avg": 0.113, "fcp_avg": 348.0, "inp_avg": 128.0, "requests_total": 679.0, "size_total": 20.1, "page_load_avg": 2072.617}], "overall": {"LCP_ms": {"count": 72, "avg": 374.167, "median": 328.0, "p75": 408.0, "p95": 748.0, "max": 1284.0}, "INP_ms": {"count": 24, "avg": 138.333, "median": 120.0, "p75": 192.0, "p95": 237.6, "max": 264.0}, "CLS": {"count": 72, "avg": 0.106, "median": 0.09, "p75": 0.122, "p95": 0.288, "max": 0.288}, "TTFB_ms": {"count": 65, "avg": 73.398, "median": 37.6, "p75": 47.5, "p95": 216.84, "max": 967.4}, "FCP_ms": {"count": 72, "avg": 374.167, "median": 328.0, "p75": 408.0, "p95": 748.0, "max": 1284.0}, "TTI_ms": {"count": 72, "avg": 635.036, "median": 521.0, "p75": 735.175, "p95": 1126.5, "max": 1421.9}, "pageLoadTime_ms": {"count": 72, "avg": 2107.246, "median": 1547.8, "p75": 3308.325, "p95": 3865.755, "max": 4488.6}, "requestCount": {"count": 72, "avg": 111.889, "median": 119.5, "p75": 144.25, "p95": 264.0, "max": 267.0}, "totalPageSizeMB": {"count": 72, "avg": 3.315, "median": 2.065, "p75": 2.62, "p95": 13.297, "max": 13.6}}, "steps": [{"step": "Browse Products", "samples": 12, "lcp_median": 282.0, "cls_p75": 0.1216, "ttfb_median": 36.45, "request_avg": 119.667, "size_avg": 2.737}, {"step": "Digital IP Management", "samples": 12, "lcp_median": 282.0, "cls_p75": 0.1216, "ttfb_median": 36.45, "request_avg": 13.25, "size_avg": 0.015}, {"step": "Explore IPLM", "samples": 12, "lcp_median": 408.0, "cls_p75": 0.0903, "ttfb_median": 36.7, "request_avg": 143.583, "size_avg": 2.334}, {"step": "Main Landing Page", "samples": 12, "lcp_median": 400.0, "cls_p75": 0.2881, "ttfb_median": 45.5, "request_avg": 260.25, "size_avg": 13.024}, {"step": "Perforce Software Popup Tab", "samples": 12, "lcp_median": 192.0, "cls_p75": 0.0492, "ttfb_median": 7.0, "request_avg": 14.583, "size_avg": 0.003}, {"step": "What\u2019s New", "samples": 12, "lcp_median": 416.0, "cls_p75": 0.0077, "ttfb_median": 41.7, "request_avg": 120.0, "size_avg": 1.776}]}};
+    const recs = ["LCP is healthy across all regions (all medians < 2.5s). Highest median LCP is in sydney at 500 ms.", "CLS needs attention in every region (p75 around 0.122, threshold is <= 0.100). Prioritize layout stability fixes.", "Server responsiveness is strongest where TTFB median is lower; slowest median TTFB is africa at 69.6 ms.", "Payload optimization opportunity: sydney has the highest median page weight at 2.41 MB.", "Trend check: compare first vs last run deltas per region to verify performance remains stable after warm-up and does not regress over time."];
+    const palette = ["#0b5fa5", "#0f9d58", "#f4b400", "#db4437", "#7b61ff", "#00a2ae"];
+
+    function fmt(value, decimals=1) {
+      if (value === null || value === undefined || Number.isNaN(value)) return "-";
+      return Number(value).toFixed(decimals);
+    }
+
+    function badgeByLcp(v) {
+      if (v <= 2500) return ["Good", "good"];
+      if (v <= 4000) return ["Needs Improvement", "warn"];
+      return ["Poor", "bad"];
+    }
+
+    function renderKpis() {
+      const grid = document.getElementById("kpiGrid");
+      Object.entries(data).forEach(([region, d], i) => {
+        const lcp = d.overall.LCP_ms.median;
+        const cls = d.overall.CLS.p75;
+        const ttfb = d.overall.TTFB_ms.median;
+        const [label, klass] = badgeByLcp(lcp);
+        const el = document.createElement("article");
+        el.className = "card";
+        el.innerHTML = `
+          <p class="kpi-title">${region.toUpperCase()} (${d.rows} samples, ${d.runs.length} runs)</p>
+          <p class="kpi-value">LCP ${fmt(lcp,0)} ms</p>
+          <p style="margin:0 0 6px;color:#5b6b7b;">TTFB ${fmt(ttfb,1)} ms • CLS p75 ${fmt(cls,3)}</p>
+          <span class="pill ${klass}">${label}</span>
+        `;
+        grid.appendChild(el);
+      });
+    }
+
+    function buildRegionBars() {
+      const regions = Object.keys(data);
+      new Chart(document.getElementById("regionBars"), {
+        type: "bar",
+        data: {
+          labels: regions.map(r => r.toUpperCase()),
+          datasets: [
+            { label: "Median LCP (ms)", data: regions.map(r => data[r].overall.LCP_ms.median), backgroundColor: "#0b5fa5" },
+            { label: "Median TTFB (ms)", data: regions.map(r => data[r].overall.TTFB_ms.median), backgroundColor: "#0f9d58" },
+            { label: "CLS p75", data: regions.map(r => data[r].overall.CLS.p75), backgroundColor: "#f4b400", yAxisID: "y1" }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { type: "linear", position: "left", title: { display: true, text: "Milliseconds" } },
+            y1: { type: "linear", position: "right", title: { display: true, text: "CLS" }, grid: { drawOnChartArea: false } }
+          }
+        }
+      });
+    }
+
+    let trendChart;
+    function drawTrend(metric) {
+      const regions = Object.keys(data);
+      const datasets = regions.map((region, idx) => {
+        const runs = data[region].runs;
+        return {
+          label: region.toUpperCase(),
+          data: runs.map(r => ({x: r.run, y: r[metric]})),
+          borderColor: palette[idx % palette.length],
+          backgroundColor: palette[idx % palette.length],
+          tension: 0.2,
+          spanGaps: true
+        };
+      });
+
+      if (trendChart) trendChart.destroy();
+      trendChart = new Chart(document.getElementById("trendChart"), {
+        type: "line",
+        data: { datasets },
+        options: {
+          parsing: true,
+          scales: {
+            x: { type: "linear", title: { display: true, text: "Run Number" }, ticks: { stepSize: 1 } },
+            y: { title: { display: true, text: metric } }
+          }
+        }
+      });
+    }
+
+    function renderDeltaRows() {
+      const tbody = document.getElementById("deltaRows");
+      Object.entries(data).forEach(([region, d]) => {
+        if (!d.runs.length) return;
+        const first = d.runs[0];
+        const last = d.runs[d.runs.length - 1];
+        const dlcp = (last.lcp_avg ?? 0) - (first.lcp_avg ?? 0);
+        const dttfb = (last.ttfb_avg ?? 0) - (first.ttfb_avg ?? 0);
+        const dcls = (last.cls_avg ?? 0) - (first.cls_avg ?? 0);
+        const dpl = (last.page_load_avg ?? 0) - (first.page_load_avg ?? 0);
+        const improved = (dlcp < 0 ? 1 : 0) + (dttfb < 0 ? 1 : 0) + (dcls < 0 ? 1 : 0) + (dpl < 0 ? 1 : 0);
+        const direction = improved >= 3 ? "Improved" : (improved === 2 ? "Mixed" : "Regressed");
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${region.toUpperCase()}</td>
+          <td>${dlcp >= 0 ? "+" : ""}${fmt(dlcp,1)}</td>
+          <td>${dttfb >= 0 ? "+" : ""}${fmt(dttfb,1)}</td>
+          <td>${dcls >= 0 ? "+" : ""}${fmt(dcls,4)}</td>
+          <td>${dpl >= 0 ? "+" : ""}${fmt(dpl,1)}</td>
+          <td>${direction}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderRecs() {
+      const ul = document.getElementById("recList");
+      recs.forEach(r => {
+        const li = document.createElement("li");
+        li.textContent = r;
+        ul.appendChild(li);
+      });
+    }
+
+    renderKpis();
+    buildRegionBars();
+    drawTrend("lcp_avg");
+    renderDeltaRows();
+    renderRecs();
+
+    document.getElementById("metricPick").addEventListener("change", (e) => drawTrend(e.target.value));
+  </script>
+</body>
+</html>

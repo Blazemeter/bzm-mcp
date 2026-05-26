@@ -1,0 +1,7 @@
+timestamp,testName,stepName,url,LCP_ms,INP_ms,CLS,TTFB_ms,FCP_ms,TTI_ms,TBT_ms,documentCompleteTime_ms,pageLoadTime_ms,requestCount,totalPageSizeMB,dnsLookupTime_ms,FPS
+2026-05-20T13:05:53.665Z,Step 1: Main Landing Page,Main Landing Page,https://www.perforce.com/,1528,40,0.007,43.2,1528,1587.5,0,3024.7,3027.6,198,11.55,6.4,60
+2026-05-20T13:05:58.107Z,Step 2: Browse Products,Browse Products,https://www.perforce.com/products,244,N/A,0.147,145.9,244,298.7,0,1567.3,1568.2,138,3.49,7.73,60
+2026-05-20T13:06:01.417Z,Step 3: Digital IP Management,Digital IP Management,https://www.perforce.com/products#p-20457,244,16,0.2212,145.9,244,298.7,0,1567.3,1568.2,6,0,7.7,60
+2026-05-20T13:06:06.018Z,Step 4: Explore IPLM,Explore IPLM,https://www.perforce.com/products/helix-iplm,380,N/A,0.0902,141.7,380,404.1,0,1428.3,1430.3,175,3.24,6.5,60
+2026-05-20T13:06:10.461Z,Step 5: What’s New,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,228,N/A,0.0836,145.7,228,277.2,0,1391.8,1393.8,141,2.63,6.15,60
+2026-05-20T13:06:17.637Z,Step 6: Perforce Software Popup Tab,Perforce Software Popup Tab,https://www.perforce.com/,52,N/A,0.1017,0,52,92.5,0,1198.7,1205,362,19.04,7.47,60

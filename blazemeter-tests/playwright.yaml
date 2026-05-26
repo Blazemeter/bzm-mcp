@@ -1,0 +1,13 @@
+execution:
+- executor: playwright
+  scenario: playwright_test
+  hold-for: 5m
+  concurrency: 10
+  locations:
+    us-east-1: 3
+  locations-weighted: false
+
+
+scenarios:
+    playwright_test:
+        script: login.spec.ts # points to the TypeScript file with testst

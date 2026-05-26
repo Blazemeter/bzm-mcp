@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web Vitals Dashboard - Perforce Journey</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --ink: #1d2a38;
+      --muted: #5a6b7f;
+      --good: #0f9d58;
+      --warn: #f4b400;
+      --bad: #db4437;
+      --accent: #145da0;
+      --accent-soft: #e8f1fb;
+      --border: #d9e3ef;
+      --shadow: 0 12px 28px rgba(20, 93, 160, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 500px at 0% 0%, #dfefff 0%, transparent 70%),
+        radial-gradient(1000px 600px at 100% 0%, #e8f6ff 0%, transparent 65%),
+        var(--bg);
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 20px 44px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #0f3b63, #145da0);
+      color: #fff;
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 1.6rem;
+    }
+
+    .hero p {
+      margin: 0;
+      color: #d5e8fb;
+    }
+
+    .grade {
+      margin-top: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .kpi-grid {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      margin-bottom: 16px;
+    }
+
+    .panel-grid {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 6px 16px rgba(23, 52, 87, 0.07);
+    }
+
+    .kpi-title {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .kpi-value {
+      margin: 8px 0 3px;
+      font-size: 1.52rem;
+      font-weight: 700;
+    }
+
+    .badge {
+      display: inline-block;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      padding: 4px 8px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .good { color: var(--good); background: #e5f6ed; }
+    .warn { color: #a07800; background: #fff4d6; }
+    .bad { color: var(--bad); background: #ffe5e2; }
+
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 270px !important;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 8px 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th { color: var(--muted); font-weight: 700; }
+
+    .recommendations li { margin-bottom: 8px; }
+    .recommendations strong { color: var(--accent); }
+
+    .footer {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 740px) {
+      .hero h1 { font-size: 1.35rem; }
+      .kpi-value { font-size: 1.35rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>Web Vitals Report: Benchmark Perforce Multi-Page User Journey</h1>
+      <p>Dataset: 45 measurements across 9 complete journey runs and 5 page steps.</p>
+      <div class="grade" id="overallGrade">Overall Rating: Calculating...</div>
+    </section>
+
+    <section class="grid kpi-grid" id="kpis"></section>
+
+    <section class="grid panel-grid">
+      <article class="card">
+        <h2>LCP Trend Across Journey Runs (Average Per Run)</h2>
+        <canvas id="lcpTrend"></canvas>
+      </article>
+      <article class="card">
+        <h2>Page Weight by Step (Average MB)</h2>
+        <canvas id="sizeBars"></canvas>
+      </article>
+      <article class="card">
+        <h2>Median LCP by Step</h2>
+        <canvas id="lcpByStep"></canvas>
+      </article>
+      <article class="card">
+        <h2>Median TTFB by Step</h2>
+        <canvas id="ttfbByStep"></canvas>
+      </article>
+    </section>
+
+    <section class="card">
+      <h2>How Values Changed Over Time</h2>
+      <p>
+        Trend lines below compare each full journey run from the first run to the latest run.
+      </p>
+      <canvas id="metricTrend"></canvas>
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Run 1</th>
+            <th>Run 9</th>
+            <th>Absolute Change</th>
+            <th>Percent Change</th>
+            <th>Direction</th>
+          </tr>
+        </thead>
+        <tbody id="trendRows"></tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Per-Step Summary</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Median LCP (ms)</th>
+            <th>p95 LCP (ms)</th>
+            <th>Median TTFB (ms)</th>
+            <th>Avg Requests</th>
+            <th>Avg Size (MB)</th>
+          </tr>
+        </thead>
+        <tbody id="stepRows"></tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Assessment And Recommendations</h2>
+      <p>
+        This page set is performing <strong>very well</strong> from a user-perceived speed perspective. All measured LCP and CLS values are inside Google's "Good" thresholds.
+      </p>
+      <ul class="recommendations" id="recommendations"></ul>
+      <p class="footer">Generated from .github/Vitals/web-vitals-report.csv on 2026-05-19.</p>
+    </section>
+  </div>
+
+  <script>
+    const data = {
+      overall: {
+        rows: 45,
+        lcp_median: 480.0,
+        lcp_p95: 860.0,
+        fcp_median: 480.0,
+        ttfb_median: 32.5,
+        cls_median: 0.0,
+        request_median: 124.0,
+        size_median: 2.37
+      },
+      step_summary: [
+        { step: "Main Landing Page", lcp_median: 476.0, lcp_p95: 524.0, ttfb_median: 34.3, requests_avg: 309.11, size_avg: 13.21 },
+        { step: "Browse Products", lcp_median: 368.0, lcp_p95: 492.0, ttfb_median: 31.7, requests_avg: 123.22, size_avg: 2.63 },
+        { step: "Digital IP Management", lcp_median: 368.0, lcp_p95: 492.0, ttfb_median: 31.7, requests_avg: 11.56, size_avg: 0.0 },
+        { step: "Explore IPLM", lcp_median: 604.0, lcp_p95: 612.0, ttfb_median: 32.3, requests_avg: 152.44, size_avg: 2.39 },
+        { step: "What's New", lcp_median: 600.0, lcp_p95: 680.0, ttfb_median: 33.7, requests_avg: 120.56, size_avg: 1.73 }
+      ],
+      journey: [
+        { run: 1, lcp_avg: 929.6, ttfb_avg: 197.52, requests_total: 728, size_total: 19.8 },
+        { run: 2, lcp_avg: 493.6, ttfb_avg: 36.52, requests_total: 718, size_total: 19.93 },
+        { run: 3, lcp_avg: 411.2, ttfb_avg: 31.7, requests_total: 712, size_total: 19.53 },
+        { run: 4, lcp_avg: 473.6, ttfb_avg: 29.84, requests_total: 717, size_total: 19.99 },
+        { run: 5, lcp_avg: 501.6, ttfb_avg: 33.74, requests_total: 715, size_total: 19.98 },
+        { run: 6, lcp_avg: 459.2, ttfb_avg: 36.78, requests_total: 712, size_total: 19.71 },
+        { run: 7, lcp_avg: 461.6, ttfb_avg: 40.68, requests_total: 719, size_total: 20.53 },
+        { run: 8, lcp_avg: 410.4, ttfb_avg: 32.72, requests_total: 718, size_total: 20.43 },
+        { run: 9, lcp_avg: 508.0, ttfb_avg: 30.24, requests_total: 713, size_total: 19.71 }
+      ],
+      trend_summary: [
+        { metric: "Avg LCP (ms)", start: 929.6, end: 508.0 },
+        { metric: "Avg TTFB (ms)", start: 197.52, end: 30.24 },
+        { metric: "Total Requests", start: 728.0, end: 713.0 },
+        { metric: "Total Size (MB)", start: 19.8, end: 19.71 }
+      ]
+    };
+
+    function statusFor(metric, value) {
+      if (metric === "lcp") {
+        if (value <= 2500) return ["Good", "good"];
+        if (value <= 4000) return ["Needs Improvement", "warn"];
+        return ["Poor", "bad"];
+      }
+      if (metric === "cls") {
+        if (value <= 0.1) return ["Good", "good"];
+        if (value <= 0.25) return ["Needs Improvement", "warn"];
+        return ["Poor", "bad"];
+      }
+      if (metric === "fcp") {
+        if (value <= 1800) return ["Good", "good"];
+        if (value <= 3000) return ["Needs Improvement", "warn"];
+        return ["Poor", "bad"];
+      }
+      if (metric === "ttfb") {
+        if (value <= 800) return ["Good", "good"];
+        if (value <= 1800) return ["Needs Improvement", "warn"];
+        return ["Poor", "bad"];
+      }
+      return ["Info", "good"];
+    }
+
+    function grade(overall) {
+      let points = 0;
+      if (overall.lcp_p95 <= 2500) points += 35;
+      else if (overall.lcp_p95 <= 4000) points += 20;
+
+      if (overall.cls_median <= 0.1) points += 25;
+      else if (overall.cls_median <= 0.25) points += 10;
+
+      if (overall.fcp_median <= 1800) points += 20;
+      else if (overall.fcp_median <= 3000) points += 10;
+
+      if (overall.ttfb_median <= 800) points += 20;
+      else if (overall.ttfb_median <= 1800) points += 10;
+
+      if (points >= 90) return "A (Excellent)";
+      if (points >= 75) return "B (Good)";
+      if (points >= 60) return "C (Fair)";
+      return "D (Needs Work)";
+    }
+
+    function addKpis() {
+      const kpiData = [
+        ["LCP Median", `${data.overall.lcp_median.toFixed(0)} ms`, ...statusFor("lcp", data.overall.lcp_median)],
+        ["LCP p95", `${data.overall.lcp_p95.toFixed(0)} ms`, ...statusFor("lcp", data.overall.lcp_p95)],
+        ["CLS Median", data.overall.cls_median.toFixed(3), ...statusFor("cls", data.overall.cls_median)],
+        ["FCP Median", `${data.overall.fcp_median.toFixed(0)} ms`, ...statusFor("fcp", data.overall.fcp_median)],
+        ["TTFB Median", `${data.overall.ttfb_median.toFixed(1)} ms`, ...statusFor("ttfb", data.overall.ttfb_median)],
+        ["Median Requests", `${data.overall.request_median.toFixed(0)}`, "Informational", "good"],
+        ["Median Page Size", `${data.overall.size_median.toFixed(2)} MB`, "Informational", "good"],
+        ["Samples", `${data.overall.rows}`, "Dataset", "good"]
+      ];
+
+      const container = document.getElementById("kpis");
+      kpiData.forEach(([title, value, label, cls]) => {
+        const article = document.createElement("article");
+        article.className = "card";
+        article.innerHTML = `
+          <p class="kpi-title">${title}</p>
+          <p class="kpi-value">${value}</p>
+          <span class="badge ${cls}">${label}</span>
+        `;
+        container.appendChild(article);
+      });
+    }
+
+    function addTableRows() {
+      const body = document.getElementById("stepRows");
+      data.step_summary.forEach((s) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${s.step}</td>
+          <td>${s.lcp_median.toFixed(0)}</td>
+          <td>${s.lcp_p95.toFixed(0)}</td>
+          <td>${s.ttfb_median.toFixed(1)}</td>
+          <td>${s.requests_avg.toFixed(2)}</td>
+          <td>${s.size_avg.toFixed(2)}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function addRecommendations() {
+      const recs = [
+        "<strong>Overall performance is excellent:</strong> Core rendering metrics are consistently in the good band, indicating users should perceive pages as fast.",
+        "<strong>Primary optimization target is payload efficiency:</strong> Main Landing Page averages about 13.21 MB with around 309 requests, much heavier than other pages.",
+        "<strong>Investigate run-1 outlier behavior:</strong> The first run has notably higher LCP and TTFB, likely cold-cache or startup effects. Track warm vs cold separately.",
+        "<strong>Keep monitoring p95 and not just median:</strong> Median values are strong; p95 tracking helps catch regressions before users notice widespread slowdowns.",
+        "<strong>Suggested next targets:</strong> Keep LCP p95 under 1.2s, reduce Main Landing payload below 8 MB, and reduce homepage request count below 220."
+      ];
+      const ul = document.getElementById("recommendations");
+      recs.forEach((r) => {
+        const li = document.createElement("li");
+        li.innerHTML = r;
+        ul.appendChild(li);
+      });
+    }
+
+    function addTrendRows() {
+      const body = document.getElementById("trendRows");
+      data.trend_summary.forEach((item) => {
+        const diff = item.end - item.start;
+        const pct = item.start === 0 ? 0 : (diff / item.start) * 100;
+        const direction = diff < 0 ? "Improved" : (diff > 0 ? "Regressed" : "Flat");
+        const sign = diff > 0 ? "+" : "";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${item.metric}</td>
+          <td>${item.start.toFixed(2)}</td>
+          <td>${item.end.toFixed(2)}</td>
+          <td>${sign}${diff.toFixed(2)}</td>
+          <td>${sign}${pct.toFixed(2)}%</td>
+          <td>${direction}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function makeCharts() {
+      const labels = data.step_summary.map((d) => d.step);
+
+      new Chart(document.getElementById("lcpTrend"), {
+        type: "line",
+        data: {
+          labels: data.journey.map((d) => `Run ${d.run}`),
+          datasets: [
+            {
+              label: "Avg LCP (ms)",
+              data: data.journey.map((d) => d.lcp_avg),
+              borderColor: "#145da0",
+              backgroundColor: "rgba(20,93,160,0.18)",
+              tension: 0.25,
+              fill: true,
+              pointRadius: 3
+            }
+          ]
+        },
+        options: {
+          plugins: { legend: { display: true } },
+          scales: {
+            y: { title: { display: true, text: "Milliseconds" } }
+          }
+        }
+      });
+
+      new Chart(document.getElementById("sizeBars"), {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Avg Page Size (MB)",
+              data: data.step_summary.map((d) => d.size_avg),
+              backgroundColor: ["#145da0", "#1b7cc5", "#2490df", "#3ea5ea", "#79c4f3"]
+            }
+          ]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { title: { display: true, text: "MB" } }
+          }
+        }
+      });
+
+      new Chart(document.getElementById("lcpByStep"), {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Median LCP (ms)",
+              data: data.step_summary.map((d) => d.lcp_median),
+              backgroundColor: "#0f9d58"
+            }
+          ]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { title: { display: true, text: "Milliseconds" } }
+          }
+        }
+      });
+
+      new Chart(document.getElementById("ttfbByStep"), {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Median TTFB (ms)",
+              data: data.step_summary.map((d) => d.ttfb_median),
+              backgroundColor: "#f4b400"
+            }
+          ]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { title: { display: true, text: "Milliseconds" } }
+          }
+        }
+      });
+
+      new Chart(document.getElementById("metricTrend"), {
+        type: "line",
+        data: {
+          labels: data.journey.map((d) => `Run ${d.run}`),
+          datasets: [
+            {
+              label: "Avg LCP (ms)",
+              data: data.journey.map((d) => d.lcp_avg),
+              borderColor: "#145da0",
+              backgroundColor: "#145da0",
+              yAxisID: "yMs",
+              tension: 0.22
+            },
+            {
+              label: "Avg TTFB (ms)",
+              data: data.journey.map((d) => d.ttfb_avg),
+              borderColor: "#f4b400",
+              backgroundColor: "#f4b400",
+              yAxisID: "yMs",
+              tension: 0.22
+            },
+            {
+              label: "Total Requests",
+              data: data.journey.map((d) => d.requests_total),
+              borderColor: "#0f9d58",
+              backgroundColor: "#0f9d58",
+              yAxisID: "yLoad",
+              tension: 0.22
+            },
+            {
+              label: "Total Size (MB)",
+              data: data.journey.map((d) => d.size_total),
+              borderColor: "#db4437",
+              backgroundColor: "#db4437",
+              yAxisID: "yLoad",
+              tension: 0.22
+            }
+          ]
+        },
+        options: {
+          plugins: { legend: { display: true } },
+          scales: {
+            yMs: {
+              type: "linear",
+              position: "left",
+              title: { display: true, text: "Milliseconds" }
+            },
+            yLoad: {
+              type: "linear",
+              position: "right",
+              title: { display: true, text: "Requests / MB" },
+              grid: { drawOnChartArea: false }
+            }
+          }
+        }
+      });
+    }
+
+    document.getElementById("overallGrade").textContent = `Overall Rating: ${grade(data.overall)}`;
+    addKpis();
+    addTrendRows();
+    addTableRows();
+    addRecommendations();
+    makeCharts();
+  </script>
+</body>
+</html>

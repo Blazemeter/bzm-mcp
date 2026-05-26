@@ -1,0 +1,42 @@
+timestamp,testName,stepName,url,LCP_ms,INP_ms,CLS,TTFB_ms,FCP_ms,TTI_ms,TBT_ms,documentCompleteTime_ms,pageLoadTime_ms,requestCount,totalPageSizeMB,dnsLookupTime_ms,FPS
+2026-05-19T12:35:52.710Z,Benchmark Perforce Multi-Page User Journey,Main Landing Page,https://www.perforce.com/,728,64,0.0001,328,728,1358.3,N/A,2776.7,2783.9,281,10.77,0,60
+2026-05-19T12:36:00.156Z,Benchmark Perforce Multi-Page User Journey,Browse Products,https://www.perforce.com/products,1460,N/A,0.0095,1043.1,1460,1468.8,N/A,5970.9,5972.7,155,4.38,0,60
+2026-05-19T12:36:01.263Z,Benchmark Perforce Multi-Page User Journey,Digital IP Management,https://www.perforce.com/products#p-20457,1460,48,0.0095,1043.1,1460,1468.8,N/A,5970.9,5972.7,8,0,0,60
+2026-05-19T12:36:06.800Z,Benchmark Perforce Multi-Page User Journey,Explore IPLM,https://www.perforce.com/products/helix-iplm,716,N/A,0.0903,314.5,716,760.5,N/A,4467.1,4474.2,157,2.35,0,60
+2026-05-19T12:36:13.194Z,Benchmark Perforce Multi-Page User Journey,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,736,N/A,0.0077,324.3,736,1125,N/A,5232.2,5233.9,124,1.75,0,60
+2026-05-19T12:36:26.019Z,Benchmark Perforce Multi-Page User Journey,Main Landing Page,https://www.perforce.com/,352,56,0.2881,73.4,352,1020.2,N/A,6430.6,6463.4,305,13.22,0,60
+2026-05-19T12:36:32.035Z,Benchmark Perforce Multi-Page User Journey,Browse Products,https://www.perforce.com/products,228,N/A,0.1216,68.3,228,438.8,N/A,4841,4843,125,2.62,0,60
+2026-05-19T12:36:33.111Z,Benchmark Perforce Multi-Page User Journey,Digital IP Management,https://www.perforce.com/products#p-20457,228,48,0.1216,68.3,228,438.8,N/A,4841,4843,10,0,0,60
+2026-05-19T12:36:38.179Z,Benchmark Perforce Multi-Page User Journey,Explore IPLM,https://www.perforce.com/products/helix-iplm,308,N/A,0.0903,57.6,308,433.2,N/A,3997.4,4002.8,154,2.35,0,60
+2026-05-19T12:36:44.099Z,Benchmark Perforce Multi-Page User Journey,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,276,N/A,0.0074,70.4,276,532,N/A,4791.5,4793.5,122,1.75,0,60
+2026-05-19T12:36:58.217Z,Benchmark Perforce Multi-Page User Journey,Main Landing Page,https://www.perforce.com/,320,48,0.2881,54.3,320,878.6,N/A,6271.7,6293.5,305,13.03,0,60
+2026-05-19T12:37:04.220Z,Benchmark Perforce Multi-Page User Journey,Browse Products,https://www.perforce.com/products,216,N/A,0.1216,59.2,216,407.7,N/A,4855.4,4857.2,127,2.86,0,60
+2026-05-19T12:37:05.294Z,Benchmark Perforce Multi-Page User Journey,Digital IP Management,https://www.perforce.com/products#p-20457,216,40,0.1216,59.2,216,407.7,N/A,4855.4,4857.2,11,0,0,60
+2026-05-19T12:37:10.348Z,Benchmark Perforce Multi-Page User Journey,Explore IPLM,https://www.perforce.com/products/helix-iplm,308,N/A,0.0903,76.2,308,381.3,N/A,3989.9,3996,154,2.35,0,60
+2026-05-19T12:37:16.377Z,Benchmark Perforce Multi-Page User Journey,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,544,N/A,0.0077,341.7,544,655.8,N/A,4920.1,4924.2,129,1.75,0,60
+2026-05-19T12:37:29.468Z,Benchmark Perforce Multi-Page User Journey,Main Landing Page,https://www.perforce.com/,324,72,0.2881,63.7,324,875.7,N/A,5529.9,5580.5,302,12.98,0,60
+2026-05-19T12:37:34.543Z,Benchmark Perforce Multi-Page User Journey,Browse Products,https://www.perforce.com/products,224,N/A,0.1216,64.1,224,392,N/A,3953.7,3955.8,124,2.82,0,60
+2026-05-19T12:37:35.778Z,Benchmark Perforce Multi-Page User Journey,Digital IP Management,https://www.perforce.com/products#p-20457,224,48,0.1216,64.1,224,392,N/A,3953.7,3955.8,11,0,0,60
+2026-05-19T12:37:40.891Z,Benchmark Perforce Multi-Page User Journey,Explore IPLM,https://www.perforce.com/products/helix-iplm,208,N/A,0.0833,63.5,208,406.9,N/A,4050.9,4055.9,156,2.39,0,60
+2026-05-19T12:37:46.615Z,Benchmark Perforce Multi-Page User Journey,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,340,N/A,0.0077,72.5,340,436.5,N/A,4651.1,4652.6,119,1.75,0,60
+2026-05-19T12:38:33.289Z,Benchmark Perforce Multi-Page User Journey,Main Landing Page,https://www.perforce.com/,308,72,0.2881,67,308,900.6,N/A,6395.7,6438.1,307,13.18,0,60
+2026-05-19T12:38:39.211Z,Benchmark Perforce Multi-Page User Journey,Browse Products,https://www.perforce.com/products,216,N/A,0.1216,60.7,216,407.8,N/A,4795.8,4797.6,125,2.62,0,60
+2026-05-19T12:38:40.295Z,Benchmark Perforce Multi-Page User Journey,Digital IP Management,https://www.perforce.com/products#p-20457,216,40,0.1216,60.7,216,407.8,N/A,4795.8,4797.6,10,0,0,60
+2026-05-19T12:38:45.576Z,Benchmark Perforce Multi-Page User Journey,Explore IPLM,https://www.perforce.com/products/helix-iplm,480,N/A,0.0903,324.5,480,630.7,N/A,4192.4,4197.7,159,2.35,0,60
+2026-05-19T12:38:51.413Z,Benchmark Perforce Multi-Page User Journey,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,388,N/A,0.0077,87.8,388,493.1,N/A,4729.9,4731.7,122,1.75,0,60
+2026-05-19T12:39:04.981Z,Benchmark Perforce Multi-Page User Journey,Main Landing Page,https://www.perforce.com/,512,48,0.2881,251.8,512,1145.9,N/A,5994.5,6048.3,302,13.21,0,60
+2026-05-19T12:39:11.004Z,Benchmark Perforce Multi-Page User Journey,Browse Products,https://www.perforce.com/products,232,N/A,0.1216,71.2,232,434.1,N/A,4825.8,4828,125,2.62,0,60
+2026-05-19T12:39:12.088Z,Benchmark Perforce Multi-Page User Journey,Digital IP Management,https://www.perforce.com/products#p-20457,232,40,0.1216,71.2,232,434.1,N/A,4825.8,4828,11,0,0,60
+2026-05-19T12:39:17.150Z,Benchmark Perforce Multi-Page User Journey,Explore IPLM,https://www.perforce.com/products/helix-iplm,304,N/A,0.0903,56,304,372.9,N/A,3994.4,4000.9,153,2.35,0,60
+2026-05-19T12:39:23.119Z,Benchmark Perforce Multi-Page User Journey,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,436,N/A,0.0077,254,436,540.9,N/A,4820,4821.9,125,1.75,0,60
+2026-05-19T12:39:36.762Z,Benchmark Perforce Multi-Page User Journey,Main Landing Page,https://www.perforce.com/,344,40,0.2778,227.2,344,1164.1,N/A,6131.3,6183.6,306,12.98,0,60
+2026-05-19T12:39:42.780Z,Benchmark Perforce Multi-Page User Journey,Browse Products,https://www.perforce.com/products,220,N/A,0.1216,65.8,220,377.8,N/A,4857.5,4859.3,127,2.82,0,60
+2026-05-19T12:39:43.857Z,Benchmark Perforce Multi-Page User Journey,Digital IP Management,https://www.perforce.com/products#p-20457,220,40,0.1216,65.8,220,377.8,N/A,4857.5,4859.3,11,0,0,60
+2026-05-19T12:39:48.906Z,Benchmark Perforce Multi-Page User Journey,Explore IPLM,https://www.perforce.com/products/helix-iplm,316,N/A,0.0903,69,316,402.4,N/A,3971.4,3976.5,152,2.35,0,60
+2026-05-19T12:39:54.764Z,Benchmark Perforce Multi-Page User Journey,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,372,N/A,0.0073,69.6,372,497.9,N/A,4734.8,4736.6,124,1.75,0,60
+2026-05-19T12:40:08.616Z,Benchmark Perforce Multi-Page User Journey,Main Landing Page,https://www.perforce.com/,384,48,0.2881,66.9,384,983.6,N/A,6244.3,6283.3,306,13.18,0,60
+2026-05-19T12:40:14.799Z,Benchmark Perforce Multi-Page User Journey,Browse Products,https://www.perforce.com/products,516,N/A,0.1216,335.8,516,725.7,N/A,5025.1,5027.1,130,2.62,0,60
+2026-05-19T12:40:15.897Z,Benchmark Perforce Multi-Page User Journey,Digital IP Management,https://www.perforce.com/products#p-20457,516,40,0.1216,335.8,516,725.7,N/A,5025.1,5027.1,12,0,0,60
+2026-05-19T12:40:21.063Z,Benchmark Perforce Multi-Page User Journey,Explore IPLM,https://www.perforce.com/products/helix-iplm,344,N/A,0.0903,65.6,344,443.4,N/A,4089.5,4095.4,155,2.39,0,60
+2026-05-19T12:40:26.881Z,Benchmark Perforce Multi-Page User Journey,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,516,N/A,0.0074,56.4,516,570.4,N/A,4742.9,4745.1,119,1.73,0,60
+2026-05-19T12:40:40.966Z,Benchmark Perforce Multi-Page User Journey,Main Landing Page,https://www.perforce.com/,528,72,0.2881,252.2,528,1133.2,N/A,6454.9,6481.6,296,12.54,0,60
