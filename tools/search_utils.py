@@ -110,12 +110,15 @@ async def test_execution_search(entity: str, token: BzmToken, account_id: int, a
         args.get("end_time", "")
     )
 
-    execution_name = args.get("execution_name", "")
+    if entity == "test-union":
+        name_filter = args.get("test_name") or args.get("execution_name", "")
+    else:
+        name_filter = args.get("execution_name") or args.get("test_name", "")
 
     filters_list = [
         {
             "name": {
-                "$ilike": f"{execution_name}"
+                "$ilike": f"{name_filter}"
             }
         },
     ]
