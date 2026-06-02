@@ -1,0 +1,48 @@
+timestamp,testName,stepName,url,LCP_ms,INP_ms,CLS,TTFB_ms,FCP_ms,TTI_ms,TBT_ms,documentCompleteTime_ms,pageLoadTime_ms,requestCount,totalPageSizeMB,dnsLookupTime_ms,FPS
+2026-05-26T15:30:08.597Z,Step 1: Main Landing Page,Main Landing Page,https://www.perforce.com/,1064,104,0.0069,26.8,1064,1941.9,N/A,4821.8,4866.4,0,0,0,60
+2026-05-26T15:30:15.976Z,Step 2: Browse Products,Browse Products,https://www.perforce.com/products,668,N/A,0.1216,214.5,668,1011.4,N/A,3840.9,3843.4,0,0,0,60
+2026-05-26T15:30:17.976Z,Step 3: Digital IP Management,Digital IP Management,https://www.perforce.com/products#p-20457,668,48,0.1216,214.5,668,1011.4,N/A,3840.9,3843.4,0,0,0,60
+2026-05-26T15:30:22.957Z,Step 4: Explore IPLM,Explore IPLM,https://www.perforce.com/products/helix-iplm,568,N/A,0.0011,217.2,568,822.6,N/A,3503.9,3512.2,0,0,0,60
+2026-05-26T15:30:27.986Z,Step 5: What’s New,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,616,N/A,0.0074,216.6,616,656.3,N/A,3259.5,3261.8,0,0,0,60
+2026-05-26T15:30:37.947Z,Step 6: Perforce Software Popup Tab,Perforce Software Popup Tab,https://www.perforce.com/,128,N/A,0.0492,N/A,128,397.4,N/A,4622.1,4670.1,0,0,0,60
+2026-05-26T15:30:49.127Z,Step 1: Main Landing Page,Main Landing Page,https://www.perforce.com/,412,64,0.2881,28.2,412,1172.8,N/A,3831.7,3848,0,0,0,60
+2026-05-26T15:30:55.916Z,Step 2: Browse Products,Browse Products,https://www.perforce.com/products,388,N/A,0.1216,25.1,388,714.8,N/A,3666.9,3669.9,0,0,0,60
+2026-05-26T15:30:58.041Z,Step 3: Digital IP Management,Digital IP Management,https://www.perforce.com/products#p-20457,388,64,0.1216,25.1,388,714.8,N/A,3666.9,3669.9,0,0,0,60
+2026-05-26T15:31:02.249Z,Step 4: Explore IPLM,Explore IPLM,https://www.perforce.com/products/helix-iplm,168,N/A,0.0903,26,168,503.1,N/A,2870.2,2877.7,0,0,0,60
+2026-05-26T15:31:06.947Z,Step 5: What’s New,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,176,N/A,0.1525,23.5,176,389.5,N/A,3048.6,3051.3,0,0,0,60
+2026-05-26T15:31:16.806Z,Step 6: Perforce Software Popup Tab,Perforce Software Popup Tab,https://www.perforce.com/,124,N/A,0.0492,N/A,124,377.1,N/A,4586.3,4626,0,0,0,60
+2026-05-26T15:31:27.922Z,Step 1: Main Landing Page,Main Landing Page,https://www.perforce.com/,376,96,0.2881,29.7,376,1185.3,N/A,3916.5,3927.4,0,0,0,60
+2026-05-26T15:31:34.568Z,Step 2: Browse Products,Browse Products,https://www.perforce.com/products,208,N/A,0.1216,23,208,734.6,N/A,3476.3,3479.1,0,0,0,60
+2026-05-26T15:31:36.298Z,Step 3: Digital IP Management,Digital IP Management,https://www.perforce.com/products#p-20457,208,64,0.1216,23,208,734.6,N/A,3476.3,3479.1,0,0,0,60
+2026-05-26T15:31:40.446Z,Step 4: Explore IPLM,Explore IPLM,https://www.perforce.com/products/helix-iplm,244,N/A,0.0903,28.5,244,609.1,N/A,2828.2,2836.7,0,0,0,60
+2026-05-26T15:31:45.073Z,Step 5: What’s New,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,284,N/A,0.0074,21.7,284,351,N/A,2977.1,2979.3,0,0,0,60
+2026-05-26T15:31:54.550Z,Step 6: Perforce Software Popup Tab,Perforce Software Popup Tab,https://www.perforce.com/,236,N/A,0.0492,N/A,236,396.5,N/A,4327.1,4370.9,0,0,0,60
+2026-05-26T15:32:05.323Z,Step 1: Main Landing Page,Main Landing Page,https://www.perforce.com/,380,112,0.2881,21.4,380,1235.5,N/A,4004.9,4026.6,0,0,0,60
+2026-05-26T15:32:12.296Z,Step 2: Browse Products,Browse Products,https://www.perforce.com/products,376,N/A,0.1216,26.9,376,703.1,N/A,3982.9,3985.6,0,0,0,60
+2026-05-26T15:32:14.087Z,Step 3: Digital IP Management,Digital IP Management,https://www.perforce.com/products#p-20457,376,64,0.1216,26.9,376,703.1,N/A,3982.9,3985.6,0,0,0,60
+2026-05-26T15:32:18.124Z,Step 4: Explore IPLM,Explore IPLM,https://www.perforce.com/products/helix-iplm,412,N/A,0.0903,25.2,412,522.2,N/A,2720.9,2728.5,0,0,0,60
+2026-05-26T15:32:22.780Z,Step 5: What’s New,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,380,N/A,0.0077,29.4,380,482.9,N/A,2965.8,2967.9,0,0,0,60
+2026-05-26T15:32:32.550Z,Step 6: Perforce Software Popup Tab,Perforce Software Popup Tab,https://www.perforce.com/,132,N/A,0.0492,0.1,132,365.9,N/A,4623.1,4657.2,0,0,0,60
+2026-05-26T15:32:43.752Z,Step 1: Main Landing Page,Main Landing Page,https://www.perforce.com/,420,72,0.2881,29.2,420,1259.1,N/A,3990.5,4005.4,0,0,0,60
+2026-05-26T15:32:49.225Z,Step 2: Browse Products,Browse Products,https://www.perforce.com/products,216,N/A,0.1216,21.9,216,598.8,N/A,3419.4,3421.7,0,0,0,60
+2026-05-26T15:32:50.987Z,Step 3: Digital IP Management,Digital IP Management,https://www.perforce.com/products#p-20457,216,64,0.1216,21.9,216,598.8,N/A,3419.4,3421.7,0,0,0,60
+2026-05-26T15:32:55.121Z,Step 4: Explore IPLM,Explore IPLM,https://www.perforce.com/products/helix-iplm,432,N/A,0.0903,25.9,432,558.1,N/A,2829.4,2837.7,0,0,0,60
+2026-05-26T15:32:59.992Z,Step 5: What’s New,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,300,N/A,0.0077,24.6,300,377.2,N/A,3017.8,3020.5,0,0,0,60
+2026-05-26T15:33:09.605Z,Step 6: Perforce Software Popup Tab,Perforce Software Popup Tab,https://www.perforce.com/,764,N/A,0.0492,11,764,960.2,N/A,5181.9,5223.1,0,0,0,60
+2026-05-26T15:33:19.012Z,Step 1: Main Landing Page,Main Landing Page,https://www.perforce.com/,384,80,0.2881,22.4,384,1194,N/A,3721.2,3734.7,0,0,0,60
+2026-05-26T15:33:25.587Z,Step 2: Browse Products,Browse Products,https://www.perforce.com/products,304,N/A,0.1216,23.4,304,643.6,N/A,3544.8,3547.5,0,0,0,60
+2026-05-26T15:33:27.549Z,Step 3: Digital IP Management,Digital IP Management,https://www.perforce.com/products#p-20457,304,64,0.1216,23.4,304,643.6,N/A,3544.8,3547.5,0,0,0,60
+2026-05-26T15:33:31.701Z,Step 4: Explore IPLM,Explore IPLM,https://www.perforce.com/products/helix-iplm,428,N/A,0.0903,23.7,428,521.6,N/A,2859.2,2867.5,0,0,0,60
+2026-05-26T15:33:36.183Z,Step 5: What’s New,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,248,N/A,0.0077,22.5,248,330.5,N/A,2645.6,2648,0,0,0,60
+2026-05-26T15:33:45.736Z,Step 6: Perforce Software Popup Tab,Perforce Software Popup Tab,https://www.perforce.com/,336,N/A,0.0561,N/A,336,775.7,N/A,4364.3,4433.4,0,0,0,60
+2026-05-26T15:33:56.995Z,Step 1: Main Landing Page,Main Landing Page,https://www.perforce.com/,412,56,0.2881,30.5,412,1176.1,N/A,4048.8,4075.9,0,0,0,60
+2026-05-26T15:34:03.418Z,Step 2: Browse Products,Browse Products,https://www.perforce.com/products,312,N/A,0.1216,29.6,312,616.1,N/A,3520.5,3523.6,0,0,0,60
+2026-05-26T15:34:05.404Z,Step 3: Digital IP Management,Digital IP Management,https://www.perforce.com/products#p-20457,312,64,0.1216,29.6,312,616.1,N/A,3520.5,3523.6,0,0,0,60
+2026-05-26T15:34:09.543Z,Step 4: Explore IPLM,Explore IPLM,https://www.perforce.com/products/helix-iplm,436,N/A,0.0903,31.1,436,535.7,N/A,2839.4,2848.5,0,0,0,60
+2026-05-26T15:34:14.364Z,Step 5: What’s New,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,188,N/A,0.0077,28.2,188,359.9,N/A,2955.6,2958,0,0,0,60
+2026-05-26T15:34:24.025Z,Step 6: Perforce Software Popup Tab,Perforce Software Popup Tab,https://www.perforce.com/,308,N/A,0.0561,0.1,308,534.6,N/A,4676.7,4718.3,0,0,0,60
+2026-05-26T15:34:35.250Z,Step 1: Main Landing Page,Main Landing Page,https://www.perforce.com/,392,72,0.2881,24.2,392,1153.5,N/A,3924.9,3970.8,0,0,0,60
+2026-05-26T15:34:42.369Z,Step 2: Browse Products,Browse Products,https://www.perforce.com/products,344,N/A,0.1216,23.8,344,640.9,N/A,3913.1,3915.9,0,0,0,60
+2026-05-26T15:34:44.188Z,Step 3: Digital IP Management,Digital IP Management,https://www.perforce.com/products#p-20457,344,64,0.1216,23.8,344,640.9,N/A,3913.1,3915.9,0,0,0,60
+2026-05-26T15:34:46.267Z,Step 4: Explore IPLM,Explore IPLM,https://www.perforce.com/products/helix-iplm,440,N/A,0.0903,22.6,440,474.6,N/A,689.9,691,0,0,0,60
+2026-05-26T15:34:51.171Z,Step 5: What’s New,What’s New,https://www.perforce.com/products/helix-iplm/whats-new,284,N/A,0.0077,27.5,284,390.5,N/A,2986.5,2989,0,0,0,60

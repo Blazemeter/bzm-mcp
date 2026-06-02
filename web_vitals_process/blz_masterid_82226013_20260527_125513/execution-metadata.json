@@ -1,0 +1,46 @@
+{
+  "master_id": 82226013,
+  "timestamp": "20260527_125513",
+  "sessions": [
+    {
+      "id": "r-v4-6a15bbca36f27741898011",
+      "name": "Perforce Example",
+      "location": "us-east-1",
+      "status": "ENDED"
+    },
+    {
+      "id": "r-v4-6a15bbca3772f406671765",
+      "name": "Perforce Example",
+      "location": "europe-west2-a",
+      "status": "ENDED"
+    },
+    {
+      "id": "r-v4-6a15bbca37d88029987496",
+      "name": "Perforce Example",
+      "location": "australia-southeast1-a",
+      "status": "ENDED"
+    },
+    {
+      "id": "r-v4-6a15bbca383ca444593879",
+      "name": "Perforce Example",
+      "location": "africa-south1-a",
+      "status": "ENDED"
+    }
+  ],
+  "accountId": 291446,
+  "accountName": "BlazeMeter SE Demo",
+  "workspaceId": 2271115,
+  "workspaceName": "PerforceJam2026",
+  "projectId": 2599301,
+  "projectName": "Default project",
+  "testCaseId": 15631013,
+  "testCaseName": "Perforce Example",
+  "testMasterId": 82226013,
+  "testMasterName": "Perforce Example",
+  "regions": [
+    "africa-south1-a",
+    "australia-southeast1-a",
+    "europe-west2-a",
+    "us-east-1"
+  ]
+}

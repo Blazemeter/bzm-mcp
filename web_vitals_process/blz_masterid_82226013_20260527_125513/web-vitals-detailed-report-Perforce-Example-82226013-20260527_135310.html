@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web Vitals Report - 82226013</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    /* ── Header ──────────────────────────────────────────────────────── */
+    .header {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .header h1 { color: #667eea; margin-bottom: 10px; }
+    .hierarchy {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .hierarchy-item {
+      background: #f5f7fa;
+      padding: 12px;
+      border-radius: 4px;
+      border-left: 4px solid #667eea;
+    }
+    .hierarchy-item label { font-weight: bold; color: #667eea; display: block; font-size: 0.85em; }
+    .hierarchy-item value  { display: block; color: #333; margin-top: 5px; }
+
+    /* ── Section card ────────────────────────────────────────────────── */
+    .section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .section h2 {
+      color: #667eea;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #667eea;
+    }
+    .section h3 { margin: 16px 0 8px; color: #444; }
+
+    /* ── Metric cards ────────────────────────────────────────────────── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .metric-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .metric-card .label { font-size: 0.9em; opacity: 0.9; }
+    .metric-card .value { font-size: 2em; font-weight: bold; margin: 10px 0; }
+    .metric-card .unit  { font-size: 0.8em; opacity: 0.8; }
+
+    /* ── Tables ──────────────────────────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+    th {
+      background: #667eea;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+    }
+    td { padding: 12px; border-bottom: 1px solid #eee; }
+    tr:hover { background: #f9f9f9; }
+    .stats-table { font-size: 0.9em; }
+    .stats-table td { padding: 8px; }
+
+    /* ── Chart placeholder ───────────────────────────────────────────── */
+    .chart-container { position: relative; height: 300px; margin-bottom: 20px; }
+
+    /* ── Tabs ────────────────────────────────────────────────────────── */
+    .tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid #ddd; }
+    .tab-btn {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #667eea;
+      font-weight: 600;
+      border-bottom: 3px solid transparent;
+    }
+    .tab-btn.active { border-bottom-color: #667eea; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- HEADER — hierarchy: account / workspace / project / test / run -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    
+        <div class="header">
+            <h1>Web Vitals Performance Report</h1>
+            <p>Generated: 2026-05-27 13:53:10 UTC</p>
+            <div class="hierarchy">
+                <div class="hierarchy-item">
+                    <label>Account</label>
+                    <value>BlazeMeter SE Demo</value>
+                </div>
+                <div class="hierarchy-item">
+                    <label>Workspace</label>
+                    <value>PerforceJam2026</value>
+                </div>
+                <div class="hierarchy-item">
+                    <label>Project</label>
+                    <value>Default project</value>
+                </div>
+                <div class="hierarchy-item">
+                    <label>Test Case</label>
+                    <value>Perforce Example</value>
+                </div>
+                <div class="hierarchy-item">
+                    <label>Master</label>
+                    <value>Perforce Example</value>
+                </div>
+                <div class="hierarchy-item">
+                    <label>Locations</label>
+                    <value><div>europe-west2-a</div><div>australia-southeast1-a</div><div>africa-south1-a</div><div>us-east-1</div></value>
+                </div>
+            </div>
+        </div>
+
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- EXECUTIVE SUMMARY — top-level metric cards + totals            -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    
+        <div class="section">
+            <h2>Executive Summary</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="label">Largest Contentful Paint (ms)</div>
+                    <div class="value">464.2</div>
+                    <div class="unit">Avg | Min: 96.0 | Max: 19928.0</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="label">Interaction to Next Paint (ms)</div>
+                    <div class="value">83.2</div>
+                    <div class="unit">Avg | Min: 16.0 | Max: 352.0</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="label">Cumulative Layout Shift</div>
+                    <div class="value">0.1</div>
+                    <div class="unit">Avg | Min: 0.0 | Max: 0.3</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="label">Time To First Byte (ms)</div>
+                    <div class="value">230.1</div>
+                    <div class="unit">Avg | Min: 0.1 | Max: 19791.7</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="label">First Contentful Paint (ms)</div>
+                    <div class="value">464.2</div>
+                    <div class="unit">Avg | Min: 96.0 | Max: 19928.0</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="label">Page Load Time (ms)</div>
+                    <div class="value">2787.6</div>
+                    <div class="unit">Avg | Min: 499.2 | Max: 24479.5</div>
+                </div>
+                </div>
+            <p><strong>Total Steps Measured:</strong> 248</p>
+            <p><strong>Locations:</strong> europe-west2-a, australia-southeast1-a, africa-south1-a, us-east-1</p>
+        </div>
+        
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PERFORMANCE BY LOCATION — one stats table per region           -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="section"><h2>Performance by Location</h2><h3>europe-west2-a</h3><p><strong>Sessions:</strong> 1</p><table class="stats-table"><thead><tr><th>Metric</th><th>Min</th><th>Max</th><th>Mean</th><th>StdDev</th></tr></thead><tbody><tr><td>Largest Contentful Paint (ms)</td><td>116.0</td><td>604.0</td><td>265.3</td><td>102.0</td></tr><tr><td>Interaction to Next Paint (ms)</td><td>24.0</td><td>176.0</td><td>87.1</td><td>55.8</td></tr><tr><td>Cumulative Layout Shift</td><td>0.0</td><td>0.3</td><td>0.1</td><td>0.1</td></tr><tr><td>Time To First Byte (ms)</td><td>0.1</td><td>129.0</td><td>38.4</td><td>24.0</td></tr><tr><td>First Contentful Paint (ms)</td><td>116.0</td><td>604.0</td><td>265.3</td><td>102.0</td></tr><tr><td>Page Load Time (ms)</td><td>499.2</td><td>3126.5</td><td>1558.0</td><td>842.7</td></tr></tbody></table><h3>australia-southeast1-a</h3><p><strong>Sessions:</strong> 1</p><table class="stats-table"><thead><tr><th>Metric</th><th>Min</th><th>Max</th><th>Mean</th><th>StdDev</th></tr></thead><tbody><tr><td>Largest Contentful Paint (ms)</td><td>124.0</td><td>1064.0</td><td>363.9</td><td>175.4</td></tr><tr><td>Interaction to Next Paint (ms)</td><td>48.0</td><td>112.0</td><td>72.0</td><td>17.5</td></tr><tr><td>Cumulative Layout Shift</td><td>0.0</td><td>0.3</td><td>0.1</td><td>0.1</td></tr><tr><td>Time To First Byte (ms)</td><td>0.1</td><td>217.2</td><td>41.7</td><td>56.7</td></tr><tr><td>First Contentful Paint (ms)</td><td>124.0</td><td>1064.0</td><td>363.9</td><td>175.4</td></tr><tr><td>Page Load Time (ms)</td><td>691.0</td><td>5223.1</td><td>3595.8</td><td>765.7</td></tr></tbody></table><h3>africa-south1-a</h3><p><strong>Sessions:</strong> 1</p><table class="stats-table"><thead><tr><th>Metric</th><th>Min</th><th>Max</th><th>Mean</th><th>StdDev</th></tr></thead><tbody><tr><td>Largest Contentful Paint (ms)</td><td>116.0</td><td>19928.0</td><td>1183.5</td><td>3998.8</td></tr><tr><td>Interaction to Next Paint (ms)</td><td>24.0</td><td>72.0</td><td>32.5</td><td>11.5</td></tr><tr><td>Cumulative Layout Shift</td><td>0.0</td><td>0.3</td><td>0.1</td><td>0.1</td></tr><tr><td>Time To First Byte (ms)</td><td>1.1</td><td>19791.7</td><td>1049.5</td><td>4139.6</td></tr><tr><td>First Contentful Paint (ms)</td><td>116.0</td><td>19928.0</td><td>1183.5</td><td>3998.8</td></tr><tr><td>Page Load Time (ms)</td><td>2732.2</td><td>24479.5</td><td>5485.3</td><td>4155.6</td></tr></tbody></table><h3>us-east-1</h3><p><strong>Sessions:</strong> 1</p><table class="stats-table"><thead><tr><th>Metric</th><th>Min</th><th>Max</th><th>Mean</th><th>StdDev</th></tr></thead><tbody><tr><td>Largest Contentful Paint (ms)</td><td>96.0</td><td>600.0</td><td>287.0</td><td>99.6</td></tr><tr><td>Interaction to Next Paint (ms)</td><td>16.0</td><td>352.0</td><td>120.0</td><td>82.7</td></tr><tr><td>Cumulative Layout Shift</td><td>0.0</td><td>0.3</td><td>0.1</td><td>0.1</td></tr><tr><td>Time To First Byte (ms)</td><td>0.1</td><td>112.7</td><td>41.8</td><td>20.4</td></tr><tr><td>First Contentful Paint (ms)</td><td>96.0</td><td>600.0</td><td>287.0</td><td>99.6</td></tr><tr><td>Page Load Time (ms)</td><td>961.0</td><td>3733.6</td><td>1904.2</td><td>954.1</td></tr></tbody></table></div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PERFORMANCE BY TEST STEP — averaged across all locations       -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="section"><h2>Performance by Test Step</h2><table><thead><tr><th>Step Name</th><th>URL</th><th>LCP (ms)</th><th>INP (ms)</th><th>CLS</th><th>Page Load (ms)</th></tr></thead><tbody><tr><td>Browse Products</td><td>https://www.perforce.com/products</td><td>756.5</td><td>N/A</td><td>0.107</td><td>2722.7</td></tr><tr><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>756.5</td><td>115.2</td><td>0.107</td><td>2722.7</td></tr><tr><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>318.1</td><td>N/A</td><td>0.088</td><td>1985.8</td></tr><tr><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>371.0</td><td>51.2</td><td>0.268</td><td>3658.6</td></tr><tr><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>310.2</td><td>N/A</td><td>0.049</td><td>3401.7</td></tr><tr><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>258.3</td><td>N/A</td><td>0.013</td><td>2292.5</td></tr></tbody></table></div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- RAW DATA — full row-level data table (capped at 100 rows)      -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="section"><h2>Raw Data</h2><table><thead><tr><th>Timestamp</th><th>Test Name</th><th>Step Name</th><th>URL</th><th>Largest Contentful Paint (ms)</th><th>Interaction to Next Paint (ms)</th><th>Cumulative Layout Shift</th><th>Time To First Byte (ms)</th><th>Page Load Time (ms)</th><th>Frames Per Second</th></tr></thead><tbody><tr><td>2026-05-26T15:29:58.061Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>392.00</td><td>24.00</td><td>0.29</td><td>35.90</td><td>2765.20</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:00.958Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>588.00</td><td>N/A</td><td>0.01</td><td>124.90</td><td>1058.70</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:02.531Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>588.00</td><td>144.00</td><td>0.01</td><td>124.90</td><td>1058.70</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:04.600Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>352.00</td><td>N/A</td><td>0.09</td><td>126.90</td><td>870.10</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:06.828Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>604.00</td><td>N/A</td><td>0.01</td><td>129.00</td><td>931.30</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:14.013Z</td><td>Step 6: Perforce Software Popup Tab</td><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>208.00</td><td>N/A</td><td>0.05</td><td>N/A</td><td>2698.10</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:19.917Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>292.00</td><td>56.00</td><td>0.29</td><td>36.70</td><td>2512.90</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:22.529Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>212.00</td><td>N/A</td><td>0.12</td><td>38.40</td><td>989.10</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:24.094Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>212.00</td><td>144.00</td><td>0.12</td><td>38.40</td><td>989.10</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:26.918Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>332.00</td><td>N/A</td><td>0.09</td><td>45.40</td><td>1606.10</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:29.611Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>204.00</td><td>N/A</td><td>0.01</td><td>41.00</td><td>1324.90</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:36.651Z</td><td>Step 6: Perforce Software Popup Tab</td><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>176.00</td><td>N/A</td><td>0.32</td><td>9.20</td><td>3077.70</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:42.164Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>280.00</td><td>40.00</td><td>0.29</td><td>39.60</td><td>2679.70</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:44.718Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>188.00</td><td>N/A</td><td>0.12</td><td>33.80</td><td>963.10</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:46.375Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>188.00</td><td>96.00</td><td>0.12</td><td>33.80</td><td>963.10</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:48.437Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>228.00</td><td>N/A</td><td>0.09</td><td>38.20</td><td>866.20</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:50.884Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>212.00</td><td>N/A</td><td>0.01</td><td>36.90</td><td>1162.30</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:57.947Z</td><td>Step 6: Perforce Software Popup Tab</td><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>488.00</td><td>N/A</td><td>0.05</td><td>7.70</td><td>3050.50</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:03.829Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>296.00</td><td>32.00</td><td>0.29</td><td>32.90</td><td>2638.70</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:06.699Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>224.00</td><td>N/A</td><td>0.12</td><td>33.10</td><td>962.00</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:08.253Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>224.00</td><td>88.00</td><td>0.12</td><td>33.10</td><td>962.00</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:10.304Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>252.00</td><td>N/A</td><td>0.09</td><td>30.70</td><td>842.50</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:12.802Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>116.00</td><td>N/A</td><td>0.00</td><td>29.00</td><td>1211.50</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:18.855Z</td><td>Step 6: Perforce Software Popup Tab</td><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>312.00</td><td>N/A</td><td>0.01</td><td>4.50</td><td>1800.80</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:24.757Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>296.00</td><td>40.00</td><td>0.29</td><td>38.20</td><td>2542.80</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:27.477Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>220.00</td><td>N/A</td><td>0.12</td><td>35.00</td><td>959.20</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:29.063Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>220.00</td><td>144.00</td><td>0.12</td><td>35.00</td><td>959.20</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:31.091Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>164.00</td><td>N/A</td><td>0.09</td><td>29.80</td><td>830.90</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:33.754Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>292.00</td><td>N/A</td><td>0.01</td><td>35.50</td><td>1297.10</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:40.688Z</td><td>Step 6: Perforce Software Popup Tab</td><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>160.00</td><td>N/A</td><td>0.05</td><td>N/A</td><td>2563.00</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:46.557Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>292.00</td><td>24.00</td><td>0.29</td><td>29.80</td><td>2608.70</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:49.060Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>204.00</td><td>N/A</td><td>0.12</td><td>33.00</td><td>901.00</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:50.683Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>204.00</td><td>176.00</td><td>0.12</td><td>33.00</td><td>901.00</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:52.770Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>260.00</td><td>N/A</td><td>0.09</td><td>32.50</td><td>887.00</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:54.740Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>172.00</td><td>N/A</td><td>0.01</td><td>29.80</td><td>679.80</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:01.996Z</td><td>Step 6: Perforce Software Popup Tab</td><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>464.00</td><td>N/A</td><td>0.06</td><td>3.40</td><td>3123.90</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:07.951Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>324.00</td><td>32.00</td><td>0.29</td><td>41.40</td><td>2498.40</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:10.700Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>228.00</td><td>N/A</td><td>0.12</td><td>50.30</td><td>950.20</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:12.341Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>228.00</td><td>176.00</td><td>0.12</td><td>50.30</td><td>950.20</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:14.401Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>128.00</td><td>N/A</td><td>0.09</td><td>34.40</td><td>847.30</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:16.920Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>200.00</td><td>N/A</td><td>0.01</td><td>33.00</td><td>1199.90</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:23.999Z</td><td>Step 6: Perforce Software Popup Tab</td><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>124.00</td><td>N/A</td><td>0.05</td><td>0.10</td><td>2666.40</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:30.050Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>380.00</td><td>48.00</td><td>0.29</td><td>65.90</td><td>2649.40</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:32.581Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>220.00</td><td>N/A</td><td>0.12</td><td>45.60</td><td>970.90</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:34.141Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>220.00</td><td>144.00</td><td>0.12</td><td>45.60</td><td>970.90</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:36.192Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>244.00</td><td>N/A</td><td>0.09</td><td>43.00</td><td>861.60</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:38.719Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>228.00</td><td>N/A</td><td>0.01</td><td>44.70</td><td>1206.80</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:45.918Z</td><td>Step 6: Perforce Software Popup Tab</td><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>484.00</td><td>N/A</td><td>0.05</td><td>1.50</td><td>3126.50</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:51.909Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>308.00</td><td>40.00</td><td>0.29</td><td>39.00</td><td>2633.20</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:54.718Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>200.00</td><td>N/A</td><td>0.12</td><td>34.80</td><td>950.80</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:56.348Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>200.00</td><td>168.00</td><td>0.12</td><td>34.80</td><td>950.80</td><td>60.00</td></tr><tr><td>2026-05-26T15:32:58.350Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>268.00</td><td>N/A</td><td>0.09</td><td>36.60</td><td>802.10</td><td>60.00</td></tr><tr><td>2026-05-26T15:33:01.102Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>216.00</td><td>N/A</td><td>0.01</td><td>36.30</td><td>1415.00</td><td>60.00</td></tr><tr><td>2026-05-26T15:33:08.198Z</td><td>Step 6: Perforce Software Popup Tab</td><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>368.00</td><td>N/A</td><td>0.05</td><td>2.90</td><td>3057.60</td><td>60.00</td></tr><tr><td>2026-05-26T15:33:14.118Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>312.00</td><td>64.00</td><td>0.29</td><td>30.20</td><td>2658.60</td><td>60.00</td></tr><tr><td>2026-05-26T15:33:16.627Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>184.00</td><td>N/A</td><td>0.12</td><td>35.30</td><td>949.20</td><td>60.00</td></tr><tr><td>2026-05-26T15:33:18.234Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>184.00</td><td>136.00</td><td>0.12</td><td>35.30</td><td>949.20</td><td>60.00</td></tr><tr><td>2026-05-26T15:33:20.314Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>268.00</td><td>N/A</td><td>0.09</td><td>33.20</td><td>881.30</td><td>60.00</td></tr><tr><td>2026-05-26T15:33:22.820Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>212.00</td><td>N/A</td><td>0.01</td><td>30.00</td><td>1185.60</td><td>60.00</td></tr><tr><td>2026-05-26T15:33:29.864Z</td><td>Step 6: Perforce Software Popup Tab</td><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>508.00</td><td>N/A</td><td>0.05</td><td>11.30</td><td>3032.40</td><td>60.00</td></tr><tr><td>2026-05-26T15:33:35.852Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>280.00</td><td>32.00</td><td>0.29</td><td>29.90</td><td>2615.00</td><td>60.00</td></tr><tr><td>2026-05-26T15:33:38.455Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>228.00</td><td>N/A</td><td>0.12</td><td>60.30</td><td>927.70</td><td>60.00</td></tr><tr><td>2026-05-26T15:33:40.013Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>228.00</td><td>128.00</td><td>0.12</td><td>60.30</td><td>927.70</td><td>60.00</td></tr><tr><td>2026-05-26T15:33:42.631Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>276.00</td><td>N/A</td><td>0.09</td><td>29.90</td><td>1340.80</td><td>60.00</td></tr><tr><td>2026-05-26T15:33:45.205Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>196.00</td><td>N/A</td><td>0.01</td><td>29.70</td><td>1321.10</td><td>60.00</td></tr><tr><td>2026-05-26T15:33:52.269Z</td><td>Step 6: Perforce Software Popup Tab</td><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>168.00</td><td>N/A</td><td>0.06</td><td>N/A</td><td>2756.00</td><td>60.00</td></tr><tr><td>2026-05-26T15:33:57.807Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>284.00</td><td>40.00</td><td>0.29</td><td>43.70</td><td>2634.40</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:00.276Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>228.00</td><td>N/A</td><td>0.12</td><td>40.20</td><td>499.20</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:01.858Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>228.00</td><td>144.00</td><td>0.12</td><td>40.20</td><td>499.20</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:03.936Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>248.00</td><td>N/A</td><td>0.09</td><td>37.90</td><td>872.00</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:06.450Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>216.00</td><td>N/A</td><td>0.01</td><td>48.20</td><td>1222.20</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:13.560Z</td><td>Step 6: Perforce Software Popup Tab</td><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>464.00</td><td>N/A</td><td>0.05</td><td>5.50</td><td>3036.60</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:19.337Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>280.00</td><td>32.00</td><td>0.29</td><td>39.60</td><td>2551.90</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:22.175Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>248.00</td><td>N/A</td><td>0.12</td><td>36.70</td><td>947.70</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:23.745Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>248.00</td><td>160.00</td><td>0.12</td><td>36.70</td><td>947.70</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:26.429Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>272.00</td><td>N/A</td><td>0.09</td><td>37.60</td><td>1491.40</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:28.900Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>212.00</td><td>N/A</td><td>0.01</td><td>47.30</td><td>1179.60</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:36.035Z</td><td>Step 6: Perforce Software Popup Tab</td><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>188.00</td><td>N/A</td><td>0.00</td><td>N/A</td><td>2806.90</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:41.954Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>304.00</td><td>32.00</td><td>0.29</td><td>31.20</td><td>2578.80</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:44.830Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>212.00</td><td>N/A</td><td>0.12</td><td>32.60</td><td>988.50</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:46.340Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>212.00</td><td>56.00</td><td>0.12</td><td>32.60</td><td>988.50</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:48.448Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>260.00</td><td>N/A</td><td>0.09</td><td>32.00</td><td>896.50</td><td>60.00</td></tr><tr><td>2026-05-26T15:34:50.413Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>188.00</td><td>N/A</td><td>0.01</td><td>30.80</td><td>678.30</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:08.597Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>1064.00</td><td>104.00</td><td>0.01</td><td>26.80</td><td>4866.40</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:15.976Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>668.00</td><td>N/A</td><td>0.12</td><td>214.50</td><td>3843.40</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:17.976Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>668.00</td><td>48.00</td><td>0.12</td><td>214.50</td><td>3843.40</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:22.957Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>568.00</td><td>N/A</td><td>0.00</td><td>217.20</td><td>3512.20</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:27.986Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>616.00</td><td>N/A</td><td>0.01</td><td>216.60</td><td>3261.80</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:37.947Z</td><td>Step 6: Perforce Software Popup Tab</td><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>128.00</td><td>N/A</td><td>0.05</td><td>N/A</td><td>4670.10</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:49.127Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>412.00</td><td>64.00</td><td>0.29</td><td>28.20</td><td>3848.00</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:55.916Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>388.00</td><td>N/A</td><td>0.12</td><td>25.10</td><td>3669.90</td><td>60.00</td></tr><tr><td>2026-05-26T15:30:58.041Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>388.00</td><td>64.00</td><td>0.12</td><td>25.10</td><td>3669.90</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:02.249Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>168.00</td><td>N/A</td><td>0.09</td><td>26.00</td><td>2877.70</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:06.947Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>176.00</td><td>N/A</td><td>0.15</td><td>23.50</td><td>3051.30</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:16.806Z</td><td>Step 6: Perforce Software Popup Tab</td><td>Perforce Software Popup Tab</td><td>https://www.perforce.com/</td><td>124.00</td><td>N/A</td><td>0.05</td><td>N/A</td><td>4626.00</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:27.922Z</td><td>Step 1: Main Landing Page</td><td>Main Landing Page</td><td>https://www.perforce.com/</td><td>376.00</td><td>96.00</td><td>0.29</td><td>29.70</td><td>3927.40</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:34.568Z</td><td>Step 2: Browse Products</td><td>Browse Products</td><td>https://www.perforce.com/products</td><td>208.00</td><td>N/A</td><td>0.12</td><td>23.00</td><td>3479.10</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:36.298Z</td><td>Step 3: Digital IP Management</td><td>Digital IP Management</td><td>https://www.perforce.com/products#p-20457</td><td>208.00</td><td>64.00</td><td>0.12</td><td>23.00</td><td>3479.10</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:40.446Z</td><td>Step 4: Explore IPLM</td><td>Explore IPLM</td><td>https://www.perforce.com/products/helix-iplm</td><td>244.00</td><td>N/A</td><td>0.09</td><td>28.50</td><td>2836.70</td><td>60.00</td></tr><tr><td>2026-05-26T15:31:45.073Z</td><td>Step 5: What’s New</td><td>What’s New</td><td>https://www.perforce.com/products/helix-iplm/whats-new</td><td>284.00</td><td>N/A</td><td>0.01</td><td>21.70</td><td>2979.30</td><td>60.00</td></tr></tbody></table><p><em>Showing 100 of 248 rows</em></p></div>
+
+  </div>
+</body>
+</html>

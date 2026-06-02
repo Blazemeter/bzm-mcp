@@ -1,0 +1,10 @@
+2026-04-13 20:43:51,969 - INFO - BlazeMeter MCP HTTP Wrapper starting
+2026-04-13 20:43:51,970 - INFO - Workspace: /Users/wguerrero/blazemeterMCP
+2026-04-13 20:43:51,970 - INFO - HTTP: 127.0.0.1:8000
+2026-04-13 20:43:51,970 - INFO - Starting MCP binary: /Users/wguerrero/blazemeterMCP/bzm-mcp-arm64.app/Contents/MacOS/bzm-mcp
+2026-04-13 20:43:51,973 - INFO - MCP process started with PID 46589
+2026-04-13 20:43:52,001 - INFO - HTTP server listening on 127.0.0.1:8000
+2026-04-13 20:43:54,001 - INFO - GET /health
+2026-04-13 20:43:58,102 - INFO - GET /health
+2026-04-13 20:44:33,368 - INFO - GET /health
+2026-04-13 20:45:45,941 - INFO - GET /health

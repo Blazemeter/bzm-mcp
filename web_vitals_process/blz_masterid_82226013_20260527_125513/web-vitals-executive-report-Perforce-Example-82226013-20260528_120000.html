@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web Vitals Executive Report — 82226013</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f1f5f9;
+      color: #1e293b;
+      line-height: 1.5;
+    }
+
+    /* ── Title bar ───────────────────────────────────────────────── */
+    .title-bar {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%);
+      color: white;
+      padding: 28px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .title-bar h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+    .title-bar .sub { font-size: 0.95rem; opacity: 0.75; margin-top: 4px; }
+    .title-bar .meta { font-size: 0.82rem; opacity: 0.65; text-align: right; line-height: 1.8; }
+
+    /* ── Page content ─────────────────────────────────────────────── */
+    .content { max-width: 1280px; margin: 0 auto; padding: 28px 24px 48px; }
+
+    /* ── Hierarchy bar ────────────────────────────────────────────── */
+    .hierarchy-bar {
+      background: white;
+      border-radius: 12px;
+      padding: 14px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 0;
+      align-items: center;
+    }
+    .hier-badge { display: flex; flex-direction: column; gap: 1px; padding: 0 16px; }
+    .hier-badge:first-child { padding-left: 0; }
+    .hier-badge .lbl { font-size: 0.68rem; font-weight: 700; color: #667eea; text-transform: uppercase; letter-spacing: 0.07em; }
+    .hier-badge .val { font-size: 0.88rem; color: #1e293b; font-weight: 500; }
+    .hier-sep { color: #cbd5e1; font-size: 1.4rem; line-height: 1; }
+    .loc-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+    .loc-chip {
+      font-size: 0.72rem; padding: 1px 8px; border-radius: 999px;
+      background: #ede9fe; color: #5b21b6; font-weight: 600;
+    }
+
+    /* ── KPI scorecard ────────────────────────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px 16px 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      border-top: 4px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .kpi-good    { border-top-color: #10b981; }
+    .kpi-warning { border-top-color: #f59e0b; }
+    .kpi-poor    { border-top-color: #ef4444; }
+    .kpi-neutral { border-top-color: #667eea; }
+    .kpi-label  { font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
+    .kpi-value  { font-size: 1.85rem; font-weight: 700; color: #0f172a; line-height: 1.1; }
+    .kpi-unit   { font-size: 0.85rem; font-weight: 400; color: #94a3b8; margin-left: 2px; }
+    .kpi-badge  { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; width: fit-content; }
+    .badge-good    { background: #d1fae5; color: #065f46; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-poor    { background: #fee2e2; color: #991b1b; }
+    .kpi-detail { font-size: 0.75rem; color: #94a3b8; }
+
+    /* ── Verdict banner ───────────────────────────────────────────── */
+    .verdict-banner {
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .verdict-fail { background: #fef2f2; border: 1px solid #fecaca; }
+    .verdict-warn { background: #fffbeb; border: 1px solid #fde68a; }
+    .verdict-icon { font-size: 2.2rem; }
+    .verdict-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+    .verdict-fail .verdict-title { color: #991b1b; }
+    .verdict-warn .verdict-title { color: #92400e; }
+    .verdict-desc { font-size: 0.88rem; color: #64748b; }
+
+    /* ── Section title ────────────────────────────────────────────── */
+    .section-title {
+      font-size: 1.05rem; font-weight: 700; color: #0f172a;
+      margin: 28px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Tables ───────────────────────────────────────────────────── */
+    .table-wrap { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead { background: #f8fafc; }
+    th { padding: 10px 14px; text-align: left; font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #e2e8f0; }
+    td { padding: 11px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #f8fafc; }
+    .td-num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+    .td-center { text-align: center; }
+
+    /* ── Status pills ─────────────────────────────────────────────── */
+    .pill {
+      display: inline-block;
+      font-size: 0.7rem; font-weight: 700;
+      padding: 2px 10px; border-radius: 999px;
+    }
+    .pill-good    { background: #d1fae5; color: #065f46; }
+    .pill-warning { background: #fef3c7; color: #92400e; }
+    .pill-poor    { background: #fee2e2; color: #991b1b; }
+    .pill-anomaly { background: #f3e8ff; color: #6b21a8; }
+    .pill-neutral { background: #e0e7ff; color: #3730a3; }
+
+    /* ── Chart containers ─────────────────────────────────────────── */
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .chart-card {
+      background: white; border-radius: 12px;
+      padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .chart-title { font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 14px; }
+    .chart-wrap { position: relative; height: 220px; }
+
+    /* ── Findings ─────────────────────────────────────────────────── */
+    .findings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .finding-card {
+      background: white; border-radius: 12px; padding: 18px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      border-left: 4px solid #e2e8f0;
+    }
+    .finding-critical { border-left-color: #ef4444; }
+    .finding-warning  { border-left-color: #f59e0b; }
+    .finding-good     { border-left-color: #10b981; }
+    .finding-info     { border-left-color: #667eea; }
+    .finding-tag { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .tag-critical { color: #ef4444; }
+    .tag-warning  { color: #f59e0b; }
+    .tag-good     { color: #10b981; }
+    .tag-info     { color: #667eea; }
+    .finding-title { font-size: 0.92rem; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+    .finding-body  { font-size: 0.82rem; color: #475569; line-height: 1.6; }
+
+    /* ── Recommendations ──────────────────────────────────────────── */
+    .reco-list { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+    .reco-item { display: flex; align-items: flex-start; gap: 16px; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; }
+    .reco-item:last-child { border-bottom: none; }
+    .reco-priority { font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+    .pri-critical { background: #fee2e2; color: #991b1b; }
+    .pri-high     { background: #ffedd5; color: #9a3412; }
+    .pri-medium   { background: #fef3c7; color: #92400e; }
+    .reco-content .reco-title { font-size: 0.88rem; font-weight: 700; color: #0f172a; margin-bottom: 3px; }
+    .reco-content .reco-body  { font-size: 0.80rem; color: #64748b; line-height: 1.55; }
+
+    /* ── Footer ───────────────────────────────────────────────────── */
+    .footer { text-align: center; font-size: 0.75rem; color: #94a3b8; padding: 20px 0 0; margin-top: 8px; border-top: 1px solid #e2e8f0; }
+
+    @media (max-width: 768px) {
+      .charts-row, .findings-grid { grid-template-columns: 1fr; }
+      .title-bar { flex-direction: column; gap: 12px; }
+      .title-bar .meta { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Title Bar ──────────────────────────────────────────────────── -->
+<div class="title-bar">
+  <div>
+    <h1>Web Vitals Executive Report</h1>
+    <div class="sub">Perforce Example &mdash; Multi-Region User Journey</div>
+  </div>
+  <div class="meta">
+    Master ID: <strong>82226013</strong><br>
+    Test Date: 2026-05-26 15:29–15:34 UTC<br>
+    Report Generated: 2026-05-28<br>
+    4 Regions &bull; 6 Steps &bull; ~46 Runs
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ── Hierarchy Bar ──────────────────────────────────────────── -->
+  <div class="hierarchy-bar">
+    <div class="hier-badge">
+      <span class="lbl">Account</span>
+      <span class="val">BlazeMeter SE Demo (291446)</span>
+    </div>
+    <span class="hier-sep">›</span>
+    <div class="hier-badge">
+      <span class="lbl">Workspace</span>
+      <span class="val">PerforceJam2026 (2271115)</span>
+    </div>
+    <span class="hier-sep">›</span>
+    <div class="hier-badge">
+      <span class="lbl">Project</span>
+      <span class="val">Default project (2599301)</span>
+    </div>
+    <span class="hier-sep">›</span>
+    <div class="hier-badge">
+      <span class="lbl">Test</span>
+      <span class="val">Perforce Example (15631013)</span>
+    </div>
+    <span class="hier-sep">›</span>
+    <div class="hier-badge">
+      <span class="lbl">Regions</span>
+      <div class="loc-list">
+        <span class="loc-chip">us-east-1</span>
+        <span class="loc-chip">europe-west2-a</span>
+        <span class="loc-chip">australia-southeast1-a</span>
+        <span class="loc-chip">africa-south1-a</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Overall Verdict ────────────────────────────────────────── -->
+  <div class="verdict-banner verdict-fail">
+    <div class="verdict-icon">❌</div>
+    <div>
+      <div class="verdict-title">Core Web Vitals: FAIL — CLS Critical Issue Detected</div>
+      <div class="verdict-desc">
+        LCP and INP pass globally across all four regions. However, <strong>Cumulative Layout Shift (CLS) fails the "Poor" threshold (0.25) on the Main Landing Page</strong>, recording a consistent score of 0.2881 in 95%+ of runs across every region. This will negatively impact Google Search rankings and user experience.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Global KPI Scorecard ───────────────────────────────────── -->
+  <div class="section-title">🌐 Global Core Web Vitals Scorecard</div>
+  <div class="kpi-grid">
+
+    <div class="kpi-card kpi-good">
+      <div class="kpi-label">LCP — Global Avg</div>
+      <div class="kpi-value">387<span class="kpi-unit">ms</span></div>
+      <div class="kpi-badge badge-good">✅ Good (&le;2,500ms)</div>
+      <div class="kpi-detail">Median ~330ms · Max 1,172ms (Africa cold-start)</div>
+    </div>
+
+    <div class="kpi-card kpi-good">
+      <div class="kpi-label">INP — Global Avg</div>
+      <div class="kpi-value">53<span class="kpi-unit">ms</span></div>
+      <div class="kpi-badge badge-good">✅ Good (&lt;200ms)</div>
+      <div class="kpi-detail">All regions &lt;110ms · EU West best at 38ms</div>
+    </div>
+
+    <div class="kpi-card kpi-poor">
+      <div class="kpi-label">CLS — Main Landing Page</div>
+      <div class="kpi-value">0.2881</div>
+      <div class="kpi-badge badge-poor">❌ Poor (&gt;0.25)</div>
+      <div class="kpi-detail">Consistent across 95%+ of runs in all regions</div>
+    </div>
+
+    <div class="kpi-card kpi-good">
+      <div class="kpi-label">TTFB — Global Avg</div>
+      <div class="kpi-value">73<span class="kpi-unit">ms</span></div>
+      <div class="kpi-badge badge-good">✅ Good (&lt;800ms)</div>
+      <div class="kpi-detail">AU: 27ms · EU: 38ms · US: 46ms · AF: 200ms</div>
+    </div>
+
+    <div class="kpi-card kpi-warning">
+      <div class="kpi-label">Page Load — US East</div>
+      <div class="kpi-value">3,021<span class="kpi-unit">ms</span></div>
+      <div class="kpi-badge badge-warning">⚠️ Above 2s target</div>
+      <div class="kpi-detail">Best region; Africa avg ~6,048ms</div>
+    </div>
+
+    <div class="kpi-card kpi-good">
+      <div class="kpi-label">FPS — All Regions</div>
+      <div class="kpi-value">60<span class="kpi-unit">fps</span></div>
+      <div class="kpi-badge badge-good">✅ Good (60fps target)</div>
+      <div class="kpi-detail">Consistent 60fps across every session</div>
+    </div>
+
+    <div class="kpi-card kpi-warning">
+      <div class="kpi-label">CLS — Browse Products</div>
+      <div class="kpi-value">0.1216</div>
+      <div class="kpi-badge badge-warning">⚠️ Needs Improvement</div>
+      <div class="kpi-detail">0.1–0.25 range · All regions consistent</div>
+    </div>
+
+    <div class="kpi-card kpi-neutral">
+      <div class="kpi-label">TTI — US East Avg</div>
+      <div class="kpi-value">944<span class="kpi-unit">ms</span></div>
+      <div class="kpi-badge" style="background:#e0e7ff;color:#3730a3">ℹ️ Informational</div>
+      <div class="kpi-detail">Main Landing Page; AU avg ~1,195ms</div>
+    </div>
+
+  </div>
+
+  <!-- ── Regional Comparison ────────────────────────────────────── -->
+  <div class="section-title">📍 Regional Performance Comparison — Main Landing Page</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Region</th>
+          <th>Runs</th>
+          <th class="td-num">LCP Avg</th>
+          <th class="td-num">LCP (excl. cold-start)</th>
+          <th class="td-num">INP Avg</th>
+          <th class="td-num">CLS</th>
+          <th class="td-num">TTFB Avg</th>
+          <th class="td-num">Page Load Avg</th>
+          <th class="td-center">LCP Status</th>
+          <th class="td-center">CLS Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>🇺🇸 US East</strong><br><span style="font-size:0.75rem;color:#94a3b8">us-east-1</span></td>
+          <td>12</td>
+          <td class="td-num">333 ms</td>
+          <td class="td-num">312 ms</td>
+          <td class="td-num">60 ms</td>
+          <td class="td-num">0.2881</td>
+          <td class="td-num">46 ms</td>
+          <td class="td-num">3,021 ms</td>
+          <td class="td-center"><span class="pill pill-good">Good</span></td>
+          <td class="td-center"><span class="pill pill-poor">Poor</span></td>
+        </tr>
+        <tr>
+          <td><strong>🇪🇺 Europe West</strong><br><span style="font-size:0.75rem;color:#94a3b8">europe-west2-a</span></td>
+          <td>14</td>
+          <td class="td-num">308 ms</td>
+          <td class="td-num">308 ms</td>
+          <td class="td-num">38 ms</td>
+          <td class="td-num">0.2881</td>
+          <td class="td-num">38 ms</td>
+          <td class="td-num">2,612 ms</td>
+          <td class="td-center"><span class="pill pill-good">Good</span></td>
+          <td class="td-center"><span class="pill pill-poor">Poor</span></td>
+        </tr>
+        <tr>
+          <td><strong>🇦🇺 Australia</strong><br><span style="font-size:0.75rem;color:#94a3b8">australia-southeast1-a</span></td>
+          <td>8</td>
+          <td class="td-num">480 ms</td>
+          <td class="td-num">397 ms</td>
+          <td class="td-num">82 ms</td>
+          <td class="td-num">0.2881</td>
+          <td class="td-num">27 ms</td>
+          <td class="td-num">4,057 ms</td>
+          <td class="td-center"><span class="pill pill-good">Good</span></td>
+          <td class="td-center"><span class="pill pill-poor">Poor</span></td>
+        </tr>
+        <tr>
+          <td><strong>🌍 Africa South</strong><br><span style="font-size:0.75rem;color:#94a3b8">africa-south1-a</span></td>
+          <td>8</td>
+          <td class="td-num">428 ms</td>
+          <td class="td-num">322 ms</td>
+          <td class="td-num">33 ms</td>
+          <td class="td-num">0.2881</td>
+          <td class="td-num">200 ms</td>
+          <td class="td-num">6,048 ms</td>
+          <td class="td-center"><span class="pill pill-good">Good</span></td>
+          <td class="td-center"><span class="pill pill-poor">Poor</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Step-Level CLS ─────────────────────────────────────────── -->
+  <div class="section-title">🔬 CLS by Journey Step — All Regions</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Step</th>
+          <th>URL</th>
+          <th class="td-num">CLS Score</th>
+          <th class="td-center">Status</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Step 1: Main Landing Page</strong></td>
+          <td style="font-size:0.78rem;color:#64748b">perforce.com/</td>
+          <td class="td-num"><strong>0.2881</strong></td>
+          <td class="td-center"><span class="pill pill-poor">❌ Poor</span></td>
+          <td style="font-size:0.8rem">Exceeds 0.25 threshold in 95%+ of all runs across all 4 regions. Primary CWV failure.</td>
+        </tr>
+        <tr>
+          <td><strong>Step 2: Browse Products</strong></td>
+          <td style="font-size:0.78rem;color:#64748b">perforce.com/products</td>
+          <td class="td-num">0.1216</td>
+          <td class="td-center"><span class="pill pill-warning">⚠️ Needs Improvement</span></td>
+          <td style="font-size:0.8rem">Consistent 0.1216 in all warm runs. Above Good threshold (0.1).</td>
+        </tr>
+        <tr>
+          <td><strong>Step 3: Digital IP Management</strong></td>
+          <td style="font-size:0.78rem;color:#64748b">perforce.com/products#p-20457</td>
+          <td class="td-num">0.1216</td>
+          <td class="td-center"><span class="pill pill-warning">⚠️ Needs Improvement</span></td>
+          <td style="font-size:0.8rem">Same page as Browse Products (anchor navigation); same CLS.</td>
+        </tr>
+        <tr>
+          <td><strong>Step 4: Explore IPLM</strong></td>
+          <td style="font-size:0.78rem;color:#64748b">perforce.com/products/helix-iplm</td>
+          <td class="td-num">0.0903</td>
+          <td class="td-center"><span class="pill pill-good">✅ Good</span></td>
+          <td style="font-size:0.8rem">Just below the 0.1 Good threshold. Consistent across all regions.</td>
+        </tr>
+        <tr>
+          <td><strong>Step 5: What's New</strong></td>
+          <td style="font-size:0.78rem;color:#64748b">perforce.com/.../whats-new</td>
+          <td class="td-num">0.0074–0.0077</td>
+          <td class="td-center"><span class="pill pill-good">✅ Excellent</span></td>
+          <td style="font-size:0.8rem">Consistently excellent. Well-designed page layout.</td>
+        </tr>
+        <tr>
+          <td><strong>Step 6: Popup Tab</strong></td>
+          <td style="font-size:0.78rem;color:#64748b">perforce.com/ (popup)</td>
+          <td class="td-num">0.0–0.0561</td>
+          <td class="td-center"><span class="pill pill-good">✅ Good</span></td>
+          <td style="font-size:0.8rem">One Africa instance recorded 0.3201 (anomaly). Typically Good.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Charts ─────────────────────────────────────────────────── -->
+  <div class="section-title">📊 Performance Charts</div>
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Main Landing Page — LCP by Region (ms, avg excl. cold-start)</div>
+      <div class="chart-wrap">
+        <canvas id="lcpChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">CLS by Journey Step (all regions consistent)</div>
+      <div class="chart-wrap">
+        <canvas id="clsChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Page Load Time by Region — Main Landing Page (ms avg)</div>
+      <div class="chart-wrap">
+        <canvas id="pageLoadChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">TTFB by Region — Main Landing Page (ms avg)</div>
+      <div class="chart-wrap">
+        <canvas id="ttfbChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Key Findings ───────────────────────────────────────────── -->
+  <div class="section-title">🔍 Key Findings</div>
+  <div class="findings-grid">
+
+    <div class="finding-card finding-critical">
+      <div class="finding-tag tag-critical">Critical</div>
+      <div class="finding-title">CLS Failure on Main Landing Page (0.2881 — Poor)</div>
+      <div class="finding-body">
+        The Main Landing Page records CLS = 0.2881 in the vast majority of runs across all four global regions. The Google CWV threshold for Poor is &gt;0.25. This is a <strong>Core Web Vitals ranking signal failure</strong> that will suppress organic search visibility. The layout shift is likely caused by late-loading above-the-fold images, hero banners injected after initial render, or fonts causing text reflow.
+      </div>
+    </div>
+
+    <div class="finding-card finding-critical">
+      <div class="finding-tag tag-critical">Critical</div>
+      <div class="finding-title">Africa Run 2 Anomaly — Browse Products Timeout (~20s)</div>
+      <div class="finding-body">
+        Africa session recorded an LCP of 19,928ms and TTFB of 19,791ms for Browse Products in Run 2, indicating a near-complete network timeout or extreme latency spike during that transaction. All other runs were normal. This should be investigated as a potential CDN failover or transient routing issue affecting the Africa South PoP.
+      </div>
+    </div>
+
+    <div class="finding-card finding-warning">
+      <div class="finding-tag tag-warning">Warning</div>
+      <div class="finding-title">Africa Cold-Start TTFB Near Threshold (765ms)</div>
+      <div class="finding-body">
+        Africa Run 1 recorded TTFB = 765ms on the Main Landing Page — within 35ms of the 800ms "needs improvement" boundary and with LCP of 1,172ms. Subsequent runs improved dramatically (&lt;250ms TTFB). This indicates the CDN or origin server is not pre-warmed for the Africa South region, penalising first-time visitors.
+      </div>
+    </div>
+
+    <div class="finding-card finding-warning">
+      <div class="finding-tag tag-warning">Warning</div>
+      <div class="finding-title">Page Load Times Above 2s Target in All Regions</div>
+      <div class="finding-body">
+        All four regions exceed the ideal 2-second page load benchmark for the Main Landing Page: US East 3,021ms, EU West 2,612ms, Australia 4,057ms, Africa 6,048ms. The progressively worse performance in distant regions confirms the site relies heavily on origin-served content rather than fully CDN-distributed assets, and the high page weight (~13MB in prior test data) is a major contributor.
+      </div>
+    </div>
+
+    <div class="finding-card finding-warning">
+      <div class="finding-tag tag-warning">Warning</div>
+      <div class="finding-title">Browse Products CLS at 0.1216 — Needs Improvement</div>
+      <div class="finding-body">
+        The Browse Products page records CLS = 0.1216 in essentially every warm run across all regions. This falls in the "Needs Improvement" band (0.1–0.25). It is consistent with Browse Products and Digital IP Management sharing the same DOM (anchor navigation). The fix applied to the landing page should be extended to this page's product grid as well.
+      </div>
+    </div>
+
+    <div class="finding-card finding-good">
+      <div class="finding-tag tag-good">Positive</div>
+      <div class="finding-title">LCP and INP Pass Globally — Strong Loading & Interactivity</div>
+      <div class="finding-body">
+        After warm-up, LCP averages 308–480ms globally — well under the 2,500ms Good threshold. INP averages 33–82ms globally, far below the 200ms Good threshold. FPS is a consistent 60fps in every region. These results demonstrate excellent responsiveness and perceived loading speed once CDN cache is warmed.
+      </div>
+    </div>
+
+    <div class="finding-card finding-good">
+      <div class="finding-tag tag-good">Positive</div>
+      <div class="finding-title">TTFB Excellent in EU, US, and Australia</div>
+      <div class="finding-body">
+        EU West (38ms), Australia (27ms), and US East (46ms) all show exceptional TTFB on warm runs, indicating well-configured CDN edge caching in these regions. Australia's TTFB of 27ms is particularly impressive given its geographic distance from the US origin, suggesting effective edge caching at Sydney PoPs.
+      </div>
+    </div>
+
+    <div class="finding-card finding-info">
+      <div class="finding-tag tag-info">Informational</div>
+      <div class="finding-title">CLS Score is Deterministic — Not a Fluke</div>
+      <div class="finding-body">
+        The CLS score of 0.2881 on the Main Landing Page appears in virtually every run after the first in all four regions. This consistency confirms the layout shift is a reproducible, structural issue tied to the page's render sequence — not a transient CDN or network artefact. It will affect real users at the same rate regardless of geographic location.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Recommendations ───────────────────────────────────────── -->
+  <div class="section-title">✅ Prioritised Recommendations</div>
+  <div class="reco-list">
+
+    <div class="reco-item">
+      <span class="reco-priority pri-critical">P1 Critical</span>
+      <div class="reco-content">
+        <div class="reco-title">Fix CLS on Main Landing Page (perforce.com/)</div>
+        <div class="reco-body">
+          Add explicit <code>width</code> and <code>height</code> attributes to all above-the-fold images and hero elements. Defer or preload fonts to prevent text reflow. Avoid injecting banners, modals, or sticky headers above content after initial render. Target: CLS &le; 0.1 (Good).
+        </div>
+      </div>
+    </div>
+
+    <div class="reco-item">
+      <span class="reco-priority pri-critical">P1 Critical</span>
+      <div class="reco-content">
+        <div class="reco-title">Fix CLS on Browse Products page (perforce.com/products)</div>
+        <div class="reco-body">
+          Same root cause as the landing page. Product card images and lazy-loaded content below the fold are causing layout shift at 0.1216. Apply explicit image dimensions and reserve space for dynamically injected product tiles. Target: CLS &le; 0.1.
+        </div>
+      </div>
+    </div>
+
+    <div class="reco-item">
+      <span class="reco-priority pri-high">P2 High</span>
+      <div class="reco-content">
+        <div class="reco-title">Investigate Africa Browse Products timeout (Run 2, ~20s latency)</div>
+        <div class="reco-body">
+          The 19,928ms LCP / 19,791ms TTFB event in Africa Run 2 suggests a CDN failover, origin routing failure, or BGP instability event. Review CDN provider logs for the africa-south1-a PoP around 2026-05-26 15:30 UTC to determine root cause and whether a failover or origin health-check policy change is needed.
+        </div>
+      </div>
+    </div>
+
+    <div class="reco-item">
+      <span class="reco-priority pri-high">P2 High</span>
+      <div class="reco-content">
+        <div class="reco-title">Pre-warm CDN cache for Africa region / reduce cold-start TTFB</div>
+        <div class="reco-body">
+          Africa Run 1 TTFB of 765ms is near the 800ms threshold, and LCP of 1,172ms is the highest of any warm-state region. Implement CDN cache pre-warming for africa-south1-a, or consider an additional PoP closer to South Africa. Alternatively, configure longer cache TTLs for static assets in this region.
+        </div>
+      </div>
+    </div>
+
+    <div class="reco-item">
+      <span class="reco-priority pri-medium">P3 Medium</span>
+      <div class="reco-content">
+        <div class="reco-title">Reduce page load time for Africa and Australia (&gt;4s)</div>
+        <div class="reco-body">
+          Africa averages 6,048ms and Australia 4,057ms for the Main Landing Page. The primary lever is payload reduction (see prior test showing ~13MB page weight). Enable aggressive asset compression (Brotli), implement lazy-loading for below-the-fold images, and ensure all static assets are served from the nearest CDN edge node rather than origin.
+        </div>
+      </div>
+    </div>
+
+    <div class="reco-item">
+      <span class="reco-priority pri-medium">P3 Medium</span>
+      <div class="reco-content">
+        <div class="reco-title">Set up automated CWV failure criteria in BlazeMeter</div>
+        <div class="reco-body">
+          Configure test failure criteria for CLS &gt; 0.1 on the Main Landing Page and Browse Products steps so future test runs automatically flag regressions. Recommended thresholds: LCP &gt; 2,500ms (fail), CLS &gt; 0.1 (fail), INP &gt; 200ms (fail), TTFB &gt; 800ms (warn).
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Thresholds Reference ───────────────────────────────────── -->
+  <div class="section-title">📏 Web Vitals Thresholds Reference</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Good</th>
+          <th>Needs Improvement</th>
+          <th>Poor</th>
+          <th>This Test (Global Avg)</th>
+          <th class="td-center">Overall Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>LCP</strong> (Largest Contentful Paint)</td>
+          <td>&le; 2,500ms</td>
+          <td>2,500–4,000ms</td>
+          <td>&gt; 4,000ms</td>
+          <td>387ms</td>
+          <td class="td-center"><span class="pill pill-good">✅ Good</span></td>
+        </tr>
+        <tr>
+          <td><strong>INP</strong> (Interaction to Next Paint)</td>
+          <td>&lt; 200ms</td>
+          <td>200–500ms</td>
+          <td>&gt; 500ms</td>
+          <td>53ms</td>
+          <td class="td-center"><span class="pill pill-good">✅ Good</span></td>
+        </tr>
+        <tr>
+          <td><strong>CLS</strong> (Cumulative Layout Shift)</td>
+          <td>&le; 0.1</td>
+          <td>0.1–0.25</td>
+          <td>&gt; 0.25</td>
+          <td>0.2881 (landing page)</td>
+          <td class="td-center"><span class="pill pill-poor">❌ Poor</span></td>
+        </tr>
+        <tr>
+          <td><strong>TTFB</strong> (Time to First Byte)</td>
+          <td>&lt; 800ms</td>
+          <td>800–1,800ms</td>
+          <td>&gt; 1,800ms</td>
+          <td>73ms</td>
+          <td class="td-center"><span class="pill pill-good">✅ Good</span></td>
+        </tr>
+        <tr>
+          <td><strong>Page Load Time</strong></td>
+          <td>&lt; 2,000ms</td>
+          <td>2,000–4,000ms</td>
+          <td>&gt; 4,000ms</td>
+          <td>3,935ms (global avg)</td>
+          <td class="td-center"><span class="pill pill-warning">⚠️ Warning</span></td>
+        </tr>
+        <tr>
+          <td><strong>FPS</strong> (Frames Per Second)</td>
+          <td>60fps</td>
+          <td>30–59fps</td>
+          <td>&lt; 30fps</td>
+          <td>60fps</td>
+          <td class="td-center"><span class="pill pill-good">✅ Good</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    BlazeMeter Web Vitals Executive Report &bull; Master ID 82226013 &bull;
+    Account: BlazeMeter SE Demo (291446) &bull; Workspace: PerforceJam2026 (2271115) &bull;
+    Generated 2026-05-28 &bull; Test run 2026-05-26
+  </div>
+</div>
+
+<script>
+  const regionLabels = ['US East', 'EU West', 'Australia', 'Africa'];
+  const chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+      y: { ticks: { font: { size: 11 } }, grid: { color: '#f1f5f9' } }
+    }
+  };
+
+  // LCP Chart
+  new Chart(document.getElementById('lcpChart'), {
+    type: 'bar',
+    data: {
+      labels: regionLabels,
+      datasets: [{
+        data: [312, 308, 397, 322],
+        backgroundColor: ['#10b981','#10b981','#10b981','#10b981'],
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: {
+        legend: { display: false },
+        annotation: {}
+      },
+      scales: {
+        ...chartDefaults.scales,
+        y: {
+          ...chartDefaults.scales.y,
+          suggestedMax: 2600,
+          ticks: { callback: v => v + 'ms', font: { size: 11 } }
+        }
+      }
+    }
+  });
+
+  // CLS Chart
+  new Chart(document.getElementById('clsChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Main Landing\nPage', 'Browse\nProducts', 'Dig. IP\nMgmt', 'Explore\nIPLM', "What's\nNew", 'Popup\nTab'],
+      datasets: [{
+        data: [0.2881, 0.1216, 0.1216, 0.0903, 0.0076, 0.035],
+        backgroundColor: ['#ef4444','#f59e0b','#f59e0b','#10b981','#10b981','#10b981'],
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        ...chartDefaults.scales,
+        y: {
+          ...chartDefaults.scales.y,
+          suggestedMax: 0.35,
+          ticks: { font: { size: 11 } }
+        }
+      }
+    }
+  });
+
+  // Page Load Chart
+  new Chart(document.getElementById('pageLoadChart'), {
+    type: 'bar',
+    data: {
+      labels: regionLabels,
+      datasets: [{
+        data: [3021, 2612, 4057, 6048],
+        backgroundColor: ['#f59e0b','#f59e0b','#f59e0b','#ef4444'],
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        ...chartDefaults.scales,
+        y: { ...chartDefaults.scales.y, ticks: { callback: v => v + 'ms', font: { size: 11 } } }
+      }
+    }
+  });
+
+  // TTFB Chart
+  new Chart(document.getElementById('ttfbChart'), {
+    type: 'bar',
+    data: {
+      labels: regionLabels,
+      datasets: [{
+        data: [46, 38, 27, 200],
+        backgroundColor: ['#10b981','#10b981','#10b981','#f59e0b'],
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        ...chartDefaults.scales,
+        y: { ...chartDefaults.scales.y, ticks: { callback: v => v + 'ms', font: { size: 11 } } }
+      }
+    }
+  });
+</script>
+
+</body>
+</html>

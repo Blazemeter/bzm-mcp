@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web Vitals Executive Report — 82226013</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f1f5f9;
+      color: #1e293b;
+      line-height: 1.5;
+    }
+
+    /* ── Title bar ───────────────────────────────────────────────── */
+    .title-bar {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%);
+      color: white;
+      padding: 28px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .title-bar h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+    .title-bar .sub { font-size: 0.95rem; opacity: 0.75; margin-top: 4px; }
+    .title-bar .meta { font-size: 0.82rem; opacity: 0.65; text-align: right; line-height: 1.8; }
+
+    /* ── Page content ─────────────────────────────────────────────── */
+    .content { max-width: 1280px; margin: 0 auto; padding: 28px 24px 48px; }
+
+    /* ── Hierarchy bar ────────────────────────────────────────────── */
+    .hierarchy-bar {
+      background: white;
+      border-radius: 12px;
+      padding: 14px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 0;
+      align-items: center;
+    }
+    .hier-badge { display: flex; flex-direction: column; gap: 1px; padding: 0 16px; }
+    .hier-badge:first-child { padding-left: 0; }
+    .hier-badge .lbl { font-size: 0.68rem; font-weight: 700; color: #667eea; text-transform: uppercase; letter-spacing: 0.07em; }
+    .hier-badge .val { font-size: 0.88rem; color: #1e293b; font-weight: 500; }
+    .hier-sep { color: #cbd5e1; font-size: 1.4rem; line-height: 1; }
+    .loc-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+    .loc-chip {
+      font-size: 0.72rem; padding: 1px 8px; border-radius: 999px;
+      background: #ede9fe; color: #5b21b6; font-weight: 600;
+    }
+
+    /* ── KPI scorecard ────────────────────────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px 16px 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      border-top: 4px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .kpi-good    { border-top-color: #10b981; }
+    .kpi-warning { border-top-color: #f59e0b; }
+    .kpi-poor    { border-top-color: #ef4444; }
+    .kpi-neutral { border-top-color: #667eea; }
+    .kpi-label   { font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
+    .kpi-value   { font-size: 1.85rem; font-weight: 700; color: #0f172a; line-height: 1.1; }
+    .kpi-unit    { font-size: 0.85rem; font-weight: 400; color: #94a3b8; margin-left: 2px; }
+    .kpi-badge   { font-size: 0.7rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; display: inline-block; width: fit-content; margin-top: 2px; }
+    .badge-good    { background: #d1fae5; color: #065f46; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-poor    { background: #fee2e2; color: #991b1b; }
+    .badge-neutral { background: #ede9fe; color: #5b21b6; }
+    .badge-unknown { background: #f1f5f9; color: #64748b; }
+
+    /* ── Cards ────────────────────────────────────────────────────── */
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #667eea;
+    }
+    .card-subtitle { font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 10px; }
+
+    /* ── Chart grid layouts ───────────────────────────────────────── */
+    .chart-row-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .chart-row-2 {
+      display: grid;
+      grid-template-columns: 55fr 45fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .chart-sm   { position: relative; height: 210px; }
+    .chart-md   { position: relative; height: 280px; }
+    .chart-lg   { position: relative; height: 320px; }
+
+    /* ── Summary table ────────────────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; font-size: 0.88em; }
+    th { background: #667eea; color: white; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 0.82em; text-transform: uppercase; letter-spacing: 0.04em; }
+    td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; }
+    tr:hover td { background: #f8fafc; }
+    .badge-tbl { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+
+    @media (max-width: 860px) {
+      .chart-row-3 { grid-template-columns: 1fr; }
+      .chart-row-2 { grid-template-columns: 1fr; }
+      .kpi-grid    { grid-template-columns: repeat(2, 1fr); }
+      .title-bar   { flex-direction: column; gap: 12px; }
+      .title-bar .meta { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════ TITLE BAR ══════ -->
+  <div class="title-bar">
+    <div>
+      <h1>Web Vitals Executive Report</h1>
+      <div class="sub">Perforce Example</div>
+    </div>
+    <div class="meta">
+      Generated: 2026-05-27 14:02:19 UTC<br>
+      Master ID: 82226013
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══════════════════════════════════════ HIERARCHY BAR ═══════ -->
+    <div class="hierarchy-bar"><div class="hier-badge"><span class="lbl">Account</span><span class="val">BlazeMeter SE Demo</span></div><span class="hier-sep">›</span><div class="hier-badge"><span class="lbl">Workspace</span><span class="val">PerforceJam2026</span></div><span class="hier-sep">›</span><div class="hier-badge"><span class="lbl">Project</span><span class="val">Default project</span></div><span class="hier-sep">›</span><div class="hier-badge"><span class="lbl">Test</span><span class="val">Perforce Example</span></div><span class="hier-sep">›</span><div class="hier-badge"><span class="lbl">Master</span><span class="val">Perforce Example</span></div><span class="hier-sep">›</span><div class="hier-badge"><span class="lbl">Regions</span><div class="loc-list"><span class="loc-chip">europe-west2-a</span><span class="loc-chip">australia-southeast1-a</span><span class="loc-chip">africa-south1-a</span><span class="loc-chip">us-east-1</span></div></div></div>
+
+    <!-- ══════════════════════════════════════ KPI SCORECARD ═══════ -->
+    <div class="kpi-grid"><div class="kpi-card kpi-good"><div class="kpi-label">LCP</div><div class="kpi-value">464.2<span class="kpi-unit">ms</span></div><div class="kpi-badge badge-good">✓ Good</div></div><div class="kpi-card kpi-good"><div class="kpi-label">INP</div><div class="kpi-value">83.2<span class="kpi-unit">ms</span></div><div class="kpi-badge badge-good">✓ Good</div></div><div class="kpi-card kpi-warning"><div class="kpi-label">CLS</div><div class="kpi-value">0.1<span class="kpi-unit"></span></div><div class="kpi-badge badge-warning">⚠ Needs Improvement</div></div><div class="kpi-card kpi-good"><div class="kpi-label">TTFB</div><div class="kpi-value">230.1<span class="kpi-unit">ms</span></div><div class="kpi-badge badge-good">✓ Good</div></div><div class="kpi-card kpi-good"><div class="kpi-label">FCP</div><div class="kpi-value">464.2<span class="kpi-unit">ms</span></div><div class="kpi-badge badge-good">✓ Good</div></div><div class="kpi-card kpi-neutral"><div class="kpi-label">Steps Measured</div><div class="kpi-value">248</div><div class="kpi-badge badge-neutral">4 Regions</div></div></div>
+
+    <!-- ═══════════════════════ CHART ROW 1 — CORE WEB VITALS ═════ -->
+    <!--  Three donut charts: LCP, INP, CLS — Good / NI / Poor       -->
+    <div class="chart-row-3">
+      <div class="card">
+        <div class="card-subtitle">LCP — Largest Contentful Paint</div>
+        <div class="chart-sm"><canvas id="lcpDonut"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-subtitle">INP — Interaction to Next Paint</div>
+        <div class="chart-sm"><canvas id="inpDonut"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-subtitle">CLS — Cumulative Layout Shift</div>
+        <div class="chart-sm"><canvas id="clsDonut"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ CHART ROW 2 — REGIONAL COMPARISON ═════ -->
+    <!--  Grouped bar: LCP, FCP, TTFB, Page Load per region          -->
+    <div class="card">
+      <div class="card-title">Regional Performance Comparison</div>
+      <div class="chart-md"><canvas id="regionalBar"></canvas></div>
+    </div>
+
+    <!-- ═══════════ CHART ROW 3 — STEP BAR  +  RADAR ══════════════ -->
+    <!--  Left: horizontal bar sorted by page load                    -->
+    <!--  Right: radar — normalised score per region                 -->
+    <div class="chart-row-2">
+      <div class="card">
+        <div class="card-title">Page Load Time by Test Step (avg ms)</div>
+        <div class="chart-lg"><canvas id="stepBar"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Regional Web Vitals Score (0 = poor → 100 = best)</div>
+        <div class="chart-lg"><canvas id="radarChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ SUMMARY TABLE ═══════ -->
+    <!--  Per-region averages with rating badges                      -->
+    <div class="card"><div class="card-title">Regional Summary</div><table><thead><tr><th>Region</th><th>LCP (ms)</th><th>INP (ms)</th><th>CLS</th><th>TTFB (ms)</th><th>Page Load (ms)</th></tr></thead><tbody><tr><td><strong>Europe</strong></td><td>265.3 <span class="badge-tbl badge-good">✓ Good</span></td><td>87.1</td><td>0.110</td><td>38.5</td><td>1558.0</td></tr><tr><td><strong>Australia</strong></td><td>363.9 <span class="badge-tbl badge-good">✓ Good</span></td><td>72.0</td><td>0.110</td><td>41.7</td><td>3595.8</td></tr><tr><td><strong>Africa</strong></td><td>1183.5 <span class="badge-tbl badge-good">✓ Good</span></td><td>32.5</td><td>0.100</td><td>1049.5</td><td>5485.3</td></tr><tr><td><strong>US</strong></td><td>287.0 <span class="badge-tbl badge-good">✓ Good</span></td><td>120.0</td><td>0.100</td><td>41.8</td><td>1904.2</td></tr></tbody></table></div>
+
+  </div><!-- /content -->
+
+  <script>
+    /* ── Injected chart data ──────────────────────────────────── */
+    const D = {"lcp_donut": [246, 0, 2], "inp_donut": [80, 4, 0], "cls_donut": [134, 73, 41], "regional": {"labels": ["Europe", "Australia", "Africa", "US"], "lcp": [265.3, 363.9, 1183.5, 287.0], "fcp": [265.3, 363.9, 1183.5, 287.0], "ttfb": [38.4, 41.7, 1049.5, 41.8], "pageLoad": [1558.0, 3595.8, 5485.3, 1904.2]}, "steps": {"labels": ["Main Landing Page", "Perforce Software Popup Tab", "Digital IP Management", "Browse Products", "What’s New", "Explore IPLM"], "avgPageLoad": [3658.6, 3401.7, 2722.7, 2722.7, 2292.5, 1985.8], "avgLCP": [371.0, 310.2, 756.5, 756.5, 258.3, 318.1]}, "radar": {"labels": ["LCP", "INP", "CLS", "TTFB", "Page Load"], "datasets": [{"label": "Europe", "data": [93.4, 82.6, 54.7, 97.9, 68.8], "borderColor": "#667eea", "backgroundColor": "#667eea28", "pointBackgroundColor": "#667eea", "pointRadius": 4, "borderWidth": 2}, {"label": "Australia", "data": [90.9, 85.6, 56.0, 97.7, 28.1], "borderColor": "#10b981", "backgroundColor": "#10b98128", "pointBackgroundColor": "#10b981", "pointRadius": 4, "borderWidth": 2}, {"label": "Africa", "data": [70.4, 93.5, 60.0, 41.7, 0], "borderColor": "#f59e0b", "backgroundColor": "#f59e0b28", "pointBackgroundColor": "#f59e0b", "pointRadius": 4, "borderWidth": 2}, {"label": "US", "data": [92.8, 76.0, 60.4, 97.7, 61.9], "borderColor": "#ef4444", "backgroundColor": "#ef444428", "pointBackgroundColor": "#ef4444", "pointRadius": 4, "borderWidth": 2}]}, "kpi": {"LCP_ms": {"avg": 464.21, "rating": "good"}, "INP_ms": {"avg": 83.238, "rating": "good"}, "CLS": {"avg": 0.106, "rating": "needs_improvement"}, "TTFB_ms": {"avg": 230.141, "rating": "good"}, "FCP_ms": {"avg": 464.21, "rating": "good"}}};
+
+    const GOOD  = '#10b981';
+    const NI    = '#f59e0b';
+    const POOR  = '#ef4444';
+
+    /* ── Helper: donut factory ─────────────────────────────────── */
+    function makeDonut(id, data) {
+      new Chart(document.getElementById(id), {
+        type: 'doughnut',
+        data: {
+          labels: ['Good', 'Needs Improvement', 'Poor'],
+          datasets: [{
+            data,
+            backgroundColor: [GOOD, NI, POOR],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          cutout: '58%',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } }
+          }
+        }
+      });
+    }
+
+    makeDonut('lcpDonut', D.lcp_donut);
+    makeDonut('inpDonut', D.inp_donut);
+    makeDonut('clsDonut', D.cls_donut);
+
+    /* ── Regional grouped bar ──────────────────────────────────── */
+    new Chart(document.getElementById('regionalBar'), {
+      type: 'bar',
+      data: {
+        labels: D.regional.labels,
+        datasets: [
+          { label: 'LCP (ms)',       data: D.regional.lcp,      backgroundColor: '#667eea' },
+          { label: 'FCP (ms)',       data: D.regional.fcp,      backgroundColor: '#10b981' },
+          { label: 'TTFB (ms)',      data: D.regional.ttfb,     backgroundColor: '#f59e0b' },
+          { label: 'Page Load (ms)', data: D.regional.pageLoad, backgroundColor: '#764ba2' }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: 'milliseconds' } }
+        }
+      }
+    });
+
+    /* ── Step horizontal bar ───────────────────────────────────── */
+    new Chart(document.getElementById('stepBar'), {
+      type: 'bar',
+      data: {
+        labels: D.steps.labels,
+        datasets: [
+          { label: 'Avg Page Load (ms)', data: D.steps.avgPageLoad, backgroundColor: '#667eea', borderRadius: 3 },
+          { label: 'Avg LCP (ms)',       data: D.steps.avgLCP,      backgroundColor: '#10b981', borderRadius: 3 }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
+        scales: { x: { beginAtZero: true } }
+      }
+    });
+
+    /* ── Regional radar ────────────────────────────────────────── */
+    new Chart(document.getElementById('radarChart'), {
+      type: 'radar',
+      data: {
+        labels: D.radar.labels,
+        datasets: D.radar.datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            beginAtZero: true,
+            max: 100,
+            ticks: { stepSize: 20, font: { size: 10 } },
+            pointLabels: { font: { size: 11 } }
+          }
+        },
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

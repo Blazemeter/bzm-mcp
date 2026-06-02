@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web Vitals Report - {{MASTER_ID}}</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    /* ── Header ──────────────────────────────────────────────────────── */
+    .header {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .header h1 { color: #667eea; margin-bottom: 10px; }
+    .hierarchy {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .hierarchy-item {
+      background: #f5f7fa;
+      padding: 12px;
+      border-radius: 4px;
+      border-left: 4px solid #667eea;
+    }
+    .hierarchy-item label { font-weight: bold; color: #667eea; display: block; font-size: 0.85em; }
+    .hierarchy-item value  { display: block; color: #333; margin-top: 5px; }
+
+    /* ── Section card ────────────────────────────────────────────────── */
+    .section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .section h2 {
+      color: #667eea;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #667eea;
+    }
+    .section h3 { margin: 16px 0 8px; color: #444; }
+
+    /* ── Metric cards ────────────────────────────────────────────────── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .metric-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .metric-card .label { font-size: 0.9em; opacity: 0.9; }
+    .metric-card .value { font-size: 2em; font-weight: bold; margin: 10px 0; }
+    .metric-card .unit  { font-size: 0.8em; opacity: 0.8; }
+
+    /* ── Tables ──────────────────────────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+    th {
+      background: #667eea;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+    }
+    td { padding: 12px; border-bottom: 1px solid #eee; }
+    tr:hover { background: #f9f9f9; }
+    .stats-table { font-size: 0.9em; }
+    .stats-table td { padding: 8px; }
+
+    /* ── Chart placeholder ───────────────────────────────────────────── */
+    .chart-container { position: relative; height: 300px; margin-bottom: 20px; }
+
+    /* ── Tabs ────────────────────────────────────────────────────────── */
+    .tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid #ddd; }
+    .tab-btn {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #667eea;
+      font-weight: 600;
+      border-bottom: 3px solid transparent;
+    }
+    .tab-btn.active { border-bottom-color: #667eea; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- HEADER — hierarchy: account / workspace / project / test / run -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    {{HEADER_SECTION}}
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- EXECUTIVE SUMMARY — top-level metric cards + totals            -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    {{SUMMARY_SECTION}}
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PERFORMANCE BY LOCATION — one stats table per region           -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    {{BY_LOCATION_SECTION}}
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PERFORMANCE BY TEST STEP — averaged across all locations       -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    {{BY_STEP_SECTION}}
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- RAW DATA — full row-level data table (capped at 100 rows)      -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    {{RAW_DATA_SECTION}}
+
+  </div>
+</body>
+</html>

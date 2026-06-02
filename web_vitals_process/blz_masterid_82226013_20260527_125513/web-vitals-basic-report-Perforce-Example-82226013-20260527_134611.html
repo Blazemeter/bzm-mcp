@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Europe, Australia, Africa, US Web Vitals Performance Summary</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; background: #f8fafc; color: #111827; }
+    .page { max-width: 960px; margin: 0 auto; padding: 24px; }
+    h1, h2, h3 { color: #111827; }
+    h1 { margin-bottom: 0.3em; }
+    p { margin: 0.8em 0; }
+    .section { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; box-shadow: 0 1px 2px rgba(15,23,42,0.08); padding: 24px; margin-bottom: 24px; }
+    .good { color: #047857; font-weight: 700; }
+    .warning { color: #b45309; font-weight: 700; }
+    .issue { color: #b91c1c; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { padding: 12px 10px; border: 1px solid #e5e7eb; text-align: left; }
+    th { background: #f3f4f6; color: #111827; }
+    .small { font-size: 0.95em; color: #6b7280; }
+    ul { margin: 0.8em 0 0.8em 1.4em; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Europe, Australia, Africa, US Web Vitals Summary</h1>
+    <p class="small">Regions: Europe, Australia, Africa, US</p>
+
+    <div class="section">
+      <h2>Overall performance insights</h2>
+      <p>The Africa-region test shows generally good backend responsiveness, with <strong>TTFB</strong> behavior indicating the server is responding quickly in most cases. User interaction readiness is strong, but page rendering and full load metrics indicate room for improvement.</p>
+      <ul>
+        <li><span class="good">Strong:</span> TTFB median ~70ms, indicating good backend response times.</li>
+        <li><span class="good">Strong:</span> TTI median ~498ms, showing pages become interactive quickly.</li>
+        <li><span class="issue">Needs work:</span> LCP average ~415ms, above the recommended 250ms threshold.</li>
+        <li><span class="issue">Needs work:</span> Average page load time ~4.9s, which is high for modern web expectations.</li>
+        <li><span class="issue">Needs work:</span> Average page weight ~4.18MB, with the landing page spiking to over 13MB.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Global metric summary</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Count</th>
+            <th>Mean</th>
+            <th>Median</th>
+            <th>Min</th>
+            <th>Max</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>LCP (ms)</td><td>41</td><td>415</td><td>324</td><td>208</td><td>1460</td></tr>
+          <tr><td>INP (ms)</td><td>17</td><td>51</td><td>48</td><td>40</td><td>72</td></tr>
+          <tr><td>CLS</td><td>41</td><td>0.117</td><td>0.1216</td><td>0.0001</td><td>0.2881</td></tr>
+          <tr><td>TTFB (ms)</td><td>41</td><td>176</td><td>69.6</td><td>54.3</td><td>1043.1</td></tr>
+          <tr><td>FCP (ms)</td><td>41</td><td>415</td><td>324</td><td>208</td><td>1460</td></tr>
+          <tr><td>TTI (ms)</td><td>41</td><td>669</td><td>498</td><td>373</td><td>1469</td></tr>
+          <tr><td>Document complete (ms)</td><td>41</td><td>4923</td><td>4826</td><td>2777</td><td>6455</td></tr>
+          <tr><td>Page load (ms)</td><td>41</td><td>4934</td><td>4828</td><td>2784</td><td>6482</td></tr>
+          <tr><td>Request count</td><td>41</td><td>148</td><td>127</td><td>8</td><td>307</td></tr>
+          <tr><td>Total page size (MB)</td><td>41</td><td>4.18</td><td>2.35</td><td>0.00</td><td>13.22</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Page-level performance highlights</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>LCP mean (ms)</th>
+            <th>CLS mean</th>
+            <th>TTFB mean (ms)</th>
+            <th>Page load mean (ms)</th>
+            <th>Size mean (MB)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Main Landing Page</td><td>422</td><td>0.255</td><td>154</td><td>5840</td><td>12.79</td></tr>
+          <tr><td>Browse Products</td><td>414</td><td>0.108</td><td>221</td><td>4893</td><td>2.92</td></tr>
+          <tr><td>Digital IP Management</td><td>414</td><td>0.108</td><td>221</td><td>4893</td><td>0.00</td></tr>
+          <tr><td>Explore IPLM</td><td>373</td><td>0.089</td><td>128</td><td>4100</td><td>2.36</td></tr>
+          <tr><td>What’s New</td><td>451</td><td>0.0076</td><td>160</td><td>4830</td><td>1.75</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Key recommendations</h2>
+      <ul>
+        <li><strong>Reduce landing page payload.</strong> The Main Landing Page is heavy at ~13MB; optimize images, fonts, and third-party assets first.</li>
+        <li><strong>Improve LCP and FCP.</strong> Prioritize visible hero content, critical CSS, and early asset delivery to lower the 415ms average.</li>
+        <li><strong>Fix layout shift on the landing page.</strong> Reserve size for images and embedded content to reduce the 0.255 CLS average.</li>
+        <li><strong>Audit page weight.</strong> Overall average page size ~4.18MB suggests further compression and lazy-loading can help full load time.</li>
+        <li><strong>Investigate TTFB outliers.</strong> Most responses are fast, but occasional spikes above 1s indicate regional cache or backend path issues.</li>
+        <li><strong>Capture more INP data.</strong> Only 17 interaction metrics were present; broadening interaction measurement will validate responsiveness across more user journeys.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Conclusion</h2>
+      <p>The Africa-region experience is promising for server response and interactivity, but the page loading experience is currently held back by larger payloads and slower first-content rendering. Focus on the landing page first and keep the smaller pages as benchmarks for what a better experience can look like.</p>
+    </div>
+  </div>
+</body>
+</html>

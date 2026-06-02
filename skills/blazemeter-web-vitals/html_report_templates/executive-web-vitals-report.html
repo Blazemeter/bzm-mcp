@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web Vitals Executive Report — {{MASTER_ID}}</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f1f5f9;
+      color: #1e293b;
+      line-height: 1.5;
+    }
+
+    /* ── Title bar ───────────────────────────────────────────────── */
+    .title-bar {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%);
+      color: white;
+      padding: 28px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .title-bar h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+    .title-bar .sub { font-size: 0.95rem; opacity: 0.75; margin-top: 4px; }
+    .title-bar .meta { font-size: 0.82rem; opacity: 0.65; text-align: right; line-height: 1.8; }
+
+    /* ── Page content ─────────────────────────────────────────────── */
+    .content { max-width: 1280px; margin: 0 auto; padding: 28px 24px 48px; }
+
+    /* ── Hierarchy bar ────────────────────────────────────────────── */
+    .hierarchy-bar {
+      background: white;
+      border-radius: 12px;
+      padding: 14px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 0;
+      align-items: center;
+    }
+    .hier-badge { display: flex; flex-direction: column; gap: 1px; padding: 0 16px; }
+    .hier-badge:first-child { padding-left: 0; }
+    .hier-badge .lbl { font-size: 0.68rem; font-weight: 700; color: #667eea; text-transform: uppercase; letter-spacing: 0.07em; }
+    .hier-badge .val { font-size: 0.88rem; color: #1e293b; font-weight: 500; }
+    .hier-sep { color: #cbd5e1; font-size: 1.4rem; line-height: 1; }
+    .loc-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+    .loc-chip {
+      font-size: 0.72rem; padding: 1px 8px; border-radius: 999px;
+      background: #ede9fe; color: #5b21b6; font-weight: 600;
+    }
+
+    /* ── KPI scorecard ────────────────────────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px 16px 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      border-top: 4px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .kpi-good    { border-top-color: #10b981; }
+    .kpi-warning { border-top-color: #f59e0b; }
+    .kpi-poor    { border-top-color: #ef4444; }
+    .kpi-neutral { border-top-color: #667eea; }
+    .kpi-label   { font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
+    .kpi-value   { font-size: 1.85rem; font-weight: 700; color: #0f172a; line-height: 1.1; }
+    .kpi-unit    { font-size: 0.85rem; font-weight: 400; color: #94a3b8; margin-left: 2px; }
+    .kpi-badge   { font-size: 0.7rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; display: inline-block; width: fit-content; margin-top: 2px; }
+    .badge-good    { background: #d1fae5; color: #065f46; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-poor    { background: #fee2e2; color: #991b1b; }
+    .badge-neutral { background: #ede9fe; color: #5b21b6; }
+    .badge-unknown { background: #f1f5f9; color: #64748b; }
+
+    /* ── Cards ────────────────────────────────────────────────────── */
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #667eea;
+    }
+    .card-subtitle { font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 10px; }
+
+    /* ── Chart grid layouts ───────────────────────────────────────── */
+    .chart-row-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .chart-row-2 {
+      display: grid;
+      grid-template-columns: 55fr 45fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .chart-sm   { position: relative; height: 210px; }
+    .chart-md   { position: relative; height: 280px; }
+    .chart-lg   { position: relative; height: 320px; }
+
+    /* ── Summary table ────────────────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; font-size: 0.88em; }
+    th { background: #667eea; color: white; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 0.82em; text-transform: uppercase; letter-spacing: 0.04em; }
+    td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; }
+    tr:hover td { background: #f8fafc; }
+    .badge-tbl { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+
+    @media (max-width: 860px) {
+      .chart-row-3 { grid-template-columns: 1fr; }
+      .chart-row-2 { grid-template-columns: 1fr; }
+      .kpi-grid    { grid-template-columns: repeat(2, 1fr); }
+      .title-bar   { flex-direction: column; gap: 12px; }
+      .title-bar .meta { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════ TITLE BAR ══════ -->
+  <div class="title-bar">
+    <div>
+      <h1>Web Vitals Executive Report</h1>
+      <div class="sub">{{TEST_MASTER_NAME}}</div>
+    </div>
+    <div class="meta">
+      Generated: {{GENERATED_AT}}<br>
+      Master ID: {{MASTER_ID}}
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══════════════════════════════════════ HIERARCHY BAR ═══════ -->
+    {{HEADER_SECTION}}
+
+    <!-- ══════════════════════════════════════ KPI SCORECARD ═══════ -->
+    {{KPI_SCORECARD}}
+
+    <!-- ═══════════════════════ CHART ROW 1 — CORE WEB VITALS ═════ -->
+    <!--  Three donut charts: LCP, INP, CLS — Good / NI / Poor       -->
+    <div class="chart-row-3">
+      <div class="card">
+        <div class="card-subtitle">LCP — Largest Contentful Paint</div>
+        <div class="chart-sm"><canvas id="lcpDonut"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-subtitle">INP — Interaction to Next Paint</div>
+        <div class="chart-sm"><canvas id="inpDonut"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-subtitle">CLS — Cumulative Layout Shift</div>
+        <div class="chart-sm"><canvas id="clsDonut"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ CHART ROW 2 — REGIONAL COMPARISON ═════ -->
+    <!--  Grouped bar: LCP, FCP, TTFB, Page Load per region          -->
+    <div class="card">
+      <div class="card-title">Regional Performance Comparison</div>
+      <div class="chart-md"><canvas id="regionalBar"></canvas></div>
+    </div>
+
+    <!-- ═══════════ CHART ROW 3 — STEP BAR  +  RADAR ══════════════ -->
+    <!--  Left: horizontal bar sorted by page load                    -->
+    <!--  Right: radar — normalised score per region                 -->
+    <div class="chart-row-2">
+      <div class="card">
+        <div class="card-title">Page Load Time by Test Step (avg ms)</div>
+        <div class="chart-lg"><canvas id="stepBar"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Regional Web Vitals Score (0 = poor → 100 = best)</div>
+        <div class="chart-lg"><canvas id="radarChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ SUMMARY TABLE ═══════ -->
+    <!--  Per-region averages with rating badges                      -->
+    {{SUMMARY_TABLE}}
+
+  </div><!-- /content -->
+
+  <script>
+    /* ── Injected chart data ──────────────────────────────────── */
+    const D = {{CHART_DATA_JSON}};
+
+    const GOOD  = '#10b981';
+    const NI    = '#f59e0b';
+    const POOR  = '#ef4444';
+
+    /* ── Helper: donut factory ─────────────────────────────────── */
+    function makeDonut(id, data) {
+      new Chart(document.getElementById(id), {
+        type: 'doughnut',
+        data: {
+          labels: ['Good', 'Needs Improvement', 'Poor'],
+          datasets: [{
+            data,
+            backgroundColor: [GOOD, NI, POOR],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          cutout: '58%',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } }
+          }
+        }
+      });
+    }
+
+    makeDonut('lcpDonut', D.lcp_donut);
+    makeDonut('inpDonut', D.inp_donut);
+    makeDonut('clsDonut', D.cls_donut);
+
+    /* ── Regional grouped bar ──────────────────────────────────── */
+    new Chart(document.getElementById('regionalBar'), {
+      type: 'bar',
+      data: {
+        labels: D.regional.labels,
+        datasets: [
+          { label: 'LCP (ms)',       data: D.regional.lcp,      backgroundColor: '#667eea' },
+          { label: 'FCP (ms)',       data: D.regional.fcp,      backgroundColor: '#10b981' },
+          { label: 'TTFB (ms)',      data: D.regional.ttfb,     backgroundColor: '#f59e0b' },
+          { label: 'Page Load (ms)', data: D.regional.pageLoad, backgroundColor: '#764ba2' }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: 'milliseconds' } }
+        }
+      }
+    });
+
+    /* ── Step horizontal bar ───────────────────────────────────── */
+    new Chart(document.getElementById('stepBar'), {
+      type: 'bar',
+      data: {
+        labels: D.steps.labels,
+        datasets: [
+          { label: 'Avg Page Load (ms)', data: D.steps.avgPageLoad, backgroundColor: '#667eea', borderRadius: 3 },
+          { label: 'Avg LCP (ms)',       data: D.steps.avgLCP,      backgroundColor: '#10b981', borderRadius: 3 }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
+        scales: { x: { beginAtZero: true } }
+      }
+    });
+
+    /* ── Regional radar ────────────────────────────────────────── */
+    new Chart(document.getElementById('radarChart'), {
+      type: 'radar',
+      data: {
+        labels: D.radar.labels,
+        datasets: D.radar.datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            beginAtZero: true,
+            max: 100,
+            ticks: { stepSize: 20, font: { size: 10 } },
+            pointLabels: { font: { size: 11 } }
+          }
+        },
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
