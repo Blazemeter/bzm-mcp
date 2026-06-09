@@ -45,6 +45,7 @@ RUN chmod +x ./bzm-mcp && \
 USER bzm-mcp
 
 ENV MCP_DOCKER=true
+ENV OTEL_EXPORTER_OTLP_ENDPOINT=""
 
 # Command to run the application
 ENTRYPOINT ["./bzm-mcp"]
