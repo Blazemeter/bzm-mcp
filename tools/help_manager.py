@@ -29,6 +29,7 @@ from formatters.help import format_help_info
 from models.manager import Manager
 from models.result import BaseResult
 from tools.help_utils import convert_js_to_py_dict
+from telemetry import run_tool
 from tools.utils import http_request, format_sanitized_traceback
 
 
@@ -290,7 +291,8 @@ Hints:
             args = {}
 
         help_manager = HelpManager(token, ctx)
-        try:
+
+        async def _dispatch():
             match action:
                 case "list_help_categories":
                     return await help_manager.list_help_categories()
@@ -345,6 +347,9 @@ Hints:
                     return BaseResult(
                         error=f"Action {action} not found in help manager tool"
                     )
+
+        try:
+            return await run_tool(f"{TOOLS_PREFIX}_help", action, ctx, _dispatch)
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

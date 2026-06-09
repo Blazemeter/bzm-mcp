@@ -23,6 +23,7 @@ from config.token import BzmToken
 from models.manager import Manager
 from models.result import BaseResult
 from tools.billing_utils import calculate_test_cost
+from telemetry import run_tool
 from tools.utils import format_sanitized_traceback
 
 
@@ -87,7 +88,8 @@ Hints:
     )
     async def billing(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
         billing_manager = BillingManager(token, ctx)
-        try:
+
+        async def _dispatch():
             match action:
                 case "calculate_cost_from_config":
                     return await billing_manager.calculate_cost_from_config(args)
@@ -95,6 +97,9 @@ Hints:
                     return BaseResult(
                         error=f"Action {action} not found in billing manager tool"
                     )
+
+        try:
+            return await run_tool(f"{TOOLS_PREFIX}_billing", action, ctx, _dispatch)
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

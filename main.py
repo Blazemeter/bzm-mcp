@@ -32,6 +32,7 @@ from mcp.server.fastmcp import FastMCP
 from config.token import BzmToken, BzmTokenError
 from config.version import __version__, __executable__, __bundle__
 from server import register_tools
+from telemetry import init_telemetry
 from tools.utils import ConfirmMode, register_confirm_mode
 
 BLAZEMETER_API_KEY_FILE_PATH = os.getenv('BLAZEMETER_API_KEY')
@@ -373,6 +374,7 @@ def get_token():
 
 
 def run(log_level: str = "CRITICAL", confirm_mode: ConfirmMode = ConfirmMode.DELETE):
+    init_telemetry("bzm-mcp", __version__)
     token = get_token()
     instructions = """
 # BlazeMeter MCP Server
@@ -473,7 +475,35 @@ def main():
         )
     )
 
+    otel_group = parser.add_argument_group("telemetry", "OpenTelemetry settings (override env vars)")
+    otel_group.add_argument(
+        "--otel-endpoint",
+        metavar="URL",
+        help="OTLP collector endpoint URL (overrides OTEL_EXPORTER_OTLP_ENDPOINT)",
+    )
+    otel_group.add_argument(
+        "--otel-headers",
+        metavar="KEY=VALUE",
+        action="append",
+        help=(
+            "OTLP header (repeatable, e.g. --otel-headers Authorization=Bearer\\ token); "
+            "overrides OTEL_EXPORTER_OTLP_HEADERS"
+        ),
+    )
+    otel_group.add_argument(
+        "--no-telemetry",
+        action="store_true",
+        help="Disable all OpenTelemetry tracing and metrics (sets OTEL_SDK_DISABLED=true)",
+    )
+
     args = parser.parse_args()
+
+    if args.no_telemetry:
+        os.environ["OTEL_SDK_DISABLED"] = "true"
+    if args.otel_endpoint:
+        os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = args.otel_endpoint
+    if args.otel_headers:
+        os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = ",".join(args.otel_headers)
 
     if args.mcp:
         init_logging(args.log_level)
