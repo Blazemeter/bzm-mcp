@@ -43,6 +43,8 @@ def init_telemetry(service_name: str, service_version: str) -> None:
     if os.getenv("OTEL_SDK_DISABLED", "").lower() == "true":
         return
     try:
+        # Lazy SDK imports: defer heavy setup until init_telemetry() and tolerate a
+        # missing SDK (ImportError) without breaking module import or startup.
         from opentelemetry.sdk.resources import SERVICE_NAME, SERVICE_VERSION, Resource
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -67,6 +69,8 @@ def init_telemetry(service_name: str, service_version: str) -> None:
         logger.debug("OTel TracerProvider initialised (service=%s, version=%s)", service_name, service_version)
 
         try:
+            # Metrics SDK is optional relative to tracing; keep imports local so a
+            # missing metrics package does not prevent trace provider setup.
             from opentelemetry.sdk.metrics import MeterProvider
             from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 
@@ -166,8 +170,10 @@ def _http_status_to_error_type(status_code: int) -> str:
     return f"http_{status_code}"
 
 
-def _record_metrics(tool_name: str, action: str, elapsed: float, outcome: str) -> None:
-    attrs = {"gen_ai.tool.name": tool_name, "mcp.tool.action": action, "error.type": outcome}
+def _record_metrics(tool_name: str, action: str, elapsed: float, error_type: str | None) -> None:
+    attrs: dict[str, str] = {"gen_ai.tool.name": tool_name, "mcp.tool.action": action}
+    if error_type is not None:
+        attrs["error.type"] = error_type
     try:
         if _call_counter is not None:
             _call_counter.add(1, attrs)
@@ -236,10 +242,10 @@ async def run_tool(
             raise
         finally:
             elapsed = time.perf_counter() - start
-            outcome = error_type or (
-                "api_error" if result is not None and getattr(result, "error", None) else "ok"
+            metric_error_type = error_type or (
+                "api_error" if result is not None and getattr(result, "error", None) else None
             )
-            _record_metrics(tool_name, action, elapsed, outcome)
+            _record_metrics(tool_name, action, elapsed, metric_error_type)
 
         if result is not None and getattr(result, "error", None):
             _record_span_error(span, "api_error")
