@@ -20,7 +20,7 @@ import httpx
 import pytest
 
 from models.result import BaseResult
-from telemetry import init_telemetry, run_tool
+from telemetry import _record_metrics, init_telemetry, run_tool
 
 
 def _make_ctx(meta=None):
@@ -48,6 +48,30 @@ def _make_tracer_and_span():
     tracer = MagicMock()
     tracer.start_as_current_span.return_value = cm
     return tracer, span
+
+
+class TestRecordMetrics:
+    def test_omits_error_type_on_success(self):
+        counter = MagicMock()
+        histogram = MagicMock()
+        with patch("telemetry._call_counter", counter), patch("telemetry._duration_histogram", histogram):
+            _record_metrics("blazemeter_user", "read", 0.5, None)
+        expected = {"gen_ai.tool.name": "blazemeter_user", "mcp.tool.action": "read"}
+        counter.add.assert_called_once_with(1, expected)
+        histogram.record.assert_called_once_with(0.5, expected)
+
+    def test_includes_error_type_on_failure(self):
+        counter = MagicMock()
+        histogram = MagicMock()
+        with patch("telemetry._call_counter", counter), patch("telemetry._duration_histogram", histogram):
+            _record_metrics("blazemeter_user", "read", 0.5, "timeout")
+        expected = {
+            "gen_ai.tool.name": "blazemeter_user",
+            "mcp.tool.action": "read",
+            "error.type": "timeout",
+        }
+        counter.add.assert_called_once_with(1, expected)
+        histogram.record.assert_called_once_with(0.5, expected)
 
 
 class TestRunTool:
