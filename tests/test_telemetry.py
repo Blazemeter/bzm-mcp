@@ -21,7 +21,16 @@ import httpx
 import pytest
 
 from models.result import BaseResult
-from telemetry import DEFAULT_OTLP_ENDPOINT, _record_metrics, init_telemetry, run_tool
+from telemetry import (
+    DEFAULT_OTLP_ENDPOINT,
+    DEFAULT_OTLP_PROTOCOL,
+    _create_metric_exporter,
+    _create_trace_exporter,
+    _get_otlp_protocol,
+    _record_metrics,
+    init_telemetry,
+    run_tool,
+)
 
 
 def _make_ctx(meta=None):
@@ -232,3 +241,53 @@ class TestInitTelemetry:
         monkeypatch.delenv("OTEL_SDK_DISABLED", raising=False)
         init_telemetry("bzm-mcp", "1.0.0")
         assert os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] == "http://localhost:4317"
+
+    def test_defaults_protocol_to_grpc(self, monkeypatch):
+        monkeypatch.delenv("OTEL_EXPORTER_OTLP_PROTOCOL", raising=False)
+        assert _get_otlp_protocol() == DEFAULT_OTLP_PROTOCOL
+        assert DEFAULT_OTLP_PROTOCOL == "grpc"
+
+    def test_http_protocol_env(self, monkeypatch):
+        monkeypatch.setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf")
+        assert _get_otlp_protocol() == "http/protobuf"
+
+    def test_does_not_raise_with_http_protocol(self, monkeypatch):
+        monkeypatch.setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf")
+        monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318")
+        init_telemetry("bzm-mcp", "1.0.0")
+
+    def test_grpc_trace_exporter_selected(self, monkeypatch):
+        monkeypatch.setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc")
+        with patch(
+            "opentelemetry.exporter.otlp.proto.grpc.trace_exporter.OTLPSpanExporter",
+            return_value=MagicMock(),
+        ) as grpc_exporter:
+            _create_trace_exporter()
+        grpc_exporter.assert_called_once()
+
+    def test_http_trace_exporter_selected(self, monkeypatch):
+        monkeypatch.setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf")
+        with patch(
+            "opentelemetry.exporter.otlp.proto.http.trace_exporter.OTLPSpanExporter",
+            return_value=MagicMock(),
+        ) as http_exporter:
+            _create_trace_exporter()
+        http_exporter.assert_called_once()
+
+    def test_grpc_metric_exporter_selected(self, monkeypatch):
+        monkeypatch.setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc")
+        with patch(
+            "opentelemetry.exporter.otlp.proto.grpc.metric_exporter.OTLPMetricExporter",
+            return_value=MagicMock(),
+        ) as grpc_exporter:
+            _create_metric_exporter()
+        grpc_exporter.assert_called_once()
+
+    def test_http_metric_exporter_selected(self, monkeypatch):
+        monkeypatch.setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http/json")
+        with patch(
+            "opentelemetry.exporter.otlp.proto.http.metric_exporter.OTLPMetricExporter",
+            return_value=MagicMock(),
+        ) as http_exporter:
+            _create_metric_exporter()
+        http_exporter.assert_called_once()
