@@ -22,6 +22,7 @@ from config.token import BzmToken
 from formatters.account import format_accounts
 from models.manager import Manager
 from models.result import BaseResult
+from telemetry import run_tool
 from tools.utils import api_request, format_sanitized_traceback
 
 
@@ -97,7 +98,8 @@ Hints:
     )
     async def account(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
         account_manager = AccountManager(token, ctx)
-        try:
+
+        async def _dispatch():
             match action:
                 case "read":
                     return await account_manager.read(args.get("account_id"))
@@ -107,6 +109,9 @@ Hints:
                     return BaseResult(
                         error=f"Action {action} not found in account manager tool"
                     )
+
+        try:
+            return await run_tool(f"{TOOLS_PREFIX}_account", action, ctx, _dispatch)
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

@@ -24,6 +24,7 @@ from formatters.project import format_projects
 from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
+from telemetry import run_tool
 from tools.utils import api_request, format_sanitized_traceback
 
 
@@ -105,7 +106,8 @@ Hints:
     )
     async def project(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
         project_manager = ProjectManager(token, ctx)
-        try:
+
+        async def _dispatch():
             match action:
                 case "read":
                     return await project_manager.read(args.get("project_id"))
@@ -115,6 +117,9 @@ Hints:
                     return BaseResult(
                         error=f"Action {action} not found in project manager tool"
                     )
+
+        try:
+            return await run_tool(f"{TOOLS_PREFIX}_project", action, ctx, _dispatch)
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"
