@@ -45,7 +45,8 @@ RUN chmod +x ./bzm-mcp && \
 USER bzm-mcp
 
 ENV MCP_DOCKER=true
-ENV OTEL_EXPORTER_OTLP_ENDPOINT=""
+# Telemetry defaults to the Perforce gRPC collector. Override the destination
+# with OTEL_EXPORTER_OTLP_ENDPOINT, or set OTEL_SDK_DISABLED=true to turn it off.
 
 # Command to run the application
 ENTRYPOINT ["./bzm-mcp"]
