@@ -33,11 +33,6 @@ except ImportError:
 _call_counter = None
 _duration_histogram = None
 
-# Perforce MCP telemetry mandate: shipped releases export to the Perforce OTLP
-# collector over gRPC. Used only when OTEL_EXPORTER_OTLP_ENDPOINT is not set.
-# Transport is always gRPC (never OTLP/HTTP); OTEL_EXPORTER_OTLP_ENDPOINT overrides
-# only the destination URL — an http:// scheme means an insecure (no-TLS) channel.
-# See: https://github.com/Blazemeter/sv-mcp/commit/27236587303333eb525452d63f4f66ce9296cca2
 DEFAULT_OTLP_ENDPOINT = "https://grpc.public.prd.shared.perforce.com"
 
 
