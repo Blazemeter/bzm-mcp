@@ -25,6 +25,7 @@ from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge, search_utils
 from tools.report_manager import ReportManager
+from telemetry import run_tool
 from tools.utils import api_request, timeout, user_agent, format_sanitized_traceback, require_confirmation, Operations
 
 
@@ -498,7 +499,7 @@ Hints:
         execution_manager = ExecutionManager(token, ctx)
         report_manager = ReportManager(token, ctx)
 
-        try:
+        async def _dispatch():
             match action:
                 case "start":
                     return await execution_manager.start(args.get("test_id"))
@@ -531,6 +532,9 @@ Hints:
                     return BaseResult(
                         error=f"Action {action} not found in test execution manager tool"
                     )
+
+        try:
+            return await run_tool(f"{TOOLS_PREFIX}_execution", action, ctx, _dispatch)
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

@@ -37,6 +37,7 @@ from models.manager import Manager
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
 from tools import bridge, search_utils
+from telemetry import run_tool
 from tools.utils import (
     api_request,
     require_confirmation,
@@ -653,7 +654,8 @@ Hints:
     )
     async def tests(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
         test_manager = TestManager(token, ctx)
-        try:
+
+        async def _dispatch():
             match action:
                 case "read":
                     return await test_manager.read(args.get("test_id"))
@@ -698,6 +700,9 @@ Hints:
                     return BaseResult(
                         error=f"Action {action} not found in tests manager tool"
                     )
+
+        try:
+            return await run_tool(f"{TOOLS_PREFIX}_tests", action, ctx, _dispatch)
         except httpx.HTTPStatusError:
             return BaseResult(error=f"Error: {format_sanitized_traceback()}")
         except Exception:
