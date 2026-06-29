@@ -119,10 +119,11 @@ def run_pyinstaller(name: str, icon: str):
         '--hidden-import=opentelemetry.sdk.resources',
         '--hidden-import=opentelemetry.sdk.metrics',
         '--hidden-import=opentelemetry.sdk.metrics.export',
-        '--hidden-import=opentelemetry.exporter.otlp.proto.http.trace_exporter',
-        '--hidden-import=opentelemetry.exporter.otlp.proto.http.metric_exporter',
+        '--hidden-import=opentelemetry.exporter.otlp.proto.grpc.trace_exporter',
+        '--hidden-import=opentelemetry.exporter.otlp.proto.grpc.metric_exporter',
         '--hidden-import=opentelemetry.propagate',
         '--collect-submodules=opentelemetry',
+        '--collect-all=grpc',
     ])
 
 

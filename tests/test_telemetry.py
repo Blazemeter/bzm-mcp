@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import asyncio
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
 
 from models.result import BaseResult
-from telemetry import _record_metrics, init_telemetry, run_tool
+from telemetry import DEFAULT_OTLP_ENDPOINT, _record_metrics, init_telemetry, run_tool
 
 
 def _make_ctx(meta=None):
@@ -216,5 +217,18 @@ class TestInitTelemetry:
         init_telemetry("bzm-mcp", "1.0.0")
 
     def test_does_not_raise_with_endpoint_set(self, monkeypatch):
-        monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318")
+        monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
         init_telemetry("bzm-mcp", "1.0.0")
+
+    def test_defaults_endpoint_to_perforce_grpc(self, monkeypatch):
+        monkeypatch.delenv("OTEL_EXPORTER_OTLP_ENDPOINT", raising=False)
+        monkeypatch.delenv("OTEL_SDK_DISABLED", raising=False)
+        init_telemetry("bzm-mcp", "1.0.0")
+        assert os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] == DEFAULT_OTLP_ENDPOINT
+        assert DEFAULT_OTLP_ENDPOINT == "https://grpc.public.prd.shared.perforce.com"
+
+    def test_explicit_endpoint_not_overridden(self, monkeypatch):
+        monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
+        monkeypatch.delenv("OTEL_SDK_DISABLED", raising=False)
+        init_telemetry("bzm-mcp", "1.0.0")
+        assert os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] == "http://localhost:4317"
