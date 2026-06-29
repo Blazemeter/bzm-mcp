@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 import httpx
 from mcp.server.fastmcp import Context
@@ -23,8 +23,9 @@ from config.token import BzmToken
 from formatters.execution import format_executions, format_executions_detailed, format_executions_status
 from models.manager import Manager
 from models.result import BaseResult
-from tools import bridge
+from tools import bridge, search_utils
 from tools.report_manager import ReportManager
+from telemetry import run_tool
 from tools.utils import api_request, timeout, user_agent, format_sanitized_traceback, require_confirmation, Operations
 
 
@@ -207,6 +208,27 @@ class ExecutionManager(Manager):
             result_formatter=format_executions,
             params=parameters
         )
+
+    async def search(self, args: dict[str, Any]) -> BaseResult:
+
+        # Check if it's valid or allowed
+        account_id = args.get("account_id")
+        if not isinstance(account_id, int) or account_id < 1:
+            return BaseResult(error="Missing or invalid required argument 'account_id'. Expected integer.")
+        account_data = await bridge.read_account(self.token, self.ctx, account_id)
+        if account_data.error:
+            return account_data
+
+        return await search_utils.test_execution_search("master", self.token, account_id, args)
+
+    async def search_filter_values(self, account_id: int, filter_names: List[str]) -> BaseResult:
+
+        # Check if it's valid or allowed
+        account_data = await bridge.read_account(self.token, self.ctx, account_id)
+        if account_data.error:
+            return account_data
+
+        return await search_utils.test_execution_search_filter_values("master", account_id, self.token, filter_names)
 
     async def ai_analysis(self, execution_id: Optional[int]) -> BaseResult:
         if not isinstance(execution_id, int) or execution_id < 1:
@@ -425,6 +447,28 @@ Actions:
         test_id (int): The id of the test to list the execution from
         limit (int, default=10, valid=[1 to 50]): The number of test executions to list.
         offset (int, default=0): Number of test executions to skip.       
+- search: Search all executions
+    args(dict): Dictionary with the following optional filter parameters:
+        account_id (int, mandatory): The id of the account to use.
+        execution_name (str): A case and diacritic insensitive search (ilike) for execution name (also known as report name).
+        workspace_id_list (list[int], values= use first search_filter_values tool with 'workspace_id_list'): The workspace IDs to filter the execution results.
+        time_frame (str, default='latest', values['latest','last24','lastWeek','lastMonth', 'custom']): 
+            The time frame to filter the execution results by run date. 
+            latest=Today, last24=Last 24 hours, lastWeek=Last 7 days, lastMonth=Last 30 days, custom= Custom Filter Range (use start_time and end_time).
+        start_time (str): The start time of run date in ISO format (only when time_frame is 'custom').
+        end_time (str): The end time of run date in ISO format (only when time_frame is 'custom').
+        cloud_provider_name_list (list[str], values= use first search_filter_values tool with 'cloud_provider_name_list'): The provider name to filter.
+        created_by_id_list (list[int], values= use first search_filter_values tool with 'created_by_id_list'): The user id that ran the execution to filter.
+        locations_id_list (list[str], values= use first search_filter_values tool with 'locations_id_list'): The location id to filter.
+        project_id_list (list[int], values= use first search_filter_values tool with 'project_id_list'): The project id to filter.
+        duration_list (list[dict[str,str]], values = use first search_filter_values tool with 'duration_list'): The duration filter, operator as key and value as value. Example: [{">=", 5}].
+        number_of_engines_list (list[dict[str,str]], values = use first search_filter_values tool with 'number_of_engines_list'): The number of engines filter, operator as key and value as value. Example: [{">=", 5}].
+        virtual_users_list (list[dict[str,str]], values = use first search_filter_values tool with 'virtual_users_list'): The number of virtual users filter, operator as key and value as value. Example: [{">=", 5}].
+        page_index (int, default=1), The current page number. If the result mention has_next_page in true, asks the user if they want to see the next page. 
+- search_filter_values: List the values needed for search filters
+    args(dict): Dictionary with the following required filter parameters:
+        account_id (int, mandatory): The id of the account to use.
+        filter_names (list[str], values=['workspace_id_list', 'cloud_provider_name_list', 'created_by_id_list', 'locations_id_list', 'project_id_list', 'duration_list', 'number_of_engines_list', 'virtual_users_list']): The filter name list.
 - read_summary: get the summary report for a given execution ID.
     args(dict): Dictionary with the following required parameters:
         execution_id (int): The execution ID to get the summary report for.
@@ -452,21 +496,26 @@ Hints:
 """
     )
     async def execution(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        test_manager = ExecutionManager(token, ctx)
+        execution_manager = ExecutionManager(token, ctx)
         report_manager = ReportManager(token, ctx)
 
-        try:
+        async def _dispatch():
             match action:
                 case "start":
-                    return await test_manager.start(args.get("test_id"))
+                    return await execution_manager.start(args.get("test_id"))
                 case "read":
-                    return await test_manager.read(args.get("execution_id"))
+                    return await execution_manager.read(args.get("execution_id"))
                 case "list":
-                    return await test_manager.list(
+                    return await execution_manager.list(
                         args.get("test_id"),
                         args.get("limit", 50),
                         args.get("offset", 0),
                     )
+                case "search":
+                    return await execution_manager.search(args)
+                case "search_filter_values":
+                    return await execution_manager.search_filter_values(args.get("account_id"),
+                                                                        args.get("filter_names", []))
                 case "read_summary":
                     return await report_manager.read_summary(args.get("execution_id"))
                 case "read_errors":
@@ -474,15 +523,18 @@ Hints:
                 case "read_request_stats":
                     return await report_manager.read_request_stats(args.get("execution_id"))
                 case "read_all_reports":
-                    return await test_manager.read_all_reports(args.get("execution_id"))
+                    return await execution_manager.read_all_reports(args.get("execution_id"))
                 case "read_anomalies_stats":
                     return await report_manager.read_anomalies_stats(args.get("execution_id"))
                 case "ai_analysis":
-                    return await test_manager.ai_analysis(args.get("execution_id"))
+                    return await execution_manager.ai_analysis(args.get("execution_id"))
                 case _:
                     return BaseResult(
                         error=f"Action {action} not found in test execution manager tool"
                     )
+
+        try:
+            return await run_tool(f"{TOOLS_PREFIX}_execution", action, ctx, _dispatch)
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

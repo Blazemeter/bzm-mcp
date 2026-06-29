@@ -25,6 +25,7 @@ from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE
 from config.token import BzmToken
 from models.manager import Manager
 from models.result import BaseResult
+from telemetry import run_tool
 from tools.utils import format_sanitized_traceback
 from tools.skills_utils import list_skills, read_skill_definition, read_skill_file, parse_skill_uri, \
     is_skill_uri, list_skill_resources_uri
@@ -203,7 +204,8 @@ Hints:
             args = {}
 
         skills_manager = SkillsManager(token, ctx)
-        try:
+
+        async def _dispatch():
             match action:
                 case "list_skills":
                     return await skills_manager.list_skills()
@@ -251,6 +253,9 @@ Hints:
                     return BaseResult(
                         error=f"Action {action} not found in skills manager tool"
                     )
+
+        try:
+            return await run_tool(f"{TOOLS_PREFIX}_skills", action, ctx, _dispatch)
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"
