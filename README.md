@@ -209,6 +209,94 @@ When using custom CA certificate bundles, you must configure both:
 
 ---
 
+## OpenTelemetry
+
+BlazeMeter MCP reports traces and metrics for MCP tool calls using [OpenTelemetry](https://opentelemetry.io/). This gives you visibility into which tools are used, how long they take, and when errors occur.
+
+Telemetry is enabled by default. You do not need to configure anything unless you want to change where data is sent or turn it off.
+
+### Default behavior
+
+By default, telemetry is exported over gRPC to:
+
+`https://grpc.public.prd.shared.perforce.com`
+
+The service is identified as `bzm-mcp` with the current release version. If telemetry fails to start or export, the MCP server continues to work as usual.
+
+### Turn off telemetry
+
+Add `OTEL_SDK_DISABLED=true` to your MCP client environment:
+
+```json
+"env": {
+  "OTEL_SDK_DISABLED": "true"
+}
+```
+
+For Docker, pass it with `-e`:
+
+```json
+"-e",
+"OTEL_SDK_DISABLED=true"
+```
+
+You can also pass `--no-telemetry` on the command line (binary or `uvx` install):
+
+```json
+"args": ["--mcp", "--no-telemetry"]
+```
+
+### Send data to your own collector
+
+Use these environment variables to point at a different OpenTelemetry collector (for example, a local one during development):
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector URL | `https://grpc.public.prd.shared.perforce.com` |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `grpc`, `http/protobuf`, or `http/json` | `grpc` |
+| `OTEL_EXPORTER_OTLP_HEADERS` | Comma-separated `key=value` headers for the collector | _(none)_ |
+
+gRPC example (typical local collector on port 4317):
+
+```json
+"env": {
+  "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
+  "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc"
+}
+```
+
+HTTP example (typical local collector on port 4318):
+
+```json
+"env": {
+  "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
+  "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf"
+}
+```
+
+When running the binary directly, you can override the endpoint and headers with CLI flags instead of environment variables:
+
+```json
+"args": [
+  "--mcp",
+  "--otel-endpoint", "http://localhost:4317",
+  "--otel-headers", "Authorization=Bearer token"
+]
+```
+
+### What gets reported
+
+Each MCP tool call creates:
+
+- **Traces** — one span per call with the tool name, action, MCP client name and version, session ID, and error type when applicable.
+- **Metrics** — `mcp.tool.calls` (count) and `mcp.tool.duration` (seconds), broken down by tool and action.
+
+Security tokens and other credentials are not included in telemetry data.
+
+If your MCP client sends `traceparent` or `tracestate` in the request metadata, BlazeMeter MCP links its spans to that parent trace.
+
+---
+
 ## License
 
 This project is licensed under the Apache License, Version 2.0. Please refer to [LICENSE](./LICENSE) for the full terms.
