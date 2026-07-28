@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from config.runtime import Runtime
+from config.runtime import AppRuntime
 from tools.account_manager import register as register_account_manager
 from tools.billing_manager import register as register_billing_manager
 from tools.execution_manager import register as register_execution_manager
@@ -25,13 +25,13 @@ from tools.user_manager import register as register_user_manager
 from tools.workspace_manager import register as register_workspace_manager
 
 
-def register_tools(mcp, runtime: Runtime):
+def register_tools(mcp, runtime: AppRuntime):
     """
     Register all available tools with the MCP server.
 
     Args:
         mcp: The MCP server instance
-        runtime: Process runtime (auth port and shared collaborators)
+        runtime: App runtime (transport + auth port and shared collaborators)
     """
     register_user_manager(mcp, runtime)
     register_project_manager(mcp, runtime)

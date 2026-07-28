@@ -32,7 +32,7 @@ from config.auth import (
     StdioAuthProvider,
     parse_authorization_header,
 )
-from config.runtime import Runtime
+from config.runtime import build_runtime
 from config.token import BzmToken, BzmTokenError
 
 
@@ -154,7 +154,12 @@ class TestBearerAuthMiddleware:
         assert client.options("/mcp").status_code == 200
 
 
-class TestRuntimeFactories:
-    def test_for_stdio_and_http(self):
-        assert isinstance(Runtime.for_stdio().auth, StdioAuthProvider)
-        assert isinstance(Runtime.for_http().auth, HttpAuthProvider)
+class TestBuildRuntime:
+    def test_build_runtime_stdio_and_http(self):
+        stdio = build_runtime("stdio")
+        assert stdio.transport == "stdio"
+        assert isinstance(stdio.auth, StdioAuthProvider)
+
+        http = build_runtime("streamable-http")
+        assert http.transport == "streamable-http"
+        assert isinstance(http.auth, HttpAuthProvider)

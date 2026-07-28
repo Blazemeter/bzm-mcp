@@ -19,7 +19,7 @@ from mcp.server.fastmcp import Context
 
 from config.blazemeter import ACCOUNTS_ENDPOINT, TOOLS_PREFIX, SUPPORT_MESSAGE
 from config.token import BzmToken
-from config.runtime import Runtime
+from config.runtime import AppRuntime
 from formatters.account import format_accounts
 from models.manager import Manager
 from models.result import BaseResult
@@ -77,7 +77,7 @@ class AccountManager(Manager):
             params=parameters
         )
 
-def register(mcp, runtime: Runtime) -> None:
+def register(mcp, runtime: AppRuntime) -> None:
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_account",
         description="""

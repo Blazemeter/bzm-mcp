@@ -20,7 +20,7 @@ from mcp.server.fastmcp import Context
 
 from config.blazemeter import TOOLS_PREFIX, EXECUTIONS_ENDPOINT, SUPPORT_MESSAGE
 from config.token import BzmToken
-from config.runtime import Runtime
+from config.runtime import AppRuntime
 from formatters.execution import format_executions, format_executions_detailed, format_executions_status
 from models.manager import Manager
 from models.result import BaseResult
@@ -431,7 +431,7 @@ class ExecutionManager(Manager):
             )
 
 
-def register(mcp, runtime: Runtime):
+def register(mcp, runtime: AppRuntime):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_execution",
         description="""

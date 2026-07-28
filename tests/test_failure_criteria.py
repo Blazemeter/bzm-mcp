@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from config.runtime import Runtime
+from config.runtime import AppRuntime, build_runtime
 import asyncio
 
 import pytest
@@ -278,7 +278,7 @@ class TestFailureCriteriaMetaPayload:
 class TestFailureCriteriaMetaAction:
     def test_tool_returns_catalog_without_api(self):
         mcp = _FakeMcpForTests()
-        register_tests_tool(mcp, Runtime.for_stdio())
+        register_tests_tool(mcp, build_runtime("stdio"))
         tool = mcp.tools[f"{TOOLS_PREFIX}_tests"]
         result = asyncio.run(tool("failure_criteria_meta", {}, ctx=None))
         assert result.error is None

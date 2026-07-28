@@ -24,7 +24,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 from config.token import BzmToken, BzmTokenError
 
-BZM_TOKEN_STATE_ATTR = "bzm_token"
+BZM_TOKEN_STATE_ATTR = "token"
 
 
 class AuthError(Exception):
