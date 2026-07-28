@@ -13,9 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Optional
-
-from config.token import BzmToken
+from config.runtime import Runtime
 from tools.account_manager import register as register_account_manager
 from tools.billing_manager import register as register_billing_manager
 from tools.execution_manager import register as register_execution_manager
@@ -27,20 +25,20 @@ from tools.user_manager import register as register_user_manager
 from tools.workspace_manager import register as register_workspace_manager
 
 
-def register_tools(mcp, token: Optional[BzmToken]):
+def register_tools(mcp, runtime: Runtime):
     """
     Register all available tools with the MCP server.
-    
+
     Args:
         mcp: The MCP server instance
-        token: Optional BlazeMeter token (can be None if not configured)
+        runtime: Process runtime (auth port and shared collaborators)
     """
-    register_user_manager(mcp, token)
-    register_project_manager(mcp, token)
-    register_workspace_manager(mcp, token)
-    register_test_manager(mcp, token)
-    register_execution_manager(mcp, token)
-    register_account_manager(mcp, token)
-    register_billing_manager(mcp, token)
-    register_help_manager(mcp, token)
-    register_skills_manager(mcp, token)
+    register_user_manager(mcp, runtime)
+    register_project_manager(mcp, runtime)
+    register_workspace_manager(mcp, runtime)
+    register_test_manager(mcp, runtime)
+    register_execution_manager(mcp, runtime)
+    register_account_manager(mcp, runtime)
+    register_billing_manager(mcp, runtime)
+    register_help_manager(mcp, runtime)
+    register_skills_manager(mcp, runtime)
