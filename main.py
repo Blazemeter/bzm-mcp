@@ -404,7 +404,11 @@ def resolve_mcp_transport(raw_cli_transport: str) -> str:
     return normalized
 
 
-def run(log_level: str = "CRITICAL", confirm_mode: ConfirmMode = ConfirmMode.DELETE, transport: str = "stdio"):
+def build_runtime(
+        log_level: str = "CRITICAL",
+        confirm_mode: ConfirmMode = ConfirmMode.DELETE,
+        transport: str = "stdio",
+) -> tuple[FastMCP, str]:
     init_telemetry("bzm-mcp", __version__)
     token = get_token()
     instructions = """
@@ -465,10 +469,17 @@ A comprehensive integration tool that provides AI assistants with full programma
     mcp = FastMCP("blazemeter-mcp", instructions=instructions, log_level=cast(LOG_LEVELS, log_level))
     register_confirm_mode(confirm_mode)
     register_tools(mcp, token)
-    if transport == "http":
-        mcp.run(transport="streamable-http")
-        return
-    mcp.run(transport="stdio")
+    runtime_transport = "streamable-http" if transport == "http" else "stdio"
+    return mcp, runtime_transport
+
+
+def run(log_level: str = "CRITICAL", confirm_mode: ConfirmMode = ConfirmMode.DELETE, transport: str = "stdio"):
+    mcp, runtime_transport = build_runtime(
+        log_level=log_level,
+        confirm_mode=confirm_mode,
+        transport=transport,
+    )
+    mcp.run(transport=runtime_transport)
 
 
 def main():
