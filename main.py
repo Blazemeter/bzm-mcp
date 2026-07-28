@@ -38,6 +38,7 @@ from tools.utils import ConfirmMode, register_confirm_mode
 BLAZEMETER_API_KEY_FILE_PATH = os.getenv('BLAZEMETER_API_KEY')
 
 LOG_LEVELS = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+MCP_TRANSPORTS = ("stdio", "http", "docker")
 
 # Canonical server label for printed JSON and clients that accept arbitrary string ids.
 MCP_SERVER_DISPLAY_NAME = "BlazeMeter MCP"
@@ -373,7 +374,37 @@ def get_token():
     return token
 
 
-def run(log_level: str = "CRITICAL", confirm_mode: ConfirmMode = ConfirmMode.DELETE):
+def resolve_mcp_transport(raw_cli_transport: str) -> str:
+    """
+    Resolve transport with precedence: CLI > BZM_MCP_TRANSPORT > stdio.
+
+    `raw_cli_transport` comes from argparse `--mcp`:
+    - empty string means `--mcp` was provided without an explicit value
+    - non-empty string means an explicit CLI transport was provided
+    """
+    raw_cli_transport = raw_cli_transport.strip()
+
+    if raw_cli_transport:
+        candidate = raw_cli_transport
+        source = "CLI --mcp"
+    else:
+        candidate = os.getenv("BZM_MCP_TRANSPORT", "").strip()
+        source = "BZM_MCP_TRANSPORT"
+
+    if not candidate:
+        return "stdio"
+
+    normalized = candidate.lower()
+    if normalized not in MCP_TRANSPORTS:
+        allowed = ", ".join(MCP_TRANSPORTS)
+        raise ValueError(
+            f"Invalid MCP transport '{candidate}' from {source}. "
+            f"Valid values: {allowed}."
+        )
+    return normalized
+
+
+def run(log_level: str = "CRITICAL", confirm_mode: ConfirmMode = ConfirmMode.DELETE, transport: str = "stdio"):
     init_telemetry("bzm-mcp", __version__)
     token = get_token()
     instructions = """
@@ -434,6 +465,9 @@ A comprehensive integration tool that provides AI assistants with full programma
     mcp = FastMCP("blazemeter-mcp", instructions=instructions, log_level=cast(LOG_LEVELS, log_level))
     register_confirm_mode(confirm_mode)
     register_tools(mcp, token)
+    if transport == "http":
+        mcp.run(transport="streamable-http")
+        return
     mcp.run(transport="stdio")
 
 
@@ -451,8 +485,13 @@ def main():
 
     parser.add_argument(
         "--mcp",
-        action="store_true",
-        help="Execute MCP Server"
+        nargs="?",
+        const="",
+        metavar="TRANSPORT",
+        help=(
+            "Execute MCP Server. Optional TRANSPORT values: stdio, http, docker.\n"
+            "Resolution precedence: CLI > BZM_MCP_TRANSPORT > stdio."
+        ),
     )
 
     parser.add_argument(
@@ -505,9 +544,13 @@ def main():
     if args.otel_headers:
         os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = ",".join(args.otel_headers)
 
-    if args.mcp:
+    if args.mcp is not None:
+        try:
+            transport = resolve_mcp_transport(args.mcp)
+        except ValueError as e:
+            parser.error(str(e))
         init_logging(args.log_level)
-        run(log_level=args.log_level.upper(), confirm_mode=ConfirmMode[args.confirm])
+        run(log_level=args.log_level.upper(), confirm_mode=ConfirmMode[args.confirm], transport=transport)
     else:
 
         logo_ascii = (
