@@ -25,6 +25,7 @@ from pydantic import Field
 from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE, \
     HELP_INDEX_URL, HELP_TOC_URL, HELP_BASE_CONTENT_URL
 from config.token import BzmToken
+from config.runtime import Runtime
 from formatters.help import format_help_info
 from models.manager import Manager
 from models.result import BaseResult
@@ -255,7 +256,7 @@ class HelpManager(Manager):
         )
 
 
-def register(mcp, token: Optional[BzmToken]):
+def register(mcp, runtime: Runtime):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_help",
         description="""
@@ -290,7 +291,7 @@ Hints:
         if args is None:
             args = {}
 
-        help_manager = HelpManager(token, ctx)
+        help_manager = HelpManager(runtime.auth.get_token(ctx), ctx)
 
         async def _dispatch():
             match action:

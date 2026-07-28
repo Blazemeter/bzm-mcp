@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from config.runtime import Runtime
 import asyncio
 
 from config.blazemeter import TOOLS_PREFIX
@@ -45,7 +46,7 @@ class FakeMcp:
 class TestRequiredArgumentsForTools:
     def test_account_read_requires_account_id(self):
         mcp = FakeMcp()
-        register_account_tool(mcp, token=None)
+        register_account_tool(mcp, Runtime.for_stdio())
         tool = mcp.tools[f"{TOOLS_PREFIX}_account"]
 
         result = asyncio.run(tool("read", {}, ctx=None))
@@ -54,7 +55,7 @@ class TestRequiredArgumentsForTools:
 
     def test_workspace_list_requires_account_id(self):
         mcp = FakeMcp()
-        register_workspaces_tool(mcp, token=None)
+        register_workspaces_tool(mcp, Runtime.for_stdio())
         tool = mcp.tools[f"{TOOLS_PREFIX}_workspaces"]
 
         result = asyncio.run(tool("list", {}, ctx=None))
@@ -63,7 +64,7 @@ class TestRequiredArgumentsForTools:
 
     def test_project_read_requires_project_id(self):
         mcp = FakeMcp()
-        register_project_tool(mcp, token=None)
+        register_project_tool(mcp, Runtime.for_stdio())
         tool = mcp.tools[f"{TOOLS_PREFIX}_project"]
 
         result = asyncio.run(tool("read", {}, ctx=None))
@@ -72,7 +73,7 @@ class TestRequiredArgumentsForTools:
 
     def test_tests_create_requires_test_name(self):
         mcp = FakeMcp()
-        register_tests_tool(mcp, token=None)
+        register_tests_tool(mcp, Runtime.for_stdio())
         tool = mcp.tools[f"{TOOLS_PREFIX}_tests"]
 
         result = asyncio.run(tool("create", {"project_id": 123}, ctx=None))
@@ -81,7 +82,7 @@ class TestRequiredArgumentsForTools:
 
     def test_tests_upload_assets_requires_file_paths(self):
         mcp = FakeMcp()
-        register_tests_tool(mcp, token=None)
+        register_tests_tool(mcp, Runtime.for_stdio())
         tool = mcp.tools[f"{TOOLS_PREFIX}_tests"]
 
         result = asyncio.run(tool("upload_assets", {"test_id": 123}, ctx=None))
@@ -90,7 +91,7 @@ class TestRequiredArgumentsForTools:
 
     def test_tests_configure_failure_criteria_requires_enabled_and_rules(self):
         mcp = FakeMcp()
-        register_tests_tool(mcp, token=None)
+        register_tests_tool(mcp, Runtime.for_stdio())
         tool = mcp.tools[f"{TOOLS_PREFIX}_tests"]
 
         result = asyncio.run(tool("configure_failure_criteria", {"test_id": 123}, ctx=None))
@@ -105,7 +106,7 @@ class TestRequiredArgumentsForTools:
 
     def test_execution_read_requires_execution_id(self):
         mcp = FakeMcp()
-        register_execution_tool(mcp, token=None)
+        register_execution_tool(mcp, Runtime.for_stdio())
         tool = mcp.tools[f"{TOOLS_PREFIX}_execution"]
 
         result = asyncio.run(tool("read", {}, ctx=None))
@@ -114,7 +115,7 @@ class TestRequiredArgumentsForTools:
 
     def test_execution_read_summary_requires_execution_id(self):
         mcp = FakeMcp()
-        register_execution_tool(mcp, token=None)
+        register_execution_tool(mcp, Runtime.for_stdio())
         tool = mcp.tools[f"{TOOLS_PREFIX}_execution"]
 
         result = asyncio.run(tool("read_summary", {}, ctx=None))
@@ -123,7 +124,7 @@ class TestRequiredArgumentsForTools:
 
     def test_skills_read_skill_requires_skill_name(self):
         mcp = FakeMcp()
-        register_skills_tool(mcp, token=None)
+        register_skills_tool(mcp, Runtime.for_stdio())
         tool = mcp.tools[f"{TOOLS_PREFIX}_skills"]
 
         result = asyncio.run(tool("read_skill", {}, ctx=None))
@@ -132,7 +133,7 @@ class TestRequiredArgumentsForTools:
 
     def test_skills_read_skill_resource_uri_requires_uri(self):
         mcp = FakeMcp()
-        register_skills_tool(mcp, token=None)
+        register_skills_tool(mcp, Runtime.for_stdio())
         tool = mcp.tools[f"{TOOLS_PREFIX}_skills"]
 
         result = asyncio.run(tool("read_skill_resource_uri", {}, ctx=None))
@@ -141,7 +142,7 @@ class TestRequiredArgumentsForTools:
 
     def test_skills_read_skill_resource_uri_list_requires_non_empty_list(self):
         mcp = FakeMcp()
-        register_skills_tool(mcp, token=None)
+        register_skills_tool(mcp, Runtime.for_stdio())
         tool = mcp.tools[f"{TOOLS_PREFIX}_skills"]
 
         result = asyncio.run(tool("read_skill_resource_uri_list", {}, ctx=None))
@@ -150,7 +151,7 @@ class TestRequiredArgumentsForTools:
 
     def test_help_read_help_info_requires_help_id_list(self):
         mcp = FakeMcp()
-        register_help_tool(mcp, token=None)
+        register_help_tool(mcp, Runtime.for_stdio())
         tool = mcp.tools[f"{TOOLS_PREFIX}_help"]
 
         result = asyncio.run(tool("read_help_info", {}, ctx=None))
@@ -159,7 +160,7 @@ class TestRequiredArgumentsForTools:
 
     def test_help_list_help_category_content_requires_subcategory_list(self):
         mcp = FakeMcp()
-        register_help_tool(mcp, token=None)
+        register_help_tool(mcp, Runtime.for_stdio())
         tool = mcp.tools[f"{TOOLS_PREFIX}_help"]
 
         result = asyncio.run(tool("list_help_category_content", {}, ctx=None))

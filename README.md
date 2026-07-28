@@ -110,6 +110,34 @@ After installing, set `BLAZEMETER_API_KEY` to your `api-key.json` path in your c
 
 ---
 
+**Hosted HTTP (streamable-http) Client Configuration**
+
+Run a shared server that authenticates each client via `Authorization: Bearer`:
+
+```bash
+uv run python main.py --mcp --transport streamable-http //PLACEHOLDER
+```
+
+Configure the MCP client with the server URL and your BlazeMeter API key as Bearer credentials (`id:secret` or base64 of `id:secret`):
+
+```json
+{
+  "mcpServers": {
+    "BlazeMeter MCP": {
+      "url": "http://localhost:8000/mcp",
+      "headers": {
+        "Authorization": "Bearer <apiKeyId>:<apiKeySecret>"
+      }
+    }
+  }
+}
+```
+
+> [!NOTE]  
+> Over HTTP, credentials are resolved per request from the `Authorization` header. Invalid or missing Bearer credentials return `401` before any tool runs. Well-formed but wrong API keys fail later inside BlazeMeter API calls (same as stdio). Stdio transport uses `api-key.json` / env / Docker secrets.
+
+---
+
 **Docker MCP Client Configuration**
 
 1. **Prerequisites:** [Docker]([https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/))
