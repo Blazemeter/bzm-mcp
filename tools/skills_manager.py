@@ -23,7 +23,7 @@ from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE
 from config.token import BzmToken
-from config.runtime import Runtime
+from config.runtime import AppRuntime
 from models.manager import Manager
 from models.result import BaseResult
 from telemetry import run_tool
@@ -158,7 +158,7 @@ class SkillsManager(Manager):
         )
 
 
-def register(mcp, runtime: Runtime):
+def register(mcp, runtime: AppRuntime):
     @mcp.resource("blazemeter-skill-{skill_name}://{path}")
     def universal_skills_handler(skill_name: str, path: str) -> str:
         path = unquote(path)

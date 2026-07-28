@@ -21,7 +21,7 @@ from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX, USER_ENDPOINT
 from config.token import BzmToken
-from config.runtime import Runtime
+from config.runtime import AppRuntime
 from formatters.user import format_users
 from models.manager import Manager
 from models.result import BaseResult
@@ -43,7 +43,7 @@ class UserManager(Manager):
         )
 
 
-def register(mcp, runtime: Runtime):
+def register(mcp, runtime: AppRuntime):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_user",
         description="""

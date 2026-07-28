@@ -14,22 +14,34 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from dataclasses import dataclass
-from typing import Optional
+from typing import Literal, Optional
 
 from config.auth import AuthPort, HttpAuthProvider, StdioAuthProvider
 from config.token import BzmToken
 
+Transport = Literal["stdio", "streamable-http"]
+
 
 @dataclass(frozen=True)
-class Runtime:
+class AppRuntime:
     """Process-level collaborators shared by tool registrations."""
 
+    transport: Transport
     auth: AuthPort
 
-    @classmethod
-    def for_stdio(cls, token: Optional[BzmToken] = None) -> "Runtime":
-        return cls(auth=StdioAuthProvider(token))
 
-    @classmethod
-    def for_http(cls) -> "Runtime":
-        return cls(auth=HttpAuthProvider())
+def build_runtime(
+        transport: Transport,
+        startup_token: Optional[BzmToken] = None,
+) -> AppRuntime:
+    """
+    Compose auth for the selected transport.
+
+    - stdio: use process-lifetime ``startup_token`` (from env / api-key.json / Docker).
+    - streamable-http: resolve credentials per request via Bearer middleware + HttpAuthProvider.
+    """
+    if transport == "stdio":
+        return AppRuntime(transport=transport, auth=StdioAuthProvider(startup_token))
+    if transport == "streamable-http":
+        return AppRuntime(transport=transport, auth=HttpAuthProvider())
+    raise ValueError(f"Unknown transport: {transport}")

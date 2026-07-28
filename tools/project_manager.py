@@ -20,7 +20,7 @@ from mcp.server.fastmcp import Context
 
 from config.blazemeter import TOOLS_PREFIX, PROJECTS_ENDPOINT
 from config.token import BzmToken
-from config.runtime import Runtime
+from config.runtime import AppRuntime
 from formatters.project import format_projects
 from models.manager import Manager
 from models.result import BaseResult
@@ -84,7 +84,7 @@ class ProjectManager(Manager):
             params=parameters
         )
 
-def register(mcp, runtime: Runtime):
+def register(mcp, runtime: AppRuntime):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_project",
         description="""
