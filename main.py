@@ -29,6 +29,8 @@ from typing import Literal, cast
 
 from mcp.server.fastmcp import FastMCP
 
+from config.auth import run_streamable_http
+from config.runtime import build_runtime
 from config.token import BzmToken, BzmTokenError
 from config.version import __version__, __executable__, __bundle__
 from server import register_tools
@@ -38,6 +40,7 @@ from tools.utils import ConfirmMode, register_confirm_mode
 BLAZEMETER_API_KEY_FILE_PATH = os.getenv('BLAZEMETER_API_KEY')
 
 LOG_LEVELS = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+MCP_TRANSPORTS = ("stdio", "http", "docker")
 
 # Canonical server label for printed JSON and clients that accept arbitrary string ids.
 MCP_SERVER_DISPLAY_NAME = "BlazeMeter MCP"
@@ -373,9 +376,67 @@ def get_token():
     return token
 
 
-def run(log_level: str = "CRITICAL", confirm_mode: ConfirmMode = ConfirmMode.DELETE):
+def resolve_mcp_transport(raw_cli_transport: str) -> str:
+    """
+    Resolve transport with precedence: CLI > BZM_MCP_TRANSPORT > stdio.
+
+    `raw_cli_transport` comes from argparse `--mcp`:
+    - empty string means `--mcp` was provided without an explicit value
+    - non-empty string means an explicit CLI transport was provided
+    """
+    raw_cli_transport = raw_cli_transport.strip()
+
+    if raw_cli_transport:
+        candidate = raw_cli_transport
+        source = "CLI --mcp"
+    else:
+        candidate = os.getenv("BZM_MCP_TRANSPORT", "").strip()
+        source = "BZM_MCP_TRANSPORT"
+
+    if not candidate:
+        return "stdio"
+
+    normalized = candidate.lower()
+    if normalized not in MCP_TRANSPORTS:
+        allowed = ", ".join(MCP_TRANSPORTS)
+        raise ValueError(
+            f"Invalid MCP transport '{candidate}' from {source}. "
+            f"Valid values: {allowed}."
+        )
+    return normalized
+
+
+def to_wire_transport(logical_transport: str) -> Literal["stdio", "streamable-http"]:
+    """Map CLI/logical transport (stdio|http|docker) to FastMCP wire transport."""
+    return "streamable-http" if logical_transport == "http" else "stdio"
+
+
+def build_mcp_server(
+        log_level: str = "CRITICAL",
+        confirm_mode: ConfirmMode = ConfirmMode.DELETE,
+        transport: str = "stdio",
+) -> tuple[FastMCP, str]:
+    """
+    Build FastMCP + auth wiring for a logical CLI transport (stdio|http|docker).
+
+    Returns ``(mcp, wire_transport)`` where ``wire_transport`` is the FastMCP
+    transport name (``stdio`` or ``streamable-http``).
+    """
     init_telemetry("bzm-mcp", __version__)
-    token = get_token()
+    host = "127.0.0.1"
+    port = 8000
+    streamable_http_path = "/mcp"
+    if transport == "http":
+        host = os.getenv("FASTMCP_HOST", "127.0.0.1").strip() or "127.0.0.1"
+        port = int(os.getenv("FASTMCP_PORT", "8000").strip() or "8000")
+        streamable_http_path = os.getenv("FASTMCP_STREAMABLE_HTTP_PATH", "/mcp").strip() or "/mcp"
+
+    # docker and stdio share process-lifetime credentials; http uses Bearer per request.
+    wire_transport = to_wire_transport(transport)
+    app_runtime = build_runtime(
+        wire_transport,
+        startup_token=get_token() if wire_transport == "stdio" else None,
+    )
     instructions = """
 # BlazeMeter MCP Server
 A comprehensive integration tool that provides AI assistants with full programmatic access to BlazeMeter's cloud-based performance testing platform. Enables automated management of complete load testing workflows from creation to execution and reporting. Transforms enterprise-grade testing capabilities into an AI-accessible service for intelligent automation of complex performance testing scenarios.
@@ -431,10 +492,31 @@ A comprehensive integration tool that provides AI assistants with full programma
 - **Proactive Troubleshooting**: Use the skills for troubleshooting any detected issues.
 - **Failure criteria**: The same field names appear when you read a test and when you configure failure criteria (`failure_criteria` on the test); the server handles BlazeMeter’s REST format internally. Use `failure_criteria_meta` for field definitions and KPI/condition catalogs. When describing criteria to the user, use `meta.general_labels`, `meta.rule_field_labels`, `meta.kpi_labels`, and `meta.condition_labels`; use raw metric and operator ids only inside tool calls. Use `configure_failure_criteria` only after user confirmation; it replaces all rules unless you merge from a prior read.
     """
-    mcp = FastMCP("blazemeter-mcp", instructions=instructions, log_level=cast(LOG_LEVELS, log_level))
+    mcp = FastMCP(
+        "blazemeter-mcp",
+        instructions=instructions,
+        log_level=cast(LOG_LEVELS, log_level),
+        host=host,
+        port=port,
+        streamable_http_path=streamable_http_path,
+        stateless_http=False,
+    )
     register_confirm_mode(confirm_mode)
-    register_tools(mcp, token)
-    mcp.run(transport="stdio")
+    register_tools(mcp, app_runtime)
+    return mcp, wire_transport
+
+
+def run(log_level: str = "CRITICAL", confirm_mode: ConfirmMode = ConfirmMode.DELETE, transport: str = "stdio"):
+    mcp, runtime_transport = build_mcp_server(
+        log_level=log_level,
+        confirm_mode=confirm_mode,
+        transport=transport,
+    )
+    if runtime_transport == "stdio":
+        mcp.run(transport=runtime_transport)
+    else:
+        # Hosted HTTP requires Bearer auth middleware around the ASGI app.
+        run_streamable_http(mcp)
 
 
 def main():
@@ -451,8 +533,13 @@ def main():
 
     parser.add_argument(
         "--mcp",
-        action="store_true",
-        help="Execute MCP Server"
+        nargs="?",
+        const="",
+        metavar="TRANSPORT",
+        help=(
+            "Execute MCP Server. Optional TRANSPORT values: stdio, http, docker.\n"
+            "Resolution precedence: CLI > BZM_MCP_TRANSPORT > stdio."
+        ),
     )
 
     parser.add_argument(
@@ -505,9 +592,17 @@ def main():
     if args.otel_headers:
         os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = ",".join(args.otel_headers)
 
-    if args.mcp:
-        init_logging(args.log_level)
-        run(log_level=args.log_level.upper(), confirm_mode=ConfirmMode[args.confirm])
+    if args.mcp is not None:
+        try:
+            transport = resolve_mcp_transport(args.mcp)
+            if transport == "docker":
+                os.environ["MCP_DOCKER"] = "true"
+            elif transport == "http":
+                os.environ["MCP_DOCKER"] = "false"
+            init_logging(args.log_level)
+            run(log_level=args.log_level.upper(), confirm_mode=ConfirmMode[args.confirm], transport=transport)
+        except ValueError as e:
+            parser.error(str(e))
     else:
 
         logo_ascii = (
