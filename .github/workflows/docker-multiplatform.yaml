@@ -74,7 +74,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Extract metadata
+    - name: Extract metadata (stdio image)
       id: meta
       uses: docker/metadata-action@v6
       with:
@@ -88,13 +88,39 @@ jobs:
           type=semver,pattern={{major}},enable=${{ github.event_name == 'release' }}
           type=raw,value=latest,enable=${{ github.event_name == 'release' }}
     
-    - name: Build and push Docker image
+    - name: Build and push stdio Docker image
       uses: docker/build-push-action@v7
       with:
         context: .
+        file: Dockerfile
         platforms: ${{ env.PLATFORMS }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Extract metadata (hosted HTTP image)
+      id: meta-hosted
+      uses: docker/metadata-action@v6
+      with:
+        images: |
+          ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_NAME }}
+        tags: |
+          type=raw,value=hosted
+          type=raw,value=hosted-latest,enable=${{ github.event_name == 'release' }}
+          type=semver,pattern=hosted-{{version}},enable=${{ github.event_name == 'release' }}
+          type=semver,pattern=hosted-{{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
+          type=ref,event=branch,prefix=hosted-
+
+    - name: Build and push hosted HTTP Docker image
+      uses: docker/build-push-action@v7
+      with:
+        context: .
+        file: Dockerfile.hosted
+        platforms: ${{ env.PLATFORMS }}
+        push: true
+        tags: ${{ steps.meta-hosted.outputs.tags }}
+        labels: ${{ steps.meta-hosted.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max

@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from typing import Literal, Optional
 
 from config.auth import AuthPort, HttpAuthProvider, StdioAuthProvider
+from config.storage import StoragePort, build_storage
 from config.token import BzmToken
 
 Transport = Literal["stdio", "streamable-http"]
@@ -28,20 +29,32 @@ class AppRuntime:
 
     transport: Transport
     auth: AuthPort
+    storage: StoragePort
 
 
 def build_runtime(
         transport: Transport,
         startup_token: Optional[BzmToken] = None,
+        storage_backend: Optional[str] = None,
 ) -> AppRuntime:
     """
-    Compose auth for the selected transport.
+    Compose auth and storage for the selected transport.
 
-    - stdio: use process-lifetime ``startup_token`` (from env / api-key.json / Docker).
-    - streamable-http: resolve credentials per request via Bearer middleware + HttpAuthProvider.
+    - stdio: process-lifetime ``startup_token``; local/memory file storage by default.
+    - streamable-http: Bearer middleware + HttpAuthProvider; HttpStorageClient
+      (local paths rejected) regardless of BZM_STORAGE_BACKEND for MVP.
     """
+    storage = build_storage(transport, backend=storage_backend)
     if transport == "stdio":
-        return AppRuntime(transport=transport, auth=StdioAuthProvider(startup_token))
+        return AppRuntime(
+            transport=transport,
+            auth=StdioAuthProvider(startup_token),
+            storage=storage,
+        )
     if transport == "streamable-http":
-        return AppRuntime(transport=transport, auth=HttpAuthProvider())
+        return AppRuntime(
+            transport=transport,
+            auth=HttpAuthProvider(),
+            storage=storage,
+        )
     raise ValueError(f"Unknown transport: {transport}")
