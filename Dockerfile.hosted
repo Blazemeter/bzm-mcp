@@ -1,0 +1,61 @@
+# Copyright 2025 BlazeMeter author
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Hosted streamable-http image for Cloud Run / mcp.blazemeter.com.
+# Built from source (not the stdio PyInstaller binary) so HTTP + Bearer +
+# health endpoints match the branch you deploy.
+# Stdio clients keep using Dockerfile + :latest — do not retag :latest to this image.
+
+FROM python:3.11-slim-bookworm AS builder
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir uv
+
+COPY pyproject.toml uv.lock README.md ./
+COPY main.py server.py telemetry.py ./
+COPY config/ config/
+COPY tools/ tools/
+COPY models/ models/
+COPY formatters/ formatters/
+COPY resources/ resources/
+
+RUN uv sync --frozen --no-dev
+
+FROM python:3.11-slim-bookworm
+
+WORKDIR /app
+
+RUN groupadd -r bzm-mcp && useradd -r -g bzm-mcp bzm-mcp
+
+COPY --from=builder /app /app
+
+# Do NOT set MCP_DOCKER=true here — that flag is for local stdio Docker + volume mounts.
+ENV BZM_MCP_TRANSPORT=http
+ENV FASTMCP_HOST=0.0.0.0
+ENV FASTMCP_PORT=8000
+ENV FASTMCP_STREAMABLE_HTTP_PATH=/mcp
+ENV BZM_STORAGE_BACKEND=memory
+# Cloud Run injects PORT; main.py falls back to PORT when FASTMCP_PORT is unset.
+# Keep FASTMCP_PORT for local docker; Cloud Run may override PORT independently.
+
+EXPOSE 8000
+
+USER bzm-mcp
+
+# uv is not copied; use the venv python directly.
+ENV PATH="/app/.venv/bin:$PATH"
+
+ENTRYPOINT ["python", "main.py"]
+CMD ["--mcp", "http"]

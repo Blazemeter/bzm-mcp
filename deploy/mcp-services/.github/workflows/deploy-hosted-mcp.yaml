@@ -1,0 +1,51 @@
+name: Deploy hosted MCP (scaffold)
+
+# Move to Blazemeter/mcp-services when that repository exists.
+# Triggers after a manual dispatch or when you wire repository_dispatch from bzm-mcp.
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "GHCR tag to deploy (e.g. hosted or hosted-1.4.0)"
+        required: true
+        default: hosted
+
+env:
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  REGION: ${{ vars.GCP_REGION || 'us-central1' }}
+  SERVICE: bzm-mcp-hosted
+  IMAGE: ghcr.io/blazemeter/bzm-mcp:${{ inputs.image_tag }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy Cloud Run
+        run: |
+          gcloud run deploy "$SERVICE" \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --image="$IMAGE" \
+            --port=8000 \
+            --allow-unauthenticated \
+            --min-instances=1 \
+            --max-instances=1 \
+            --set-env-vars="BZM_MCP_TRANSPORT=http,FASTMCP_HOST=0.0.0.0,FASTMCP_PORT=8000,BZM_STORAGE_BACKEND=memory"
+
+      - name: Health smoke
+        run: |
+          URL=$(gcloud run services describe "$SERVICE" --project="$PROJECT_ID" --region="$REGION" --format='value(status.url)')
+          curl -sf "$URL/health"

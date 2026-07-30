@@ -33,6 +33,7 @@ from config.auth import (
     parse_authorization_header,
 )
 from config.runtime import build_runtime
+from config.storage import HttpStorageClient, LocalStorageClient
 from config.token import BzmToken, BzmTokenError
 
 
@@ -153,13 +154,35 @@ class TestBearerAuthMiddleware:
         client = TestClient(app)
         assert client.options("/mcp").status_code == 200
 
+    def test_health_bypasses_auth(self):
+        async def health(_request: Request):
+            return JSONResponse({"status": "ok"})
+
+        app = BearerAuthMiddleware(
+            Starlette(
+                routes=[
+                    Route("/health", endpoint=health, methods=["GET"]),
+                    Route("/healthz", endpoint=health, methods=["GET"]),
+                ]
+            )
+        )
+        client = TestClient(app)
+        assert client.get("/health").status_code == 200
+        assert client.get("/health").json()["status"] == "ok"
+        assert client.get("/healthz").status_code == 200
+
 
 class TestBuildRuntime:
-    def test_build_runtime_stdio_and_http(self):
+    def test_build_runtime_stdio_and_http(self, monkeypatch):
+        monkeypatch.delenv("MCP_DOCKER", raising=False)
+        monkeypatch.delenv("BZM_STORAGE_BACKEND", raising=False)
+
         stdio = build_runtime("stdio")
         assert stdio.transport == "stdio"
         assert isinstance(stdio.auth, StdioAuthProvider)
+        assert isinstance(stdio.storage, LocalStorageClient)
 
         http = build_runtime("streamable-http")
         assert http.transport == "streamable-http"
         assert isinstance(http.auth, HttpAuthProvider)
+        assert isinstance(http.storage, HttpStorageClient)

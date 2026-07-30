@@ -428,7 +428,13 @@ def build_mcp_server(
     streamable_http_path = "/mcp"
     if transport == "http":
         host = os.getenv("FASTMCP_HOST", "127.0.0.1").strip() or "127.0.0.1"
-        port = int(os.getenv("FASTMCP_PORT", "8000").strip() or "8000")
+        # Cloud Run injects PORT; prefer FASTMCP_PORT when set, else PORT, else 8000.
+        port_raw = (
+            os.getenv("FASTMCP_PORT")
+            or os.getenv("PORT")
+            or "8000"
+        ).strip() or "8000"
+        port = int(port_raw)
         streamable_http_path = os.getenv("FASTMCP_STREAMABLE_HTTP_PATH", "/mcp").strip() or "/mcp"
 
     # docker and stdio share process-lifetime credentials; http uses Bearer per request.

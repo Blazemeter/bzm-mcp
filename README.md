@@ -112,10 +112,20 @@ After installing, set `BLAZEMETER_API_KEY` to your `api-key.json` path in your c
 
 **Hosted HTTP (streamable-http) Client Configuration**
 
-Run a shared server that authenticates each client via `Authorization: Bearer`:
+Shared server authenticates each client via `Authorization: Bearer`. Production URL:
+
+`https://mcp.blazemeter.com/mcp`
+
+Local / operator run:
 
 ```bash
-uv run python main.py --mcp --transport streamable-http //PLACEHOLDER
+# From source
+uv run python main.py --mcp http
+# or
+BZM_MCP_TRANSPORT=http FASTMCP_HOST=0.0.0.0 FASTMCP_PORT=8000 uv run python main.py --mcp
+
+# Hosted container image (separate from stdio Docker image)
+docker run --rm -p 8000:8000 ghcr.io/blazemeter/bzm-mcp:hosted
 ```
 
 Configure the MCP client with the server URL and your BlazeMeter API key as Bearer credentials (`id:secret` or base64 of `id:secret`):
@@ -124,7 +134,7 @@ Configure the MCP client with the server URL and your BlazeMeter API key as Bear
 {
   "mcpServers": {
     "BlazeMeter MCP": {
-      "url": "http://localhost:8000/mcp",
+      "url": "https://mcp.blazemeter.com/mcp",
       "headers": {
         "Authorization": "Bearer <apiKeyId>:<apiKeySecret>"
       }
@@ -133,8 +143,11 @@ Configure the MCP client with the server URL and your BlazeMeter API key as Bear
 }
 ```
 
+For local testing use `"url": "http://localhost:8000/mcp"` instead.
+
 > [!NOTE]  
-> Over HTTP, credentials are resolved per request from the `Authorization` header. Invalid or missing Bearer credentials return `401` before any tool runs. Well-formed but wrong API keys fail later inside BlazeMeter API calls (same as stdio). Stdio transport uses `api-key.json` / env / Docker secrets.
+> Over HTTP, credentials are resolved per request from the `Authorization` header. Invalid or missing Bearer credentials return `401` before any tool runs. Well-formed but wrong API keys fail later inside BlazeMeter API calls (same as stdio). Stdio transport uses `api-key.json` / env / Docker secrets.  
+> Hosted MVP uses in-memory storage and rejects local file upload (`upload_assets`). See [docs/hosted-mvp-runbook.md](docs/hosted-mvp-runbook.md).
 
 ---
 

@@ -1,0 +1,47 @@
+# Cloud Run service sketch for hosted BlazeMeter MCP (MVP, single instance).
+# Apply via gcloud or copy into mcp-services/cloudrun/service.yaml
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: bzm-mcp-hosted
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "1"
+    spec:
+      containerConcurrency: 80
+      containers:
+        - image: ghcr.io/blazemeter/bzm-mcp:hosted
+          ports:
+            - name: http1
+              containerPort: 8000
+          env:
+            - name: BZM_MCP_TRANSPORT
+              value: http
+            - name: FASTMCP_HOST
+              value: "0.0.0.0"
+            - name: FASTMCP_PORT
+              value: "8000"
+            - name: FASTMCP_STREAMABLE_HTTP_PATH
+              value: /mcp
+            - name: BZM_STORAGE_BACKEND
+              value: memory
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 30
