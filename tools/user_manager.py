@@ -21,6 +21,7 @@ from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX, USER_ENDPOINT
 from config.token import BzmToken
+from config.runtime import AppRuntime
 from formatters.user import format_users
 from models.manager import Manager
 from models.result import BaseResult
@@ -42,7 +43,7 @@ class UserManager(Manager):
         )
 
 
-def register(mcp, token: Optional[BzmToken]):
+def register(mcp, runtime: AppRuntime):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_user",
         description="""
@@ -60,7 +61,7 @@ Hints:
             ctx: Context = Field(description="Context object providing access to MCP capabilities")
     ) -> BaseResult:
 
-        user_manager = UserManager(token, ctx)
+        user_manager = UserManager(runtime.auth.get_token(ctx), ctx)
 
         async def _dispatch():
             match action:

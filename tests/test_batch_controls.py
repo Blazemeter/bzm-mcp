@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from config.runtime import AppRuntime, build_runtime
 import asyncio
 
 from config.blazemeter import TOOLS_PREFIX
@@ -41,7 +42,7 @@ class FakeMcp:
 class TestBatchControls:
     def test_help_batch_respects_concurrency_limit(self, monkeypatch):
         mcp = FakeMcp()
-        register_help_tool(mcp, token=None)
+        register_help_tool(mcp, build_runtime("stdio"))
         help_tool = mcp.tools[f"{TOOLS_PREFIX}_help"]
         HelpManager.help_tree = {}
         monkeypatch.setattr(HelpManager, "MAX_BATCH_CONCURRENCY", 2)
@@ -67,7 +68,7 @@ class TestBatchControls:
 
     def test_skills_batch_respects_concurrency_limit(self, monkeypatch):
         mcp = FakeMcp()
-        register_skills_tool(mcp, token=None)
+        register_skills_tool(mcp, build_runtime("stdio"))
         skills_tool = mcp.tools[f"{TOOLS_PREFIX}_skills"]
         monkeypatch.setattr(SkillsManager, "MAX_BATCH_CONCURRENCY", 2)
 

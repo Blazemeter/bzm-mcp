@@ -27,6 +27,7 @@ from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
 from config.path_mapper import PathMapperFactory
 from config.security import detect_sensitive_upload_path_reason
 from config.token import BzmToken
+from config.runtime import AppRuntime
 from formatters.failure_criteria_labels import failure_criteria_meta_payload
 from formatters.test import format_tests
 from models.failure_criteria import (
@@ -549,7 +550,7 @@ class TestManager(Manager):
         return BaseResult(result=[failure_criteria_meta_payload()])
 
 
-def register(mcp, token: Optional[BzmToken]):
+def register(mcp, runtime: AppRuntime):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_tests",
         description="""
@@ -653,7 +654,7 @@ Hints:
 """,
     )
     async def tests(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        test_manager = TestManager(token, ctx)
+        test_manager = TestManager(runtime.auth.get_token(ctx), ctx)
 
         async def _dispatch():
             match action:

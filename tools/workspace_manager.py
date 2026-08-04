@@ -21,6 +21,7 @@ from pydantic import Field
 
 from config.blazemeter import WORKSPACES_ENDPOINT, TOOLS_PREFIX
 from config.token import BzmToken
+from config.runtime import AppRuntime
 from formatters.workspace import format_workspaces, format_workspaces_detailed, format_workspaces_locations
 from models.manager import Manager
 from models.result import BaseResult
@@ -109,7 +110,7 @@ class WorkspaceManager(Manager):
             else:
                 return locations_result
 
-def register(mcp, token: Optional[BzmToken]):
+def register(mcp, runtime: AppRuntime):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_workspaces",
         description="""
@@ -138,7 +139,7 @@ Hints:
             ctx: Context = Field(description="Context object providing access to MCP capabilities")
     ) -> BaseResult:
 
-        workspace_manager = WorkspaceManager(token, ctx)
+        workspace_manager = WorkspaceManager(runtime.auth.get_token(ctx), ctx)
 
         async def _dispatch():
             match action:
