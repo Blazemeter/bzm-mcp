@@ -20,6 +20,7 @@ from mcp.server.fastmcp import Context
 
 from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE
 from config.token import BzmToken
+from config.runtime import AppRuntime
 from models.manager import Manager
 from models.result import BaseResult
 from tools.billing_utils import calculate_test_cost
@@ -46,7 +47,7 @@ class BillingManager(Manager):
         ])
 
 
-def register(mcp, token: Optional[BzmToken]) -> None:
+def register(mcp, runtime: AppRuntime) -> None:
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_billing",
         description="""
@@ -87,7 +88,7 @@ Hints:
 """
     )
     async def billing(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        billing_manager = BillingManager(token, ctx)
+        billing_manager = BillingManager(runtime.auth.get_token(ctx), ctx)
 
         async def _dispatch():
             match action:
