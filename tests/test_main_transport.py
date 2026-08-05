@@ -75,6 +75,8 @@ class TestBuildMcpServerHttp:
 
         assert mcp.kwargs["port"] == 8080
 
+
+class TestBuildMcpServerTransportMapping:
     def test_transport_mapping_keeps_docker_stdio_and_http_streamable(self, monkeypatch):
         _patch_mcp_server_dependencies(monkeypatch)
 
