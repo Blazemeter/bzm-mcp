@@ -124,8 +124,14 @@ uv run python main.py --mcp http
 # or
 BZM_MCP_TRANSPORT=http FASTMCP_HOST=0.0.0.0 FASTMCP_PORT=8000 uv run python main.py --mcp
 
-# Hosted container image (separate from stdio Docker image)
-docker run --rm -p 8000:8000 ghcr.io/blazemeter/bzm-mcp:hosted
+# Container image (:latest is stdio by default; pass hosted HTTP env vars)
+docker run --rm -p 8000:8000 \
+  -e BZM_MCP_TRANSPORT=http \
+  -e FASTMCP_HOST=0.0.0.0 \
+  -e FASTMCP_PORT=8000 \
+  -e FASTMCP_STREAMABLE_HTTP_PATH=/mcp \
+  -e BZM_STORAGE_BACKEND=memory \
+  ghcr.io/blazemeter/bzm-mcp:latest
 ```
 
 Configure the MCP client with the server URL and your BlazeMeter API key as Bearer credentials (`id:secret` or base64 of `id:secret`):
