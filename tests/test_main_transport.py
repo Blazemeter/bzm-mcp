@@ -98,6 +98,7 @@ class TestBuildMcpServerAuthWiring:
 
         _patch_mcp_server_dependencies(monkeypatch)
         monkeypatch.setattr(main, "register_tools", capture_register)
+        monkeypatch.delenv("BZM_STORAGE_API_BASE_URL", raising=False)
 
         main.build_mcp_server(transport="http")
 

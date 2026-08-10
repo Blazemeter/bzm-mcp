@@ -15,9 +15,18 @@ limitations under the License.
 """
 from dataclasses import dataclass
 from typing import Literal, Optional
+import os
 
 from config.auth import AuthPort, HttpAuthProvider, StdioAuthProvider
-from config.storage import StoragePort, build_storage
+from config.storage import (
+    DefaultSessionScopeResolver,
+    FileStoragePort,
+    HttpSessionStorageProvider,
+    InMemorySessionStorageProvider,
+    SessionScopeResolverPort,
+    SessionStoragePort,
+    build_storage,
+)
 from config.token import BzmToken
 
 Transport = Literal["stdio", "streamable-http"]
@@ -29,7 +38,9 @@ class AppRuntime:
 
     transport: Transport
     auth: AuthPort
-    storage: StoragePort
+    storage: FileStoragePort
+    session_storage: SessionStoragePort
+    scope_resolver: SessionScopeResolverPort
 
 
 def build_runtime(
@@ -40,21 +51,37 @@ def build_runtime(
     """
     Compose auth and storage for the selected transport.
 
-    - stdio: process-lifetime ``startup_token``; local/memory file storage by default.
-    - streamable-http: Bearer middleware + HttpAuthProvider; HttpStorageClient
-      (local paths rejected) regardless of BZM_STORAGE_BACKEND for MVP.
+    - stdio: process-lifetime ``startup_token`` + local/memory file storage.
+    - streamable-http: request-scoped auth + hosted-safe file storage, and
+      external session-partition persistence when BZM_STORAGE_API_BASE_URL is set.
     """
-    storage = build_storage(transport, backend=storage_backend)
+    file_storage = build_storage(transport, backend=storage_backend)
+
     if transport == "stdio":
         return AppRuntime(
             transport=transport,
             auth=StdioAuthProvider(startup_token),
-            storage=storage,
+            storage=file_storage,
+            session_storage=InMemorySessionStorageProvider(),
+            scope_resolver=DefaultSessionScopeResolver(),
         )
+
     if transport == "streamable-http":
+        storage_base_url = os.getenv("BZM_STORAGE_API_BASE_URL", "").strip()
+        if storage_base_url:
+            session_storage: SessionStoragePort = HttpSessionStorageProvider(
+                base_url=storage_base_url,
+            )
+            session_storage.ensure_available()
+        else:
+            session_storage = InMemorySessionStorageProvider()
+
         return AppRuntime(
             transport=transport,
             auth=HttpAuthProvider(),
-            storage=storage,
+            storage=file_storage,
+            session_storage=session_storage,
+            scope_resolver=DefaultSessionScopeResolver(),
         )
+
     raise ValueError(f"Unknown transport: {transport}")
