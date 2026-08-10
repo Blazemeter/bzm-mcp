@@ -24,7 +24,7 @@ from mcp.server.fastmcp import Context
 
 from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
 from config.security import detect_sensitive_upload_path_reason
-from config.storage import LocalStorageClient, StorageNotSupportedError, StoragePort
+from config.storage import MemoryStorageProvider, StorageNotSupportedError, StoragePort
 from config.token import BzmToken
 from config.runtime import AppRuntime
 from formatters.failure_criteria_labels import failure_criteria_meta_payload
@@ -58,7 +58,7 @@ class TestManager(Manager):
         storage: Optional[StoragePort] = None,
     ):
         super().__init__(token, ctx)
-        self.storage = storage or LocalStorageClient()
+        self.storage = storage or MemoryStorageProvider()
 
     async def read(self, test_id: Optional[int]) -> BaseResult:
         if not isinstance(test_id, int) or test_id < 1:

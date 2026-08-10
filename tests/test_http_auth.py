@@ -33,7 +33,7 @@ from config.auth import (
     parse_authorization_header,
 )
 from config.runtime import build_runtime
-from config.storage import HttpStorageClient, LocalStorageClient
+from config.storage import HttpStorageClient, MemoryStorageProvider
 from config.token import BzmToken, BzmTokenError
 
 
@@ -180,7 +180,7 @@ class TestBuildRuntime:
         stdio = build_runtime("stdio")
         assert stdio.transport == "stdio"
         assert isinstance(stdio.auth, StdioAuthProvider)
-        assert isinstance(stdio.storage, LocalStorageClient)
+        assert isinstance(stdio.storage, MemoryStorageProvider)
 
         http = build_runtime("streamable-http")
         assert http.transport == "streamable-http"

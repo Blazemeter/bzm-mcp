@@ -15,9 +15,15 @@ limitations under the License.
 """
 from __future__ import annotations
 
+import asyncio
+import copy
 import os
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Literal, Optional, Protocol, runtime_checkable
+from typing import Any, Dict, List, Literal, Optional, Protocol, runtime_checkable
+from urllib.parse import quote
+
+import httpx
 
 from config.path_mapper import PathMapperFactory, PathMappingStrategy
 
@@ -29,20 +35,70 @@ HOSTED_FILE_ACCESS_MESSAGE = (
     "Phase 2 remote Storage."
 )
 
+DEFAULT_STORAGE_SERVICE_URL_ENV = "BZM_STORAGE_SERVICE_URL"
+
 
 class StorageNotSupportedError(NotImplementedError):
     """Raised when a storage backend cannot fulfill a file operation."""
 
 
+@dataclass
+class SessionPartition:
+    """
+    Session document stored under ``{user_id}/{mcp_session_id}``.
+
+    Schema placeholders match the external Storage Service contract so MCP
+    workers and the storage API stay aligned.
+    """
+
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    dataframes: Dict[str, Any] = field(default_factory=dict)
+    tasks: Dict[str, Any] = field(default_factory=dict)
+    uploaded_files: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "metadata": copy.deepcopy(self.metadata),
+            "dataframes": copy.deepcopy(self.dataframes),
+            "tasks": copy.deepcopy(self.tasks),
+            "uploaded_files": copy.deepcopy(self.uploaded_files),
+        }
+
+    @classmethod
+    def from_dict(cls, payload: Optional[Dict[str, Any]]) -> "SessionPartition":
+        data = payload or {}
+        return cls(
+            metadata=dict(data.get("metadata") or {}),
+            dataframes=dict(data.get("dataframes") or {}),
+            tasks=dict(data.get("tasks") or {}),
+            uploaded_files=dict(data.get("uploaded_files") or {}),
+        )
+
+
 @runtime_checkable
 class StoragePort(Protocol):
     """
-    Contract for resolving and reading files used by MCP tools (e.g. upload_assets).
+    Contract for session-partitioned state and file access used by MCP tools.
 
-    MVP backends:
-    - memory/local: process-local disk via path mapping (stdio / local Docker)
-    - http: fail-closed stub for hosted streamable-http (no local disk)
+    Session methods are keyed by ``{user_id}/{mcp_session_id}`` so hosted
+    workers can share dataframes/tasks across HTTP requests and instances.
+
+    File methods support ``upload_assets`` on stdio; hosted backends fail closed.
     """
+
+    async def get(self, user_id: str, mcp_session_id: str) -> Optional[SessionPartition]:
+        ...
+
+    async def put(
+            self,
+            user_id: str,
+            mcp_session_id: str,
+            partition: SessionPartition,
+    ) -> None:
+        ...
+
+    async def delete(self, user_id: str, mcp_session_id: str) -> None:
+        ...
 
     def map_paths(self, file_paths: List[str]) -> List[str]:
         ...
@@ -62,10 +118,10 @@ class StoragePort(Protocol):
 
 class LocalStorageClient:
     """
-    Process-local file access (BZM_STORAGE_BACKEND=memory for MVP).
+    Process-local file access helper used by ``MemoryStorageProvider``.
 
-    Uses the existing path mapper so Docker volume mounts keep working.
-    No external Storage Service — suitable for single-instance / stdio MVP.
+    Kept as a named type so existing upload/security tests can target file I/O
+    without depending on session-partition behaviour.
     """
 
     def __init__(self, path_mapper: Optional[PathMappingStrategy] = None):
@@ -88,14 +144,143 @@ class LocalStorageClient:
         return Path(path).name
 
 
-class HttpStorageClient:
+class MemoryStorageProvider:
     """
-    Fail-closed file storage for hosted HTTP (and future remote Storage Service).
+    Stdio / single-process session store (in-memory partitions) + local files.
 
-    Every file lookup/upload path raises so local client paths cannot be used
-    against a shared hosted instance. Phase 2 can replace these stubs with
-    real remote Storage API calls.
+    Replaces the process-global ``_dataframes`` dict as the backing store while
+    preserving local disk access for ``upload_assets``.
     """
+
+    def __init__(
+            self,
+            path_mapper: Optional[PathMappingStrategy] = None,
+            files: Optional[LocalStorageClient] = None,
+    ):
+        self._files = files or LocalStorageClient(path_mapper=path_mapper)
+        self._partitions: Dict[tuple[str, str], SessionPartition] = {}
+        self._lock = asyncio.Lock()
+
+    @staticmethod
+    def _key(user_id: str, mcp_session_id: str) -> tuple[str, str]:
+        return (str(user_id), str(mcp_session_id))
+
+    async def get(self, user_id: str, mcp_session_id: str) -> Optional[SessionPartition]:
+        async with self._lock:
+            partition = self._partitions.get(self._key(user_id, mcp_session_id))
+            if partition is None:
+                return None
+            return SessionPartition.from_dict(partition.to_dict())
+
+    async def put(
+            self,
+            user_id: str,
+            mcp_session_id: str,
+            partition: SessionPartition,
+    ) -> None:
+        async with self._lock:
+            self._partitions[self._key(user_id, mcp_session_id)] = SessionPartition.from_dict(
+                partition.to_dict()
+            )
+
+    async def delete(self, user_id: str, mcp_session_id: str) -> None:
+        async with self._lock:
+            self._partitions.pop(self._key(user_id, mcp_session_id), None)
+
+    def map_paths(self, file_paths: List[str]) -> List[str]:
+        return self._files.map_paths(file_paths)
+
+    def exists(self, path: str) -> bool:
+        return self._files.exists(path)
+
+    def is_file(self, path: str) -> bool:
+        return self._files.is_file(path)
+
+    def read_bytes(self, path: str) -> bytes:
+        return self._files.read_bytes(path)
+
+    def basename(self, path: str) -> str:
+        return self._files.basename(path)
+
+
+class HTTPStorageClient:
+    """
+    Hosted Storage Service client: session get/put/delete over HTTP.
+
+    File lookup/upload paths remain fail-closed until remote ``uploaded_files``
+    support lands. Base URL: ``BZM_STORAGE_SERVICE_URL``.
+    """
+
+    def __init__(
+            self,
+            base_url: Optional[str] = None,
+            http_client: Optional[httpx.AsyncClient] = None,
+            timeout: Optional[httpx.Timeout] = None,
+    ):
+        env_url = os.getenv(DEFAULT_STORAGE_SERVICE_URL_ENV, "")
+        self._base_url = (base_url if base_url is not None else env_url).rstrip("/")
+        self._http_client = http_client
+        self._owns_client = http_client is None
+        self._timeout = timeout or httpx.Timeout(connect=5.0, read=30.0, write=30.0, pool=5.0)
+        self._client_lock = asyncio.Lock()
+
+    def _require_base_url(self) -> str:
+        if not self._base_url:
+            raise ValueError(
+                f"{DEFAULT_STORAGE_SERVICE_URL_ENV} is required for HTTP storage "
+                "(session get/put/delete)."
+            )
+        return self._base_url
+
+    def _partition_path(self, user_id: str, mcp_session_id: str) -> str:
+        user = quote(str(user_id), safe="")
+        session = quote(str(mcp_session_id), safe="")
+        return f"/v1/sessions/{user}/{session}"
+
+    async def _client(self) -> httpx.AsyncClient:
+        if self._http_client is not None:
+            return self._http_client
+        async with self._client_lock:
+            if self._http_client is None:
+                self._http_client = httpx.AsyncClient(
+                    base_url=self._require_base_url(),
+                    timeout=self._timeout,
+                )
+            return self._http_client
+
+    async def get(self, user_id: str, mcp_session_id: str) -> Optional[SessionPartition]:
+        self._require_base_url()
+        client = await self._client()
+        response = await client.get(self._partition_path(user_id, mcp_session_id))
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, dict):
+            raise ValueError("Storage Service get returned a non-object JSON payload")
+        return SessionPartition.from_dict(payload)
+
+    async def put(
+            self,
+            user_id: str,
+            mcp_session_id: str,
+            partition: SessionPartition,
+    ) -> None:
+        self._require_base_url()
+        client = await self._client()
+        response = await client.put(
+            self._partition_path(user_id, mcp_session_id),
+            json=partition.to_dict(),
+        )
+        response.raise_for_status()
+
+    async def delete(self, user_id: str, mcp_session_id: str) -> None:
+        self._require_base_url()
+        client = await self._client()
+        response = await client.delete(self._partition_path(user_id, mcp_session_id))
+        if response.status_code == 404:
+            return
+        response.raise_for_status()
 
     def map_paths(self, file_paths: List[str]) -> List[str]:
         raise StorageNotSupportedError(HOSTED_FILE_ACCESS_MESSAGE)
@@ -111,6 +296,10 @@ class HttpStorageClient:
 
     def basename(self, path: str) -> str:
         raise StorageNotSupportedError(HOSTED_FILE_ACCESS_MESSAGE)
+
+
+# Backward-compatible alias used by older tests / docs.
+HttpStorageClient = HTTPStorageClient
 
 
 def resolve_storage_backend(raw: Optional[str] = None) -> StorageBackend:
@@ -132,10 +321,11 @@ def build_storage(
     """
     Select storage for the process.
 
-    Hosted streamable-http always uses HttpStorageClient so local paths are
-    rejected. Stdio uses LocalStorageClient when backend is memory (MVP default).
+    - stdio + memory → ``MemoryStorageProvider`` (in-memory sessions + local files)
+    - streamable-http or backend=http → ``HTTPStorageClient`` (remote sessions;
+      local file paths rejected)
     """
     resolved = resolve_storage_backend(backend)
     if transport == "streamable-http" or resolved == "http":
-        return HttpStorageClient()
-    return LocalStorageClient()
+        return HTTPStorageClient()
+    return MemoryStorageProvider()

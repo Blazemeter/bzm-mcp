@@ -20,8 +20,10 @@ import pytest
 from config.runtime import build_runtime
 from config.storage import (
     HOSTED_FILE_ACCESS_MESSAGE,
+    HTTPStorageClient,
     HttpStorageClient,
     LocalStorageClient,
+    MemoryStorageProvider,
     StorageNotSupportedError,
     build_storage,
     resolve_storage_backend,
@@ -44,20 +46,21 @@ class TestResolveStorageBackend:
 
 
 class TestBuildStorage:
-    def test_stdio_memory_uses_local(self, monkeypatch):
+    def test_stdio_memory_uses_memory_provider(self, monkeypatch):
         monkeypatch.delenv("BZM_STORAGE_BACKEND", raising=False)
         monkeypatch.delenv("MCP_DOCKER", raising=False)
         storage = build_storage("stdio")
-        assert isinstance(storage, LocalStorageClient)
+        assert isinstance(storage, MemoryStorageProvider)
 
     def test_streamable_http_uses_http_client(self, monkeypatch):
         monkeypatch.setenv("BZM_STORAGE_BACKEND", "memory")
         storage = build_storage("streamable-http")
+        assert isinstance(storage, HTTPStorageClient)
         assert isinstance(storage, HttpStorageClient)
 
     def test_explicit_http_backend_on_stdio(self):
         storage = build_storage("stdio", backend="http")
-        assert isinstance(storage, HttpStorageClient)
+        assert isinstance(storage, HTTPStorageClient)
 
 
 class TestLocalStorageClient:
@@ -76,7 +79,7 @@ class TestLocalStorageClient:
 
 class TestHttpStorageClient:
     def test_all_file_methods_raise(self):
-        client = HttpStorageClient()
+        client = HTTPStorageClient(base_url="http://storage.test")
         with pytest.raises(StorageNotSupportedError, match="hosted MCP") as exc_info:
             client.map_paths(["/tmp/a.jmx"])
         assert HOSTED_FILE_ACCESS_MESSAGE in str(exc_info.value)
@@ -93,18 +96,18 @@ class TestHttpStorageClient:
 class TestRuntimeStorageWiring:
     def test_http_runtime_gets_http_storage(self):
         runtime = build_runtime("streamable-http")
-        assert isinstance(runtime.storage, HttpStorageClient)
+        assert isinstance(runtime.storage, HTTPStorageClient)
 
-    def test_stdio_runtime_gets_local_storage(self, monkeypatch):
+    def test_stdio_runtime_gets_memory_storage(self, monkeypatch):
         monkeypatch.delenv("MCP_DOCKER", raising=False)
         monkeypatch.delenv("BZM_STORAGE_BACKEND", raising=False)
         runtime = build_runtime("stdio")
-        assert isinstance(runtime.storage, LocalStorageClient)
+        assert isinstance(runtime.storage, MemoryStorageProvider)
 
 
 class TestUploadAssetsHostedRejection:
     def test_upload_assets_returns_clear_error_on_http_storage(self):
-        manager = TestManager(token=None, ctx=None, storage=HttpStorageClient())
+        manager = TestManager(token=None, ctx=None, storage=HTTPStorageClient(base_url="http://x"))
 
         async def _fake_read(_test_id):
             from models.result import BaseResult

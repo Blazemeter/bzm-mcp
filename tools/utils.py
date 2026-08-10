@@ -20,6 +20,7 @@ import functools
 import os
 import platform
 import re
+import secrets
 import sys
 import traceback
 from datetime import datetime, timezone
@@ -36,6 +37,18 @@ from config.security import validate_http_request_endpoint
 from config.token import BzmToken
 from config.version import __version__
 from models.result import BaseResult, HttpBaseResult
+
+SIMPLE_ID_ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz"
+SIMPLE_ID_LENGTH = 8
+
+
+def generate_simple_id() -> str:
+    return "".join(secrets.choice(SIMPLE_ID_ALPHABET) for _ in range(SIMPLE_ID_LENGTH))
+
+
+def normalize_simple_id(simple_id: str) -> str:
+    return str(simple_id).strip().lower()
+
 
 so = platform.system()  # "Windows", "Linux", "Darwin"
 version = platform.version()  # kernel / build version

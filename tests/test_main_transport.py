@@ -3,7 +3,7 @@ import pytest
 import main
 from config.auth import HttpAuthProvider, StdioAuthProvider
 from config.runtime import AppRuntime
-from config.storage import HttpStorageClient, LocalStorageClient
+from config.storage import HttpStorageClient, MemoryStorageProvider
 
 
 class _DummyFastMCP:
@@ -127,7 +127,7 @@ class TestBuildMcpServerAuthWiring:
         for runtime in captured["runtimes"]:
             assert isinstance(runtime.auth, StdioAuthProvider)
             assert runtime.auth.get_token(ctx=None) is token
-            assert isinstance(runtime.storage, LocalStorageClient)
+            assert isinstance(runtime.storage, MemoryStorageProvider)
 
 
 class TestRunTransportDispatch:

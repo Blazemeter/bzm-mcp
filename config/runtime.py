@@ -40,9 +40,10 @@ def build_runtime(
     """
     Compose auth and storage for the selected transport.
 
-    - stdio: process-lifetime ``startup_token``; local/memory file storage by default.
-    - streamable-http: Bearer middleware + HttpAuthProvider; HttpStorageClient
-      (local paths rejected) regardless of BZM_STORAGE_BACKEND for MVP.
+    - stdio: process-lifetime ``startup_token``; ``MemoryStorageProvider``
+      (in-memory session partitions + local files) by default.
+    - streamable-http: Bearer middleware + HttpAuthProvider; ``HTTPStorageClient``
+      (remote session partitions; local paths rejected).
     """
     storage = build_storage(transport, backend=storage_backend)
     if transport == "stdio":
