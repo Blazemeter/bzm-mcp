@@ -49,7 +49,7 @@ def resolve_session_partition(
 
 
 class ToolsManager(Manager):
-    """Session-scoped dataframe tools backed by StoragePort."""
+    """Session-scoped dataframe tools backed by SessionStoragePort."""
 
     def _session(self) -> Tuple[str, str]:
         return resolve_session_partition(self.token, self.ctx)

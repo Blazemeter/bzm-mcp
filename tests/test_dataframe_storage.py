@@ -14,18 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import asyncio
-import json
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import httpx
 import pytest
 
+import tools.dataframe_manager as dataframe_manager
 from config.storage import (
     HTTPStorageClient,
     MemoryStorageProvider,
-    SESSION_PARTITION_PATH_PREFIX,
     SessionPartition,
+    StorageNotConfiguredError,
 )
+from tests.storage_fakes import FakeStorageTransport
 from tools.dataframe_manager import (
     clear_dataframes,
     configure_dataframe_storage,
@@ -40,29 +41,6 @@ def _run(coro):
     return asyncio.run(coro)
 
 
-class _FakeTransport(httpx.AsyncBaseTransport):
-    def __init__(self):
-        self.partitions: Dict[str, Dict[str, Any]] = {}
-
-    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-        path = request.url.path
-        prefix = f"{SESSION_PARTITION_PATH_PREFIX}/"
-        if not path.startswith(prefix):
-            return httpx.Response(404, json={"error": "not found"})
-        key = path[len(prefix) :]
-        if request.method == "GET":
-            if key not in self.partitions:
-                return httpx.Response(404, json={"error": "not found"})
-            return httpx.Response(200, json=self.partitions[key])
-        if request.method == "PUT":
-            self.partitions[key] = json.loads(request.content.decode("utf-8"))
-            return httpx.Response(200, json=self.partitions[key])
-        if request.method == "DELETE":
-            self.partitions.pop(key, None)
-            return httpx.Response(204)
-        return httpx.Response(405)
-
-
 @pytest.fixture
 def memory_store():
     store = MemoryStorageProvider()
@@ -72,12 +50,19 @@ def memory_store():
 
 @pytest.fixture
 def http_store():
-    transport = _FakeTransport()
+    transport = FakeStorageTransport()
     http = httpx.AsyncClient(transport=transport, base_url="http://storage.test")
     client = HTTPStorageClient(base_url="http://storage.test", http_client=http)
     configure_dataframe_storage(client)
     yield client, http
     _run(http.aclose())
+
+
+class TestDataframeStorageWiring:
+    def test_requires_configure_before_use(self):
+        dataframe_manager._storage = None
+        with pytest.raises(StorageNotConfiguredError, match="not configured"):
+            _run(list_dataframes_metadata(user_id="u", mcp_session_id="s"))
 
 
 class TestDataframeManagerMemoryStorage:
@@ -201,4 +186,28 @@ class TestDataframeManagerHttpStorage:
 
         partition: Optional[SessionPartition] = _run(client.get("user-9", "sess-http"))
         assert partition is not None
+        assert meta["dataframe_id"] in partition.dataframes
+
+    def test_register_preserves_existing_tasks(self, http_store):
+        client, _http = http_store
+        _run(
+            client.put(
+                "user-9",
+                "sess-tasks",
+                SessionPartition(tasks={"t1": {"status": "running"}}),
+            )
+        )
+        meta = _run(
+            register_dataframe(
+                result=[{"id": 1}],
+                origin_manager="tests",
+                origin_action="http",
+                json_size_chars=9001,
+                user_id="user-9",
+                mcp_session_id="sess-tasks",
+            )
+        )
+        partition = _run(client.get("user-9", "sess-tasks"))
+        assert partition is not None
+        assert partition.tasks == {"t1": {"status": "running"}}
         assert meta["dataframe_id"] in partition.dataframes

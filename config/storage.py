@@ -38,12 +38,16 @@ HOSTED_FILE_ACCESS_MESSAGE = (
 DEFAULT_STORAGE_SERVICE_URL_ENV = "BZM_STORAGE_SERVICE_URL"
 
 # Aligned with bzm-mcp-storage-api (hosted-bzm-mcp). Path prefix may change when
-# both services freeze the contract;
+# both services freeze the contract; keep a single constant for client + tests.
 SESSION_PARTITION_PATH_PREFIX = "/internal/v1/sessions"
 
 
 class StorageNotSupportedError(NotImplementedError):
     """Raised when a storage backend cannot fulfill a file operation."""
+
+
+class StorageNotConfiguredError(RuntimeError):
+    """Raised when dataframe/session storage is used before AppRuntime wiring."""
 
 
 @dataclass
@@ -134,14 +138,32 @@ class SessionPartition:
 
 
 @runtime_checkable
-class StoragePort(Protocol):
+class FileStoragePort(Protocol):
+    """Narrow contract for upload_assets / local path resolution."""
+
+    def map_paths(self, file_paths: List[str]) -> List[str]:
+        ...
+
+    def exists(self, path: str) -> bool:
+        ...
+
+    def is_file(self, path: str) -> bool:
+        ...
+
+    def read_bytes(self, path: str) -> bytes:
+        ...
+
+    def basename(self, path: str) -> str:
+        ...
+
+
+@runtime_checkable
+class SessionStoragePort(Protocol):
     """
-    Contract for session-partitioned state and file access used by MCP tools.
+    Narrow contract for session partitions keyed by ``{user_id}/{mcp_session_id}``.
 
-    Session methods are keyed by ``{user_id}/{mcp_session_id}`` so hosted
-    workers can share dataframes/tasks across HTTP requests and instances.
-
-    File methods support ``upload_assets`` on stdio; hosted backends fail closed.
+    ``put_dataframes`` updates only the dataframes map so concurrent writers of
+    tasks/metadata/uploaded_files are less likely to be clobbered.
     """
 
     async def get(self, user_id: str, mcp_session_id: str) -> Optional[SessionPartition]:
@@ -158,20 +180,18 @@ class StoragePort(Protocol):
     async def delete(self, user_id: str, mcp_session_id: str) -> None:
         ...
 
-    def map_paths(self, file_paths: List[str]) -> List[str]:
+    async def put_dataframes(
+            self,
+            user_id: str,
+            mcp_session_id: str,
+            dataframes: Dict[str, Any],
+    ) -> None:
         ...
 
-    def exists(self, path: str) -> bool:
-        ...
 
-    def is_file(self, path: str) -> bool:
-        ...
-
-    def read_bytes(self, path: str) -> bytes:
-        ...
-
-    def basename(self, path: str) -> str:
-        ...
+@runtime_checkable
+class StoragePort(FileStoragePort, SessionStoragePort, Protocol):
+    """Combined port used by AppRuntime (implements both file + session contracts)."""
 
 
 class LocalStorageClient:
@@ -245,6 +265,22 @@ class MemoryStorageProvider:
         async with self._lock:
             self._partitions.pop(self._key(user_id, mcp_session_id), None)
 
+    async def put_dataframes(
+            self,
+            user_id: str,
+            mcp_session_id: str,
+            dataframes: Dict[str, Any],
+    ) -> None:
+        async with self._lock:
+            key = self._key(user_id, mcp_session_id)
+            existing = self._partitions.get(key)
+            if existing is None:
+                partition = SessionPartition(dataframes=copy.deepcopy(dataframes))
+            else:
+                partition = SessionPartition.from_dict(existing.to_dict())
+                partition.dataframes = copy.deepcopy(dataframes)
+            self._partitions[key] = partition
+
     def map_paths(self, file_paths: List[str]) -> List[str]:
         return self._files.map_paths(file_paths)
 
@@ -278,7 +314,6 @@ class HTTPStorageClient:
         env_url = os.getenv(DEFAULT_STORAGE_SERVICE_URL_ENV, "")
         self._base_url = (base_url if base_url is not None else env_url).rstrip("/")
         self._http_client = http_client
-        self._owns_client = http_client is None
         self._timeout = timeout or httpx.Timeout(connect=5.0, read=30.0, write=30.0, pool=5.0)
         self._client_lock = asyncio.Lock()
 
@@ -337,6 +372,17 @@ class HTTPStorageClient:
         if response.status_code == 404:
             return
         response.raise_for_status()
+
+    async def put_dataframes(
+            self,
+            user_id: str,
+            mcp_session_id: str,
+            dataframes: Dict[str, Any],
+    ) -> None:
+        """Merge dataframes into the remote partition without dropping other sections."""
+        existing = await self.get(user_id, mcp_session_id) or SessionPartition()
+        existing.dataframes = copy.deepcopy(dataframes)
+        await self.put(user_id, mcp_session_id, existing)
 
     def map_paths(self, file_paths: List[str]) -> List[str]:
         raise StorageNotSupportedError(HOSTED_FILE_ACCESS_MESSAGE)

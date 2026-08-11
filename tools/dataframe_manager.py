@@ -25,7 +25,10 @@ from typing import Any, Dict, List, Optional
 import polars as pl
 
 from models.result import BaseResult
-from config.storage import MemoryStorageProvider, SessionPartition, StoragePort
+from config.storage import (
+    SessionStoragePort,
+    StorageNotConfiguredError,
+)
 from config.token import BzmToken
 from tools.utils import generate_simple_id, SIMPLE_ID_LENGTH
 
@@ -38,7 +41,7 @@ DATAFRAME_ID_MAX_ATTEMPTS = 10
 DEFAULT_USER_ID = "local"
 DEFAULT_SESSION_ID = "stdio"
 
-_storage: Optional[StoragePort] = None
+_storage: Optional[SessionStoragePort] = None
 _registry_lock = asyncio.Lock()
 _working_sets: Dict[tuple[str, str], "_SessionWorkingSet"] = {}
 
@@ -53,17 +56,19 @@ class _SessionWorkingSet:
     hydrated: bool = False
 
 
-def configure_dataframe_storage(storage: StoragePort) -> None:
-    """Bind the process-wide StoragePort used as the dataframe backing store."""
+def configure_dataframe_storage(storage: SessionStoragePort) -> None:
+    """Bind session storage from AppRuntime (composition root)."""
     global _storage, _working_sets
     _storage = storage
     _working_sets = {}
 
 
-def _get_storage() -> StoragePort:
-    global _storage
+def _get_storage() -> SessionStoragePort:
     if _storage is None:
-        _storage = MemoryStorageProvider()
+        raise StorageNotConfiguredError(
+            "Session storage is not configured. "
+            "Wire AppRuntime via configure_dataframe_storage() before using dataframes."
+        )
     return _storage
 
 
@@ -132,14 +137,12 @@ async def _persist_working_set(
         user_id: str,
         mcp_session_id: str,
 ) -> None:
-    """Write this session's dataframes map into Storage (caller holds working_set.lock)."""
-    storage = _get_storage()
-    existing = await storage.get(user_id, mcp_session_id) or SessionPartition()
-    existing.dataframes = {
+    """Persist only dataframes for this session (preserves tasks/metadata/files)."""
+    dataframes = {
         dataframe_id: _serialize_record(record)
         for dataframe_id, record in working_set.dataframes.items()
     }
-    await storage.put(user_id, mcp_session_id, existing)
+    await _get_storage().put_dataframes(user_id, mcp_session_id, dataframes)
 
 _DISALLOWED_SQL_PATTERN = re.compile(
     r"\b(insert|update|delete|create|drop|alter|truncate|replace|merge|call|copy|grant|revoke)\b",

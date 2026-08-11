@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import asyncio
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import httpx
 import pytest
@@ -31,6 +31,7 @@ from config.storage import (
     build_storage,
     session_partition_path,
 )
+from tests.storage_fakes import FakeStorageTransport
 
 
 class TestSessionPartition:
@@ -137,6 +138,34 @@ class TestMemoryStorageProvider:
         assert list(loaded.dataframes.keys()) == ["b"]
         assert loaded.tasks == {}
 
+    def test_put_dataframes_preserves_other_sections(self):
+        store = MemoryStorageProvider()
+        asyncio.run(
+            store.put(
+                "u",
+                "s",
+                SessionPartition(
+                    metadata={"source": "seed"},
+                    dataframes={"a": {"dataframe_id": "a"}},
+                    tasks={"t1": {"status": "running"}},
+                    uploaded_files=[UploadedFilePlaceholder(file_id="f1")],
+                ),
+            )
+        )
+        asyncio.run(
+            store.put_dataframes(
+                "u",
+                "s",
+                {"b": {"dataframe_id": "b", "data": [{"n": 1}]}},
+            )
+        )
+        loaded = asyncio.run(store.get("u", "s"))
+        assert loaded is not None
+        assert list(loaded.dataframes.keys()) == ["b"]
+        assert loaded.metadata == {"source": "seed"}
+        assert loaded.tasks == {"t1": {"status": "running"}}
+        assert loaded.uploaded_files[0].file_id == "f1"
+
     def test_file_access_still_works(self, tmp_path, monkeypatch):
         monkeypatch.delenv("MCP_DOCKER", raising=False)
         path = tmp_path / "asset.jmx"
@@ -149,33 +178,6 @@ class TestMemoryStorageProvider:
         assert store.basename(str(path)) == "asset.jmx"
 
 
-class _FakeTransport(httpx.AsyncBaseTransport):
-    """In-memory HTTP transport simulating the Storage Service API."""
-
-    def __init__(self):
-        self.partitions: Dict[str, Dict[str, Any]] = {}
-
-    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-        path = request.url.path
-        prefix = f"{SESSION_PARTITION_PATH_PREFIX}/"
-        if not path.startswith(prefix):
-            return httpx.Response(404, json={"error": "not found"})
-        key = path[len(prefix) :]
-        if request.method == "GET":
-            if key not in self.partitions:
-                return httpx.Response(404, json={"error": "not found"})
-            return httpx.Response(200, json=self.partitions[key])
-        if request.method == "PUT":
-            import json
-
-            self.partitions[key] = json.loads(request.content.decode("utf-8"))
-            return httpx.Response(200, json=self.partitions[key])
-        if request.method == "DELETE":
-            self.partitions.pop(key, None)
-            return httpx.Response(204)
-        return httpx.Response(405)
-
-
 class TestHTTPStorageClient:
     def test_file_methods_still_fail_closed(self):
         client = HTTPStorageClient(base_url="http://storage.test")
@@ -186,7 +188,7 @@ class TestHTTPStorageClient:
         assert HOSTED_FILE_ACCESS_MESSAGE
 
     def test_get_put_delete_via_http(self):
-        transport = _FakeTransport()
+        transport = FakeStorageTransport()
         http = httpx.AsyncClient(
             transport=transport,
             base_url="http://storage.test",
@@ -210,6 +212,33 @@ class TestHTTPStorageClient:
             assert again.dataframes == loaded.dataframes
             await client.delete("user-1", "sess-a")
             assert await client.get("user-1", "sess-a") is None
+            await http.aclose()
+
+        asyncio.run(_run())
+
+    def test_put_dataframes_preserves_remote_tasks(self):
+        transport = FakeStorageTransport()
+        http = httpx.AsyncClient(transport=transport, base_url="http://storage.test")
+        client = HTTPStorageClient(base_url="http://storage.test", http_client=http)
+
+        async def _run():
+            await client.put(
+                "user-1",
+                "sess-a",
+                SessionPartition(
+                    tasks={"t1": {"status": "running"}},
+                    dataframes={"old": {"dataframe_id": "old"}},
+                ),
+            )
+            await client.put_dataframes(
+                "user-1",
+                "sess-a",
+                {"new": {"dataframe_id": "new", "data": []}},
+            )
+            loaded = await client.get("user-1", "sess-a")
+            assert loaded is not None
+            assert loaded.tasks == {"t1": {"status": "running"}}
+            assert list(loaded.dataframes.keys()) == ["new"]
             await http.aclose()
 
         asyncio.run(_run())
@@ -265,7 +294,7 @@ class TestSharedSessionVisibility:
         assert "shared" in loaded.dataframes
 
     def test_http_two_requests_same_session_see_shared_data(self):
-        transport = _FakeTransport()
+        transport = FakeStorageTransport()
         http = httpx.AsyncClient(transport=transport, base_url="http://storage.test")
         client = HTTPStorageClient(base_url="http://storage.test", http_client=http)
 
