@@ -301,8 +301,8 @@ class HttpSessionStorageProvider(SessionStoragePort):
 
     def _url_for_scope(self, scope: SessionScope) -> str:
         user_id = quote(scope.user_id, safe="")
-        session_id = quote(scope.mcp_session_id, safe="")
-        return f"{self._base_url}/internal/v1/sessions/{user_id}/{session_id}"
+        mcp_session_id = quote(scope.mcp_session_id, safe="")
+        return f"{self._base_url}/session-partitions/{user_id}/{mcp_session_id}"
 
     def _health_url(self) -> str:
         return f"{self._base_url}/health"
