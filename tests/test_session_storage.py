@@ -24,9 +24,12 @@ from config.storage import (
     HOSTED_FILE_ACCESS_MESSAGE,
     HTTPStorageClient,
     MemoryStorageProvider,
+    SESSION_PARTITION_PATH_PREFIX,
     SessionPartition,
     StorageNotSupportedError,
+    UploadedFilePlaceholder,
     build_storage,
+    session_partition_path,
 )
 
 
@@ -36,20 +39,58 @@ class TestSessionPartition:
             metadata={"version": 1},
             dataframes={"abc": {"dataframe_id": "abc", "data": [{"x": 1}]}},
             tasks={"t1": {"status": "queued"}},
-            uploaded_files={},
+            uploaded_files=[
+                UploadedFilePlaceholder(file_id="f1", name="report.csv"),
+            ],
         )
         restored = SessionPartition.from_dict(partition.to_dict())
         assert restored.metadata == {"version": 1}
         assert restored.dataframes["abc"]["dataframe_id"] == "abc"
         assert restored.tasks["t1"]["status"] == "queued"
-        assert restored.uploaded_files == {}
+        assert len(restored.uploaded_files) == 1
+        assert restored.uploaded_files[0].file_id == "f1"
+        assert restored.uploaded_files[0].name == "report.csv"
+        assert restored.to_dict()["uploaded_files"] == [
+            {
+                "file_id": "f1",
+                "name": "report.csv",
+                "content_type": None,
+                "size_bytes": None,
+                "metadata": {},
+            }
+        ]
 
     def test_from_dict_defaults_missing_sections(self):
         restored = SessionPartition.from_dict({})
         assert restored.metadata == {}
         assert restored.dataframes == {}
         assert restored.tasks == {}
-        assert restored.uploaded_files == {}
+        assert restored.uploaded_files == []
+
+    def test_from_dict_rejects_non_list_uploaded_files(self):
+        with pytest.raises(ValueError, match="uploaded_files must be a list"):
+            SessionPartition.from_dict({"uploaded_files": {"f1": {"name": "x"}}})
+
+    def test_from_dict_ignores_response_identity_fields(self):
+        restored = SessionPartition.from_dict(
+            {
+                "user_id": "u123",
+                "mcp_session_id": "s456",
+                "metadata": {"source": "api"},
+                "uploaded_files": [{"file_id": "f1", "name": "a.csv"}],
+            }
+        )
+        assert restored.metadata == {"source": "api"}
+        assert restored.uploaded_files[0].file_id == "f1"
+
+
+class TestSessionPartitionPath:
+    def test_matches_storage_api_prefix(self):
+        assert SESSION_PARTITION_PATH_PREFIX == "/internal/v1/sessions"
+        assert session_partition_path("u123", "s456") == "/internal/v1/sessions/u123/s456"
+
+    def test_url_encodes_segments(self):
+        assert session_partition_path("u/1", "s a") == "/internal/v1/sessions/u%2F1/s%20a"
 
 
 class TestMemoryStorageProvider:
@@ -116,7 +157,7 @@ class _FakeTransport(httpx.AsyncBaseTransport):
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         path = request.url.path
-        prefix = "/v1/sessions/"
+        prefix = f"{SESSION_PARTITION_PATH_PREFIX}/"
         if not path.startswith(prefix):
             return httpx.Response(404, json={"error": "not found"})
         key = path[len(prefix) :]

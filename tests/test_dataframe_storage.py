@@ -20,7 +20,12 @@ from typing import Any, Dict, Optional
 import httpx
 import pytest
 
-from config.storage import HTTPStorageClient, MemoryStorageProvider, SessionPartition
+from config.storage import (
+    HTTPStorageClient,
+    MemoryStorageProvider,
+    SESSION_PARTITION_PATH_PREFIX,
+    SessionPartition,
+)
 from tools.dataframe_manager import (
     clear_dataframes,
     configure_dataframe_storage,
@@ -41,7 +46,7 @@ class _FakeTransport(httpx.AsyncBaseTransport):
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         path = request.url.path
-        prefix = "/v1/sessions/"
+        prefix = f"{SESSION_PARTITION_PATH_PREFIX}/"
         if not path.startswith(prefix):
             return httpx.Response(404, json={"error": "not found"})
         key = path[len(prefix) :]

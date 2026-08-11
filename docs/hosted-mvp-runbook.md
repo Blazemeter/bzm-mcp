@@ -163,10 +163,12 @@ Storage Service API (external `bzm-mcp-storage-api`):
 
 | Method | Path | Notes |
 |--------|------|-------|
-| `GET` | `/v1/sessions/{user_id}/{mcp_session_id}` | `404` if missing |
-| `PUT` | `/v1/sessions/{user_id}/{mcp_session_id}` | full partition JSON body |
-| `DELETE` | `/v1/sessions/{user_id}/{mcp_session_id}` | idempotent |
+| `GET` | `/internal/v1/sessions/{user_id}/{mcp_session_id}` | `404` if missing |
+| `PUT` | `/internal/v1/sessions/{user_id}/{mcp_session_id}` | full partition JSON body |
+| `DELETE` | `/internal/v1/sessions/{user_id}/{mcp_session_id}` | idempotent |
 
+Partition body: `metadata`, `dataframes`, `tasks` (objects) and `uploaded_files`
+(list of `{file_id, name?, content_type?, size_bytes?, metadata?}`).
 Dataframe rows are stored under `dataframes.<id>` with metadata plus a `data`
 array of records. Polars/SQL stays in the MCP worker; only the backing store
 is remote in hosted mode.

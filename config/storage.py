@@ -37,9 +37,67 @@ HOSTED_FILE_ACCESS_MESSAGE = (
 
 DEFAULT_STORAGE_SERVICE_URL_ENV = "BZM_STORAGE_SERVICE_URL"
 
+# Aligned with bzm-mcp-storage-api (hosted-bzm-mcp). Path prefix may change when
+# both services freeze the contract;
+SESSION_PARTITION_PATH_PREFIX = "/internal/v1/sessions"
+
 
 class StorageNotSupportedError(NotImplementedError):
     """Raised when a storage backend cannot fulfill a file operation."""
+
+
+@dataclass
+class UploadedFilePlaceholder:
+    """Matches storage-api ``UploadedFilePlaceholder`` (list items under uploaded_files)."""
+
+    file_id: str
+    name: Optional[str] = None
+    content_type: Optional[str] = None
+    size_bytes: Optional[int] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "file_id": self.file_id,
+            "name": self.name,
+            "content_type": self.content_type,
+            "size_bytes": self.size_bytes,
+            "metadata": copy.deepcopy(self.metadata),
+        }
+
+    @classmethod
+    def from_dict(cls, payload: Dict[str, Any]) -> "UploadedFilePlaceholder":
+        return cls(
+            file_id=str(payload.get("file_id") or ""),
+            name=payload.get("name"),
+            content_type=payload.get("content_type"),
+            size_bytes=payload.get("size_bytes"),
+            metadata=dict(payload.get("metadata") or {}),
+        )
+
+
+def session_partition_path(user_id: str, mcp_session_id: str) -> str:
+    """Build the Storage Service path for a session partition."""
+    user = quote(str(user_id), safe="")
+    session = quote(str(mcp_session_id), safe="")
+    return f"{SESSION_PARTITION_PATH_PREFIX}/{user}/{session}"
+
+
+def _normalize_uploaded_files(raw: Any) -> List[UploadedFilePlaceholder]:
+    """Coerce storage-api list payloads into placeholder objects."""
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise ValueError("uploaded_files must be a list of file placeholder objects")
+    files: List[UploadedFilePlaceholder] = []
+    for item in raw:
+        if isinstance(item, UploadedFilePlaceholder):
+            files.append(item)
+        elif isinstance(item, dict):
+            files.append(UploadedFilePlaceholder.from_dict(item))
+        else:
+            raise ValueError("uploaded_files entries must be objects with file_id")
+    return files
 
 
 @dataclass
@@ -47,21 +105,21 @@ class SessionPartition:
     """
     Session document stored under ``{user_id}/{mcp_session_id}``.
 
-    Schema placeholders match the external Storage Service contract so MCP
-    workers and the storage API stay aligned.
+    Field shapes match the external Storage Service (bzm-mcp-storage-api):
+    metadata/dataframes/tasks as objects; uploaded_files as a list of placeholders.
     """
 
     metadata: Dict[str, Any] = field(default_factory=dict)
     dataframes: Dict[str, Any] = field(default_factory=dict)
     tasks: Dict[str, Any] = field(default_factory=dict)
-    uploaded_files: Dict[str, Any] = field(default_factory=dict)
+    uploaded_files: List[UploadedFilePlaceholder] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "metadata": copy.deepcopy(self.metadata),
             "dataframes": copy.deepcopy(self.dataframes),
             "tasks": copy.deepcopy(self.tasks),
-            "uploaded_files": copy.deepcopy(self.uploaded_files),
+            "uploaded_files": [item.to_dict() for item in self.uploaded_files],
         }
 
     @classmethod
@@ -71,7 +129,7 @@ class SessionPartition:
             metadata=dict(data.get("metadata") or {}),
             dataframes=dict(data.get("dataframes") or {}),
             tasks=dict(data.get("tasks") or {}),
-            uploaded_files=dict(data.get("uploaded_files") or {}),
+            uploaded_files=_normalize_uploaded_files(data.get("uploaded_files")),
         )
 
 
@@ -233,9 +291,7 @@ class HTTPStorageClient:
         return self._base_url
 
     def _partition_path(self, user_id: str, mcp_session_id: str) -> str:
-        user = quote(str(user_id), safe="")
-        session = quote(str(mcp_session_id), safe="")
-        return f"/v1/sessions/{user}/{session}"
+        return session_partition_path(user_id, mcp_session_id)
 
     async def _client(self) -> httpx.AsyncClient:
         if self._http_client is not None:
