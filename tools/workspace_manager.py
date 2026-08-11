@@ -139,7 +139,8 @@ Hints:
             ctx: Context = Field(description="Context object providing access to MCP capabilities")
     ) -> BaseResult:
 
-        workspace_manager = WorkspaceManager(runtime.auth.get_token(ctx), ctx)
+        token = runtime.auth.get_token(ctx)
+        workspace_manager = WorkspaceManager(token, ctx)
 
         async def _dispatch():
             match action:
@@ -157,7 +158,10 @@ Hints:
                     )
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_workspaces", action, ctx, _dispatch)
+            return await run_tool(f"{TOOLS_PREFIX}_workspaces", action, ctx, _dispatch,
+                token=token,
+                tool_args=args
+            )
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

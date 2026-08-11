@@ -106,7 +106,8 @@ Hints:
 """
     )
     async def project(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        project_manager = ProjectManager(runtime.auth.get_token(ctx), ctx)
+        token = runtime.auth.get_token(ctx)
+        project_manager = ProjectManager(token, ctx)
 
         async def _dispatch():
             match action:
@@ -120,7 +121,10 @@ Hints:
                     )
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_project", action, ctx, _dispatch)
+            return await run_tool(f"{TOOLS_PREFIX}_project", action, ctx, _dispatch,
+                token=token,
+                tool_args=args
+            )
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

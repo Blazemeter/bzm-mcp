@@ -26,15 +26,16 @@ from models.manager import Manager
 from models.result import BaseResult
 from telemetry import run_tool
 from tools.dataframe_manager import (
-    DEFAULT_SESSION_ID,
-    DEFAULT_USER_ID,
     clear_dataframes,
     get_dataframe_metadata,
     get_sql_capabilities,
     group_dataframe_schemas,
     list_dataframes_metadata,
     query_dataframes,
+    register_dataframe,
     remove_dataframe,
+    resolve_partition_ids,
+    serialize_result_to_compact_json,
 )
 from tools.utils import format_sanitized_traceback
 
@@ -44,17 +45,11 @@ def resolve_session_partition(
         ctx: Optional[Context],
 ) -> Tuple[str, str]:
     """Map the current MCP invocation to a Storage partition key."""
-    user_id = token.id if token is not None else DEFAULT_USER_ID
-    session_id = getattr(ctx, "session_id", None) if ctx is not None else None
-    mcp_session_id = str(session_id) if session_id else DEFAULT_SESSION_ID
-    return user_id, mcp_session_id
+    return resolve_partition_ids(token, ctx)
 
 
 class ToolsManager(Manager):
     """Session-scoped dataframe tools backed by StoragePort."""
-
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
 
     def _session(self) -> Tuple[str, str]:
         return resolve_session_partition(self.token, self.ctx)
@@ -131,19 +126,20 @@ class ToolsManager(Manager):
     ) -> BaseResult:
         user_id, mcp_session_id = self._session()
         normalized_result_format = str(result_format or "auto").strip().lower()
-        effective_output_format = output_format
+        if normalized_result_format not in {"auto", "dataframe", "raw"}:
+            return BaseResult(
+                error="Invalid result_format value. Allowed values: auto, dataframe, raw."
+            )
+        # Store path always queries as records so register_dataframe can rebuild rows.
+        effective_output_format = (
+            "records" if normalized_result_format == "dataframe" else output_format
+        )
         info_messages = [
             "Query executed successfully against the session SQL context.",
             "ORDER BY + LIMIT + OFFSET are mandatory in every dataframe query.",
             "Use a prudent default page size of up to 100 rows (for example, LIMIT 100 OFFSET 0), "
             "then continue paging as needed.",
         ]
-        if normalized_result_format == "dataframe":
-            effective_output_format = "records"
-            info_messages.append(
-                "When result_format=dataframe, dataframes_query uses records internally "
-                "for dataframe storage and ignores output_format only for storage."
-            )
         query_response = await query_dataframes(
             sql,
             output_format=effective_output_format,
@@ -152,6 +148,36 @@ class ToolsManager(Manager):
         )
         if query_response.get("error"):
             return BaseResult(error=query_response["error"])
+
+        if normalized_result_format == "dataframe":
+            rows = query_response["result"] or []
+            try:
+                json_size_chars = len(serialize_result_to_compact_json(rows))
+            except Exception:
+                json_size_chars = 0
+            metadata = await register_dataframe(
+                result=rows,
+                origin_manager="blazemeter_tools",
+                origin_action="dataframes_query",
+                json_size_chars=json_size_chars,
+                user_id=user_id,
+                mcp_session_id=mcp_session_id,
+            )
+            return BaseResult(
+                result=[{
+                    "stored_as_dataframe": True,
+                    "dataframe_id": metadata["dataframe_id"],
+                    "table_name": metadata["table_name"],
+                    "rows": metadata["rows"],
+                    "columns": metadata["columns"],
+                    "schema_hash": metadata["schema_hash"],
+                    "json_size_chars": metadata["json_size_chars"],
+                }],
+                info=info_messages + [
+                    "result_format=dataframe stored the query output as a new session dataframe."
+                ],
+            )
+
         return BaseResult(
             result=query_response["result"],
             total=query_response["rows"],
@@ -269,7 +295,8 @@ Hints:
             args: Dict[str, Any] = Field(description="Dictionary with parameters"),
             ctx: Context = Field(description="Context object providing access to MCP capabilities"),
     ) -> BaseResult:
-        manager = ToolsManager(runtime.auth.get_token(ctx), ctx)
+        token = runtime.auth.get_token(ctx)
+        manager = ToolsManager(token, ctx)
         args = args or {}
 
         async def _dispatch():
@@ -306,7 +333,11 @@ Hints:
                     return BaseResult(error=f"Action {action} not found in tools manager tool")
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_tools", action, ctx, _dispatch)
+            return await run_tool(f"{TOOLS_PREFIX}_tools", action, ctx, _dispatch,
+                token=token,
+                tool_args=args,
+                dataframe_excluded_actions={"dataframes_clear", "dataframes_get", "dataframes_list", "dataframes_query", "dataframes_remove", "dataframes_schema_groups", "dataframes_sql_help"}
+            )
         except httpx.HTTPStatusError:
             return BaseResult(error=f"Error: {format_sanitized_traceback()}")
         except Exception:

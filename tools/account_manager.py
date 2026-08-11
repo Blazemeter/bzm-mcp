@@ -98,7 +98,8 @@ Hints:
 """
     )
     async def account(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        account_manager = AccountManager(runtime.auth.get_token(ctx), ctx)
+        token = runtime.auth.get_token(ctx)
+        account_manager = AccountManager(token, ctx)
 
         async def _dispatch():
             match action:
@@ -112,7 +113,10 @@ Hints:
                     )
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_account", action, ctx, _dispatch)
+            return await run_tool(f"{TOOLS_PREFIX}_account", action, ctx, _dispatch,
+                token=token,
+                tool_args=args
+            )
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

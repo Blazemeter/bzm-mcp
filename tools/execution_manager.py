@@ -497,7 +497,8 @@ Hints:
 """
     )
     async def execution(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        execution_manager = ExecutionManager(runtime.auth.get_token(ctx), ctx)
+        token = runtime.auth.get_token(ctx)
+        execution_manager = ExecutionManager(token, ctx)
         report_manager = ReportManager(runtime.auth.get_token(ctx), ctx)
 
         async def _dispatch():
@@ -535,7 +536,10 @@ Hints:
                     )
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_execution", action, ctx, _dispatch)
+            return await run_tool(f"{TOOLS_PREFIX}_execution", action, ctx, _dispatch,
+                token=token,
+                tool_args=args
+            )
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

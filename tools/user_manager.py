@@ -61,7 +61,8 @@ Hints:
             ctx: Context = Field(description="Context object providing access to MCP capabilities")
     ) -> BaseResult:
 
-        user_manager = UserManager(runtime.auth.get_token(ctx), ctx)
+        token = runtime.auth.get_token(ctx)
+        user_manager = UserManager(token, ctx)
 
         async def _dispatch():
             match action:
@@ -73,7 +74,10 @@ Hints:
                     )
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_user", action, ctx, _dispatch)
+            return await run_tool(f"{TOOLS_PREFIX}_user", action, ctx, _dispatch,
+                token=token,
+                tool_args=args
+            )
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

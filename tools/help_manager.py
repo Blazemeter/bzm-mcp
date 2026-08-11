@@ -291,7 +291,8 @@ Hints:
         if args is None:
             args = {}
 
-        help_manager = HelpManager(runtime.auth.get_token(ctx), ctx)
+        token = runtime.auth.get_token(ctx)
+        help_manager = HelpManager(token, ctx)
 
         async def _dispatch():
             match action:
@@ -350,7 +351,11 @@ Hints:
                     )
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_help", action, ctx, _dispatch)
+            return await run_tool(f"{TOOLS_PREFIX}_help", action, ctx, _dispatch,
+                token=token,
+                tool_args=args,
+                disable_dataframe_materialization=True
+            )
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

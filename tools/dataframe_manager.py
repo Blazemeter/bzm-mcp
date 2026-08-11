@@ -18,7 +18,7 @@ import hashlib
 import json
 import logging
 import re
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from datetime import datetime, UTC
 from typing import Any, Dict, List, Optional
 
@@ -26,6 +26,7 @@ import polars as pl
 
 from models.result import BaseResult
 from config.storage import MemoryStorageProvider, SessionPartition, StoragePort
+from config.token import BzmToken
 from tools.utils import generate_simple_id, SIMPLE_ID_LENGTH
 
 logger = logging.getLogger(__name__)
@@ -38,19 +39,25 @@ DEFAULT_USER_ID = "local"
 DEFAULT_SESSION_ID = "stdio"
 
 _storage: Optional[StoragePort] = None
-_dataframes: Dict[str, "DataFrameRecord"] = {}
-_loaded_session: Optional[tuple[str, str]] = None
-_write_lock = asyncio.Lock()
-_sql_context = pl.SQLContext()
+_registry_lock = asyncio.Lock()
+_working_sets: Dict[tuple[str, str], "_SessionWorkingSet"] = {}
+
+
+@dataclass
+class _SessionWorkingSet:
+    """Isolated Polars/SQL state for one {user_id}/{mcp_session_id} partition."""
+
+    dataframes: Dict[str, "DataFrameRecord"] = field(default_factory=dict)
+    sql_context: Any = field(default_factory=pl.SQLContext)
+    lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    hydrated: bool = False
 
 
 def configure_dataframe_storage(storage: StoragePort) -> None:
     """Bind the process-wide StoragePort used as the dataframe backing store."""
-    global _storage, _dataframes, _loaded_session, _sql_context
+    global _storage, _working_sets
     _storage = storage
-    _dataframes = {}
-    _loaded_session = None
-    _sql_context = pl.SQLContext()
+    _working_sets = {}
 
 
 def _get_storage() -> StoragePort:
@@ -58,6 +65,20 @@ def _get_storage() -> StoragePort:
     if _storage is None:
         _storage = MemoryStorageProvider()
     return _storage
+
+
+def _session_key(user_id: str, mcp_session_id: str) -> tuple[str, str]:
+    return (str(user_id), str(mcp_session_id))
+
+
+async def _get_or_create_working_set(user_id: str, mcp_session_id: str) -> _SessionWorkingSet:
+    key = _session_key(user_id, mcp_session_id)
+    async with _registry_lock:
+        working_set = _working_sets.get(key)
+        if working_set is None:
+            working_set = _SessionWorkingSet()
+            _working_sets[key] = working_set
+        return working_set
 
 
 def _serialize_record(record: "DataFrameRecord") -> Dict[str, Any]:
@@ -85,46 +106,38 @@ def _deserialize_record(payload: Dict[str, Any]) -> "DataFrameRecord":
     )
 
 
-async def _unload_locked() -> None:
-    global _dataframes
-    for record in list(_dataframes.values()):
-        try:
-            _sql_context.unregister(record.table_name)
-        except Exception:
-            pass
-    _dataframes = {}
-
-
-async def _ensure_session_loaded(user_id: str, mcp_session_id: str) -> None:
-    """Hydrate Polars/SQL working set from Storage for the session partition."""
-    global _loaded_session, _dataframes
-    key = (str(user_id), str(mcp_session_id))
-    if _loaded_session == key:
+async def _hydrate_working_set(
+        working_set: _SessionWorkingSet,
+        user_id: str,
+        mcp_session_id: str,
+) -> None:
+    """Load partition dataframes into the session working set (caller holds working_set.lock)."""
+    if working_set.hydrated:
         return
-    async with _write_lock:
-        if _loaded_session == key:
-            return
-        await _unload_locked()
-        partition = await _get_storage().get(user_id, mcp_session_id)
-        loaded: Dict[str, DataFrameRecord] = {}
-        if partition:
-            for raw in partition.dataframes.values():
-                if not isinstance(raw, dict) or "dataframe_id" not in raw:
-                    continue
-                record = _deserialize_record(raw)
-                _sql_context.register(record.table_name, record.dataframe)
-                loaded[record.dataframe_id] = record
-        _dataframes = loaded
-        _loaded_session = key
+    partition = await _get_storage().get(user_id, mcp_session_id)
+    loaded: Dict[str, DataFrameRecord] = {}
+    if partition:
+        for raw in partition.dataframes.values():
+            if not isinstance(raw, dict) or "dataframe_id" not in raw:
+                continue
+            record = _deserialize_record(raw)
+            working_set.sql_context.register(record.table_name, record.dataframe)
+            loaded[record.dataframe_id] = record
+    working_set.dataframes = loaded
+    working_set.hydrated = True
 
 
-async def _persist_session(user_id: str, mcp_session_id: str) -> None:
-    """Write the current working set into the session partition dataframes map."""
+async def _persist_working_set(
+        working_set: _SessionWorkingSet,
+        user_id: str,
+        mcp_session_id: str,
+) -> None:
+    """Write this session's dataframes map into Storage (caller holds working_set.lock)."""
     storage = _get_storage()
     existing = await storage.get(user_id, mcp_session_id) or SessionPartition()
     existing.dataframes = {
         dataframe_id: _serialize_record(record)
-        for dataframe_id, record in _dataframes.items()
+        for dataframe_id, record in working_set.dataframes.items()
     }
     await storage.put(user_id, mcp_session_id, existing)
 
@@ -328,17 +341,17 @@ async def register_dataframe(
     )
 
 
-def _allocate_dataframe_id() -> str:
+def _allocate_dataframe_id(working_set: _SessionWorkingSet) -> str:
     for _ in range(DATAFRAME_ID_MAX_ATTEMPTS):
         candidate = generate_simple_id()
-        if candidate not in _dataframes:
+        if candidate not in working_set.dataframes:
             return candidate
 
     logger.error(
         "Unable to allocate dataframe id. attempts=%s id_length=%s active_pool_size=%s",
         DATAFRAME_ID_MAX_ATTEMPTS,
         SIMPLE_ID_LENGTH,
-        len(_dataframes),
+        len(working_set.dataframes),
     )
     raise RuntimeError(f"Unable to allocate dataframe id after {DATAFRAME_ID_MAX_ATTEMPTS} attempts.")
 
@@ -352,14 +365,15 @@ async def _register_dataframe_instance(
         user_id: str = DEFAULT_USER_ID,
         mcp_session_id: str = DEFAULT_SESSION_ID,
 ) -> Dict[str, Any]:
-    await _ensure_session_loaded(user_id, mcp_session_id)
     if flatten:
         try:
             dataframe = auto_flatten_wide(dataframe)
         except Exception:
             pass  # Keep original dataframe if flattening fails
-    async with _write_lock:
-        dataframe_id = _allocate_dataframe_id()
+    working_set = await _get_or_create_working_set(user_id, mcp_session_id)
+    async with working_set.lock:
+        await _hydrate_working_set(working_set, user_id, mcp_session_id)
+        dataframe_id = _allocate_dataframe_id(working_set)
         table_name = f"df_{dataframe_id}"
         record = DataFrameRecord(
             dataframe_id=dataframe_id,
@@ -374,9 +388,9 @@ async def _register_dataframe_instance(
             json_size_chars=json_size_chars,
             dataframe=dataframe,
         )
-        _sql_context.register(table_name, dataframe)
-        _dataframes[dataframe_id] = record
-        await _persist_session(user_id, mcp_session_id)
+        working_set.sql_context.register(table_name, dataframe)
+        working_set.dataframes[dataframe_id] = record
+        await _persist_working_set(working_set, user_id, mcp_session_id)
     return record.to_metadata()
 
 
@@ -452,14 +466,88 @@ async def materialize_large_result_if_needed(
     return base_result
 
 
+def _extract_result_format(action: Any, args_dict: Any) -> str:
+    if not isinstance(args_dict, dict):
+        return "auto"
+    result_format = str(args_dict.get("result_format", "auto")).strip().lower()
+    if result_format not in {"auto", "dataframe", "raw"}:
+        return "invalid"
+    return result_format
+
+
+def resolve_partition_ids(
+        token: Optional[BzmToken],
+        ctx: Any,
+) -> tuple[str, str]:
+    """Resolve Storage partition keys from auth token + MCP context."""
+    user_id = token.id if token is not None else DEFAULT_USER_ID
+    session_id = getattr(ctx, "session_id", None) if ctx is not None else None
+    mcp_session_id = str(session_id) if session_id else DEFAULT_SESSION_ID
+    return user_id, mcp_session_id
+
+
+async def finalize_tool_result(
+        result: Any,
+        *,
+        action: Any,
+        args: Any,
+        origin_manager: str,
+        token: Optional[BzmToken] = None,
+        ctx: Any = None,
+        excluded_actions: Optional[set[str]] = None,
+) -> Any:
+    """
+    Post-process a tool BaseResult: honor result_format and materialize large payloads.
+
+    excluded_actions: skip auto materialization (still honors result_format=dataframe).
+    """
+    if not isinstance(result, BaseResult) or result.error or result.result is None:
+        return result
+
+    excluded = excluded_actions or set()
+    result_format = _extract_result_format(action, args)
+    if result_format == "invalid":
+        return BaseResult(
+            error="Invalid result_format value. Allowed values: auto, dataframe, raw."
+        )
+    if isinstance(action, str) and action == "batch":
+        result_format = "raw"
+    if result_format == "raw":
+        return result
+    if result_format == "auto" and isinstance(action, str) and action in excluded:
+        return result
+
+    user_id, mcp_session_id = resolve_partition_ids(token, ctx)
+    try:
+        return await materialize_large_result_if_needed(
+            base_result=result,
+            origin_manager=origin_manager,
+            origin_action=str(action) if action is not None else "unknown",
+            force=(result_format == "dataframe"),
+            user_id=user_id,
+            mcp_session_id=mcp_session_id,
+        )
+    except Exception as exc:
+        return BaseResult(
+            error=(
+                f"Large result materialization failed: {exc}. "
+                "Try reducing the scope or filters and retry."
+            )
+        )
+
+
 async def list_dataframes_metadata(
         include_schema: bool = False,
         user_id: str = DEFAULT_USER_ID,
         mcp_session_id: str = DEFAULT_SESSION_ID,
 ) -> List[Dict[str, Any]]:
-    await _ensure_session_loaded(user_id, mcp_session_id)
-    async with _write_lock:
-        return [record.to_metadata(include_schema=include_schema) for record in _dataframes.values()]
+    working_set = await _get_or_create_working_set(user_id, mcp_session_id)
+    async with working_set.lock:
+        await _hydrate_working_set(working_set, user_id, mcp_session_id)
+        return [
+            record.to_metadata(include_schema=include_schema)
+            for record in working_set.dataframes.values()
+        ]
 
 
 async def get_dataframe_metadata(
@@ -468,9 +556,10 @@ async def get_dataframe_metadata(
         user_id: str = DEFAULT_USER_ID,
         mcp_session_id: str = DEFAULT_SESSION_ID,
 ) -> Optional[Dict[str, Any]]:
-    await _ensure_session_loaded(user_id, mcp_session_id)
-    async with _write_lock:
-        record = _dataframes.get(dataframe_id)
+    working_set = await _get_or_create_working_set(user_id, mcp_session_id)
+    async with working_set.lock:
+        await _hydrate_working_set(working_set, user_id, mcp_session_id)
+        record = working_set.dataframes.get(dataframe_id)
         if not record:
             return None
         return record.to_metadata(include_schema=include_schema)
@@ -481,14 +570,18 @@ async def group_dataframe_schemas(
         user_id: str = DEFAULT_USER_ID,
         mcp_session_id: str = DEFAULT_SESSION_ID,
 ) -> Dict[str, Any]:
-    await _ensure_session_loaded(user_id, mcp_session_id)
-    async with _write_lock:
+    working_set = await _get_or_create_working_set(user_id, mcp_session_id)
+    async with working_set.lock:
+        await _hydrate_working_set(working_set, user_id, mcp_session_id)
         if dataframe_id_list:
             requested = [str(df_id) for df_id in dataframe_id_list]
-            selected = [record for df_id in requested if (record := _dataframes.get(df_id))]
-            missing = [df_id for df_id in requested if df_id not in _dataframes]
+            selected = [
+                record for df_id in requested
+                if (record := working_set.dataframes.get(df_id))
+            ]
+            missing = [df_id for df_id in requested if df_id not in working_set.dataframes]
         else:
-            selected = list(_dataframes.values())
+            selected = list(working_set.dataframes.values())
             missing = []
         top_groups: Dict[str, Dict[str, Any]] = {}
         for record in selected:
@@ -637,15 +730,25 @@ async def query_dataframes(
         user_id: str = DEFAULT_USER_ID,
         mcp_session_id: str = DEFAULT_SESSION_ID,
 ) -> Dict[str, Any]:
-    await _ensure_session_loaded(user_id, mcp_session_id)
     sql_error = _validate_sql_read_only(sql)
     if sql_error:
         return {"error": sql_error}
     normalized_output_format = str(output_format or "matrix").strip().lower()
     if normalized_output_format not in {"matrix", "columnar", "records"}:
         return {"error": "Invalid output_format. Allowed values: matrix, columnar, records."}
+    working_set = await _get_or_create_working_set(user_id, mcp_session_id)
+    async with working_set.lock:
+        await _hydrate_working_set(working_set, user_id, mcp_session_id)
+        return _execute_sql_on_working_set(working_set, sql, normalized_output_format)
+
+
+def _execute_sql_on_working_set(
+        working_set: _SessionWorkingSet,
+        sql: str,
+        normalized_output_format: str,
+) -> Dict[str, Any]:
     try:
-        query_result = _sql_context.execute(sql)
+        query_result = working_set.sql_context.execute(sql)
         if hasattr(query_result, "collect"):
             query_result = query_result.collect()
         if not isinstance(query_result, pl.DataFrame):
@@ -700,16 +803,17 @@ async def remove_dataframe(
         user_id: str = DEFAULT_USER_ID,
         mcp_session_id: str = DEFAULT_SESSION_ID,
 ) -> bool:
-    await _ensure_session_loaded(user_id, mcp_session_id)
-    async with _write_lock:
-        record = _dataframes.pop(dataframe_id, None)
+    working_set = await _get_or_create_working_set(user_id, mcp_session_id)
+    async with working_set.lock:
+        await _hydrate_working_set(working_set, user_id, mcp_session_id)
+        record = working_set.dataframes.pop(dataframe_id, None)
         if not record:
             return False
         try:
-            _sql_context.unregister(record.table_name)
+            working_set.sql_context.unregister(record.table_name)
         except Exception:
             pass
-        await _persist_session(user_id, mcp_session_id)
+        await _persist_working_set(working_set, user_id, mcp_session_id)
         return True
 
 
@@ -717,18 +821,19 @@ async def clear_dataframes(
         user_id: str = DEFAULT_USER_ID,
         mcp_session_id: str = DEFAULT_SESSION_ID,
 ) -> int:
-    await _ensure_session_loaded(user_id, mcp_session_id)
-    async with _write_lock:
-        ids = list(_dataframes.keys())
+    working_set = await _get_or_create_working_set(user_id, mcp_session_id)
+    async with working_set.lock:
+        await _hydrate_working_set(working_set, user_id, mcp_session_id)
+        ids = list(working_set.dataframes.keys())
         for dataframe_id in ids:
-            record = _dataframes.pop(dataframe_id, None)
+            record = working_set.dataframes.pop(dataframe_id, None)
             if not record:
                 continue
             try:
-                _sql_context.unregister(record.table_name)
+                working_set.sql_context.unregister(record.table_name)
             except Exception:
                 pass
-        await _persist_session(user_id, mcp_session_id)
+        await _persist_working_set(working_set, user_id, mcp_session_id)
         return len(ids)
 
 

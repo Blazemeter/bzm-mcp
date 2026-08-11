@@ -667,7 +667,8 @@ Hints:
 """,
     )
     async def tests(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        test_manager = TestManager(runtime.auth.get_token(ctx), ctx, runtime.storage)
+        token = runtime.auth.get_token(ctx)
+        test_manager = TestManager(token, ctx, runtime.storage)
 
         async def _dispatch():
             match action:
@@ -716,7 +717,10 @@ Hints:
                     )
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_tests", action, ctx, _dispatch)
+            return await run_tool(f"{TOOLS_PREFIX}_tests", action, ctx, _dispatch,
+                token=token,
+                tool_args=args
+            )
         except httpx.HTTPStatusError:
             return BaseResult(error=f"Error: {format_sanitized_traceback()}")
         except Exception:
