@@ -23,8 +23,9 @@ import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
+from config.file_access import FileAccessPort
 from config.security import detect_sensitive_upload_path_reason
-from config.storage import LocalStorageClient, StorageNotSupportedError, StoragePort
+from config.storage import SessionScopeResolverPort
 from config.token import BzmToken
 from config.runtime import AppRuntime
 from formatters.failure_criteria_labels import failure_criteria_meta_payload
@@ -55,10 +56,15 @@ class TestManager(Manager):
         self,
         token: Optional[BzmToken],
         ctx: Context,
-        storage: Optional[StoragePort] = None,
+        file_access: FileAccessPort,
+        scope_resolver: SessionScopeResolverPort,
     ):
         super().__init__(token, ctx)
-        self.storage = storage or LocalStorageClient()
+        self.file_access = file_access
+        self.scope_resolver = scope_resolver
+
+    def _current_scope(self):
+        return self.scope_resolver.resolve(self.ctx, self.token)
 
     async def read(self, test_id: Optional[int]) -> BaseResult:
         if not isinstance(test_id, int) or test_id < 1:
@@ -152,6 +158,8 @@ class TestManager(Manager):
         valid_files: List[str],
         invalid_files: List[str],
         blocked_files: List[Dict[str, str]],
+        file_access: Optional[FileAccessPort] = None,
+        scope=None,
     ):
         # Security design note:
         # Uploads are intentionally allowed from any user working location (not restricted to one workspace root),
@@ -174,7 +182,9 @@ class TestManager(Manager):
                     }
                 )
                 continue
-            if self.storage.exists(file_path) and self.storage.is_file(file_path):
+            exists = file_access.exists(file_path, scope=scope) if file_access else False
+            is_file = file_access.is_file(file_path, scope=scope) if file_access else False
+            if exists and is_file:
                 logger.debug(f"File exists: {file_path}")
                 valid_files.append(file_path)
             else:
@@ -220,20 +230,14 @@ class TestManager(Manager):
         logger.debug(f"Starting upload_assets for test_id: {test_id}")
         logger.debug(f"Original file paths: {file_paths}")
         logger.debug(f"Main script: {main_script}")
+        scope = self._current_scope()
 
-        try:
-            mapped_file_paths = self.storage.map_paths(file_paths)
-        except StorageNotSupportedError as exc:
-            return {"error": str(exc)}
-
+        mapped_file_paths = self.file_access.map_paths(file_paths, scope=scope)
         logger.debug(f"Mapped file paths: {mapped_file_paths}")
 
         mapped_main_script = None
         if main_script:
-            try:
-                mapped_main_script_list = self.storage.map_paths([main_script])
-            except StorageNotSupportedError as exc:
-                return {"error": str(exc)}
+            mapped_main_script_list = self.file_access.map_paths([main_script], scope=scope)
             mapped_main_script = (
                 mapped_main_script_list[0] if mapped_main_script_list else None
             )
@@ -243,12 +247,14 @@ class TestManager(Manager):
         invalid_files = []
         blocked_files = []
 
-        try:
-            self._validate_files(
-                mapped_file_paths, valid_files, invalid_files, blocked_files
-            )
-        except StorageNotSupportedError as exc:
-            return {"error": str(exc)}
+        self._validate_files(
+            mapped_file_paths,
+            valid_files,
+            invalid_files,
+            blocked_files,
+            file_access=self.file_access,
+            scope=scope,
+        )
 
         logger.debug(f"Valid files: {valid_files}")
         logger.debug(f"Invalid files: {invalid_files}")
@@ -263,9 +269,7 @@ class TestManager(Manager):
             }
 
         logger.debug("Starting concurrent uploads")
-        upload_tasks = [
-            self._upload_single_file(test_id, file_path) for file_path in valid_files
-        ]
+        upload_tasks = [self._upload_single_file(test_id, file_path, scope) for file_path in valid_files]
         upload_results = await asyncio.gather(*upload_tasks, return_exceptions=True)
 
         logger.debug(f"Upload results: {upload_results}")
@@ -295,14 +299,14 @@ class TestManager(Manager):
             "config_update": config_update_result,
         }
 
-    async def _upload_single_file(self, test_id: int, file_path: str) -> BaseResult:
+    async def _upload_single_file(self, test_id: int, file_path: str, scope) -> BaseResult:
         logger.debug(f"Uploading single file: {file_path} to test: {test_id}")
         try:
-            file_name = self.storage.basename(file_path)
+            file_name = Path(file_path).name
 
             logger.debug(f"File name: {file_name}")
 
-            file_content = self.storage.read_bytes(file_path)
+            file_content = self.file_access.read_bytes(file_path, scope=scope)
 
             logger.debug(f"File size: {len(file_content)} bytes")
 
@@ -317,8 +321,6 @@ class TestManager(Manager):
 
             return result
 
-        except StorageNotSupportedError:
-            raise
         except Exception as e:
             logger.error(f"Exception in _upload_single_file: {e}")
             logger.error(f"Traceback: {format_sanitized_traceback(e)}")
@@ -328,7 +330,7 @@ class TestManager(Manager):
         self, test_id: int, main_script_path: str
     ) -> BaseResult:
         try:
-            file_name = self.storage.basename(main_script_path)
+            file_name = Path(main_script_path).name
             config_update = {
                 "configuration": {
                     "filename": file_name,
@@ -667,7 +669,12 @@ Hints:
 """,
     )
     async def tests(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        test_manager = TestManager(runtime.auth.get_token(ctx), ctx, runtime.storage)
+        test_manager = TestManager(
+            runtime.auth.get_token(ctx),
+            ctx,
+            runtime.file_access,
+            runtime.scope_resolver,
+        )
 
         async def _dispatch():
             match action:

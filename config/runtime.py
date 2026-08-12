@@ -18,14 +18,13 @@ from typing import Literal, Optional
 import os
 
 from config.auth import AuthPort, HttpAuthProvider, StdioAuthProvider
+from config.file_access import FileAccessPort, build_file_access
 from config.storage import (
     DefaultSessionScopeResolver,
-    FileStoragePort,
     HttpSessionStorageProvider,
     InMemorySessionStorageProvider,
     SessionScopeResolverPort,
     SessionStoragePort,
-    build_storage,
 )
 from config.token import BzmToken
 
@@ -38,49 +37,48 @@ class AppRuntime:
 
     transport: Transport
     auth: AuthPort
-    storage: FileStoragePort
-    session_storage: SessionStoragePort
+    storage: SessionStoragePort
+    file_access: FileAccessPort
     scope_resolver: SessionScopeResolverPort
 
 
 def build_runtime(
         transport: Transport,
         startup_token: Optional[BzmToken] = None,
-        storage_backend: Optional[str] = None,
+        storage_backend: Optional[str] = None,  # Kept for API compatibility.
 ) -> AppRuntime:
     """
-    Compose auth and storage for the selected transport.
+    Compose auth, file access, and session storage for the selected transport.
 
-    - stdio: process-lifetime ``startup_token`` + local/memory file storage.
-    - streamable-http: request-scoped auth + hosted-safe file storage, and
-      external session-partition persistence when BZM_STORAGE_API_BASE_URL is set.
+    - stdio: process-lifetime ``startup_token`` and in-memory session storage.
+    - streamable-http: request-scoped auth and storage API-backed partitions.
     """
-    file_storage = build_storage(transport, backend=storage_backend)
+    del storage_backend  # Reserved for future extension.
 
     if transport == "stdio":
         return AppRuntime(
             transport=transport,
             auth=StdioAuthProvider(startup_token),
-            storage=file_storage,
-            session_storage=InMemorySessionStorageProvider(),
+            storage=InMemorySessionStorageProvider(),
+            file_access=build_file_access(transport),
             scope_resolver=DefaultSessionScopeResolver(),
         )
 
     if transport == "streamable-http":
         storage_base_url = os.getenv("BZM_STORAGE_API_BASE_URL", "").strip()
-        if storage_base_url:
-            session_storage: SessionStoragePort = HttpSessionStorageProvider(
-                base_url=storage_base_url,
+        if not storage_base_url:
+            raise ValueError(
+                "BZM_STORAGE_API_BASE_URL is required for streamable-http transport."
             )
-            session_storage.ensure_available()
-        else:
-            session_storage = InMemorySessionStorageProvider()
-
+        storage: SessionStoragePort = HttpSessionStorageProvider(
+            base_url=storage_base_url,
+        )
+        storage.ensure_available()
         return AppRuntime(
             transport=transport,
             auth=HttpAuthProvider(),
-            storage=file_storage,
-            session_storage=session_storage,
+            storage=storage,
+            file_access=build_file_access(transport),
             scope_resolver=DefaultSessionScopeResolver(),
         )
 
