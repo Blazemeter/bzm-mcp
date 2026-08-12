@@ -26,6 +26,9 @@ from config.token import BzmToken, BzmTokenError
 
 BZM_TOKEN_STATE_ATTR = "token"
 
+# Unauthenticated probe paths for orchestrators / load balancers.
+HEALTH_PATHS = frozenset({"/health", "/healthz"})
+
 
 class AuthError(Exception):
     """Raised when Authorization cannot be parsed into credentials."""
@@ -98,6 +101,11 @@ class BearerAuthMiddleware:
             await self.app(scope, receive, send)
             return
 
+        path = scope.get("path", "") or ""
+        if path in HEALTH_PATHS:
+            await self.app(scope, receive, send)
+            return
+
         request = Request(scope, receive)
         try:
             token = parse_authorization_header(request.headers.get("authorization"))
@@ -114,10 +122,24 @@ class BearerAuthMiddleware:
         await self.app(scope, receive, send)
 
 
+def register_health_routes(mcp: FastMCP) -> None:
+    """Register unauthenticated health probes on the FastMCP ASGI app."""
+
+    @mcp.custom_route("/health", methods=["GET"])
+    async def health(_request: Request) -> JSONResponse:
+        return JSONResponse({"status": "ok"})
+
+    @mcp.custom_route("/healthz", methods=["GET"])
+    async def healthz(_request: Request) -> JSONResponse:
+        return JSONResponse({"status": "ok"})
+
+
 def run_streamable_http(mcp: FastMCP) -> None:
     """Serve FastMCP over streamable HTTP with Bearer auth middleware."""
     import anyio
     import uvicorn
+
+    register_health_routes(mcp)
 
     async def _serve() -> None:
         app = BearerAuthMiddleware(mcp.streamable_http_app())

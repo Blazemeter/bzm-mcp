@@ -3,6 +3,7 @@ import pytest
 import main
 from config.auth import HttpAuthProvider, StdioAuthProvider
 from config.runtime import AppRuntime
+from config.storage import HttpStorageClient, LocalStorageClient
 
 
 class _DummyFastMCP:
@@ -64,6 +65,16 @@ class TestBuildMcpServerHttp:
         assert mcp.kwargs["streamable_http_path"] == "/custom-mcp"
         assert mcp.kwargs["stateless_http"] is False
 
+    def test_http_falls_back_to_cloud_run_port(self, monkeypatch):
+        _patch_mcp_server_dependencies(monkeypatch)
+        monkeypatch.delenv("FASTMCP_PORT", raising=False)
+        monkeypatch.setenv("PORT", "8080")
+        monkeypatch.setenv("FASTMCP_HOST", "0.0.0.0")
+
+        mcp, _ = main.build_mcp_server(transport="http")
+
+        assert mcp.kwargs["port"] == 8080
+
 
 class TestBuildMcpServerTransportMapping:
     def test_transport_mapping_keeps_docker_stdio_and_http_streamable(self, monkeypatch):
@@ -94,6 +105,7 @@ class TestBuildMcpServerAuthWiring:
         assert isinstance(runtime, AppRuntime)
         assert runtime.transport == "streamable-http"
         assert isinstance(runtime.auth, HttpAuthProvider)
+        assert isinstance(runtime.storage, HttpStorageClient)
 
     def test_stdio_and_docker_register_stdio_auth_provider(self, monkeypatch):
         captured = {}
@@ -105,6 +117,8 @@ class TestBuildMcpServerAuthWiring:
         _patch_mcp_server_dependencies(monkeypatch)
         monkeypatch.setattr(main, "get_token", lambda: token)
         monkeypatch.setattr(main, "register_tools", capture_register)
+        monkeypatch.delenv("MCP_DOCKER", raising=False)
+        monkeypatch.delenv("BZM_STORAGE_BACKEND", raising=False)
 
         main.build_mcp_server(transport="stdio")
         main.build_mcp_server(transport="docker")
@@ -113,6 +127,7 @@ class TestBuildMcpServerAuthWiring:
         for runtime in captured["runtimes"]:
             assert isinstance(runtime.auth, StdioAuthProvider)
             assert runtime.auth.get_token(ctx=None) is token
+            assert isinstance(runtime.storage, LocalStorageClient)
 
 
 class TestRunTransportDispatch:
