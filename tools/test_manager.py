@@ -58,8 +58,9 @@ class TestManager(Manager):
         ctx: Context,
         file_access: FileAccessPort,
         scope_resolver: SessionScopeResolverPort,
+        user_config: Optional[dict[str, Any]] = None,
     ):
-        super().__init__(token, ctx)
+        super().__init__(token, ctx, user_config=user_config)
         self.file_access = file_access
         self.scope_resolver = scope_resolver
 
@@ -674,6 +675,7 @@ Hints:
             ctx,
             runtime.file_access,
             runtime.scope_resolver,
+            user_config=runtime.user_config,
         )
 
         async def _dispatch():

@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from dataclasses import dataclass
-from typing import Literal, Optional
 import os
+from typing import Any, Literal, Optional
 
 from config.auth import AuthPort, HttpAuthProvider, StdioAuthProvider
 from config.file_access import FileAccessPort, build_file_access
@@ -27,6 +27,7 @@ from config.storage import (
     SessionStoragePort,
 )
 from config.token import BzmToken
+from tools.utils import ConfirmMode
 
 Transport = Literal["stdio", "streamable-http"]
 
@@ -40,11 +41,13 @@ class AppRuntime:
     storage: SessionStoragePort
     file_access: FileAccessPort
     scope_resolver: SessionScopeResolverPort
+    user_config: dict[str, Any]
 
 
 def build_runtime(
         transport: Transport,
         startup_token: Optional[BzmToken] = None,
+        startup_confirmation_mode: ConfirmMode = ConfirmMode.DELETE,
 ) -> AppRuntime:
     """
     Compose auth, file access, and session storage for the selected transport.
@@ -53,12 +56,17 @@ def build_runtime(
     - streamable-http: request-scoped auth and storage API-backed partitions.
     """
     if transport == "stdio":
+        stdio_user_config = {
+            "startup_token": startup_token,
+            "confirmation_mode": startup_confirmation_mode.name,
+        }
         return AppRuntime(
             transport=transport,
             auth=StdioAuthProvider(startup_token),
             storage=InMemorySessionStorageProvider(),
             file_access=build_file_access(transport),
             scope_resolver=DefaultSessionScopeResolver(),
+            user_config=stdio_user_config,
         )
 
     if transport == "streamable-http":
@@ -77,6 +85,7 @@ def build_runtime(
             storage=storage,
             file_access=build_file_access(transport),
             scope_resolver=DefaultSessionScopeResolver(),
+            user_config={},
         )
 
     raise ValueError(f"Unknown transport: {transport}")

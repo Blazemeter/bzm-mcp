@@ -35,7 +35,7 @@ from config.token import BzmToken, BzmTokenError
 from config.version import __version__, __executable__, __bundle__
 from server import register_tools
 from telemetry import init_telemetry
-from tools.utils import ConfirmMode, register_confirm_mode
+from tools.utils import ConfirmMode
 
 BLAZEMETER_API_KEY_FILE_PATH = os.getenv('BLAZEMETER_API_KEY')
 
@@ -442,6 +442,7 @@ def build_mcp_server(
     app_runtime = build_runtime(
         wire_transport,
         startup_token=get_token() if wire_transport == "stdio" else None,
+        startup_confirmation_mode=confirm_mode,
     )
     instructions = """
 # BlazeMeter MCP Server
@@ -507,7 +508,6 @@ A comprehensive integration tool that provides AI assistants with full programma
         streamable_http_path=streamable_http_path,
         stateless_http=False,
     )
-    register_confirm_mode(confirm_mode)
     register_tools(mcp, app_runtime)
     return mcp, wire_transport
 

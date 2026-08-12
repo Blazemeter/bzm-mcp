@@ -26,6 +26,7 @@ from starlette.testclient import TestClient
 
 from config.auth import (
     AuthError,
+    BZM_USER_CONFIG_STATE_ATTR,
     BZM_TOKEN_STATE_ATTR,
     BearerAuthMiddleware,
     HttpAuthProvider,
@@ -126,7 +127,13 @@ class TestBearerAuthMiddleware:
     def _app(self):
         async def ok(request: Request):
             token = getattr(request.state, BZM_TOKEN_STATE_ATTR, None)
-            return JSONResponse({"id": token.id if token else None})
+            user_config = getattr(request.state, BZM_USER_CONFIG_STATE_ATTR, {})
+            return JSONResponse(
+                {
+                    "id": token.id if token else None,
+                    "confirmation_mode": user_config.get("confirmation_mode"),
+                }
+            )
 
         return BearerAuthMiddleware(Starlette(routes=[Route("/mcp", endpoint=ok, methods=["POST"])]))
 
@@ -149,6 +156,19 @@ class TestBearerAuthMiddleware:
         )
         assert response.status_code == 200
         assert response.json()["id"] == "key-id"
+        assert response.json()["confirmation_mode"] == "DELETE"
+
+    def test_valid_bearer_reads_confirmation_mode_header(self):
+        client = TestClient(self._app())
+        response = client.post(
+            "/mcp",
+            headers={
+                "Authorization": "Bearer key-id:key-secret",
+                "Confirmation-Mode": "CUD",
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["confirmation_mode"] == "CUD"
 
     def test_options_bypasses_auth(self):
         async def ok(_request: Request):
@@ -188,12 +208,14 @@ class TestBuildRuntime:
         assert isinstance(stdio.auth, StdioAuthProvider)
         assert isinstance(stdio.storage, InMemorySessionStorageProvider)
         assert isinstance(stdio.file_access, LocalPathFileSource)
+        assert stdio.user_config["confirmation_mode"] == "DELETE"
 
         http = build_runtime("streamable-http")
         assert http.transport == "streamable-http"
         assert isinstance(http.auth, HttpAuthProvider)
         assert isinstance(http.storage, HttpSessionStorageProvider)
         assert isinstance(http.file_access, StorageFileSource)
+        assert http.user_config == {}
 
     def test_build_runtime_http_uses_storage_api_when_configured(self, monkeypatch):
         monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")

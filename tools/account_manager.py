@@ -33,8 +33,13 @@ class AccountManager(Manager):
     # the format_accounts only expose minimum information to user
     # The read operation verify permissions and don't allow to share if don't have permissions.
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        token: Optional[BzmToken],
+        ctx: Context,
+        user_config: Optional[dict[str, Any]] = None,
+    ):
+        super().__init__(token, ctx, user_config=user_config)
 
     async def read(self, account_id: Optional[int]) -> BaseResult:
         if not isinstance(account_id, int) or account_id < 1:
@@ -98,7 +103,11 @@ Hints:
 """
     )
     async def account(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        account_manager = AccountManager(runtime.auth.get_token(ctx), ctx)
+        account_manager = AccountManager(
+            runtime.auth.get_token(ctx),
+            ctx,
+            user_config=runtime.user_config,
+        )
 
         async def _dispatch():
             match action:

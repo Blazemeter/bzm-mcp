@@ -30,8 +30,13 @@ from tools.utils import format_sanitized_traceback
 
 class BillingManager(Manager):
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        token: Optional[BzmToken],
+        ctx: Context,
+        user_config: Optional[dict[str, Any]] = None,
+    ):
+        super().__init__(token, ctx, user_config=user_config)
 
     async def calculate_cost_from_config(self, args: Dict) -> BaseResult:
         result = calculate_test_cost(args)
@@ -88,7 +93,11 @@ Hints:
 """
     )
     async def billing(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        billing_manager = BillingManager(runtime.auth.get_token(ctx), ctx)
+        billing_manager = BillingManager(
+            runtime.auth.get_token(ctx),
+            ctx,
+            user_config=runtime.user_config,
+        )
 
         async def _dispatch():
             match action:

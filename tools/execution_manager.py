@@ -32,8 +32,13 @@ from tools.utils import api_request, timeout, user_agent, format_sanitized_trace
 
 class ExecutionManager(Manager):
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        token: Optional[BzmToken],
+        ctx: Context,
+        user_config: Optional[dict[str, Any]] = None,
+    ):
+        super().__init__(token, ctx, user_config=user_config)
 
     async def _request_log_analyzer_api(self, method: str, execution_id: int,
                                         json_body: Optional[Dict[str, Any]] = None) -> BaseResult:
@@ -497,8 +502,16 @@ Hints:
 """
     )
     async def execution(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        execution_manager = ExecutionManager(runtime.auth.get_token(ctx), ctx)
-        report_manager = ReportManager(runtime.auth.get_token(ctx), ctx)
+        execution_manager = ExecutionManager(
+            runtime.auth.get_token(ctx),
+            ctx,
+            user_config=runtime.user_config,
+        )
+        report_manager = ReportManager(
+            runtime.auth.get_token(ctx),
+            ctx,
+            user_config=runtime.user_config,
+        )
 
         async def _dispatch():
             match action:

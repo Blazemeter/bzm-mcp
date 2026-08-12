@@ -36,8 +36,13 @@ class WorkspaceManager(Manager):
     # the format_workspaces only expose minimum information to user
     # The read operation verify permissions and don't allow to share details.
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        token: Optional[BzmToken],
+        ctx: Context,
+        user_config: Optional[dict[str, Any]] = None,
+    ):
+        super().__init__(token, ctx, user_config=user_config)
 
     async def read(self, workspace_id: Optional[int]) -> BaseResult:
         if not isinstance(workspace_id, int) or workspace_id < 1:
@@ -139,7 +144,11 @@ Hints:
             ctx: Context = Field(description="Context object providing access to MCP capabilities")
     ) -> BaseResult:
 
-        workspace_manager = WorkspaceManager(runtime.auth.get_token(ctx), ctx)
+        workspace_manager = WorkspaceManager(
+            runtime.auth.get_token(ctx),
+            ctx,
+            user_config=runtime.user_config,
+        )
 
         async def _dispatch():
             match action:

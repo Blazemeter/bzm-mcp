@@ -31,8 +31,13 @@ from tools.utils import api_request, format_sanitized_traceback
 
 class UserManager(Manager):
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        token: Optional[BzmToken],
+        ctx: Context,
+        user_config: Optional[dict[str, Any]] = None,
+    ):
+        super().__init__(token, ctx, user_config=user_config)
 
     async def read(self) -> BaseResult:
         return await api_request(
@@ -61,7 +66,11 @@ Hints:
             ctx: Context = Field(description="Context object providing access to MCP capabilities")
     ) -> BaseResult:
 
-        user_manager = UserManager(runtime.auth.get_token(ctx), ctx)
+        user_manager = UserManager(
+            runtime.auth.get_token(ctx),
+            ctx,
+            user_config=runtime.user_config,
+        )
 
         async def _dispatch():
             match action:

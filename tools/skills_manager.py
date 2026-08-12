@@ -43,8 +43,13 @@ class SkillsManager(Manager):
         "Skills content is sourced from curated repository resources and is trusted by design."
     )
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        token: Optional[BzmToken],
+        ctx: Context,
+        user_config: Optional[dict[str, Any]] = None,
+    ):
+        super().__init__(token, ctx, user_config=user_config)
 
     @staticmethod
     async def list_skills() -> BaseResult:
@@ -204,7 +209,11 @@ Hints:
         if args is None:
             args = {}
 
-        skills_manager = SkillsManager(runtime.auth.get_token(ctx), ctx)
+        skills_manager = SkillsManager(
+            runtime.auth.get_token(ctx),
+            ctx,
+            user_config=runtime.user_config,
+        )
 
         async def _dispatch():
             match action:
