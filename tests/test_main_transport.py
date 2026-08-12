@@ -20,7 +20,6 @@ class _DummyFastMCP:
 def _patch_mcp_server_dependencies(monkeypatch):
     monkeypatch.setattr(main, "init_telemetry", lambda *a, **k: None)
     monkeypatch.setattr(main, "get_token", lambda: object())
-    monkeypatch.setattr(main, "register_confirm_mode", lambda *a, **k: None)
     monkeypatch.setattr(main, "register_tools", lambda *a, **k: None)
     monkeypatch.setattr(main, "FastMCP", _DummyFastMCP)
     monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")

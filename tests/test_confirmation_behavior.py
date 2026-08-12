@@ -18,12 +18,13 @@ import asyncio
 from types import SimpleNamespace
 
 from models.result import BaseResult
-from tools.utils import ConfirmMode, Operations, register_confirm_mode, require_confirmation
+from tools.utils import Operations, require_confirmation
 
 
 class _ManagerWithConfirmation:
-    def __init__(self, ctx):
+    def __init__(self, ctx, confirmation_mode: str = "DELETE"):
         self.ctx = ctx
+        self.user_config = {"confirmation_mode": confirmation_mode}
 
     @require_confirmation(operation=Operations.CREATE)
     async def do_create(self):
@@ -47,8 +48,7 @@ class _RejectContext:
 
 class TestConfirmationBehavior:
     def test_blocks_when_confirmation_required_and_elicit_unsupported(self):
-        register_confirm_mode(ConfirmMode.CUD)
-        manager = _ManagerWithConfirmation(_NoElicitContext())
+        manager = _ManagerWithConfirmation(_NoElicitContext(), confirmation_mode="CUD")
 
         result = asyncio.run(manager.do_create())
 
@@ -57,8 +57,7 @@ class TestConfirmationBehavior:
         assert result.result is None
 
     def test_allows_when_confirmation_required_and_user_accepts(self):
-        register_confirm_mode(ConfirmMode.CUD)
-        manager = _ManagerWithConfirmation(_AcceptContext())
+        manager = _ManagerWithConfirmation(_AcceptContext(), confirmation_mode="CUD")
 
         result = asyncio.run(manager.do_create())
 
@@ -66,8 +65,7 @@ class TestConfirmationBehavior:
         assert result.result == ["created"]
 
     def test_returns_cancelled_when_confirmation_required_and_user_declines(self):
-        register_confirm_mode(ConfirmMode.CUD)
-        manager = _ManagerWithConfirmation(_RejectContext())
+        manager = _ManagerWithConfirmation(_RejectContext(), confirmation_mode="CUD")
 
         result = asyncio.run(manager.do_create())
 
@@ -75,8 +73,7 @@ class TestConfirmationBehavior:
         assert result.result == ["Action manually cancelled by the user."]
 
     def test_allows_when_confirmation_not_required_even_without_elicit(self):
-        register_confirm_mode(ConfirmMode.DISABLE)
-        manager = _ManagerWithConfirmation(_NoElicitContext())
+        manager = _ManagerWithConfirmation(_NoElicitContext(), confirmation_mode="DISABLE")
 
         result = asyncio.run(manager.do_create())
 

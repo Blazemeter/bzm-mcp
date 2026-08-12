@@ -25,7 +25,6 @@ from tools.account_manager import AccountManager
 from tools.execution_manager import ExecutionManager
 from tools.project_manager import ProjectManager
 from tools.test_manager import TestManager
-from tools.utils import register_confirm_mode, ConfirmMode
 from tools.workspace_manager import WorkspaceManager
 
 
@@ -98,7 +97,6 @@ class TestHierarchyAndConsent:
         assert result.error == "Project validation failed"
 
     def test_execution_start_stops_when_test_validation_fails(self, monkeypatch):
-        register_confirm_mode(ConfirmMode.DISABLE)
         called = {"api_request": False}
 
         async def fake_read_test(*args, **kwargs):
@@ -110,7 +108,11 @@ class TestHierarchyAndConsent:
 
         monkeypatch.setattr(execution_manager.bridge, "read_test", fake_read_test)
         monkeypatch.setattr(execution_manager, "api_request", fake_api_request)
-        manager = ExecutionManager(token=None, ctx=None)
+        manager = ExecutionManager(
+            token=None,
+            ctx=None,
+            user_config={"confirmation_mode": "DISABLE"},
+        )
 
         result = asyncio.run(manager.start(42))
 

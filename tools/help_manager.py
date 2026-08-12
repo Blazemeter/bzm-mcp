@@ -45,8 +45,13 @@ class HelpManager(Manager):
         "Help content is sourced from curated BlazeMeter documentation domains and is trusted by design."
     )
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        token: Optional[BzmToken],
+        ctx: Context,
+        user_config: Optional[dict[str, Any]] = None,
+    ):
+        super().__init__(token, ctx, user_config=user_config)
 
     async def _load_help_tree(self):
         help_index_url = HELP_INDEX_URL
@@ -291,7 +296,11 @@ Hints:
         if args is None:
             args = {}
 
-        help_manager = HelpManager(runtime.auth.get_token(ctx), ctx)
+        help_manager = HelpManager(
+            runtime.auth.get_token(ctx),
+            ctx,
+            user_config=runtime.user_config,
+        )
 
         async def _dispatch():
             match action:

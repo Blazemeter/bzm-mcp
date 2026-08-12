@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Optional
+from typing import Any, Optional
 
 from mcp.server.fastmcp import Context
 
@@ -21,6 +21,12 @@ from config.token import BzmToken
 
 
 class Manager:
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
+    def __init__(
+        self,
+        token: Optional[BzmToken],
+        ctx: Context,
+        user_config: Optional[dict[str, Any]] = None,
+    ):
         self.token = token
         self.ctx = ctx
+        self.user_config = user_config or {}
