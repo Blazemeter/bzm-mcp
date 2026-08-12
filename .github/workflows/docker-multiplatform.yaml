@@ -74,7 +74,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Extract metadata (stdio image)
+    - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v6
       with:
@@ -88,11 +88,10 @@ jobs:
           type=semver,pattern={{major}},enable=${{ github.event_name == 'release' }}
           type=raw,value=latest,enable=${{ github.event_name == 'release' }}
     
-    - name: Build and push stdio Docker image
+    - name: Build and push Docker image
       uses: docker/build-push-action@v7
       with:
         context: .
-        file: Dockerfile
         platforms: ${{ env.PLATFORMS }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}
