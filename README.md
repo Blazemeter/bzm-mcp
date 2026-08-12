@@ -110,31 +110,9 @@ After installing, set `BLAZEMETER_API_KEY` to your `api-key.json` path in your c
 
 ---
 
-**Hosted HTTP (streamable-http) Client Configuration**
+**Hosted HTTP (streamable-http)**
 
-Shared server authenticates each client via `Authorization: Bearer`. Production URL:
-
-`https://mcp.blazemeter.com/mcp`
-
-Local / operator run:
-
-```bash
-# From source
-uv run python main.py --mcp http
-# or
-BZM_MCP_TRANSPORT=http FASTMCP_HOST=0.0.0.0 FASTMCP_PORT=8000 uv run python main.py --mcp
-
-# Container image (:latest is stdio by default; pass hosted HTTP env vars)
-docker run --rm -p 8000:8000 \
-  -e BZM_MCP_TRANSPORT=http \
-  -e FASTMCP_HOST=0.0.0.0 \
-  -e FASTMCP_PORT=8000 \
-  -e FASTMCP_STREAMABLE_HTTP_PATH=/mcp \
-  -e BZM_STORAGE_BACKEND=memory \
-  ghcr.io/blazemeter/bzm-mcp:latest
-```
-
-Configure the MCP client with the server URL and your BlazeMeter API key as Bearer credentials (`id:secret` or base64 of `id:secret`):
+Connect to the shared hosted server with Bearer auth. Production URL: `https://mcp.blazemeter.com/mcp`
 
 ```json
 {
@@ -149,11 +127,8 @@ Configure the MCP client with the server URL and your BlazeMeter API key as Bear
 }
 ```
 
-For local testing use `"url": "http://localhost:8000/mcp"` instead.
-
 > [!NOTE]  
-> Over HTTP, credentials are resolved per request from the `Authorization` header. Invalid or missing Bearer credentials return `401` before any tool runs. Well-formed but wrong API keys fail later inside BlazeMeter API calls (same as stdio). Stdio transport uses `api-key.json` / env / Docker secrets.  
-> Hosted MVP uses in-memory storage and rejects local file upload (`upload_assets`). See [docs/hosted-mvp-runbook.md](docs/hosted-mvp-runbook.md).
+> For local/operator HTTP setup, env vars, auth behavior, and MVP limits (including `upload_assets`), see [docs/hosted-http.md](docs/hosted-http.md).
 
 ---
 
