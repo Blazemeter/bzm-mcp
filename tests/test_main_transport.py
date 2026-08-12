@@ -2,6 +2,7 @@ import pytest
 
 import main
 from config.auth import HttpAuthProvider, StdioAuthProvider
+from config.file_access import StorageFileSource
 from config.runtime import AppRuntime
 from config.storage import HttpSessionStorageProvider, InMemorySessionStorageProvider
 
@@ -24,6 +25,7 @@ def _patch_mcp_server_dependencies(monkeypatch):
     monkeypatch.setattr(main, "FastMCP", _DummyFastMCP)
     monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
     monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
+    monkeypatch.setattr(StorageFileSource, "ensure_available", lambda self: None)
 
 
 class TestResolveMcpTransport:

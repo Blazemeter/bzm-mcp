@@ -17,6 +17,8 @@ limitations under the License.
 import asyncio
 from types import SimpleNamespace
 
+from config.file_access import LocalPathFileSource
+from config.storage import DefaultSessionScopeResolver
 from models.result import BaseResult
 from tools import account_manager, project_manager, workspace_manager, test_manager, execution_manager
 from tools.account_manager import AccountManager
@@ -84,7 +86,12 @@ class TestHierarchyAndConsent:
 
         monkeypatch.setattr(test_manager, "api_request", fake_api_request)
         monkeypatch.setattr(test_manager.bridge, "read_project", fake_read_project)
-        manager = TestManager(token=None, ctx=None)
+        manager = TestManager(
+            token=None,
+            ctx=None,
+            file_access=LocalPathFileSource(),
+            scope_resolver=DefaultSessionScopeResolver(),
+        )
 
         result = asyncio.run(manager.read(50))
 

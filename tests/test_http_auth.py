@@ -198,6 +198,7 @@ class TestBuildRuntime:
     def test_build_runtime_http_uses_storage_api_when_configured(self, monkeypatch):
         monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
         monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
+        monkeypatch.setattr(StorageFileSource, "ensure_available", lambda self: None)
 
         runtime = build_runtime("streamable-http")
         assert runtime.transport == "streamable-http"
