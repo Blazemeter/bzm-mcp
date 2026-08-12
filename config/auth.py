@@ -27,6 +27,27 @@ from config.token import BzmToken, BzmTokenError
 BZM_TOKEN_STATE_ATTR = "token"
 BZM_USER_CONFIG_STATE_ATTR = "user_config"
 BZM_CONFIRMATION_MODE_HEADER = "confirmation-mode"
+BZM_SESSION_ID_HEADER = "mcp-session-id"
+
+_SESSION_CONFIRMATION_MODE: dict[tuple[str, str], str] = {}
+
+
+def _normalize_confirmation_mode(raw_value: Optional[str]) -> str:
+    value = (raw_value or "").strip().upper()
+    if value == "NONE":
+        return "DISABLE"
+    if value in ("DELETE", "CUD", "DISABLE"):
+        return value
+    return "DELETE"
+
+
+def _session_store_key(token: BzmToken, session_id: str) -> tuple[str, str]:
+    return token.id, session_id
+
+
+def clear_confirmation_mode_session_store() -> None:
+    """Test/helper hook to reset process-local session confirmation cache."""
+    _SESSION_CONFIRMATION_MODE.clear()
 
 # Unauthenticated probe paths for orchestrators / load balancers.
 HEALTH_PATHS = frozenset({"/health", "/healthz"})
@@ -121,7 +142,19 @@ class BearerAuthMiddleware:
             return
 
         setattr(request.state, BZM_TOKEN_STATE_ATTR, token)
-        confirmation_mode = request.headers.get(BZM_CONFIRMATION_MODE_HEADER, "DELETE")
+        session_id = request.headers.get(BZM_SESSION_ID_HEADER, "").strip()
+        raw_confirmation_mode = request.headers.get(BZM_CONFIRMATION_MODE_HEADER)
+        if raw_confirmation_mode is not None and raw_confirmation_mode.strip():
+            confirmation_mode = _normalize_confirmation_mode(raw_confirmation_mode)
+            if session_id:
+                _SESSION_CONFIRMATION_MODE[_session_store_key(token, session_id)] = confirmation_mode
+        elif session_id:
+            confirmation_mode = _SESSION_CONFIRMATION_MODE.get(
+                _session_store_key(token, session_id),
+                "DELETE",
+            )
+        else:
+            confirmation_mode = "DELETE"
         setattr(
             request.state,
             BZM_USER_CONFIG_STATE_ATTR,
