@@ -3,7 +3,7 @@ import pytest
 import main
 from config.auth import HttpAuthProvider, StdioAuthProvider
 from config.runtime import AppRuntime
-from config.storage import HttpStorageClient, LocalStorageClient
+from config.storage import HttpSessionStorageProvider, InMemorySessionStorageProvider
 
 
 class _DummyFastMCP:
@@ -22,6 +22,8 @@ def _patch_mcp_server_dependencies(monkeypatch):
     monkeypatch.setattr(main, "register_confirm_mode", lambda *a, **k: None)
     monkeypatch.setattr(main, "register_tools", lambda *a, **k: None)
     monkeypatch.setattr(main, "FastMCP", _DummyFastMCP)
+    monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+    monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
 
 
 class TestResolveMcpTransport:
@@ -98,7 +100,6 @@ class TestBuildMcpServerAuthWiring:
 
         _patch_mcp_server_dependencies(monkeypatch)
         monkeypatch.setattr(main, "register_tools", capture_register)
-        monkeypatch.delenv("BZM_STORAGE_API_BASE_URL", raising=False)
 
         main.build_mcp_server(transport="http")
 
@@ -106,7 +107,7 @@ class TestBuildMcpServerAuthWiring:
         assert isinstance(runtime, AppRuntime)
         assert runtime.transport == "streamable-http"
         assert isinstance(runtime.auth, HttpAuthProvider)
-        assert isinstance(runtime.storage, HttpStorageClient)
+        assert isinstance(runtime.storage, HttpSessionStorageProvider)
 
     def test_stdio_and_docker_register_stdio_auth_provider(self, monkeypatch):
         captured = {}
@@ -128,7 +129,7 @@ class TestBuildMcpServerAuthWiring:
         for runtime in captured["runtimes"]:
             assert isinstance(runtime.auth, StdioAuthProvider)
             assert runtime.auth.get_token(ctx=None) is token
-            assert isinstance(runtime.storage, LocalStorageClient)
+            assert isinstance(runtime.storage, InMemorySessionStorageProvider)
 
 
 class TestRunTransportDispatch:
