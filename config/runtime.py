@@ -45,7 +45,6 @@ class AppRuntime:
 def build_runtime(
         transport: Transport,
         startup_token: Optional[BzmToken] = None,
-        storage_backend: Optional[str] = None,  # Kept for API compatibility.
 ) -> AppRuntime:
     """
     Compose auth, file access, and session storage for the selected transport.
@@ -53,8 +52,6 @@ def build_runtime(
     - stdio: process-lifetime ``startup_token`` and in-memory session storage.
     - streamable-http: request-scoped auth and storage API-backed partitions.
     """
-    del storage_backend  # Reserved for future extension.
-
     if transport == "stdio":
         return AppRuntime(
             transport=transport,
