@@ -27,12 +27,10 @@ from starlette.testclient import TestClient
 from config.auth import (
     AuthError,
     BZM_USER_CONFIG_STATE_ATTR,
-    BZM_SESSION_ID_HEADER,
     BZM_TOKEN_STATE_ATTR,
     BearerAuthMiddleware,
     HttpAuthProvider,
     StdioAuthProvider,
-    clear_confirmation_mode_session_store,
     parse_authorization_header,
 )
 from config.file_access import LocalPathFileSource, StorageFileSource
@@ -126,9 +124,6 @@ class TestAuthProviders:
 
 
 class TestBearerAuthMiddleware:
-    def setup_method(self):
-        clear_confirmation_mode_session_store()
-
     def _app(self):
         async def ok(request: Request):
             token = getattr(request.state, BZM_TOKEN_STATE_ATTR, None)
@@ -175,15 +170,13 @@ class TestBearerAuthMiddleware:
         assert response.status_code == 200
         assert response.json()["confirmation_mode"] == "CUD"
 
-    def test_uses_stored_confirmation_mode_for_same_session_without_header(self):
+    def test_confirmation_mode_not_persisted_between_requests_without_header(self):
         client = TestClient(self._app())
-        session_id = "session-abc"
         first = client.post(
             "/mcp",
             headers={
                 "Authorization": "Bearer key-id:key-secret",
                 "Confirmation-Mode": "CUD",
-                BZM_SESSION_ID_HEADER: session_id,
             },
         )
         assert first.status_code == 200
@@ -191,13 +184,10 @@ class TestBearerAuthMiddleware:
 
         second = client.post(
             "/mcp",
-            headers={
-                "Authorization": "Bearer key-id:key-secret",
-                BZM_SESSION_ID_HEADER: session_id,
-            },
+            headers={"Authorization": "Bearer key-id:key-secret"},
         )
         assert second.status_code == 200
-        assert second.json()["confirmation_mode"] == "CUD"
+        assert second.json()["confirmation_mode"] == "DELETE"
 
     def test_options_bypasses_auth(self):
         async def ok(_request: Request):
