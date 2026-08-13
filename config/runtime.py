@@ -44,6 +44,14 @@ class AppRuntime:
     user_config: dict[str, Any]
 
 
+def build_user_config(runtime: AppRuntime, ctx) -> dict[str, Any]:
+    user_config = dict(runtime.user_config)
+    token = runtime.auth.get_token(ctx)
+    if token is not None:
+        user_config["token"] = token
+    return user_config
+
+
 def build_runtime(
         transport: Transport,
         startup_token: Optional[BzmToken] = None,
@@ -58,6 +66,7 @@ def build_runtime(
     if transport == "stdio":
         stdio_user_config = {
             "startup_token": startup_token,
+            "token": startup_token,
             "confirmation_mode": startup_confirmation_mode.name,
         }
         return AppRuntime(

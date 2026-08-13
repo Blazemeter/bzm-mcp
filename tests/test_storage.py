@@ -112,7 +112,6 @@ class TestRuntimeStorageWiring:
 class TestUploadAssetsHostedRejection:
     def test_upload_assets_returns_clear_error_on_http_storage(self):
         manager = TestManager(
-            token=None,
             ctx=None,
             file_access=StorageFileSource("https://mcp-storage.internal"),
             scope_resolver=DefaultSessionScopeResolver(),
