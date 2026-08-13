@@ -19,8 +19,7 @@ import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE
-from config.token import BzmToken
-from config.runtime import AppRuntime
+from config.runtime import AppRuntime, build_user_config
 from models.manager import Manager
 from models.result import BaseResult
 from tools.billing_utils import calculate_test_cost
@@ -32,11 +31,10 @@ class BillingManager(Manager):
 
     def __init__(
         self,
-        token: Optional[BzmToken],
         ctx: Context,
         user_config: Optional[dict[str, Any]] = None,
     ):
-        super().__init__(token, ctx, user_config=user_config)
+        super().__init__(ctx, user_config=user_config)
 
     async def calculate_cost_from_config(self, args: Dict) -> BaseResult:
         result = calculate_test_cost(args)
@@ -94,9 +92,8 @@ Hints:
     )
     async def billing(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
         billing_manager = BillingManager(
-            runtime.auth.get_token(ctx),
             ctx,
-            user_config=runtime.user_config,
+            user_config=build_user_config(runtime, ctx),
         )
 
         async def _dispatch():

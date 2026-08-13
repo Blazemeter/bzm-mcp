@@ -34,7 +34,7 @@ class TestHierarchyAndConsent:
             return BaseResult(result=[SimpleNamespace(ai_consent=False)])
 
         monkeypatch.setattr(account_manager, "api_request", fake_api_request)
-        manager = AccountManager(token=None, ctx=None)
+        manager = AccountManager(ctx=None)
 
         result = asyncio.run(manager.read(123))
 
@@ -50,7 +50,7 @@ class TestHierarchyAndConsent:
 
         monkeypatch.setattr(workspace_manager, "api_request", fake_api_request)
         monkeypatch.setattr(workspace_manager.bridge, "read_account", fake_read_account)
-        manager = WorkspaceManager(token=None, ctx=None)
+        manager = WorkspaceManager(ctx=None)
 
         result = asyncio.run(manager.read(55))
 
@@ -69,7 +69,7 @@ class TestHierarchyAndConsent:
         monkeypatch.setattr(project_manager, "api_request", fake_api_request)
         monkeypatch.setattr(project_manager.bridge, "read_workspace", fake_read_workspace)
         monkeypatch.setattr(project_manager.bridge, "count_project_tests", fake_count_project_tests)
-        manager = ProjectManager(token=None, ctx=None)
+        manager = ProjectManager(ctx=None)
 
         result = asyncio.run(manager.read(200))
 
@@ -86,7 +86,6 @@ class TestHierarchyAndConsent:
         monkeypatch.setattr(test_manager, "api_request", fake_api_request)
         monkeypatch.setattr(test_manager.bridge, "read_project", fake_read_project)
         manager = TestManager(
-            token=None,
             ctx=None,
             file_access=LocalPathFileSource(),
             scope_resolver=DefaultSessionScopeResolver(),
@@ -109,7 +108,6 @@ class TestHierarchyAndConsent:
         monkeypatch.setattr(execution_manager.bridge, "read_test", fake_read_test)
         monkeypatch.setattr(execution_manager, "api_request", fake_api_request)
         manager = ExecutionManager(
-            token=None,
             ctx=None,
             user_config={"confirmation_mode": "DISABLE"},
         )
@@ -132,7 +130,7 @@ class TestHierarchyAndConsent:
         monkeypatch.setattr(execution_manager, "api_request", fake_api_request)
         monkeypatch.setattr(execution_manager.bridge, "read_project", fake_read_project)
         monkeypatch.setattr(ExecutionManager, "_fetch_execution_status", fake_fetch_execution_status)
-        manager = ExecutionManager(token=None, ctx=None)
+        manager = ExecutionManager(ctx=None)
 
         result = asyncio.run(manager.read(909))
 

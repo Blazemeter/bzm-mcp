@@ -24,8 +24,7 @@ from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE, \
     HELP_INDEX_URL, HELP_TOC_URL, HELP_BASE_CONTENT_URL
-from config.token import BzmToken
-from config.runtime import AppRuntime
+from config.runtime import AppRuntime, build_user_config
 from formatters.help import format_help_info
 from models.manager import Manager
 from models.result import BaseResult
@@ -47,11 +46,10 @@ class HelpManager(Manager):
 
     def __init__(
         self,
-        token: Optional[BzmToken],
         ctx: Context,
         user_config: Optional[dict[str, Any]] = None,
     ):
-        super().__init__(token, ctx, user_config=user_config)
+        super().__init__(ctx, user_config=user_config)
 
     async def _load_help_tree(self):
         help_index_url = HELP_INDEX_URL
@@ -297,9 +295,8 @@ Hints:
             args = {}
 
         help_manager = HelpManager(
-            runtime.auth.get_token(ctx),
             ctx,
-            user_config=runtime.user_config,
+            user_config=build_user_config(runtime, ctx),
         )
 
         async def _dispatch():
