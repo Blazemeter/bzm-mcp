@@ -122,7 +122,7 @@ class TestBuildMcpServerAuthWiring:
         monkeypatch.setattr(main, "get_token", lambda: token)
         monkeypatch.setattr(main, "register_tools", capture_register)
         monkeypatch.delenv("MCP_DOCKER", raising=False)
-        monkeypatch.delenv("BZM_STORAGE_BACKEND", raising=False)
+        monkeypatch.delenv("BZM_STORAGE_STRATEGY", raising=False)
 
         main.build_mcp_server(transport="stdio")
         main.build_mcp_server(transport="docker")

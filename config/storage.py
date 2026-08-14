@@ -69,7 +69,7 @@ class FileStoragePort(Protocol):
 
 class LocalStorageClient:
     """
-    Process-local file access (BZM_STORAGE_BACKEND=memory for MVP).
+    Process-local file access (BZM_STORAGE_STRATEGY=memory for MVP).
 
     Uses the existing path mapper so Docker volume mounts keep working.
     No external Storage Service — suitable for single-instance / stdio MVP.
@@ -121,15 +121,15 @@ class HttpStorageClient:
 
 
 def resolve_storage_backend(raw: Optional[str] = None) -> StorageBackend:
-    """Resolve BZM_STORAGE_BACKEND (default: memory)."""
+    """Resolve BZM_STORAGE_STRATEGY (default: memory)."""
     candidate = (
-        raw if raw is not None else os.getenv("BZM_STORAGE_BACKEND", "memory")
+        raw if raw is not None else os.getenv("BZM_STORAGE_STRATEGY", "memory")
     ).strip().lower()
     if not candidate:
         return "memory"
     if candidate not in ("memory", "http"):
         raise ValueError(
-            f"Invalid BZM_STORAGE_BACKEND '{candidate}'. Valid values: memory, http."
+            f"Invalid BZM_STORAGE_STRATEGY '{candidate}'. Valid values: memory, http."
         )
     return candidate  # type: ignore[return-value]
 

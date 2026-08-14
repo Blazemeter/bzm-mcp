@@ -48,7 +48,7 @@ docker run --rm -p 8000:8000 \
   -e FASTMCP_HOST=0.0.0.0 \
   -e FASTMCP_PORT=8000 \
   -e FASTMCP_STREAMABLE_HTTP_PATH=/mcp \
-  -e BZM_STORAGE_BACKEND=memory \
+  -e BZM_STORAGE_STRATEGY=memory \
   ghcr.io/blazemeter/bzm-mcp:latest
 ```
 
@@ -60,9 +60,9 @@ docker run --rm -p 8000:8000 \
 | `FASTMCP_HOST` | Bind address (HTTP only) | `127.0.0.1` |
 | `FASTMCP_PORT` | Listen port (HTTP only). Also accepts `PORT` (e.g. Cloud Run) | `8000` |
 | `FASTMCP_STREAMABLE_HTTP_PATH` | HTTP path for the MCP endpoint | `/mcp` |
-| `BZM_STORAGE_BACKEND` | `memory` or `http` | `memory` |
+| `BZM_STORAGE_STRATEGY` | `memory` or `http` | `memory` |
 
-On streamable-http, local file paths are always rejected regardless of `BZM_STORAGE_BACKEND` (hosted fail-closed storage).
+On streamable-http, local file paths are always rejected regardless of `BZM_STORAGE_STRATEGY` (hosted fail-closed storage).
 
 ## Hosted MVP limitations
 
