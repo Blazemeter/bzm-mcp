@@ -15,9 +15,17 @@ limitations under the License.
 """
 from dataclasses import dataclass
 from typing import Literal, Optional
+import os
 
 from config.auth import AuthPort, HttpAuthProvider, StdioAuthProvider
-from config.storage import StoragePort, build_storage
+from config.file_access import FileAccessPort, build_file_access
+from config.storage import (
+    DefaultSessionScopeResolver,
+    HttpSessionStorageProvider,
+    InMemorySessionStorageProvider,
+    SessionScopeResolverPort,
+    SessionStoragePort,
+)
 from config.token import BzmToken
 
 Transport = Literal["stdio", "streamable-http"]
@@ -29,32 +37,46 @@ class AppRuntime:
 
     transport: Transport
     auth: AuthPort
-    storage: StoragePort
+    storage: SessionStoragePort
+    file_access: FileAccessPort
+    scope_resolver: SessionScopeResolverPort
 
 
 def build_runtime(
         transport: Transport,
         startup_token: Optional[BzmToken] = None,
-        storage_backend: Optional[str] = None,
 ) -> AppRuntime:
     """
-    Compose auth and storage for the selected transport.
+    Compose auth, file access, and session storage for the selected transport.
 
-    - stdio: process-lifetime ``startup_token``; local/memory file storage by default.
-    - streamable-http: Bearer middleware + HttpAuthProvider; HttpStorageClient
-      (local paths rejected) regardless of BZM_STORAGE_BACKEND for MVP.
+    - stdio: process-lifetime ``startup_token`` and in-memory session storage.
+    - streamable-http: request-scoped auth and storage API-backed partitions.
     """
-    storage = build_storage(transport, backend=storage_backend)
     if transport == "stdio":
         return AppRuntime(
             transport=transport,
             auth=StdioAuthProvider(startup_token),
-            storage=storage,
+            storage=InMemorySessionStorageProvider(),
+            file_access=build_file_access(transport),
+            scope_resolver=DefaultSessionScopeResolver(),
         )
+
     if transport == "streamable-http":
+        storage_base_url = os.getenv("BZM_STORAGE_API_BASE_URL", "").strip()
+        if not storage_base_url:
+            raise ValueError(
+                "BZM_STORAGE_API_BASE_URL is required for streamable-http transport."
+            )
+        storage: SessionStoragePort = HttpSessionStorageProvider(
+            base_url=storage_base_url,
+        )
+        storage.ensure_available()
         return AppRuntime(
             transport=transport,
             auth=HttpAuthProvider(),
             storage=storage,
+            file_access=build_file_access(transport),
+            scope_resolver=DefaultSessionScopeResolver(),
         )
+
     raise ValueError(f"Unknown transport: {transport}")

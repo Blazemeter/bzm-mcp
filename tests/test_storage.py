@@ -17,10 +17,14 @@ import asyncio
 
 import pytest
 
+from config.file_access import LocalPathFileSource, StorageFileSource
 from config.runtime import build_runtime
 from config.storage import (
+    DefaultSessionScopeResolver,
     HOSTED_FILE_ACCESS_MESSAGE,
+    HttpSessionStorageProvider,
     HttpStorageClient,
+    InMemorySessionStorageProvider,
     LocalStorageClient,
     StorageNotSupportedError,
     build_storage,
@@ -31,27 +35,27 @@ from tools.test_manager import TestManager
 
 class TestResolveStorageBackend:
     def test_default_memory(self, monkeypatch):
-        monkeypatch.delenv("BZM_STORAGE_BACKEND", raising=False)
+        monkeypatch.delenv("BZM_STORAGE_STRATEGY", raising=False)
         assert resolve_storage_backend() == "memory"
 
     def test_env_http(self, monkeypatch):
-        monkeypatch.setenv("BZM_STORAGE_BACKEND", "http")
+        monkeypatch.setenv("BZM_STORAGE_STRATEGY", "http")
         assert resolve_storage_backend() == "http"
 
     def test_invalid_raises(self):
-        with pytest.raises(ValueError, match="BZM_STORAGE_BACKEND"):
+        with pytest.raises(ValueError, match="BZM_STORAGE_STRATEGY"):
             resolve_storage_backend("s3")
 
 
 class TestBuildStorage:
     def test_stdio_memory_uses_local(self, monkeypatch):
-        monkeypatch.delenv("BZM_STORAGE_BACKEND", raising=False)
+        monkeypatch.delenv("BZM_STORAGE_STRATEGY", raising=False)
         monkeypatch.delenv("MCP_DOCKER", raising=False)
         storage = build_storage("stdio")
         assert isinstance(storage, LocalStorageClient)
 
     def test_streamable_http_uses_http_client(self, monkeypatch):
-        monkeypatch.setenv("BZM_STORAGE_BACKEND", "memory")
+        monkeypatch.setenv("BZM_STORAGE_STRATEGY", "memory")
         storage = build_storage("streamable-http")
         assert isinstance(storage, HttpStorageClient)
 
@@ -91,20 +95,28 @@ class TestHttpStorageClient:
 
 
 class TestRuntimeStorageWiring:
-    def test_http_runtime_gets_http_storage(self):
+    def test_http_runtime_gets_http_storage(self, monkeypatch):
+        monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
         runtime = build_runtime("streamable-http")
-        assert isinstance(runtime.storage, HttpStorageClient)
+        assert isinstance(runtime.storage, HttpSessionStorageProvider)
+        assert isinstance(runtime.file_access, StorageFileSource)
 
     def test_stdio_runtime_gets_local_storage(self, monkeypatch):
         monkeypatch.delenv("MCP_DOCKER", raising=False)
-        monkeypatch.delenv("BZM_STORAGE_BACKEND", raising=False)
         runtime = build_runtime("stdio")
-        assert isinstance(runtime.storage, LocalStorageClient)
+        assert isinstance(runtime.storage, InMemorySessionStorageProvider)
+        assert isinstance(runtime.file_access, LocalPathFileSource)
 
 
 class TestUploadAssetsHostedRejection:
     def test_upload_assets_returns_clear_error_on_http_storage(self):
-        manager = TestManager(token=None, ctx=None, storage=HttpStorageClient())
+        manager = TestManager(
+            token=None,
+            ctx=None,
+            file_access=StorageFileSource("https://mcp-storage.internal"),
+            scope_resolver=DefaultSessionScopeResolver(),
+        )
 
         async def _fake_read(_test_id):
             from models.result import BaseResult
@@ -115,4 +127,4 @@ class TestUploadAssetsHostedRejection:
             manager.upload_assets(1, ["/tmp/demo.jmx"], main_script=None)
         )
         assert "error" in result
-        assert "not supported on the hosted MCP" in result["error"]
+        assert "No valid files found to upload" in result["error"]
