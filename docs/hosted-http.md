@@ -16,7 +16,8 @@ Configure the MCP client with that URL and your BlazeMeter API key as Bearer cre
     "BlazeMeter MCP": {
       "url": "https://mcp.blazemeter.com/mcp",
       "headers": {
-        "Authorization": "Bearer <apiKeyId>:<apiKeySecret>"
+        "Authorization": "Bearer <apiKeyId>:<apiKeySecret>",
+        "confirmation-mode": "DELETE"
       }
     }
   }
@@ -31,6 +32,12 @@ For a locally run server, use `"url": "http://localhost:8000/mcp"` instead.
 - Invalid or missing Bearer credentials return `401` before any tool runs.
 - Well-formed but wrong API keys fail later inside BlazeMeter API calls (same as stdio).
 - Stdio / local Docker transport uses `api-key.json` / env / Docker secrets instead of Bearer auth.
+
+### Confirmation mode header
+
+- Optional header: `confirmation-mode`
+- Allowed values: `DELETE`, `CUD`, `DISABLE`
+- If omitted, empty, or invalid, the server falls back to `DELETE`.
 
 ## Local / operator run
 
