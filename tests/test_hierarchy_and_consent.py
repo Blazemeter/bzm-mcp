@@ -107,10 +107,7 @@ class TestHierarchyAndConsent:
 
         monkeypatch.setattr(execution_manager.bridge, "read_test", fake_read_test)
         monkeypatch.setattr(execution_manager, "api_request", fake_api_request)
-        manager = ExecutionManager(
-            ctx=None,
-            user_config={"confirmation_mode": "DISABLE"},
-        )
+        manager = ExecutionManager(ctx=SimpleNamespace(user_config={"confirmation_mode": "DISABLE"}))
 
         result = asyncio.run(manager.start(42))
 

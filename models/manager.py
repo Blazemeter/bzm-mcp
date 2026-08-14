@@ -13,15 +13,29 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Any, Optional
-
 from mcp.server.fastmcp import Context
+
+from config.auth import BZM_TOKEN_STATE_ATTR, BZM_USER_CONFIG_STATE_ATTR
 
 class Manager:
     def __init__(
         self,
         ctx: Context,
-        user_config: Optional[dict[str, Any]] = None,
     ):
         self.ctx = ctx
-        self.user_config = dict(user_config or {})
+        # depending on the transport, I can get the token from the request context or request state inside ctx
+        request_context = getattr(ctx, "request_context", None)
+        request_state = getattr(getattr(request_context, "request", None), "state", None)
+
+        request_context_config = getattr(request_context, BZM_USER_CONFIG_STATE_ATTR, None)
+        request_state_config = getattr(request_state, BZM_USER_CONFIG_STATE_ATTR, None)
+
+        if isinstance(request_context_config, dict):
+            user_config = request_context_config
+        elif isinstance(request_state_config, dict):
+            user_config = request_state_config
+        else:
+            user_config = {}
+
+        request_state_token = getattr(request_state, BZM_TOKEN_STATE_ATTR, None)
+        self.token = user_config.get("token") or request_state_token

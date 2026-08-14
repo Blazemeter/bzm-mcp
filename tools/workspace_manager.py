@@ -38,16 +38,15 @@ class WorkspaceManager(Manager):
     def __init__(
         self,
         ctx: Context,
-        user_config: Optional[dict[str, Any]] = None,
     ):
-        super().__init__(ctx, user_config=user_config)
+        super().__init__(ctx)
 
     async def read(self, workspace_id: Optional[int]) -> BaseResult:
         if not isinstance(workspace_id, int) or workspace_id < 1:
             return BaseResult(error="Missing or invalid required argument 'workspace_id'. Expected integer.")
 
         workspace_result = await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{WORKSPACES_ENDPOINT}/{workspace_id}",
             result_formatter=format_workspaces_detailed
@@ -56,7 +55,7 @@ class WorkspaceManager(Manager):
             return workspace_result
         else:
             # Check if it's valid or allowed
-            account_result = await bridge.read_account(self.user_config.get("token"), self.ctx,
+            account_result = await bridge.read_account(self.token, self.ctx,
                                                        workspace_result.result[0].account_id)
             if account_result.error:
                 return account_result
@@ -70,7 +69,7 @@ class WorkspaceManager(Manager):
             return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
 
         # Check if it's valid or allowed
-        account_data = await bridge.read_account(self.user_config.get("token"), self.ctx, account_id)
+        account_data = await bridge.read_account(self.token, self.ctx, account_id)
         if account_data.error:
             return account_data
 
@@ -82,7 +81,7 @@ class WorkspaceManager(Manager):
         }
 
         return await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{WORKSPACES_ENDPOINT}",
             result_formatter=format_workspaces,
@@ -96,7 +95,7 @@ class WorkspaceManager(Manager):
             return BaseResult(error="Invalid argument 'purpose'. Expected non-empty string.")
 
         locations_result = await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{WORKSPACES_ENDPOINT}/{workspace_id}",
             result_formatter=format_workspaces_locations,
@@ -106,7 +105,7 @@ class WorkspaceManager(Manager):
             return locations_result
         else:
             # Check if it's valid or allowed
-            account_result = await bridge.read_account(self.user_config.get("token"), self.ctx,
+            account_result = await bridge.read_account(self.token, self.ctx,
                                                        locations_result.result[0]["account_id"])
             if account_result.error:
                 return account_result
@@ -142,10 +141,8 @@ Hints:
             ctx: Context = Field(description="Context object providing access to MCP capabilities")
     ) -> BaseResult:
 
-        workspace_manager = WorkspaceManager(
-            ctx,
-            user_config=build_user_config(runtime, ctx),
-        )
+        build_user_config(runtime, ctx)
+        workspace_manager = WorkspaceManager(ctx)
 
         async def _dispatch():
             match action:

@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import httpx
 from mcp.server.fastmcp import Context
@@ -33,13 +33,12 @@ class UserManager(Manager):
     def __init__(
         self,
         ctx: Context,
-        user_config: Optional[dict[str, Any]] = None,
     ):
-        super().__init__(ctx, user_config=user_config)
+        super().__init__(ctx)
 
     async def read(self) -> BaseResult:
         return await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{USER_ENDPOINT}",
             result_formatter=format_users
@@ -64,10 +63,8 @@ Hints:
             ctx: Context = Field(description="Context object providing access to MCP capabilities")
     ) -> BaseResult:
 
-        user_manager = UserManager(
-            ctx,
-            user_config=build_user_config(runtime, ctx),
-        )
+        build_user_config(runtime, ctx)
+        user_manager = UserManager(ctx)
 
         async def _dispatch():
             match action:

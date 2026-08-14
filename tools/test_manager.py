@@ -56,14 +56,13 @@ class TestManager(Manager):
         ctx: Context,
         file_access: FileAccessPort,
         scope_resolver: SessionScopeResolverPort,
-        user_config: Optional[dict[str, Any]] = None,
     ):
-        super().__init__(ctx, user_config=user_config)
+        super().__init__(ctx)
         self.file_access = file_access
         self.scope_resolver = scope_resolver
 
     def _current_scope(self):
-        return self.scope_resolver.resolve(self.ctx, self.user_config.get("token"))
+        return self.scope_resolver.resolve(self.ctx, self.token)
 
     async def read(self, test_id: Optional[int]) -> BaseResult:
         if not isinstance(test_id, int) or test_id < 1:
@@ -72,7 +71,7 @@ class TestManager(Manager):
             )
 
         test_result = await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{TESTS_ENDPOINT}/{test_id}",
             result_formatter=format_tests,
@@ -82,7 +81,7 @@ class TestManager(Manager):
         else:
             # Check if it's valid or allowed
             project_result = await bridge.read_project(
-                self.user_config.get("token"), self.ctx, test_result.result[0].project_id
+                self.token, self.ctx, test_result.result[0].project_id
             )
             if project_result.error:
                 return project_result
@@ -103,7 +102,7 @@ class TestManager(Manager):
             )
 
         # Check if it's valid or allowed
-        project_result = await bridge.read_project(self.user_config.get("token"), self.ctx, project_id)
+        project_result = await bridge.read_project(self.token, self.ctx, project_id)
         if project_result.error:
             return project_result
 
@@ -118,7 +117,7 @@ class TestManager(Manager):
             },
         }
         return await api_request(
-            self.user_config.get("token"),
+            self.token,
             "POST",
             f"{TESTS_ENDPOINT}",
             result_formatter=format_tests,
@@ -137,7 +136,7 @@ class TestManager(Manager):
             return test_result
         else:
             test_deleted_result = await api_request(
-                self.user_config.get("token"), "DELETE", f"{TESTS_ENDPOINT}/{test_id}"
+                self.token, "DELETE", f"{TESTS_ENDPOINT}/{test_id}"
             )
             if test_deleted_result.error:
                 return test_deleted_result
@@ -314,7 +313,7 @@ class TestManager(Manager):
             endpoint = f"{TESTS_ENDPOINT}/{test_id}/files"
             logger.debug(f"Uploading to endpoint: {endpoint}")
 
-            result = await api_request(self.user_config.get("token"), "POST", endpoint, files=files)
+            result = await api_request(self.token, "POST", endpoint, files=files)
 
             logger.debug(f"Upload result: {result}")
 
@@ -338,7 +337,7 @@ class TestManager(Manager):
             }
 
             return await api_request(
-                self.user_config.get("token"), "PATCH", f"{TESTS_ENDPOINT}/{test_id}", json=config_update
+                self.token, "PATCH", f"{TESTS_ENDPOINT}/{test_id}", json=config_update
             )
 
         except Exception as e:
@@ -393,7 +392,7 @@ class TestManager(Manager):
 
         if control_ai_consent:
             # Check if it's valid or allowed
-            project_result = await bridge.read_project(self.user_config.get("token"), self.ctx, project_id)
+            project_result = await bridge.read_project(self.token, self.ctx, project_id)
             if project_result.error:
                 return project_result
 
@@ -405,7 +404,7 @@ class TestManager(Manager):
         }
 
         return await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{TESTS_ENDPOINT}",
             result_formatter=format_tests,
@@ -419,24 +418,24 @@ class TestManager(Manager):
             return BaseResult(
                 error="Missing or invalid required argument 'account_id'. Expected integer."
             )
-        account_data = await bridge.read_account(self.user_config.get("token"), self.ctx, account_id)
+        account_data = await bridge.read_account(self.token, self.ctx, account_id)
         if account_data.error:
             return account_data
 
         return await search_utils.test_execution_search(
-            "test-union", self.user_config.get("token"), account_id, args
+            "test-union", self.token, account_id, args
         )
 
     async def search_filter_values(
         self, account_id: int, filter_names: List[str]
     ) -> BaseResult:
         # Check if it's valid or allowed
-        account_data = await bridge.read_account(self.user_config.get("token"), self.ctx, account_id)
+        account_data = await bridge.read_account(self.token, self.ctx, account_id)
         if account_data.error:
             return account_data
 
         return await search_utils.test_execution_search_filter_values(
-            "test-union", account_id, self.user_config.get("token"), filter_names
+            "test-union", account_id, self.token, filter_names
         )
 
     @staticmethod
@@ -521,7 +520,7 @@ class TestManager(Manager):
         configuration_body = {"overrideExecutions": override_executions}
 
         return await api_request(
-            self.user_config.get("token"),
+            self.token,
             "PATCH",
             f"{TESTS_ENDPOINT}/{performance_test.test_id}",
             result_formatter=format_tests,
@@ -552,7 +551,7 @@ class TestManager(Manager):
             configuration, fc
         )
         return await api_request(
-            self.user_config.get("token"),
+            self.token,
             "PATCH",
             f"{TESTS_ENDPOINT}/{test_id}",
             result_formatter=format_tests,
@@ -668,12 +667,8 @@ Hints:
 """,
     )
     async def tests(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        test_manager = TestManager(
-            ctx,
-            runtime.file_access,
-            runtime.scope_resolver,
-            user_config=build_user_config(runtime, ctx),
-        )
+        build_user_config(runtime, ctx)
+        test_manager = TestManager(ctx, runtime.file_access, runtime.scope_resolver)
 
         async def _dispatch():
             match action:

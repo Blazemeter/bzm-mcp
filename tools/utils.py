@@ -295,7 +295,12 @@ def _get_ctx_user_config(ctx: Any) -> dict[str, Any] | None:
         if isinstance(state_config, dict):
             return state_config
 
-    request = getattr(getattr(ctx, "request_context", None), "request", None)
+    request_context = getattr(ctx, "request_context", None)
+    context_config = getattr(request_context, BZM_USER_CONFIG_STATE_ATTR, None)
+    if isinstance(context_config, dict):
+        return context_config
+
+    request = getattr(request_context, "request", None)
     if request is not None:
         request_config = getattr(request.state, BZM_USER_CONFIG_STATE_ATTR, None)
         if isinstance(request_config, dict):

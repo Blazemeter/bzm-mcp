@@ -33,16 +33,15 @@ class ProjectManager(Manager):
     def __init__(
         self,
         ctx: Context,
-        user_config: Optional[dict[str, Any]] = None,
     ):
-        super().__init__(ctx, user_config=user_config)
+        super().__init__(ctx)
 
     async def read(self, project_id: Optional[int]) -> BaseResult:
         if not isinstance(project_id, int) or project_id < 1:
             return BaseResult(error="Missing or invalid required argument 'project_id'. Expected integer.")
 
         project_result = await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{PROJECTS_ENDPOINT}/{project_id}",
             result_formatter=format_projects
@@ -53,12 +52,12 @@ class ProjectManager(Manager):
         project_element = project_result.result[0]
 
         # Check if it's valid or allowed
-        workspace_result = await bridge.read_workspace(self.user_config.get("token"), self.ctx, project_element.workspace_id)
+        workspace_result = await bridge.read_workspace(self.token, self.ctx, project_element.workspace_id)
         if workspace_result.error:
             return workspace_result
 
         # Get the amount of test
-        project_element.tests_count = await bridge.count_project_tests(self.user_config.get("token"), self.ctx, project_id)
+        project_element.tests_count = await bridge.count_project_tests(self.token, self.ctx, project_id)
         return project_result
 
     async def list(self, workspace_id: Optional[int], limit: int = 50, offset: int = 0) -> BaseResult:
@@ -68,7 +67,7 @@ class ProjectManager(Manager):
             return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
 
         # Check if it's valid or allowed
-        workspace_result = await bridge.read_workspace(self.user_config.get("token"), self.ctx, workspace_id)
+        workspace_result = await bridge.read_workspace(self.token, self.ctx, workspace_id)
         if workspace_result.error:
             return workspace_result
 
@@ -80,7 +79,7 @@ class ProjectManager(Manager):
         }
 
         return await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{PROJECTS_ENDPOINT}",
             result_formatter=format_projects,
@@ -109,10 +108,8 @@ Hints:
 """
     )
     async def project(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        project_manager = ProjectManager(
-            ctx,
-            user_config=build_user_config(runtime, ctx),
-        )
+        build_user_config(runtime, ctx)
+        project_manager = ProjectManager(ctx)
 
         async def _dispatch():
             match action:

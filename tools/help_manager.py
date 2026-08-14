@@ -16,7 +16,7 @@ limitations under the License.
 import asyncio
 from copy import deepcopy
 from itertools import chain
-from typing import Optional, Any, Dict, List
+from typing import Any, Dict, List
 
 import httpx
 from mcp.server.fastmcp import Context
@@ -47,9 +47,8 @@ class HelpManager(Manager):
     def __init__(
         self,
         ctx: Context,
-        user_config: Optional[dict[str, Any]] = None,
     ):
-        super().__init__(ctx, user_config=user_config)
+        super().__init__(ctx)
 
     async def _load_help_tree(self):
         help_index_url = HELP_INDEX_URL
@@ -294,10 +293,8 @@ Hints:
         if args is None:
             args = {}
 
-        help_manager = HelpManager(
-            ctx,
-            user_config=build_user_config(runtime, ctx),
-        )
+        build_user_config(runtime, ctx)
+        help_manager = HelpManager(ctx)
 
         async def _dispatch():
             match action:

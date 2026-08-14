@@ -23,8 +23,8 @@ from tools.utils import Operations, require_confirmation
 
 class _ManagerWithConfirmation:
     def __init__(self, ctx, confirmation_mode: str = "DELETE"):
+        setattr(ctx, "user_config", {"confirmation_mode": confirmation_mode})
         self.ctx = ctx
-        self.user_config = {"confirmation_mode": confirmation_mode}
 
     @require_confirmation(operation=Operations.CREATE)
     async def do_create(self):

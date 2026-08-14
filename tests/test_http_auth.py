@@ -34,12 +34,13 @@ from config.auth import (
     parse_authorization_header,
 )
 from config.file_access import LocalPathFileSource, StorageFileSource
-from config.runtime import build_runtime
+from config.runtime import build_runtime, build_user_config
 from config.storage import (
     HttpSessionStorageProvider,
     InMemorySessionStorageProvider,
 )
 from config.token import BzmToken, BzmTokenError
+from models.manager import Manager
 
 
 class TestBearerCredentialParsing:
@@ -121,6 +122,29 @@ class TestAuthProviders:
 
         assert provider.get_token(make_ctx(token_a)).id == "account-a"
         assert provider.get_token(make_ctx(token_b)).id == "account-b"
+
+
+class TestManagerTokenResolution:
+    def test_manager_falls_back_to_request_state_token(self):
+        token = BzmToken("account-a", "secret-a")
+        request = SimpleNamespace(state=SimpleNamespace(**{BZM_TOKEN_STATE_ATTR: token}))
+        ctx = SimpleNamespace(request_context=SimpleNamespace(request=request))
+
+        manager = Manager(ctx)
+
+        assert manager.token is token
+
+
+class _StrictCtx:
+    """Mimics FastMCP Context where arbitrary attrs are disallowed."""
+
+    def __init__(self, request_context):
+        object.__setattr__(self, "request_context", request_context)
+
+    def __setattr__(self, name, value):
+        if name == "user_config":
+            raise ValueError('"Context" object has no field "user_config"')
+        object.__setattr__(self, name, value)
 
 
 class TestBearerAuthMiddleware:
@@ -258,3 +282,58 @@ class TestBuildRuntime:
         assert isinstance(runtime.auth, HttpAuthProvider)
         assert isinstance(runtime.storage, HttpSessionStorageProvider)
         assert isinstance(runtime.file_access, StorageFileSource)
+
+    def test_build_user_config_injects_request_context_for_stdio(self, monkeypatch):
+        monkeypatch.delenv("MCP_DOCKER", raising=False)
+        runtime = build_runtime("stdio")
+        ctx = SimpleNamespace(request_context=SimpleNamespace(request=None))
+
+        user_config = build_user_config(runtime, ctx)
+
+        assert "token" in user_config
+        assert user_config["confirmation_mode"] == "DELETE"
+        assert getattr(ctx.request_context, BZM_USER_CONFIG_STATE_ATTR, None) == user_config
+
+    def test_build_user_config_merges_http_request_state(self, monkeypatch):
+        monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
+        runtime = build_runtime("streamable-http")
+        token = BzmToken("key-id", "key-secret")
+        request = SimpleNamespace(
+            state=SimpleNamespace(
+                **{
+                    BZM_TOKEN_STATE_ATTR: token,
+                    BZM_USER_CONFIG_STATE_ATTR: {"confirmation_mode": "CUD"},
+                }
+            )
+        )
+        ctx = SimpleNamespace(request_context=SimpleNamespace(request=request))
+
+        user_config = build_user_config(runtime, ctx)
+
+        assert user_config["confirmation_mode"] == "CUD"
+        assert user_config["token"] is token
+        assert getattr(ctx.request_context, BZM_USER_CONFIG_STATE_ATTR, None) == user_config
+        assert getattr(request.state, BZM_USER_CONFIG_STATE_ATTR, None) == user_config
+
+    def test_build_user_config_hydrates_request_context_when_ctx_is_strict(self, monkeypatch):
+        monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
+        runtime = build_runtime("streamable-http")
+        token = BzmToken("key-id", "key-secret")
+        request = SimpleNamespace(
+            state=SimpleNamespace(
+                **{
+                    BZM_TOKEN_STATE_ATTR: token,
+                    BZM_USER_CONFIG_STATE_ATTR: {"confirmation_mode": "CUD"},
+                }
+            )
+        )
+        ctx = _StrictCtx(request_context=SimpleNamespace(request=request))
+
+        user_config = build_user_config(runtime, ctx)
+        manager = Manager(ctx)
+
+        assert user_config["token"] is token
+        assert getattr(ctx.request_context, BZM_USER_CONFIG_STATE_ATTR, None) == user_config
+        assert manager.token is token

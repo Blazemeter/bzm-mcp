@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 import httpx
 from mcp.server.fastmcp import Context
@@ -32,9 +32,8 @@ class BillingManager(Manager):
     def __init__(
         self,
         ctx: Context,
-        user_config: Optional[dict[str, Any]] = None,
     ):
-        super().__init__(ctx, user_config=user_config)
+        super().__init__(ctx)
 
     async def calculate_cost_from_config(self, args: Dict) -> BaseResult:
         result = calculate_test_cost(args)
@@ -91,10 +90,8 @@ Hints:
 """
     )
     async def billing(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        billing_manager = BillingManager(
-            ctx,
-            user_config=build_user_config(runtime, ctx),
-        )
+        build_user_config(runtime, ctx)
+        billing_manager = BillingManager(ctx)
 
         async def _dispatch():
             match action:
