@@ -34,13 +34,12 @@ class ExecutionManager(Manager):
     def __init__(
         self,
         ctx: Context,
-        user_config: Optional[dict[str, Any]] = None,
     ):
-        super().__init__(ctx, user_config=user_config)
+        super().__init__(ctx)
 
     async def _request_log_analyzer_api(self, method: str, execution_id: int,
                                         json_body: Optional[Dict[str, Any]] = None) -> BaseResult:
-        token = self.user_config.get("token")
+        token = self.token
         if not token:
             return BaseResult(
                 error="No API token. Set BLAZEMETER_API_KEY env var with file path or API_KEY_ID and API_KEY_SECRET secrets."
@@ -110,14 +109,14 @@ class ExecutionManager(Manager):
             return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
 
         # Check if it's valid or allowed
-        test_result = await bridge.read_test(self.user_config.get("token"), self.ctx, test_id)
+        test_result = await bridge.read_test(self.token, self.ctx, test_id)
         if test_result.error:
             return test_result
 
         parameters = {"delayedStart": delayed_start_ready}
         start_body = {"isDebugRun": is_debug_run}
         return await api_request(
-            self.user_config.get("token"),
+            self.token,
             "POST",
             f"/tests/{test_id}/start",
             result_formatter=format_executions,
@@ -130,7 +129,7 @@ class ExecutionManager(Manager):
             return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
 
         execution_response = await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{EXECUTIONS_ENDPOINT}/{execution_id}",
             result_formatter=format_executions_detailed,
@@ -141,7 +140,7 @@ class ExecutionManager(Manager):
 
         execution_element = execution_response.result[0]
 
-        project_result = await bridge.read_project(self.user_config.get("token"), self.ctx, execution_element.project_id)
+        project_result = await bridge.read_project(self.token, self.ctx, execution_element.project_id)
         if project_result.error:
             return project_result
 
@@ -161,7 +160,7 @@ class ExecutionManager(Manager):
     async def _fetch_execution_status(self, execution_id: int) -> BaseResult:
         parameters = {"level": 200, "events": False}
         return await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{EXECUTIONS_ENDPOINT}/{execution_id}/status",
             result_formatter=format_executions_status,
@@ -195,7 +194,7 @@ class ExecutionManager(Manager):
         if not isinstance(limit, int) or not isinstance(offset, int):
             return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
 
-        test_result = await bridge.read_test(self.user_config.get("token"), self.ctx, test_id)
+        test_result = await bridge.read_test(self.token, self.ctx, test_id)
         if test_result.error:
             return test_result
 
@@ -207,7 +206,7 @@ class ExecutionManager(Manager):
         }
 
         return await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{EXECUTIONS_ENDPOINT}",
             result_formatter=format_executions,
@@ -220,23 +219,23 @@ class ExecutionManager(Manager):
         account_id = args.get("account_id")
         if not isinstance(account_id, int) or account_id < 1:
             return BaseResult(error="Missing or invalid required argument 'account_id'. Expected integer.")
-        account_data = await bridge.read_account(self.user_config.get("token"), self.ctx, account_id)
+        account_data = await bridge.read_account(self.token, self.ctx, account_id)
         if account_data.error:
             return account_data
 
-        return await search_utils.test_execution_search("master", self.user_config.get("token"), account_id, args)
+        return await search_utils.test_execution_search("master", self.token, account_id, args)
 
     async def search_filter_values(self, account_id: int, filter_names: List[str]) -> BaseResult:
 
         # Check if it's valid or allowed
-        account_data = await bridge.read_account(self.user_config.get("token"), self.ctx, account_id)
+        account_data = await bridge.read_account(self.token, self.ctx, account_id)
         if account_data.error:
             return account_data
 
         return await search_utils.test_execution_search_filter_values(
             "master",
             account_id,
-            self.user_config.get("token"),
+            self.token,
             filter_names,
         )
 
@@ -405,7 +404,7 @@ class ExecutionManager(Manager):
         if not isinstance(execution_id, int) or execution_id < 1:
             return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
 
-        report_manager = ReportManager(self.ctx, user_config=self.user_config)
+        report_manager = ReportManager(self.ctx)
         summary_result = await report_manager.read_summary(execution_id)
         error_result = await report_manager.read_error(execution_id)
         stats_result = await report_manager.read_request_stats(execution_id)
@@ -506,14 +505,9 @@ Hints:
 """
     )
     async def execution(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        execution_manager = ExecutionManager(
-            ctx,
-            user_config=build_user_config(runtime, ctx),
-        )
-        report_manager = ReportManager(
-            ctx,
-            user_config=build_user_config(runtime, ctx),
-        )
+        build_user_config(runtime, ctx)
+        execution_manager = ExecutionManager(ctx)
+        report_manager = ReportManager(ctx)
 
         async def _dispatch():
             match action:

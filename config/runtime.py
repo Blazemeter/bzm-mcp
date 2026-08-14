@@ -17,7 +17,12 @@ from dataclasses import dataclass
 import os
 from typing import Any, Literal, Optional
 
-from config.auth import AuthPort, HttpAuthProvider, StdioAuthProvider
+from config.auth import (
+    AuthPort,
+    BZM_USER_CONFIG_STATE_ATTR,
+    HttpAuthProvider,
+    StdioAuthProvider,
+)
 from config.file_access import FileAccessPort, build_file_access
 from config.storage import (
     DefaultSessionScopeResolver,
@@ -44,11 +49,49 @@ class AppRuntime:
     user_config: dict[str, Any]
 
 
+def _read_ctx_user_config(ctx: Any) -> dict[str, Any]:
+    if ctx is None:
+        return {}
+
+    user_config: dict[str, Any] = {}
+    request_context = getattr(ctx, "request_context", None)
+    request = getattr(request_context, "request", None)
+    request_state = getattr(request, "state", None)
+
+    for target, attr_name in (
+        (ctx, "user_config"),
+        (request_context, BZM_USER_CONFIG_STATE_ATTR),
+        (request_state, BZM_USER_CONFIG_STATE_ATTR),
+    ):
+        request_config = getattr(target, attr_name, None)
+        if isinstance(request_config, dict):
+            user_config.update(request_config)
+
+    return user_config
+
+
+def _hydrate_ctx_user_config(ctx: Any, user_config: dict[str, Any]) -> None:
+    if ctx is None:
+        return
+
+    config_copy = dict(user_config)
+    request_context = getattr(ctx, "request_context", None)
+    request = getattr(request_context, "request", None)
+    request_state = getattr(request, "state", None)
+
+    for target in (request_context, request_state):
+        if target is not None:
+            setattr(target, BZM_USER_CONFIG_STATE_ATTR, dict(config_copy))
+
+
 def build_user_config(runtime: AppRuntime, ctx) -> dict[str, Any]:
     user_config = dict(runtime.user_config)
+    user_config.update(_read_ctx_user_config(ctx))
     token = runtime.auth.get_token(ctx)
     if token is not None:
         user_config["token"] = token
+
+    _hydrate_ctx_user_config(ctx, user_config)
     return user_config
 
 

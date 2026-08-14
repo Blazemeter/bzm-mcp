@@ -45,9 +45,8 @@ class SkillsManager(Manager):
     def __init__(
         self,
         ctx: Context,
-        user_config: Optional[dict[str, Any]] = None,
     ):
-        super().__init__(ctx, user_config=user_config)
+        super().__init__(ctx)
 
     @staticmethod
     async def list_skills() -> BaseResult:
@@ -207,10 +206,8 @@ Hints:
         if args is None:
             args = {}
 
-        skills_manager = SkillsManager(
-            ctx,
-            user_config=build_user_config(runtime, ctx),
-        )
+        build_user_config(runtime, ctx)
+        skills_manager = SkillsManager(ctx)
 
         async def _dispatch():
             match action:

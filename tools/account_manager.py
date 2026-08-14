@@ -35,16 +35,15 @@ class AccountManager(Manager):
     def __init__(
         self,
         ctx: Context,
-        user_config: Optional[dict[str, Any]] = None,
     ):
-        super().__init__(ctx, user_config=user_config)
+        super().__init__(ctx)
 
     async def read(self, account_id: Optional[int]) -> BaseResult:
         if not isinstance(account_id, int) or account_id < 1:
             return BaseResult(error="Missing or invalid required argument 'account_id'. Expected integer.")
 
         account_result = await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{ACCOUNTS_ENDPOINT}/{account_id}",
             result_formatter=format_accounts
@@ -73,7 +72,7 @@ class AccountManager(Manager):
         }
 
         return await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{ACCOUNTS_ENDPOINT}",
             result_formatter=format_accounts,
@@ -101,10 +100,8 @@ Hints:
 """
     )
     async def account(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        account_manager = AccountManager(
-            ctx,
-            user_config=build_user_config(runtime, ctx),
-        )
+        build_user_config(runtime, ctx)
+        account_manager = AccountManager(ctx)
 
         async def _dispatch():
             match action:

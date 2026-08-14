@@ -38,9 +38,8 @@ class ReportManager(Manager):
     def __init__(
         self,
         ctx: Context,
-        user_config: Optional[dict[str, Any]] = None,
     ):
-        super().__init__(ctx, user_config=user_config)
+        super().__init__(ctx)
 
     def _extract_execution_name(self, execution_result: BaseResult) -> Optional[str]:
         """Extract execution name from execution result if available."""
@@ -56,7 +55,7 @@ class ReportManager(Manager):
                 execution_result.result[0].get("result").archived)
 
     async def read_summary(self, master_id: int):
-        execution_result = await bridge.read_execution(self.user_config.get("token"), self.ctx, master_id)
+        execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
             return execution_result
 
@@ -69,7 +68,7 @@ class ReportManager(Manager):
         execution_name = self._extract_execution_name(execution_result)
 
         return await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/default/summary",
             result_formatter=format_summary_report,
@@ -88,7 +87,7 @@ class ReportManager(Manager):
             return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
 
         # Check if it's valid or allowed
-        execution_result = await bridge.read_execution(self.user_config.get("token"), self.ctx, master_id)
+        execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
             return execution_result
 
@@ -99,7 +98,7 @@ class ReportManager(Manager):
             )
 
         return await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/errorsreport/data",
             result_formatter=format_error_report,
@@ -118,7 +117,7 @@ class ReportManager(Manager):
             return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
 
         # Check if it's valid or allowed
-        execution_result = await bridge.read_execution(self.user_config.get("token"), self.ctx, master_id)
+        execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
             return execution_result
 
@@ -130,7 +129,7 @@ class ReportManager(Manager):
 
         # Get request stats data from API with formatter
         return await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/aggregatereport/data",
             result_formatter=format_request_stats,
@@ -150,7 +149,7 @@ class ReportManager(Manager):
         if not isinstance(master_id, int) or master_id < 1:
             return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
 
-        execution_result = await bridge.read_execution(self.user_config.get("token"), self.ctx, master_id)
+        execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
             return execution_result
 
@@ -162,7 +161,7 @@ class ReportManager(Manager):
         execution_name = self._extract_execution_name(execution_result)
 
         return await api_request(
-            self.user_config.get("token"),
+            self.token,
             "GET",
             f"{EXECUTIONS_ENDPOINT}/{master_id}/anomalies/stats",
             result_formatter=format_anomalies_stats,
