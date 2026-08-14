@@ -35,27 +35,27 @@ from tools.test_manager import TestManager
 
 class TestResolveStorageBackend:
     def test_default_memory(self, monkeypatch):
-        monkeypatch.delenv("BZM_STORAGE_BACKEND", raising=False)
+        monkeypatch.delenv("BZM_STORAGE_STRATEGY", raising=False)
         assert resolve_storage_backend() == "memory"
 
     def test_env_http(self, monkeypatch):
-        monkeypatch.setenv("BZM_STORAGE_BACKEND", "http")
+        monkeypatch.setenv("BZM_STORAGE_STRATEGY", "http")
         assert resolve_storage_backend() == "http"
 
     def test_invalid_raises(self):
-        with pytest.raises(ValueError, match="BZM_STORAGE_BACKEND"):
+        with pytest.raises(ValueError, match="BZM_STORAGE_STRATEGY"):
             resolve_storage_backend("s3")
 
 
 class TestBuildStorage:
     def test_stdio_memory_uses_local(self, monkeypatch):
-        monkeypatch.delenv("BZM_STORAGE_BACKEND", raising=False)
+        monkeypatch.delenv("BZM_STORAGE_STRATEGY", raising=False)
         monkeypatch.delenv("MCP_DOCKER", raising=False)
         storage = build_storage("stdio")
         assert isinstance(storage, LocalStorageClient)
 
     def test_streamable_http_uses_http_client(self, monkeypatch):
-        monkeypatch.setenv("BZM_STORAGE_BACKEND", "memory")
+        monkeypatch.setenv("BZM_STORAGE_STRATEGY", "memory")
         storage = build_storage("streamable-http")
         assert isinstance(storage, HttpStorageClient)
 

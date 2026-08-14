@@ -179,7 +179,7 @@ class TestBearerAuthMiddleware:
 class TestBuildRuntime:
     def test_build_runtime_stdio_and_http(self, monkeypatch):
         monkeypatch.delenv("MCP_DOCKER", raising=False)
-        monkeypatch.delenv("BZM_STORAGE_BACKEND", raising=False)
+        monkeypatch.delenv("BZM_STORAGE_STRATEGY", raising=False)
         monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
         monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
 
