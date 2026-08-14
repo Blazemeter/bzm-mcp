@@ -32,8 +32,12 @@ from config.auth import (
     StdioAuthProvider,
     parse_authorization_header,
 )
+from config.file_access import LocalPathFileSource, StorageFileSource
 from config.runtime import build_runtime
-from config.storage import HttpStorageClient, LocalStorageClient
+from config.storage import (
+    HttpSessionStorageProvider,
+    InMemorySessionStorageProvider,
+)
 from config.token import BzmToken, BzmTokenError
 
 
@@ -175,14 +179,29 @@ class TestBearerAuthMiddleware:
 class TestBuildRuntime:
     def test_build_runtime_stdio_and_http(self, monkeypatch):
         monkeypatch.delenv("MCP_DOCKER", raising=False)
-        monkeypatch.delenv("BZM_STORAGE_BACKEND", raising=False)
+        monkeypatch.delenv("BZM_STORAGE_STRATEGY", raising=False)
+        monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
 
         stdio = build_runtime("stdio")
         assert stdio.transport == "stdio"
         assert isinstance(stdio.auth, StdioAuthProvider)
-        assert isinstance(stdio.storage, LocalStorageClient)
+        assert isinstance(stdio.storage, InMemorySessionStorageProvider)
+        assert isinstance(stdio.file_access, LocalPathFileSource)
 
         http = build_runtime("streamable-http")
         assert http.transport == "streamable-http"
         assert isinstance(http.auth, HttpAuthProvider)
-        assert isinstance(http.storage, HttpStorageClient)
+        assert isinstance(http.storage, HttpSessionStorageProvider)
+        assert isinstance(http.file_access, StorageFileSource)
+
+    def test_build_runtime_http_uses_storage_api_when_configured(self, monkeypatch):
+        monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
+        monkeypatch.setattr(StorageFileSource, "ensure_available", lambda self: None)
+
+        runtime = build_runtime("streamable-http")
+        assert runtime.transport == "streamable-http"
+        assert isinstance(runtime.auth, HttpAuthProvider)
+        assert isinstance(runtime.storage, HttpSessionStorageProvider)
+        assert isinstance(runtime.file_access, StorageFileSource)

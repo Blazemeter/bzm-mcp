@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from config.storage import LocalStorageClient
+from config.file_access import LocalPathFileSource
+from config.storage import DefaultSessionScopeResolver
 from tools.test_manager import TestManager as UploadAssetsManager
 
 
@@ -55,12 +56,18 @@ class TestUploadAssetsFileValidation:
         invalid_files = []
         blocked_files = []
 
-        manager = UploadAssetsManager(token=None, ctx=None, storage=LocalStorageClient())
+        manager = UploadAssetsManager(
+            token=None,
+            ctx=None,
+            file_access=LocalPathFileSource(),
+            scope_resolver=DefaultSessionScopeResolver(),
+        )
         manager._validate_files(
             [str(safe_file), str(env_file), str(missing_file)],
             valid_files,
             invalid_files,
             blocked_files,
+            file_access=manager.file_access,
         )
 
         assert valid_files == [str(safe_file)]
