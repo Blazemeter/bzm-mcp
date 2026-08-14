@@ -67,10 +67,6 @@ class FileStoragePort(Protocol):
         ...
 
 
-# Backward-compat name used in current managers/tests.
-StoragePort = FileStoragePort
-
-
 class LocalStorageClient:
     """
     Process-local file access (BZM_STORAGE_BACKEND=memory for MVP).
@@ -341,6 +337,3 @@ class HttpSessionStorageProvider(SessionStoragePort):
             return bool(payload.get("deleted"))
 
 
-# Backward-compat aliases for the feature branch naming.
-InMemoryStorageProvider = InMemorySessionStorageProvider
-HttpStorageProvider = HttpSessionStorageProvider
