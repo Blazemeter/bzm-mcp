@@ -170,6 +170,18 @@ class TestBearerAuthMiddleware:
         assert response.status_code == 200
         assert response.json()["confirmation_mode"] == "CUD"
 
+    def test_confirmation_mode_none_falls_back_to_delete(self):
+        client = TestClient(self._app())
+        response = client.post(
+            "/mcp",
+            headers={
+                "Authorization": "Bearer key-id:key-secret",
+                "Confirmation-Mode": "NONE",
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["confirmation_mode"] == "DELETE"
+
     def test_confirmation_mode_not_persisted_between_requests_without_header(self):
         client = TestClient(self._app())
         first = client.post(
