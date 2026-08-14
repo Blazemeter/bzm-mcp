@@ -31,8 +31,6 @@ BZM_CONFIRMATION_MODE_HEADER = "confirmation-mode"
 
 def _normalize_confirmation_mode(raw_value: Optional[str]) -> str:
     value = (raw_value or "").strip().upper()
-    if value == "NONE":
-        return "DISABLE"
     if value in ("DELETE", "CUD", "DISABLE"):
         return value
     return "DELETE"
