@@ -22,7 +22,7 @@ from mcp.server.fastmcp import Context
 from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE
-from config.runtime import AppRuntime, build_user_config
+from config.runtime import AppRuntime
 from models.manager import Manager
 from models.result import BaseResult
 from telemetry import run_tool
@@ -206,7 +206,7 @@ Hints:
         if args is None:
             args = {}
 
-        build_user_config(runtime, ctx)
+        runtime.configure_context(ctx)
         skills_manager = SkillsManager(ctx)
 
         async def _dispatch():

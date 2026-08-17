@@ -19,7 +19,7 @@ import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE
-from config.runtime import AppRuntime, build_user_config
+from config.runtime import AppRuntime
 from models.manager import Manager
 from models.result import BaseResult
 from tools.billing_utils import calculate_test_cost
@@ -90,7 +90,7 @@ Hints:
 """
     )
     async def billing(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        build_user_config(runtime, ctx)
+        runtime.configure_context(ctx)
         billing_manager = BillingManager(ctx)
 
         async def _dispatch():

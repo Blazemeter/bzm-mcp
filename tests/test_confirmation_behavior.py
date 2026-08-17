@@ -17,13 +17,16 @@ limitations under the License.
 import asyncio
 from types import SimpleNamespace
 
+from config.auth import BZM_USER_CONFIG_STATE_ATTR
 from models.result import BaseResult
 from tools.utils import Operations, require_confirmation
 
 
 class _ManagerWithConfirmation:
     def __init__(self, ctx, confirmation_mode: str = "DELETE"):
-        setattr(ctx, "user_config", {"confirmation_mode": confirmation_mode})
+        request_state = SimpleNamespace(**{BZM_USER_CONFIG_STATE_ATTR: {"confirmation_mode": confirmation_mode}})
+        request = SimpleNamespace(state=request_state)
+        setattr(ctx, "request_context", SimpleNamespace(request=request))
         self.ctx = ctx
 
     @require_confirmation(operation=Operations.CREATE)

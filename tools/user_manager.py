@@ -20,7 +20,7 @@ from mcp.server.fastmcp import Context
 from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX, USER_ENDPOINT
-from config.runtime import AppRuntime, build_user_config
+from config.runtime import AppRuntime
 from formatters.user import format_users
 from models.manager import Manager
 from models.result import BaseResult
@@ -63,7 +63,7 @@ Hints:
             ctx: Context = Field(description="Context object providing access to MCP capabilities")
     ) -> BaseResult:
 
-        build_user_config(runtime, ctx)
+        runtime.configure_context(ctx)
         user_manager = UserManager(ctx)
 
         async def _dispatch():

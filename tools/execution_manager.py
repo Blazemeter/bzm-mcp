@@ -19,7 +19,7 @@ import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TOOLS_PREFIX, EXECUTIONS_ENDPOINT, SUPPORT_MESSAGE
-from config.runtime import AppRuntime, build_user_config
+from config.runtime import AppRuntime
 from formatters.execution import format_executions, format_executions_detailed, format_executions_status
 from models.manager import Manager
 from models.result import BaseResult
@@ -505,7 +505,7 @@ Hints:
 """
     )
     async def execution(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        build_user_config(runtime, ctx)
+        runtime.configure_context(ctx)
         execution_manager = ExecutionManager(ctx)
         report_manager = ReportManager(ctx)
 

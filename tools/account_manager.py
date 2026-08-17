@@ -18,7 +18,7 @@ import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import ACCOUNTS_ENDPOINT, TOOLS_PREFIX, SUPPORT_MESSAGE
-from config.runtime import AppRuntime, build_user_config
+from config.runtime import AppRuntime
 from formatters.account import format_accounts
 from models.manager import Manager
 from models.result import BaseResult
@@ -100,7 +100,7 @@ Hints:
 """
     )
     async def account(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        build_user_config(runtime, ctx)
+        runtime.configure_context(ctx)
         account_manager = AccountManager(ctx)
 
         async def _dispatch():
