@@ -31,8 +31,8 @@ from pathlib import Path
 import httpx
 from pydantic import BaseModel
 
-from config.auth import BZM_USER_CONFIG_STATE_ATTR
 from config.blazemeter import BZM_API_BASE_URL
+from config.context_resolution import resolve_ctx_user_config
 from config.security import validate_http_request_endpoint
 from config.token import BzmToken
 from config.version import __version__
@@ -282,19 +282,9 @@ def _to_confirm_mode(value: Any) -> ConfirmMode:
 
 
 def _get_ctx_user_config(ctx: Any) -> dict[str, Any] | None:
-    if ctx is None:
-        return None
-
-    request_context = getattr(ctx, "request_context", None)
-    context_config = getattr(request_context, BZM_USER_CONFIG_STATE_ATTR, None)
-    if isinstance(context_config, dict):
-        return context_config
-
-    request = getattr(request_context, "request", None)
-    request_state = getattr(request, "state", None)
-    request_config = getattr(request_state, BZM_USER_CONFIG_STATE_ATTR, None)
-    if isinstance(request_config, dict):
-        return request_config
+    user_config = resolve_ctx_user_config(ctx)
+    if user_config:
+        return user_config
     return None
 
 

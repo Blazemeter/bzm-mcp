@@ -15,7 +15,7 @@ limitations under the License.
 """
 from mcp.server.fastmcp import Context
 
-from config.auth import BZM_TOKEN_STATE_ATTR, BZM_USER_CONFIG_STATE_ATTR
+from config.context_resolution import resolve_ctx_token
 
 class Manager:
     def __init__(
@@ -23,19 +23,4 @@ class Manager:
         ctx: Context,
     ):
         self.ctx = ctx
-        # depending on the transport, I can get the token from the request context or request state inside ctx
-        request_context = getattr(ctx, "request_context", None)
-        request_state = getattr(getattr(request_context, "request", None), "state", None)
-
-        request_context_config = getattr(request_context, BZM_USER_CONFIG_STATE_ATTR, None)
-        request_state_config = getattr(request_state, BZM_USER_CONFIG_STATE_ATTR, None)
-
-        if isinstance(request_context_config, dict):
-            user_config = request_context_config
-        elif isinstance(request_state_config, dict):
-            user_config = request_state_config
-        else:
-            user_config = {}
-
-        request_state_token = getattr(request_state, BZM_TOKEN_STATE_ATTR, None)
-        self.token = user_config.get("token") or request_state_token
+        self.token = resolve_ctx_token(ctx)
