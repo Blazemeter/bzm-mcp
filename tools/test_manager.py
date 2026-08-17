@@ -26,7 +26,7 @@ from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
 from config.file_access import FileAccessPort
 from config.security import detect_sensitive_upload_path_reason
 from config.storage import SessionScopeResolverPort
-from config.runtime import AppRuntime, build_user_config
+from config.runtime import AppRuntime
 from formatters.failure_criteria_labels import failure_criteria_meta_payload
 from formatters.test import format_tests
 from models.failure_criteria import (
@@ -667,7 +667,7 @@ Hints:
 """,
     )
     async def tests(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        build_user_config(runtime, ctx)
+        runtime.configure_context(ctx)
         test_manager = TestManager(ctx, runtime.file_access, runtime.scope_resolver)
 
         async def _dispatch():

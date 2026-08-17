@@ -19,7 +19,7 @@ import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TOOLS_PREFIX, PROJECTS_ENDPOINT
-from config.runtime import AppRuntime, build_user_config
+from config.runtime import AppRuntime
 from formatters.project import format_projects
 from models.manager import Manager
 from models.result import BaseResult
@@ -108,7 +108,7 @@ Hints:
 """
     )
     async def project(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        build_user_config(runtime, ctx)
+        runtime.configure_context(ctx)
         project_manager = ProjectManager(ctx)
 
         async def _dispatch():

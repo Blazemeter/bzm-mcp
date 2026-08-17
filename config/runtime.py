@@ -48,6 +48,19 @@ class AppRuntime:
     scope_resolver: SessionScopeResolverPort
     user_config: dict[str, Any]
 
+    def resolve_user_config(self, ctx: Any) -> dict[str, Any]:
+        user_config = dict(self.user_config)
+        user_config.update(_read_ctx_user_config(ctx))
+        token = self.auth.get_token(ctx)
+        if token is not None:
+            user_config["token"] = token
+        return user_config
+
+    def configure_context(self, ctx: Any) -> dict[str, Any]:
+        user_config = self.resolve_user_config(ctx)
+        _hydrate_ctx_user_config(ctx, user_config)
+        return user_config
+
 
 def _read_ctx_user_config(ctx: Any) -> dict[str, Any]:
     if ctx is None:
@@ -82,17 +95,6 @@ def _hydrate_ctx_user_config(ctx: Any, user_config: dict[str, Any]) -> None:
     for target in (request_context, request_state):
         if target is not None:
             setattr(target, BZM_USER_CONFIG_STATE_ATTR, dict(config_copy))
-
-
-def build_user_config(runtime: AppRuntime, ctx) -> dict[str, Any]:
-    user_config = dict(runtime.user_config)
-    user_config.update(_read_ctx_user_config(ctx))
-    token = runtime.auth.get_token(ctx)
-    if token is not None:
-        user_config["token"] = token
-
-    _hydrate_ctx_user_config(ctx, user_config)
-    return user_config
 
 
 def build_runtime(
