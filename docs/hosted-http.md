@@ -37,7 +37,7 @@ For a locally run server, use `"url": "http://localhost:8000/mcp"` instead.
 
 - Optional header: `confirmation-mode`
 - Allowed values: `DELETE`, `CUD`, `DISABLE`
-- If omitted, empty, or invalid, the server falls back to `DELETE`.
+- If omitted, empty, or invalid, the session falls back to `DELETE`.
 
 ## Local / operator run
 
