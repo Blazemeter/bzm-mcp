@@ -127,3 +127,10 @@ class TestUploadAssetsHostedRejection:
         )
         assert "error" in result
         assert "No valid files found to upload" in result["error"]
+
+    def test_upload_assets_without_file_ports_returns_hosted_message(self):
+        manager = TestManager(ctx=None)
+        result = asyncio.run(
+            manager.upload_assets(1, ["/tmp/demo.jmx"], main_script=None)
+        )
+        assert result["error"] == HOSTED_FILE_ACCESS_MESSAGE
