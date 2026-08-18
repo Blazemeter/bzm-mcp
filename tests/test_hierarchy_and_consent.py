@@ -17,10 +17,9 @@ limitations under the License.
 import asyncio
 from types import SimpleNamespace
 
-from config.file_access import LocalPathFileSource
-from config.storage import DefaultSessionScopeResolver
 from models.result import BaseResult
 from tools import account_manager, project_manager, workspace_manager, test_manager, execution_manager
+from tools import bridge
 from tools.account_manager import AccountManager
 from tools.execution_manager import ExecutionManager
 from tools.project_manager import ProjectManager
@@ -85,15 +84,37 @@ class TestHierarchyAndConsent:
 
         monkeypatch.setattr(test_manager, "api_request", fake_api_request)
         monkeypatch.setattr(test_manager.bridge, "read_project", fake_read_project)
-        manager = TestManager(
-            ctx=None,
-            file_access=LocalPathFileSource(),
-            scope_resolver=DefaultSessionScopeResolver(),
-        )
+        manager = TestManager(ctx=None)
 
         result = asyncio.run(manager.read(50))
 
         assert result.error == "Project validation failed"
+
+    def test_count_project_tests_does_not_require_file_access(self, monkeypatch):
+        async def fake_api_request(*args, **kwargs):
+            return BaseResult(result=[], total=4)
+
+        monkeypatch.setattr(test_manager, "api_request", fake_api_request)
+
+        total = asyncio.run(bridge.count_project_tests(token=None, ctx=None, project_id=2554395))
+
+        assert total == 4
+
+    def test_create_validates_project_without_file_access(self, monkeypatch):
+        async def fake_api_request(*args, **kwargs):
+            return BaseResult(result=[SimpleNamespace(test_id=99, test_name="dummy_test")])
+
+        async def fake_read_project(*args, **kwargs):
+            return BaseResult(result=["ok"])
+
+        monkeypatch.setattr(test_manager, "api_request", fake_api_request)
+        monkeypatch.setattr(test_manager.bridge, "read_project", fake_read_project)
+        manager = TestManager(ctx=None)
+
+        result = asyncio.run(manager.create("dummy_test", 2554395))
+
+        assert result.error is None
+        assert result.result[0].test_name == "dummy_test"
 
     def test_execution_start_stops_when_test_validation_fails(self, monkeypatch):
         called = {"api_request": False}
