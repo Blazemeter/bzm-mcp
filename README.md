@@ -110,28 +110,6 @@ After installing, set `BLAZEMETER_API_KEY` to your `api-key.json` path in your c
 
 ---
 
-**Hosted HTTP (streamable-http)**
-
-Connect to the shared hosted server with Bearer auth. Production URL: `https://mcp.blazemeter.com/mcp`
-
-```json
-{
-  "mcpServers": {
-    "BlazeMeter MCP": {
-      "url": "https://mcp.blazemeter.com/mcp",
-      "headers": {
-        "Authorization": "Bearer <apiKeyId>:<apiKeySecret>"
-      }
-    }
-  }
-}
-```
-
-> [!NOTE]  
-> For local/operator HTTP setup, env vars, auth behavior, and MVP limits (including `upload_assets`), see [docs/hosted-http.md](docs/hosted-http.md).
-
----
-
 **Docker MCP Client Configuration**
 
 1. **Prerequisites:** [Docker]([https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/))

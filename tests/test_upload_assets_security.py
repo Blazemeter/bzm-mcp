@@ -57,7 +57,6 @@ class TestUploadAssetsFileValidation:
         blocked_files = []
 
         manager = UploadAssetsManager(
-            token=None,
             ctx=None,
             file_access=LocalPathFileSource(),
             scope_resolver=DefaultSessionScopeResolver(),

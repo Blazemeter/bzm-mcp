@@ -19,7 +19,6 @@ import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TOOLS_PREFIX, PROJECTS_ENDPOINT
-from config.token import BzmToken
 from config.runtime import AppRuntime
 from formatters.project import format_projects
 from models.manager import Manager
@@ -31,8 +30,11 @@ from tools.utils import api_request, format_sanitized_traceback
 
 class ProjectManager(Manager):
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        ctx: Context,
+    ):
+        super().__init__(ctx)
 
     async def read(self, project_id: Optional[int]) -> BaseResult:
         if not isinstance(project_id, int) or project_id < 1:
@@ -106,7 +108,8 @@ Hints:
 """
     )
     async def project(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        project_manager = ProjectManager(runtime.auth.get_token(ctx), ctx)
+        runtime.configure_context(ctx)
+        project_manager = ProjectManager(ctx)
 
         async def _dispatch():
             match action:

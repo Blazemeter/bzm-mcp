@@ -18,7 +18,6 @@ import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import ACCOUNTS_ENDPOINT, TOOLS_PREFIX, SUPPORT_MESSAGE
-from config.token import BzmToken
 from config.runtime import AppRuntime
 from formatters.account import format_accounts
 from models.manager import Manager
@@ -33,8 +32,11 @@ class AccountManager(Manager):
     # the format_accounts only expose minimum information to user
     # The read operation verify permissions and don't allow to share if don't have permissions.
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        ctx: Context,
+    ):
+        super().__init__(ctx)
 
     async def read(self, account_id: Optional[int]) -> BaseResult:
         if not isinstance(account_id, int) or account_id < 1:
@@ -98,7 +100,8 @@ Hints:
 """
     )
     async def account(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        account_manager = AccountManager(runtime.auth.get_token(ctx), ctx)
+        runtime.configure_context(ctx)
+        account_manager = AccountManager(ctx)
 
         async def _dispatch():
             match action:

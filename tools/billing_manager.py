@@ -13,13 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE
-from config.token import BzmToken
 from config.runtime import AppRuntime
 from models.manager import Manager
 from models.result import BaseResult
@@ -30,8 +29,11 @@ from tools.utils import format_sanitized_traceback
 
 class BillingManager(Manager):
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        ctx: Context,
+    ):
+        super().__init__(ctx)
 
     async def calculate_cost_from_config(self, args: Dict) -> BaseResult:
         result = calculate_test_cost(args)
@@ -88,7 +90,8 @@ Hints:
 """
     )
     async def billing(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        billing_manager = BillingManager(runtime.auth.get_token(ctx), ctx)
+        runtime.configure_context(ctx)
+        billing_manager = BillingManager(ctx)
 
         async def _dispatch():
             match action:

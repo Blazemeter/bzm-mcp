@@ -26,6 +26,7 @@ from starlette.testclient import TestClient
 
 from config.auth import (
     AuthError,
+    BZM_USER_CONFIG_STATE_ATTR,
     BZM_TOKEN_STATE_ATTR,
     BearerAuthMiddleware,
     HttpAuthProvider,
@@ -39,6 +40,7 @@ from config.storage import (
     InMemorySessionStorageProvider,
 )
 from config.token import BzmToken, BzmTokenError
+from models.manager import Manager
 
 
 class TestBearerCredentialParsing:
@@ -122,11 +124,40 @@ class TestAuthProviders:
         assert provider.get_token(make_ctx(token_b)).id == "account-b"
 
 
+class TestManagerTokenResolution:
+    def test_manager_falls_back_to_request_state_token(self):
+        token = BzmToken("account-a", "secret-a")
+        request = SimpleNamespace(state=SimpleNamespace(**{BZM_TOKEN_STATE_ATTR: token}))
+        ctx = SimpleNamespace(request_context=SimpleNamespace(request=request))
+
+        manager = Manager(ctx)
+
+        assert manager.token is token
+
+
+class _StrictCtx:
+    """Mimics FastMCP Context where arbitrary attrs are disallowed."""
+
+    def __init__(self, request_context):
+        object.__setattr__(self, "request_context", request_context)
+
+    def __setattr__(self, name, value):
+        if name == "user_config":
+            raise ValueError('"Context" object has no field "user_config"')
+        object.__setattr__(self, name, value)
+
+
 class TestBearerAuthMiddleware:
     def _app(self):
         async def ok(request: Request):
             token = getattr(request.state, BZM_TOKEN_STATE_ATTR, None)
-            return JSONResponse({"id": token.id if token else None})
+            user_config = getattr(request.state, BZM_USER_CONFIG_STATE_ATTR, {})
+            return JSONResponse(
+                {
+                    "id": token.id if token else None,
+                    "confirmation_mode": user_config.get("confirmation_mode"),
+                }
+            )
 
         return BearerAuthMiddleware(Starlette(routes=[Route("/mcp", endpoint=ok, methods=["POST"])]))
 
@@ -149,6 +180,50 @@ class TestBearerAuthMiddleware:
         )
         assert response.status_code == 200
         assert response.json()["id"] == "key-id"
+        assert response.json()["confirmation_mode"] == "DELETE"
+
+    def test_valid_bearer_reads_confirmation_mode_header(self):
+        client = TestClient(self._app())
+        response = client.post(
+            "/mcp",
+            headers={
+                "Authorization": "Bearer key-id:key-secret",
+                "Confirmation-Mode": "CUD",
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["confirmation_mode"] == "CUD"
+
+    def test_confirmation_mode_none_falls_back_to_delete(self):
+        client = TestClient(self._app())
+        response = client.post(
+            "/mcp",
+            headers={
+                "Authorization": "Bearer key-id:key-secret",
+                "Confirmation-Mode": "NONE",
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["confirmation_mode"] == "DELETE"
+
+    def test_confirmation_mode_not_persisted_between_requests_without_header(self):
+        client = TestClient(self._app())
+        first = client.post(
+            "/mcp",
+            headers={
+                "Authorization": "Bearer key-id:key-secret",
+                "Confirmation-Mode": "CUD",
+            },
+        )
+        assert first.status_code == 200
+        assert first.json()["confirmation_mode"] == "CUD"
+
+        second = client.post(
+            "/mcp",
+            headers={"Authorization": "Bearer key-id:key-secret"},
+        )
+        assert second.status_code == 200
+        assert second.json()["confirmation_mode"] == "DELETE"
 
     def test_options_bypasses_auth(self):
         async def ok(_request: Request):
@@ -188,12 +263,14 @@ class TestBuildRuntime:
         assert isinstance(stdio.auth, StdioAuthProvider)
         assert isinstance(stdio.storage, InMemorySessionStorageProvider)
         assert isinstance(stdio.file_access, LocalPathFileSource)
+        assert stdio.user_config["confirmation_mode"] == "DELETE"
 
         http = build_runtime("streamable-http")
         assert http.transport == "streamable-http"
         assert isinstance(http.auth, HttpAuthProvider)
         assert isinstance(http.storage, HttpSessionStorageProvider)
         assert isinstance(http.file_access, StorageFileSource)
+        assert http.user_config == {}
 
     def test_build_runtime_http_uses_storage_api_when_configured(self, monkeypatch):
         monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
@@ -205,3 +282,58 @@ class TestBuildRuntime:
         assert isinstance(runtime.auth, HttpAuthProvider)
         assert isinstance(runtime.storage, HttpSessionStorageProvider)
         assert isinstance(runtime.file_access, StorageFileSource)
+
+    def test_configure_context_injects_request_context_for_stdio(self, monkeypatch):
+        monkeypatch.delenv("MCP_DOCKER", raising=False)
+        runtime = build_runtime("stdio")
+        ctx = SimpleNamespace(request_context=SimpleNamespace(request=None))
+
+        user_config = runtime.configure_context(ctx)
+
+        assert "token" in user_config
+        assert user_config["confirmation_mode"] == "DELETE"
+        assert getattr(ctx.request_context, BZM_USER_CONFIG_STATE_ATTR, None) == user_config
+
+    def test_configure_context_merges_http_request_state(self, monkeypatch):
+        monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
+        runtime = build_runtime("streamable-http")
+        token = BzmToken("key-id", "key-secret")
+        request = SimpleNamespace(
+            state=SimpleNamespace(
+                **{
+                    BZM_TOKEN_STATE_ATTR: token,
+                    BZM_USER_CONFIG_STATE_ATTR: {"confirmation_mode": "CUD"},
+                }
+            )
+        )
+        ctx = SimpleNamespace(request_context=SimpleNamespace(request=request))
+
+        user_config = runtime.configure_context(ctx)
+
+        assert user_config["confirmation_mode"] == "CUD"
+        assert user_config["token"] is token
+        assert getattr(ctx.request_context, BZM_USER_CONFIG_STATE_ATTR, None) == user_config
+        assert getattr(request.state, BZM_USER_CONFIG_STATE_ATTR, None) == user_config
+
+    def test_configure_context_hydrates_request_context_when_ctx_is_strict(self, monkeypatch):
+        monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
+        runtime = build_runtime("streamable-http")
+        token = BzmToken("key-id", "key-secret")
+        request = SimpleNamespace(
+            state=SimpleNamespace(
+                **{
+                    BZM_TOKEN_STATE_ATTR: token,
+                    BZM_USER_CONFIG_STATE_ATTR: {"confirmation_mode": "CUD"},
+                }
+            )
+        )
+        ctx = _StrictCtx(request_context=SimpleNamespace(request=request))
+
+        user_config = runtime.configure_context(ctx)
+        manager = Manager(ctx)
+
+        assert user_config["token"] is token
+        assert getattr(ctx.request_context, BZM_USER_CONFIG_STATE_ATTR, None) == user_config
+        assert manager.token is token
