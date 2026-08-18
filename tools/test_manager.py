@@ -25,8 +25,7 @@ from mcp.server.fastmcp import Context
 from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
 from config.file_access import FileAccessPort
 from config.security import detect_sensitive_upload_path_reason
-from config.storage import SessionScopeResolverPort
-from config.token import BzmToken
+from config.storage import HOSTED_FILE_ACCESS_MESSAGE, SessionScopeResolverPort
 from config.runtime import AppRuntime
 from formatters.failure_criteria_labels import failure_criteria_meta_payload
 from formatters.test import format_tests
@@ -54,12 +53,13 @@ class TestManager(Manager):
 
     def __init__(
         self,
-        token: Optional[BzmToken],
         ctx: Context,
-        file_access: FileAccessPort,
-        scope_resolver: SessionScopeResolverPort,
+        file_access: Optional[FileAccessPort] = None,
+        scope_resolver: Optional[SessionScopeResolverPort] = None,
     ):
-        super().__init__(token, ctx)
+        super().__init__(ctx)
+        # Upload ports are stdio-only today. HTTP create/list/read must work
+        # without them; hosted file upload will be a separate tool later.
         self.file_access = file_access
         self.scope_resolver = scope_resolver
 
@@ -221,6 +221,8 @@ class TestManager(Manager):
             return {
                 "error": "Missing or invalid required argument 'file_paths'. Expected non-empty list."
             }
+        if self.file_access is None or self.scope_resolver is None:
+            return {"error": HOSTED_FILE_ACCESS_MESSAGE}
 
         # Check if it's valid or allowed
         test_data = await self.read(test_id)
@@ -669,12 +671,13 @@ Hints:
 """,
     )
     async def tests(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        test_manager = TestManager(
-            runtime.auth.get_token(ctx),
-            ctx,
-            runtime.file_access,
-            runtime.scope_resolver,
-        )
+        runtime.configure_context(ctx)
+        if runtime.transport == "stdio":
+            test_manager = TestManager(
+                ctx, runtime.file_access, runtime.scope_resolver
+            )
+        else:
+            test_manager = TestManager(ctx)
 
         async def _dispatch():
             match action:

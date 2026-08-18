@@ -22,7 +22,6 @@ from mcp.server.fastmcp import Context
 from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE
-from config.token import BzmToken
 from config.runtime import AppRuntime
 from models.manager import Manager
 from models.result import BaseResult
@@ -43,8 +42,11 @@ class SkillsManager(Manager):
         "Skills content is sourced from curated repository resources and is trusted by design."
     )
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        ctx: Context,
+    ):
+        super().__init__(ctx)
 
     @staticmethod
     async def list_skills() -> BaseResult:
@@ -204,7 +206,8 @@ Hints:
         if args is None:
             args = {}
 
-        skills_manager = SkillsManager(runtime.auth.get_token(ctx), ctx)
+        runtime.configure_context(ctx)
+        skills_manager = SkillsManager(ctx)
 
         async def _dispatch():
             match action:
