@@ -21,6 +21,7 @@ from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX
 from config.runtime import AppRuntime
+from config.storage import DefaultSessionScopeResolver, SessionScope, SessionScopeResolverPort
 from config.token import BzmToken
 from models.manager import Manager
 from models.result import BaseResult
@@ -51,8 +52,20 @@ def resolve_session_partition(
 class ToolsManager(Manager):
     """Session-scoped dataframe tools backed by SessionStoragePort."""
 
+    def __init__(
+            self,
+            ctx: Context,
+            scope_resolver: Optional[SessionScopeResolverPort] = None,
+    ):
+        super().__init__(ctx)
+        self.scope_resolver = scope_resolver or DefaultSessionScopeResolver()
+
+    def _scope(self) -> SessionScope:
+        return self.scope_resolver.resolve(self.ctx, self.token)
+
     def _session(self) -> Tuple[str, str]:
-        return resolve_session_partition(self.token, self.ctx)
+        scope = self._scope()
+        return scope.user_id, scope.mcp_session_id
 
     async def dataframes_list(self) -> BaseResult:
         user_id, mcp_session_id = self._session()
@@ -295,8 +308,9 @@ Hints:
             args: Dict[str, Any] = Field(description="Dictionary with parameters"),
             ctx: Context = Field(description="Context object providing access to MCP capabilities"),
     ) -> BaseResult:
-        token = runtime.auth.get_token(ctx)
-        manager = ToolsManager(token, ctx)
+        runtime.configure_context(ctx)
+        manager = ToolsManager(ctx, runtime.scope_resolver)
+        token = manager.token
         args = args or {}
 
         async def _dispatch():

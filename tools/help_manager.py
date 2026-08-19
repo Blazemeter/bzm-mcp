@@ -16,7 +16,7 @@ limitations under the License.
 import asyncio
 from copy import deepcopy
 from itertools import chain
-from typing import Optional, Any, Dict, List
+from typing import Any, Dict, List
 
 import httpx
 from mcp.server.fastmcp import Context
@@ -24,7 +24,6 @@ from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE, \
     HELP_INDEX_URL, HELP_TOC_URL, HELP_BASE_CONTENT_URL
-from config.token import BzmToken
 from config.runtime import AppRuntime
 from formatters.help import format_help_info
 from models.manager import Manager
@@ -45,8 +44,11 @@ class HelpManager(Manager):
         "Help content is sourced from curated BlazeMeter documentation domains and is trusted by design."
     )
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        ctx: Context,
+    ):
+        super().__init__(ctx)
 
     async def _load_help_tree(self):
         help_index_url = HELP_INDEX_URL
@@ -291,8 +293,8 @@ Hints:
         if args is None:
             args = {}
 
-        token = runtime.auth.get_token(ctx)
-        help_manager = HelpManager(token, ctx)
+        runtime.configure_context(ctx)
+        help_manager = HelpManager(ctx)
 
         async def _dispatch():
             match action:
@@ -351,11 +353,7 @@ Hints:
                     )
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_help", action, ctx, _dispatch,
-                token=token,
-                tool_args=args,
-                disable_dataframe_materialization=True
-            )
+            return await run_tool(f"{TOOLS_PREFIX}_help", action, ctx, _dispatch)
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

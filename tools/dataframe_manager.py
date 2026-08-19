@@ -24,12 +24,15 @@ from typing import Any, Dict, List, Optional
 
 import polars as pl
 
-from models.result import BaseResult
+from config.context_resolution import resolve_ctx_token
 from config.storage import (
+    DefaultSessionScopeResolver,
+    SessionPartitionPayload,
+    SessionScope,
     SessionStoragePort,
-    StorageNotConfiguredError,
 )
 from config.token import BzmToken
+from models.result import BaseResult
 from tools.utils import generate_simple_id, SIMPLE_ID_LENGTH
 
 logger = logging.getLogger(__name__)
@@ -38,8 +41,15 @@ DATAFRAME_JSON_SIZE_THRESHOLD = 8000
 
 DATAFRAME_ID_MAX_ATTEMPTS = 10
 
-DEFAULT_USER_ID = "local"
-DEFAULT_SESSION_ID = "stdio"
+DEFAULT_USER_ID = "anonymous"
+DEFAULT_SESSION_ID = "default"
+
+_SCOPE_RESOLVER = DefaultSessionScopeResolver()
+
+
+class StorageNotConfiguredError(RuntimeError):
+    """Raised when dataframe storage is used before AppRuntime wiring."""
+
 
 _storage: Optional[SessionStoragePort] = None
 _registry_lock = asyncio.Lock()
@@ -74,6 +84,10 @@ def _get_storage() -> SessionStoragePort:
 
 def _session_key(user_id: str, mcp_session_id: str) -> tuple[str, str]:
     return (str(user_id), str(mcp_session_id))
+
+
+def _scope(user_id: str, mcp_session_id: str) -> SessionScope:
+    return SessionScope(user_id=str(user_id), mcp_session_id=str(mcp_session_id))
 
 
 async def _get_or_create_working_set(user_id: str, mcp_session_id: str) -> _SessionWorkingSet:
@@ -119,7 +133,7 @@ async def _hydrate_working_set(
     """Load partition dataframes into the session working set (caller holds working_set.lock)."""
     if working_set.hydrated:
         return
-    partition = await _get_storage().get(user_id, mcp_session_id)
+    partition = await _get_storage().get_partition(_scope(user_id, mcp_session_id))
     loaded: Dict[str, DataFrameRecord] = {}
     if partition:
         for raw in partition.dataframes.values():
@@ -142,7 +156,10 @@ async def _persist_working_set(
         dataframe_id: _serialize_record(record)
         for dataframe_id, record in working_set.dataframes.items()
     }
-    await _get_storage().put_dataframes(user_id, mcp_session_id, dataframes)
+    await _get_storage().put_partition(
+        _scope(user_id, mcp_session_id),
+        SessionPartitionPayload(dataframes=dataframes),
+    )
 
 _DISALLOWED_SQL_PATTERN = re.compile(
     r"\b(insert|update|delete|create|drop|alter|truncate|replace|merge|call|copy|grant|revoke)\b",
@@ -482,11 +499,10 @@ def resolve_partition_ids(
         token: Optional[BzmToken],
         ctx: Any,
 ) -> tuple[str, str]:
-    """Resolve Storage partition keys from auth token + MCP context."""
-    user_id = token.id if token is not None else DEFAULT_USER_ID
-    session_id = getattr(ctx, "session_id", None) if ctx is not None else None
-    mcp_session_id = str(session_id) if session_id else DEFAULT_SESSION_ID
-    return user_id, mcp_session_id
+    """Resolve Storage partition keys from auth token + MCP session context."""
+    resolved_token = token if token is not None else resolve_ctx_token(ctx)
+    scope = _SCOPE_RESOLVER.resolve(ctx, resolved_token)
+    return scope.user_id, scope.mcp_session_id
 
 
 async def finalize_tool_result(

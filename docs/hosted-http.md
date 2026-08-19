@@ -16,7 +16,8 @@ Configure the MCP client with that URL and your BlazeMeter API key as Bearer cre
     "BlazeMeter MCP": {
       "url": "https://mcp.blazemeter.com/mcp",
       "headers": {
-        "Authorization": "Bearer <apiKeyId>:<apiKeySecret>"
+        "Authorization": "Bearer <apiKeyId>:<apiKeySecret>",
+        "confirmation-mode": "DELETE"
       }
     }
   }
@@ -31,6 +32,12 @@ For a locally run server, use `"url": "http://localhost:8000/mcp"` instead.
 - Invalid or missing Bearer credentials return `401` before any tool runs.
 - Well-formed but wrong API keys fail later inside BlazeMeter API calls (same as stdio).
 - Stdio / local Docker transport uses `api-key.json` / env / Docker secrets instead of Bearer auth.
+
+### Confirmation mode header
+
+- Optional header: `confirmation-mode`
+- Allowed values: `DELETE`, `CUD`, `DISABLE`
+- If omitted, empty, or invalid, the session falls back to `DELETE`.
 
 ## Local / operator run
 
@@ -48,7 +55,7 @@ docker run --rm -p 8000:8000 \
   -e FASTMCP_HOST=0.0.0.0 \
   -e FASTMCP_PORT=8000 \
   -e FASTMCP_STREAMABLE_HTTP_PATH=/mcp \
-  -e BZM_STORAGE_BACKEND=memory \
+  -e BZM_STORAGE_API_BASE_URL=https://mcp-storage.internal \
   ghcr.io/blazemeter/bzm-mcp:latest
 ```
 
@@ -60,11 +67,12 @@ docker run --rm -p 8000:8000 \
 | `FASTMCP_HOST` | Bind address (HTTP only) | `127.0.0.1` |
 | `FASTMCP_PORT` | Listen port (HTTP only). Also accepts `PORT` (e.g. Cloud Run) | `8000` |
 | `FASTMCP_STREAMABLE_HTTP_PATH` | HTTP path for the MCP endpoint | `/mcp` |
-| `BZM_STORAGE_BACKEND` | `memory` or `http` | `memory` |
+| `BZM_STORAGE_API_BASE_URL` | Storage Service base URL (required for streamable-http) | — |
+| `BZM_STORAGE_STRATEGY` | `memory` or `http` (file-access helper; session store follows transport) | `memory` |
 
-On streamable-http, local file paths are always rejected regardless of `BZM_STORAGE_BACKEND` (hosted fail-closed storage).
+On streamable-http, session partitions are stored via `HttpSessionStorageProvider` and local file paths are rejected (`StorageFileSource`).
 
 ## Hosted MVP limitations
 
-- In-memory / fail-closed storage: no local disk access on the shared hosted server.
-- `upload_assets` and other local file lookup/upload paths are rejected. Use a local stdio or Docker MCP installation for those workflows, or wait for remote Storage (Phase 2).
+- Session dataframes/tasks live in the Storage Service keyed by `{user_id}/{mcp_session_id}`.
+- `upload_assets` and other local file lookup/upload paths are rejected. Use a local stdio or Docker MCP installation for those workflows, or wait for remote file access.

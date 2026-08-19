@@ -20,7 +20,6 @@ from mcp.server.fastmcp import Context
 from pydantic import Field
 
 from config.blazemeter import WORKSPACES_ENDPOINT, TOOLS_PREFIX
-from config.token import BzmToken
 from config.runtime import AppRuntime
 from formatters.workspace import format_workspaces, format_workspaces_detailed, format_workspaces_locations
 from models.manager import Manager
@@ -36,8 +35,11 @@ class WorkspaceManager(Manager):
     # the format_workspaces only expose minimum information to user
     # The read operation verify permissions and don't allow to share details.
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        ctx: Context,
+    ):
+        super().__init__(ctx)
 
     async def read(self, workspace_id: Optional[int]) -> BaseResult:
         if not isinstance(workspace_id, int) or workspace_id < 1:
@@ -139,8 +141,8 @@ Hints:
             ctx: Context = Field(description="Context object providing access to MCP capabilities")
     ) -> BaseResult:
 
-        token = runtime.auth.get_token(ctx)
-        workspace_manager = WorkspaceManager(token, ctx)
+        runtime.configure_context(ctx)
+        workspace_manager = WorkspaceManager(ctx)
 
         async def _dispatch():
             match action:
@@ -158,10 +160,7 @@ Hints:
                     )
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_workspaces", action, ctx, _dispatch,
-                token=token,
-                tool_args=args
-            )
+            return await run_tool(f"{TOOLS_PREFIX}_workspaces", action, ctx, _dispatch)
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

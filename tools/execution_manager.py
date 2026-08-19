@@ -19,7 +19,6 @@ import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TOOLS_PREFIX, EXECUTIONS_ENDPOINT, SUPPORT_MESSAGE
-from config.token import BzmToken
 from config.runtime import AppRuntime
 from formatters.execution import format_executions, format_executions_detailed, format_executions_status
 from models.manager import Manager
@@ -32,19 +31,23 @@ from tools.utils import api_request, timeout, user_agent, format_sanitized_trace
 
 class ExecutionManager(Manager):
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        ctx: Context,
+    ):
+        super().__init__(ctx)
 
     async def _request_log_analyzer_api(self, method: str, execution_id: int,
                                         json_body: Optional[Dict[str, Any]] = None) -> BaseResult:
-        if not self.token:
+        token = self.token
+        if not token:
             return BaseResult(
                 error="No API token. Set BLAZEMETER_API_KEY env var with file path or API_KEY_ID and API_KEY_SECRET secrets."
             )
 
         url = f"https://log-analyzer.blazemeter.com/analyzer/{execution_id}"
         headers = {
-            "Authorization": self.token.as_basic_auth(),
+            "Authorization": token.as_basic_auth(),
             "User-Agent": user_agent,
             "Accept": "application/json",
             "Content-Type": "application/json"
@@ -229,7 +232,12 @@ class ExecutionManager(Manager):
         if account_data.error:
             return account_data
 
-        return await search_utils.test_execution_search_filter_values("master", account_id, self.token, filter_names)
+        return await search_utils.test_execution_search_filter_values(
+            "master",
+            account_id,
+            self.token,
+            filter_names,
+        )
 
     async def ai_analysis(self, execution_id: Optional[int]) -> BaseResult:
         if not isinstance(execution_id, int) or execution_id < 1:
@@ -396,7 +404,7 @@ class ExecutionManager(Manager):
         if not isinstance(execution_id, int) or execution_id < 1:
             return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
 
-        report_manager = ReportManager(self.token, self.ctx)
+        report_manager = ReportManager(self.ctx)
         summary_result = await report_manager.read_summary(execution_id)
         error_result = await report_manager.read_error(execution_id)
         stats_result = await report_manager.read_request_stats(execution_id)
@@ -497,9 +505,9 @@ Hints:
 """
     )
     async def execution(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        token = runtime.auth.get_token(ctx)
-        execution_manager = ExecutionManager(token, ctx)
-        report_manager = ReportManager(runtime.auth.get_token(ctx), ctx)
+        runtime.configure_context(ctx)
+        execution_manager = ExecutionManager(ctx)
+        report_manager = ReportManager(ctx)
 
         async def _dispatch():
             match action:
@@ -536,10 +544,7 @@ Hints:
                     )
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_execution", action, ctx, _dispatch,
-                token=token,
-                tool_args=args
-            )
+            return await run_tool(f"{TOOLS_PREFIX}_execution", action, ctx, _dispatch)
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

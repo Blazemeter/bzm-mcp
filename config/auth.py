@@ -25,6 +25,16 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from config.token import BzmToken, BzmTokenError
 
 BZM_TOKEN_STATE_ATTR = "token"
+BZM_USER_CONFIG_STATE_ATTR = "user_config"
+BZM_CONFIRMATION_MODE_HEADER = "confirmation-mode"
+
+
+def _normalize_confirmation_mode(raw_value: Optional[str]) -> str:
+    value = (raw_value or "").strip().upper()
+    if value in ("DELETE", "CUD", "DISABLE"):
+        return value
+    return "DELETE"
+
 
 # Unauthenticated probe paths for orchestrators / load balancers.
 HEALTH_PATHS = frozenset({"/health", "/healthz"})
@@ -119,6 +129,16 @@ class BearerAuthMiddleware:
             return
 
         setattr(request.state, BZM_TOKEN_STATE_ATTR, token)
+        raw_confirmation_mode = request.headers.get(BZM_CONFIRMATION_MODE_HEADER)
+        if raw_confirmation_mode is not None and raw_confirmation_mode.strip():
+            confirmation_mode = _normalize_confirmation_mode(raw_confirmation_mode)
+        else:
+            confirmation_mode = "DELETE"
+        setattr(
+            request.state,
+            BZM_USER_CONFIG_STATE_ATTR,
+            {"confirmation_mode": confirmation_mode},
+        )
         await self.app(scope, receive, send)
 
 

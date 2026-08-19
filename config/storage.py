@@ -15,17 +15,18 @@ limitations under the License.
 """
 from __future__ import annotations
 
-import asyncio
-import copy
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 import os
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Protocol, runtime_checkable
+from typing import Any, List, Literal, Optional, Protocol, runtime_checkable
 from urllib.parse import quote
 
 import httpx
+from mcp.server.fastmcp import Context
 
 from config.path_mapper import PathMapperFactory, PathMappingStrategy
+from config.token import BzmToken
 
 StorageBackend = Literal["memory", "http"]
 
@@ -35,111 +36,20 @@ HOSTED_FILE_ACCESS_MESSAGE = (
     "Phase 2 remote Storage."
 )
 
-DEFAULT_STORAGE_SERVICE_URL_ENV = "BZM_STORAGE_SERVICE_URL"
-
-# Aligned with bzm-mcp-storage-api (hosted-bzm-mcp). Path prefix may change when
-# both services freeze the contract; keep a single constant for client + tests.
-SESSION_PARTITION_PATH_PREFIX = "/internal/v1/sessions"
-
 
 class StorageNotSupportedError(NotImplementedError):
     """Raised when a storage backend cannot fulfill a file operation."""
 
 
-class StorageNotConfiguredError(RuntimeError):
-    """Raised when dataframe/session storage is used before AppRuntime wiring."""
-
-
-@dataclass
-class UploadedFilePlaceholder:
-    """Matches storage-api ``UploadedFilePlaceholder`` (list items under uploaded_files)."""
-
-    file_id: str
-    name: Optional[str] = None
-    content_type: Optional[str] = None
-    size_bytes: Optional[int] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "file_id": self.file_id,
-            "name": self.name,
-            "content_type": self.content_type,
-            "size_bytes": self.size_bytes,
-            "metadata": copy.deepcopy(self.metadata),
-        }
-
-    @classmethod
-    def from_dict(cls, payload: Dict[str, Any]) -> "UploadedFilePlaceholder":
-        return cls(
-            file_id=str(payload.get("file_id") or ""),
-            name=payload.get("name"),
-            content_type=payload.get("content_type"),
-            size_bytes=payload.get("size_bytes"),
-            metadata=dict(payload.get("metadata") or {}),
-        )
-
-
-def session_partition_path(user_id: str, mcp_session_id: str) -> str:
-    """Build the Storage Service path for a session partition."""
-    user = quote(str(user_id), safe="")
-    session = quote(str(mcp_session_id), safe="")
-    return f"{SESSION_PARTITION_PATH_PREFIX}/{user}/{session}"
-
-
-def _normalize_uploaded_files(raw: Any) -> List[UploadedFilePlaceholder]:
-    """Coerce storage-api list payloads into placeholder objects."""
-    if raw is None:
-        return []
-    if not isinstance(raw, list):
-        raise ValueError("uploaded_files must be a list of file placeholder objects")
-    files: List[UploadedFilePlaceholder] = []
-    for item in raw:
-        if isinstance(item, UploadedFilePlaceholder):
-            files.append(item)
-        elif isinstance(item, dict):
-            files.append(UploadedFilePlaceholder.from_dict(item))
-        else:
-            raise ValueError("uploaded_files entries must be objects with file_id")
-    return files
-
-
-@dataclass
-class SessionPartition:
-    """
-    Session document stored under ``{user_id}/{mcp_session_id}``.
-
-    Field shapes match the external Storage Service (bzm-mcp-storage-api):
-    metadata/dataframes/tasks as objects; uploaded_files as a list of placeholders.
-    """
-
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    dataframes: Dict[str, Any] = field(default_factory=dict)
-    tasks: Dict[str, Any] = field(default_factory=dict)
-    uploaded_files: List[UploadedFilePlaceholder] = field(default_factory=list)
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "metadata": copy.deepcopy(self.metadata),
-            "dataframes": copy.deepcopy(self.dataframes),
-            "tasks": copy.deepcopy(self.tasks),
-            "uploaded_files": [item.to_dict() for item in self.uploaded_files],
-        }
-
-    @classmethod
-    def from_dict(cls, payload: Optional[Dict[str, Any]]) -> "SessionPartition":
-        data = payload or {}
-        return cls(
-            metadata=dict(data.get("metadata") or {}),
-            dataframes=dict(data.get("dataframes") or {}),
-            tasks=dict(data.get("tasks") or {}),
-            uploaded_files=_normalize_uploaded_files(data.get("uploaded_files")),
-        )
-
-
 @runtime_checkable
 class FileStoragePort(Protocol):
-    """Narrow contract for upload_assets / local path resolution."""
+    """
+    Contract for resolving and reading files used by MCP tools (e.g. upload_assets).
+
+    MVP backends:
+    - memory/local: process-local disk via path mapping (stdio / local Docker)
+    - http: fail-closed stub for hosted streamable-http (no local disk)
+    """
 
     def map_paths(self, file_paths: List[str]) -> List[str]:
         ...
@@ -157,49 +67,12 @@ class FileStoragePort(Protocol):
         ...
 
 
-@runtime_checkable
-class SessionStoragePort(Protocol):
-    """
-    Narrow contract for session partitions keyed by ``{user_id}/{mcp_session_id}``.
-
-    ``put_dataframes`` updates only the dataframes map so concurrent writers of
-    tasks/metadata/uploaded_files are less likely to be clobbered.
-    """
-
-    async def get(self, user_id: str, mcp_session_id: str) -> Optional[SessionPartition]:
-        ...
-
-    async def put(
-            self,
-            user_id: str,
-            mcp_session_id: str,
-            partition: SessionPartition,
-    ) -> None:
-        ...
-
-    async def delete(self, user_id: str, mcp_session_id: str) -> None:
-        ...
-
-    async def put_dataframes(
-            self,
-            user_id: str,
-            mcp_session_id: str,
-            dataframes: Dict[str, Any],
-    ) -> None:
-        ...
-
-
-@runtime_checkable
-class StoragePort(FileStoragePort, SessionStoragePort, Protocol):
-    """Combined port used by AppRuntime (implements both file + session contracts)."""
-
-
 class LocalStorageClient:
     """
-    Process-local file access helper used by ``MemoryStorageProvider``.
+    Process-local file access (BZM_STORAGE_STRATEGY=memory for MVP).
 
-    Kept as a named type so existing upload/security tests can target file I/O
-    without depending on session-partition behaviour.
+    Uses the existing path mapper so Docker volume mounts keep working.
+    No external Storage Service — suitable for single-instance / stdio MVP.
     """
 
     def __init__(self, path_mapper: Optional[PathMappingStrategy] = None):
@@ -222,167 +95,14 @@ class LocalStorageClient:
         return Path(path).name
 
 
-class MemoryStorageProvider:
+class HttpStorageClient:
     """
-    Stdio / single-process session store (in-memory partitions) + local files.
+    Fail-closed file storage for hosted HTTP (and future remote Storage Service).
 
-    Replaces the process-global ``_dataframes`` dict as the backing store while
-    preserving local disk access for ``upload_assets``.
+    Every file lookup/upload path raises so local client paths cannot be used
+    against a shared hosted instance. Phase 2 can replace these stubs with
+    real remote Storage API calls.
     """
-
-    def __init__(
-            self,
-            path_mapper: Optional[PathMappingStrategy] = None,
-            files: Optional[LocalStorageClient] = None,
-    ):
-        self._files = files or LocalStorageClient(path_mapper=path_mapper)
-        self._partitions: Dict[tuple[str, str], SessionPartition] = {}
-        self._lock = asyncio.Lock()
-
-    @staticmethod
-    def _key(user_id: str, mcp_session_id: str) -> tuple[str, str]:
-        return (str(user_id), str(mcp_session_id))
-
-    async def get(self, user_id: str, mcp_session_id: str) -> Optional[SessionPartition]:
-        async with self._lock:
-            partition = self._partitions.get(self._key(user_id, mcp_session_id))
-            if partition is None:
-                return None
-            return SessionPartition.from_dict(partition.to_dict())
-
-    async def put(
-            self,
-            user_id: str,
-            mcp_session_id: str,
-            partition: SessionPartition,
-    ) -> None:
-        async with self._lock:
-            self._partitions[self._key(user_id, mcp_session_id)] = SessionPartition.from_dict(
-                partition.to_dict()
-            )
-
-    async def delete(self, user_id: str, mcp_session_id: str) -> None:
-        async with self._lock:
-            self._partitions.pop(self._key(user_id, mcp_session_id), None)
-
-    async def put_dataframes(
-            self,
-            user_id: str,
-            mcp_session_id: str,
-            dataframes: Dict[str, Any],
-    ) -> None:
-        async with self._lock:
-            key = self._key(user_id, mcp_session_id)
-            existing = self._partitions.get(key)
-            if existing is None:
-                partition = SessionPartition(dataframes=copy.deepcopy(dataframes))
-            else:
-                partition = SessionPartition.from_dict(existing.to_dict())
-                partition.dataframes = copy.deepcopy(dataframes)
-            self._partitions[key] = partition
-
-    def map_paths(self, file_paths: List[str]) -> List[str]:
-        return self._files.map_paths(file_paths)
-
-    def exists(self, path: str) -> bool:
-        return self._files.exists(path)
-
-    def is_file(self, path: str) -> bool:
-        return self._files.is_file(path)
-
-    def read_bytes(self, path: str) -> bytes:
-        return self._files.read_bytes(path)
-
-    def basename(self, path: str) -> str:
-        return self._files.basename(path)
-
-
-class HTTPStorageClient:
-    """
-    Hosted Storage Service client: session get/put/delete over HTTP.
-
-    File lookup/upload paths remain fail-closed until remote ``uploaded_files``
-    support lands. Base URL: ``BZM_STORAGE_SERVICE_URL``.
-    """
-
-    def __init__(
-            self,
-            base_url: Optional[str] = None,
-            http_client: Optional[httpx.AsyncClient] = None,
-            timeout: Optional[httpx.Timeout] = None,
-    ):
-        env_url = os.getenv(DEFAULT_STORAGE_SERVICE_URL_ENV, "")
-        self._base_url = (base_url if base_url is not None else env_url).rstrip("/")
-        self._http_client = http_client
-        self._timeout = timeout or httpx.Timeout(connect=5.0, read=30.0, write=30.0, pool=5.0)
-        self._client_lock = asyncio.Lock()
-
-    def _require_base_url(self) -> str:
-        if not self._base_url:
-            raise ValueError(
-                f"{DEFAULT_STORAGE_SERVICE_URL_ENV} is required for HTTP storage "
-                "(session get/put/delete)."
-            )
-        return self._base_url
-
-    def _partition_path(self, user_id: str, mcp_session_id: str) -> str:
-        return session_partition_path(user_id, mcp_session_id)
-
-    async def _client(self) -> httpx.AsyncClient:
-        if self._http_client is not None:
-            return self._http_client
-        async with self._client_lock:
-            if self._http_client is None:
-                self._http_client = httpx.AsyncClient(
-                    base_url=self._require_base_url(),
-                    timeout=self._timeout,
-                )
-            return self._http_client
-
-    async def get(self, user_id: str, mcp_session_id: str) -> Optional[SessionPartition]:
-        self._require_base_url()
-        client = await self._client()
-        response = await client.get(self._partition_path(user_id, mcp_session_id))
-        if response.status_code == 404:
-            return None
-        response.raise_for_status()
-        payload = response.json()
-        if not isinstance(payload, dict):
-            raise ValueError("Storage Service get returned a non-object JSON payload")
-        return SessionPartition.from_dict(payload)
-
-    async def put(
-            self,
-            user_id: str,
-            mcp_session_id: str,
-            partition: SessionPartition,
-    ) -> None:
-        self._require_base_url()
-        client = await self._client()
-        response = await client.put(
-            self._partition_path(user_id, mcp_session_id),
-            json=partition.to_dict(),
-        )
-        response.raise_for_status()
-
-    async def delete(self, user_id: str, mcp_session_id: str) -> None:
-        self._require_base_url()
-        client = await self._client()
-        response = await client.delete(self._partition_path(user_id, mcp_session_id))
-        if response.status_code == 404:
-            return
-        response.raise_for_status()
-
-    async def put_dataframes(
-            self,
-            user_id: str,
-            mcp_session_id: str,
-            dataframes: Dict[str, Any],
-    ) -> None:
-        """Merge dataframes into the remote partition without dropping other sections."""
-        existing = await self.get(user_id, mcp_session_id) or SessionPartition()
-        existing.dataframes = copy.deepcopy(dataframes)
-        await self.put(user_id, mcp_session_id, existing)
 
     def map_paths(self, file_paths: List[str]) -> List[str]:
         raise StorageNotSupportedError(HOSTED_FILE_ACCESS_MESSAGE)
@@ -398,20 +118,18 @@ class HTTPStorageClient:
 
     def basename(self, path: str) -> str:
         raise StorageNotSupportedError(HOSTED_FILE_ACCESS_MESSAGE)
-
-
-# Backward-compatible alias used by older tests / docs.
-HttpStorageClient = HTTPStorageClient
 
 
 def resolve_storage_backend(raw: Optional[str] = None) -> StorageBackend:
-    """Resolve BZM_STORAGE_BACKEND (default: memory)."""
-    candidate = (raw if raw is not None else os.getenv("BZM_STORAGE_BACKEND", "memory")).strip().lower()
+    """Resolve BZM_STORAGE_STRATEGY (default: memory)."""
+    candidate = (
+        raw if raw is not None else os.getenv("BZM_STORAGE_STRATEGY", "memory")
+    ).strip().lower()
     if not candidate:
         return "memory"
     if candidate not in ("memory", "http"):
         raise ValueError(
-            f"Invalid BZM_STORAGE_BACKEND '{candidate}'. Valid values: memory, http."
+            f"Invalid BZM_STORAGE_STRATEGY '{candidate}'. Valid values: memory, http."
         )
     return candidate  # type: ignore[return-value]
 
@@ -419,15 +137,203 @@ def resolve_storage_backend(raw: Optional[str] = None) -> StorageBackend:
 def build_storage(
         transport: Literal["stdio", "streamable-http"],
         backend: Optional[str] = None,
-) -> StoragePort:
+) -> FileStoragePort:
     """
-    Select storage for the process.
+    Select file storage for the process.
 
-    - stdio + memory → ``MemoryStorageProvider`` (in-memory sessions + local files)
-    - streamable-http or backend=http → ``HTTPStorageClient`` (remote sessions;
-      local file paths rejected)
+    Hosted streamable-http always uses HttpStorageClient so local paths are
+    rejected. Stdio uses LocalStorageClient when backend is memory (MVP default).
     """
     resolved = resolve_storage_backend(backend)
     if transport == "streamable-http" or resolved == "http":
-        return HTTPStorageClient()
-    return MemoryStorageProvider()
+        return HttpStorageClient()
+    return LocalStorageClient()
+
+
+@dataclass(frozen=True)
+class SessionScope:
+    user_id: str
+    mcp_session_id: str
+
+
+@dataclass(frozen=True)
+class SessionPartitionPayload:
+    metadata: dict[str, Any] | None = None
+    dataframes: dict[str, Any] | None = None
+    tasks: dict[str, Any] | None = None
+    uploaded_files: list[dict[str, Any]] | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        body: dict[str, Any] = {}
+        if self.metadata is not None:
+            body["metadata"] = self.metadata
+        if self.dataframes is not None:
+            body["dataframes"] = self.dataframes
+        if self.tasks is not None:
+            body["tasks"] = self.tasks
+        if self.uploaded_files is not None:
+            body["uploaded_files"] = self.uploaded_files
+        return body
+
+
+@dataclass(frozen=True)
+class SessionPartition:
+    user_id: str
+    mcp_session_id: str
+    metadata: dict[str, Any]
+    dataframes: dict[str, Any]
+    tasks: dict[str, Any]
+    uploaded_files: list[dict[str, Any]]
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "SessionPartition":
+        return cls(
+            user_id=str(data.get("user_id", "")),
+            mcp_session_id=str(data.get("mcp_session_id", "")),
+            metadata=data.get("metadata", {}) or {},
+            dataframes=data.get("dataframes", {}) or {},
+            tasks=data.get("tasks", {}) or {},
+            uploaded_files=data.get("uploaded_files", []) or [],
+        )
+
+
+class SessionStoragePort(ABC):
+    @abstractmethod
+    async def put_partition(self, scope: SessionScope, payload: SessionPartitionPayload) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_partition(self, scope: SessionScope) -> SessionPartition | None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete_partition(self, scope: SessionScope) -> bool:
+        raise NotImplementedError
+
+
+class SessionScopeResolverPort(ABC):
+    @abstractmethod
+    def resolve(self, ctx: Context, token: Optional[BzmToken]) -> SessionScope:
+        raise NotImplementedError
+
+
+class DefaultSessionScopeResolver(SessionScopeResolverPort):
+    """
+    Resolve scope from request/ctx metadata.
+
+    Hosted HTTP receives `Mcp-Session-Id` via header.
+    Local stdio/docker falls back to FastMCP context session_id when available.
+    """
+
+    @staticmethod
+    def _resolve_session_id(ctx: Context) -> str:
+        request = getattr(getattr(ctx, "request_context", None), "request", None)
+        if request is not None:
+            session_id = request.headers.get("mcp-session-id")
+            if session_id and session_id.strip():
+                return session_id.strip()
+        session_id = getattr(ctx, "session_id", None)
+        if session_id is not None and str(session_id).strip():
+            return str(session_id).strip()
+        return "default"
+
+    @staticmethod
+    def _resolve_user_id(token: Optional[BzmToken]) -> str:
+        if token is not None and token.id.strip():
+            return token.id.strip()
+        return "anonymous"
+
+    def resolve(self, ctx: Context, token: Optional[BzmToken]) -> SessionScope:
+        return SessionScope(
+            user_id=self._resolve_user_id(token),
+            mcp_session_id=self._resolve_session_id(ctx),
+        )
+
+
+class InMemorySessionStorageProvider(SessionStoragePort):
+    def __init__(self) -> None:
+        self._partitions: dict[tuple[str, str], SessionPartition] = {}
+
+    async def put_partition(self, scope: SessionScope, payload: SessionPartitionPayload) -> None:
+        existing = self._partitions.get((scope.user_id, scope.mcp_session_id))
+        metadata = existing.metadata if existing else {}
+        dataframes = existing.dataframes if existing else {}
+        tasks = existing.tasks if existing else {}
+        uploaded_files = existing.uploaded_files if existing else []
+
+        if payload.metadata is not None:
+            metadata = payload.metadata
+        if payload.dataframes is not None:
+            dataframes = payload.dataframes
+        if payload.tasks is not None:
+            tasks = payload.tasks
+        if payload.uploaded_files is not None:
+            uploaded_files = payload.uploaded_files
+
+        self._partitions[(scope.user_id, scope.mcp_session_id)] = SessionPartition(
+            user_id=scope.user_id,
+            mcp_session_id=scope.mcp_session_id,
+            metadata=metadata,
+            dataframes=dataframes,
+            tasks=tasks,
+            uploaded_files=uploaded_files,
+        )
+
+    async def get_partition(self, scope: SessionScope) -> SessionPartition | None:
+        return self._partitions.get((scope.user_id, scope.mcp_session_id))
+
+    async def delete_partition(self, scope: SessionScope) -> bool:
+        return self._partitions.pop((scope.user_id, scope.mcp_session_id), None) is not None
+
+
+class HttpSessionStorageProvider(SessionStoragePort):
+    def __init__(
+        self,
+        base_url: str,
+        timeout_seconds: float = 15.0,
+    ) -> None:
+        self._base_url = base_url.rstrip("/")
+        self._timeout = timeout_seconds
+
+    def _url_for_scope(self, scope: SessionScope) -> str:
+        user_id = quote(scope.user_id, safe="")
+        mcp_session_id = quote(scope.mcp_session_id, safe="")
+        return f"{self._base_url}/session-partitions/{user_id}/{mcp_session_id}"
+
+    def _health_url(self) -> str:
+        return f"{self._base_url}/health"
+
+    def ensure_available(self) -> None:
+        """Fail fast if the storage API is unreachable."""
+        with httpx.Client(timeout=min(self._timeout, 5.0)) as client:
+            response = client.get(self._health_url())
+            response.raise_for_status()
+
+    async def put_partition(self, scope: SessionScope, payload: SessionPartitionPayload) -> None:
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
+            response = await client.put(
+                self._url_for_scope(scope),
+                json=payload.to_dict(),
+            )
+            response.raise_for_status()
+
+    async def get_partition(self, scope: SessionScope) -> SessionPartition | None:
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
+            response = await client.get(
+                self._url_for_scope(scope),
+            )
+            if response.status_code == 404:
+                return None
+            response.raise_for_status()
+            return SessionPartition.from_dict(response.json())
+
+    async def delete_partition(self, scope: SessionScope) -> bool:
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
+            response = await client.delete(
+                self._url_for_scope(scope),
+            )
+            response.raise_for_status()
+            payload = response.json()
+            return bool(payload.get("deleted"))
+
+

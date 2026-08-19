@@ -14,20 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import asyncio
-from typing import Optional
 
-import httpx
 import pytest
 
 import tools.dataframe_manager as dataframe_manager
 from config.storage import (
-    HTTPStorageClient,
-    MemoryStorageProvider,
-    SessionPartition,
-    StorageNotConfiguredError,
+    InMemorySessionStorageProvider,
+    SessionPartitionPayload,
+    SessionScope,
+    SessionStoragePort,
 )
-from tests.storage_fakes import FakeStorageTransport
 from tools.dataframe_manager import (
+    StorageNotConfiguredError,
     clear_dataframes,
     configure_dataframe_storage,
     list_dataframes_metadata,
@@ -41,21 +39,27 @@ def _run(coro):
     return asyncio.run(coro)
 
 
+def _scope(user_id: str, mcp_session_id: str) -> SessionScope:
+    return SessionScope(user_id=user_id, mcp_session_id=mcp_session_id)
+
+
 @pytest.fixture
 def memory_store():
-    store = MemoryStorageProvider()
+    store = InMemorySessionStorageProvider()
     configure_dataframe_storage(store)
     return store
 
 
-@pytest.fixture
-def http_store():
-    transport = FakeStorageTransport()
-    http = httpx.AsyncClient(transport=transport, base_url="http://storage.test")
-    client = HTTPStorageClient(base_url="http://storage.test", http_client=http)
-    configure_dataframe_storage(client)
-    yield client, http
-    _run(http.aclose())
+class RecordingSessionStorage(InMemorySessionStorageProvider):
+    """SessionStoragePort spy used to prove dataframe I/O goes through the port."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.put_payloads: list[SessionPartitionPayload] = []
+
+    async def put_partition(self, scope: SessionScope, payload: SessionPartitionPayload) -> None:
+        self.put_payloads.append(payload)
+        await super().put_partition(scope, payload)
 
 
 class TestDataframeStorageWiring:
@@ -63,6 +67,11 @@ class TestDataframeStorageWiring:
         dataframe_manager._storage = None
         with pytest.raises(StorageNotConfiguredError, match="not configured"):
             _run(list_dataframes_metadata(user_id="u", mcp_session_id="s"))
+
+    def test_configure_accepts_session_storage_port(self):
+        store: SessionStoragePort = InMemorySessionStorageProvider()
+        configure_dataframe_storage(store)
+        assert dataframe_manager._storage is store
 
 
 class TestDataframeManagerMemoryStorage:
@@ -100,7 +109,6 @@ class TestDataframeManagerMemoryStorage:
         )
         assert _run(list_dataframes_metadata(user_id="user-1", mcp_session_id="sess-a")) == []
 
-        # Clear on empty session is a no-op.
         assert _run(clear_dataframes(user_id="user-1", mcp_session_id="sess-a")) == 0
 
     def test_sessions_are_isolated(self, memory_store):
@@ -142,7 +150,6 @@ class TestDataframeManagerMemoryStorage:
                 mcp_session_id="mcp-session-shared",
             )
         )
-        # Force a cold hydrate as if a new request handler ran.
         configure_dataframe_storage(memory_store)
         listed = _run(
             list_dataframes_metadata(
@@ -155,9 +162,10 @@ class TestDataframeManagerMemoryStorage:
         assert listed[0]["rows"] == 2
 
 
-class TestDataframeManagerHttpStorage:
-    def test_register_and_query_via_http_storage(self, http_store):
-        client, _http = http_store
+class TestDataframeManagerSessionPort:
+    def test_register_writes_through_put_partition(self):
+        store = RecordingSessionStorage()
+        configure_dataframe_storage(store)
         meta = _run(
             register_dataframe(
                 result=[{"id": 10, "label": "x"}],
@@ -168,8 +176,10 @@ class TestDataframeManagerHttpStorage:
                 mcp_session_id="sess-http",
             )
         )
-        # New manager instance / cold cache using the same HTTP backend.
-        configure_dataframe_storage(client)
+        assert store.put_payloads
+        assert meta["dataframe_id"] in store.put_payloads[-1].dataframes
+
+        configure_dataframe_storage(store)
         listed = _run(
             list_dataframes_metadata(user_id="user-9", mcp_session_id="sess-http")
         )
@@ -184,17 +194,17 @@ class TestDataframeManagerHttpStorage:
         assert "error" not in queried
         assert queried["rows"] == 1
 
-        partition: Optional[SessionPartition] = _run(client.get("user-9", "sess-http"))
+        partition = _run(store.get_partition(_scope("user-9", "sess-http")))
         assert partition is not None
         assert meta["dataframe_id"] in partition.dataframes
 
-    def test_register_preserves_existing_tasks(self, http_store):
-        client, _http = http_store
+    def test_register_preserves_existing_tasks(self):
+        store = InMemorySessionStorageProvider()
+        configure_dataframe_storage(store)
         _run(
-            client.put(
-                "user-9",
-                "sess-tasks",
-                SessionPartition(tasks={"t1": {"status": "running"}}),
+            store.put_partition(
+                _scope("user-9", "sess-tasks"),
+                SessionPartitionPayload(tasks={"t1": {"status": "running"}}),
             )
         )
         meta = _run(
@@ -207,7 +217,7 @@ class TestDataframeManagerHttpStorage:
                 mcp_session_id="sess-tasks",
             )
         )
-        partition = _run(client.get("user-9", "sess-tasks"))
+        partition = _run(store.get_partition(_scope("user-9", "sess-tasks")))
         assert partition is not None
         assert partition.tasks == {"t1": {"status": "running"}}
         assert meta["dataframe_id"] in partition.dataframes

@@ -25,7 +25,7 @@ import sys
 import traceback
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional, Callable, Awaitable
+from typing import Any, Optional, Callable, Awaitable
 from importlib import resources
 from pathlib import Path
 
@@ -33,6 +33,7 @@ import httpx
 from pydantic import BaseModel
 
 from config.blazemeter import BZM_API_BASE_URL
+from config.context_resolution import resolve_ctx_user_config
 from config.security import validate_http_request_endpoint
 from config.token import BzmToken
 from config.version import __version__
@@ -140,9 +141,6 @@ class ConfirmMode(Enum):
     DELETE = "DELETE"  # Delete only
     CUD = "CUD"  # Create, Update, Delete
     DISABLE = "NONE"  # No confirmation
-
-
-_confirm_mode = ConfirmMode.DELETE
 
 
 class Operations(Enum):
@@ -283,18 +281,44 @@ class Confirmation(BaseModel):
     pass  # Empty model with no fields for simple accept/cancel without UI elements
 
 
-def register_confirm_mode(confirm_mode_value: ConfirmMode):
-    global _confirm_mode
-    _confirm_mode = confirm_mode_value
+def _to_confirm_mode(value: Any) -> ConfirmMode:
+    if isinstance(value, ConfirmMode):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().upper()
+        if normalized in ConfirmMode.__members__:
+            return ConfirmMode[normalized]
+        for mode in ConfirmMode:
+            if normalized == mode.value:
+                return mode
+    return ConfirmMode.DELETE
 
 
-def get_confirm_mode() -> ConfirmMode:
-    global _confirm_mode
-    return _confirm_mode
+def _get_ctx_user_config(ctx: Any) -> dict[str, Any] | None:
+    user_config = resolve_ctx_user_config(ctx)
+    if user_config:
+        return user_config
+    return None
 
 
-def operation_need_confirmation(operation: Operations) -> bool:
-    confirm_mode = get_confirm_mode()
+def resolve_confirmation_mode(ctx: Any, manager_user_config: Any = None) -> ConfirmMode:
+    """
+    Resolve confirmation mode from runtime/user session context.
+
+    Precedence:
+    1) per-request/per-session context user config
+    2) manager-level user config (stdio startup config)
+    3) DELETE default
+    """
+    ctx_user_config = _get_ctx_user_config(ctx)
+    if isinstance(ctx_user_config, dict):
+        return _to_confirm_mode(ctx_user_config.get("confirmation_mode"))
+    if isinstance(manager_user_config, dict):
+        return _to_confirm_mode(manager_user_config.get("confirmation_mode"))
+    return ConfirmMode.DELETE
+
+
+def operation_need_confirmation(operation: Operations, confirm_mode: ConfirmMode) -> bool:
     if confirm_mode == ConfirmMode.DELETE and operation in [Operations.DELETE]:
         return True
     elif confirm_mode == ConfirmMode.CUD and operation in [Operations.CREATE, Operations.UPDATE, Operations.DELETE]:
@@ -314,7 +338,11 @@ def require_confirmation(operation: Operations = Operations.READ,
     def decorator(func: Callable[..., Awaitable]):
         @functools.wraps(func)
         async def wrapper(self, *args, **kwargs):
-            need_confirmation = operation_need_confirmation(operation)
+            confirm_mode = resolve_confirmation_mode(
+                getattr(self, "ctx", None),
+                getattr(self, "user_config", None),
+            )
+            need_confirmation = operation_need_confirmation(operation, confirm_mode)
             confirmed = True  # Run operation by default
             if need_confirmation:
                 try:

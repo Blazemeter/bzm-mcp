@@ -16,7 +16,8 @@ limitations under the License.
 import asyncio
 from types import SimpleNamespace
 
-from config.storage import MemoryStorageProvider
+from config.auth import BZM_TOKEN_STATE_ATTR, BZM_USER_CONFIG_STATE_ATTR
+from config.storage import InMemorySessionStorageProvider
 from config.token import BzmToken
 from models.result import BaseResult
 from tools.dataframe_manager import (
@@ -33,9 +34,26 @@ def _run(coro):
     return asyncio.run(coro)
 
 
+def _ctx(token: BzmToken, session_id: str):
+    request_state = SimpleNamespace(
+        **{
+            BZM_TOKEN_STATE_ATTR: token,
+            BZM_USER_CONFIG_STATE_ATTR: {"token": token},
+        }
+    )
+    request = SimpleNamespace(
+        state=request_state,
+        headers={"mcp-session-id": session_id},
+    )
+    return SimpleNamespace(
+        session_id=session_id,
+        request_context=SimpleNamespace(request=request),
+    )
+
+
 class TestConcurrentSessionIsolation:
     def test_concurrent_registers_do_not_cross_write(self):
-        store = MemoryStorageProvider()
+        store = InMemorySessionStorageProvider()
         configure_dataframe_storage(store)
 
         async def _register(user_id: str, session_id: str, value: int):
@@ -68,17 +86,16 @@ class TestConcurrentSessionIsolation:
         assert len(s3) == 1
         assert {row["rows"] for row in s1} == {1}
         assert s2[0]["origin_action"] == "seed"
-        values = []
         for partition in (s1, s2, s3):
             assert all(item["origin_manager"] == "tests" for item in partition)
 
 
 class TestMaterializeWiring:
     def test_finalize_materializes_large_auto_result(self):
-        store = MemoryStorageProvider()
+        store = InMemorySessionStorageProvider()
         configure_dataframe_storage(store)
         token = BzmToken("user-mat", "secret")
-        ctx = SimpleNamespace(session_id="sess-mat")
+        ctx = _ctx(token, "sess-mat")
         payload = [{"id": i, "name": f"row-{i}", "note": "x" * 40} for i in range(300)]
         base = BaseResult(result=payload)
 
@@ -100,9 +117,9 @@ class TestMaterializeWiring:
         assert len(listed) == 1
 
     def test_force_dataframe_even_when_small(self):
-        configure_dataframe_storage(MemoryStorageProvider())
+        configure_dataframe_storage(InMemorySessionStorageProvider())
         token = BzmToken("user-force", "secret")
-        ctx = SimpleNamespace(session_id="sess-force")
+        ctx = _ctx(token, "sess-force")
         base = BaseResult(result=[{"id": 1}])
         finalized = _run(
             materialize_large_result_if_needed(
@@ -115,11 +132,12 @@ class TestMaterializeWiring:
             )
         )
         assert finalized.result[0]["stored_as_dataframe"] is True
+        assert ctx.session_id == "sess-force"
 
     def test_excluded_action_skips_auto_materialize(self):
-        configure_dataframe_storage(MemoryStorageProvider())
+        configure_dataframe_storage(InMemorySessionStorageProvider())
         token = BzmToken("user-ex", "secret")
-        ctx = SimpleNamespace(session_id="sess-ex")
+        ctx = _ctx(token, "sess-ex")
         payload = [{"id": i, "note": "x" * 40} for i in range(300)]
         finalized = _run(
             finalize_tool_result(
@@ -137,10 +155,10 @@ class TestMaterializeWiring:
 
 class TestDataframesQueryResultFormatStore:
     def test_result_format_dataframe_registers_new_dataframe(self):
-        configure_dataframe_storage(MemoryStorageProvider())
+        configure_dataframe_storage(InMemorySessionStorageProvider())
         token = BzmToken("user-q", "secret")
-        ctx = SimpleNamespace(session_id="sess-q")
-        manager = ToolsManager(token, ctx)
+        ctx = _ctx(token, "sess-q")
+        manager = ToolsManager(ctx)
 
         meta = _run(
             register_dataframe(

@@ -16,7 +16,8 @@ limitations under the License.
 import asyncio
 from types import SimpleNamespace
 
-from config.storage import MemoryStorageProvider
+from config.auth import BZM_TOKEN_STATE_ATTR, BZM_USER_CONFIG_STATE_ATTR
+from config.storage import InMemorySessionStorageProvider
 from config.token import BzmToken
 from tools.dataframe_manager import configure_dataframe_storage, register_dataframe
 from tools.tools_manager import ToolsManager, resolve_session_partition
@@ -26,6 +27,23 @@ def _run(coro):
     return asyncio.run(coro)
 
 
+def _ctx(token: BzmToken, session_id: str):
+    request_state = SimpleNamespace(
+        **{
+            BZM_TOKEN_STATE_ATTR: token,
+            BZM_USER_CONFIG_STATE_ATTR: {"token": token},
+        }
+    )
+    request = SimpleNamespace(
+        state=request_state,
+        headers={"mcp-session-id": session_id},
+    )
+    return SimpleNamespace(
+        session_id=session_id,
+        request_context=SimpleNamespace(request=request),
+    )
+
+
 class TestResolveSessionPartition:
     def test_uses_token_id_and_ctx_session(self):
         token = BzmToken("api-key-id", "secret")
@@ -33,16 +51,16 @@ class TestResolveSessionPartition:
         assert resolve_session_partition(token, ctx) == ("api-key-id", "mcp-abc")
 
     def test_defaults_when_missing(self):
-        assert resolve_session_partition(None, None) == ("local", "stdio")
+        assert resolve_session_partition(None, None) == ("anonymous", "default")
 
 
 class TestToolsManagerDataframesAgainstStorage:
     def test_list_query_remove_clear(self):
-        store = MemoryStorageProvider()
+        store = InMemorySessionStorageProvider()
         configure_dataframe_storage(store)
         token = BzmToken("user-tools", "secret")
-        ctx = SimpleNamespace(session_id="session-tools")
-        manager = ToolsManager(token, ctx)
+        ctx = _ctx(token, "session-tools")
+        manager = ToolsManager(ctx)
 
         meta = _run(
             register_dataframe(
@@ -74,7 +92,6 @@ class TestToolsManagerDataframesAgainstStorage:
         assert removed.error is None
         assert _run(manager.dataframes_list()).total == 0
 
-        # Re-seed then clear
         _run(
             register_dataframe(
                 result=[{"id": 3}],
