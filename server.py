@@ -16,7 +16,6 @@ limitations under the License.
 from config.runtime import AppRuntime
 from tools.account_manager import register as register_account_manager
 from tools.billing_manager import register as register_billing_manager
-from tools.dataframe_manager import configure_dataframe_storage
 from tools.execution_manager import register as register_execution_manager
 from tools.help_manager import register as register_help_manager
 from tools.project_manager import register as register_project_manager
@@ -35,7 +34,6 @@ def register_tools(mcp, runtime: AppRuntime):
         mcp: The MCP server instance
         runtime: App runtime (transport + auth port and shared collaborators)
     """
-    configure_dataframe_storage(runtime.storage)
     register_user_manager(mcp, runtime)
     register_project_manager(mcp, runtime)
     register_workspace_manager(mcp, runtime)

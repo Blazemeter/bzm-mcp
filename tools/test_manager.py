@@ -37,7 +37,7 @@ from models.manager import Manager
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
 from tools import bridge, search_utils
-from telemetry import run_tool
+from tools.runtime_tools import run_tool_with_runtime
 from tools.utils import (
     api_request,
     require_confirmation,
@@ -726,7 +726,9 @@ Hints:
                     )
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_tests", action, ctx, _dispatch)
+            return await run_tool_with_runtime(
+                runtime, f"{TOOLS_PREFIX}_tests", action, ctx, _dispatch,
+            )
         except httpx.HTTPStatusError:
             return BaseResult(error=f"Error: {format_sanitized_traceback()}")
         except Exception:

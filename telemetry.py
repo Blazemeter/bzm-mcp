@@ -207,29 +207,9 @@ async def run_tool(
     action: str,
     ctx: Any,
     dispatch: Callable[[], Awaitable[Any]],
-    *,
-    token: Any = None,
-    tool_args: Any = None,
-    dataframe_excluded_actions: set[str] | None = None,
-    disable_dataframe_materialization: bool = False,
 ) -> Any:
-    async def _finalize(result: Any) -> Any:
-        if disable_dataframe_materialization or result is None:
-            return result
-        from tools.dataframe_manager import finalize_tool_result
-
-        return await finalize_tool_result(
-            result,
-            action=action,
-            args=tool_args,
-            origin_manager=tool_name,
-            token=token,
-            ctx=ctx,
-            excluded_actions=dataframe_excluded_actions,
-        )
-
     if trace is None:
-        return await _finalize(await dispatch())
+        return await dispatch()
 
     try:
         meta = _get_meta(ctx)
@@ -243,7 +223,7 @@ async def run_tool(
             set_status_on_exception=False,
         )
     except Exception:
-        return await _finalize(await dispatch())
+        return await dispatch()
 
     with span_cm as span:
         try:
@@ -286,7 +266,6 @@ async def run_tool(
             )
             _record_metrics(tool_name, action, elapsed, metric_error_type)
 
-        result = await _finalize(result)
         if result is not None and getattr(result, "error", None):
             _record_span_error(span, "api_error")
         return result

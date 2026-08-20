@@ -14,56 +14,34 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import asyncio
-from types import SimpleNamespace
+from unittest.mock import MagicMock
 
-from config.auth import BZM_TOKEN_STATE_ATTR, BZM_USER_CONFIG_STATE_ATTR
-from config.storage import InMemorySessionStorageProvider
+from config.runtime import AppRuntime
+from config.storage import DefaultSessionScopeResolver, SessionScope
 from config.token import BzmToken
 from models.result import BaseResult
+from tests.conftest import make_ctx, run_async
 from tools.dataframe_manager import (
-    configure_dataframe_storage,
+    MISSING_STORAGE_ERROR,
     finalize_tool_result,
     list_dataframes_metadata,
     materialize_large_result_if_needed,
     register_dataframe,
 )
+from tools.runtime_tools import run_tool_with_runtime
 from tools.tools_manager import ToolsManager
 
 
-def _run(coro):
-    return asyncio.run(coro)
-
-
-def _ctx(token: BzmToken, session_id: str):
-    request_state = SimpleNamespace(
-        **{
-            BZM_TOKEN_STATE_ATTR: token,
-            BZM_USER_CONFIG_STATE_ATTR: {"token": token},
-        }
-    )
-    request = SimpleNamespace(
-        state=request_state,
-        headers={"mcp-session-id": session_id},
-    )
-    return SimpleNamespace(
-        session_id=session_id,
-        request_context=SimpleNamespace(request=request),
-    )
-
-
 class TestConcurrentSessionIsolation:
-    def test_concurrent_registers_do_not_cross_write(self):
-        store = InMemorySessionStorageProvider()
-        configure_dataframe_storage(store)
-
+    def test_concurrent_registers_do_not_cross_write(self, session_store):
         async def _register(user_id: str, session_id: str, value: int):
             return await register_dataframe(
                 result=[{"v": value}],
                 origin_manager="tests",
                 origin_action="seed",
                 json_size_chars=9001,
-                user_id=user_id,
-                mcp_session_id=session_id,
+                storage=session_store,
+                scope=SessionScope(user_id, session_id),
             )
 
         async def _exercise():
@@ -74,13 +52,13 @@ class TestConcurrentSessionIsolation:
                 _register("u1", "s1", 11),
             )
             listed = await asyncio.gather(
-                list_dataframes_metadata(user_id="u1", mcp_session_id="s1"),
-                list_dataframes_metadata(user_id="u1", mcp_session_id="s2"),
-                list_dataframes_metadata(user_id="u2", mcp_session_id="s1"),
+                list_dataframes_metadata(session_store, SessionScope("u1", "s1")),
+                list_dataframes_metadata(session_store, SessionScope("u1", "s2")),
+                list_dataframes_metadata(session_store, SessionScope("u2", "s1")),
             )
             return listed
 
-        s1, s2, s3 = _run(_exercise())
+        s1, s2, s3 = run_async(_exercise())
         assert len(s1) == 2
         assert len(s2) == 1
         assert len(s3) == 1
@@ -91,60 +69,81 @@ class TestConcurrentSessionIsolation:
 
 
 class TestMaterializeWiring:
-    def test_finalize_materializes_large_auto_result(self):
-        store = InMemorySessionStorageProvider()
-        configure_dataframe_storage(store)
+    def test_finalize_materializes_large_auto_result(self, session_store):
         token = BzmToken("user-mat", "secret")
-        ctx = _ctx(token, "sess-mat")
+        ctx = make_ctx(token, "sess-mat")
         payload = [{"id": i, "name": f"row-{i}", "note": "x" * 40} for i in range(300)]
         base = BaseResult(result=payload)
 
-        finalized = _run(
+        finalized = run_async(
             finalize_tool_result(
                 base,
                 action="list",
                 args={},
                 origin_manager="blazemeter_tests",
+                storage=session_store,
+                scope_resolver=DefaultSessionScopeResolver(),
                 token=token,
                 ctx=ctx,
             )
         )
         assert finalized.error is None
         assert finalized.result[0]["stored_as_dataframe"] is True
-        listed = _run(
-            list_dataframes_metadata(user_id="user-mat", mcp_session_id="sess-mat")
+        listed = run_async(
+            list_dataframes_metadata(session_store, SessionScope("user-mat", "sess-mat"))
         )
         assert len(listed) == 1
 
-    def test_force_dataframe_even_when_small(self):
-        configure_dataframe_storage(InMemorySessionStorageProvider())
-        token = BzmToken("user-force", "secret")
-        ctx = _ctx(token, "sess-force")
+    def test_force_dataframe_even_when_small(self, session_store):
         base = BaseResult(result=[{"id": 1}])
-        finalized = _run(
+        finalized = run_async(
             materialize_large_result_if_needed(
                 base,
                 origin_manager="tests",
                 origin_action="list",
+                storage=session_store,
+                scope=SessionScope("user-force", "sess-force"),
                 force=True,
-                user_id="user-force",
-                mcp_session_id="sess-force",
             )
         )
         assert finalized.result[0]["stored_as_dataframe"] is True
-        assert ctx.session_id == "sess-force"
 
-    def test_excluded_action_skips_auto_materialize(self):
-        configure_dataframe_storage(InMemorySessionStorageProvider())
-        token = BzmToken("user-ex", "secret")
-        ctx = _ctx(token, "sess-ex")
+    def test_finalize_without_storage_fails_closed(self):
         payload = [{"id": i, "note": "x" * 40} for i in range(300)]
-        finalized = _run(
+        finalized = run_async(
+            finalize_tool_result(
+                BaseResult(result=payload),
+                action="list",
+                args={},
+                origin_manager="blazemeter_tests",
+            )
+        )
+        assert finalized.error == MISSING_STORAGE_ERROR
+
+    def test_excluded_action_skips_without_storage(self):
+        payload = [{"id": i, "note": "x" * 40} for i in range(300)]
+        finalized = run_async(
             finalize_tool_result(
                 BaseResult(result=payload),
                 action="dataframes_list",
                 args={},
                 origin_manager="blazemeter_tools",
+                excluded_actions={"dataframes_list"},
+            )
+        )
+        assert len(finalized.result) == 300
+
+    def test_excluded_action_skips_auto_materialize(self, session_store):
+        token = BzmToken("user-ex", "secret")
+        ctx = make_ctx(token, "sess-ex")
+        payload = [{"id": i, "note": "x" * 40} for i in range(300)]
+        finalized = run_async(
+            finalize_tool_result(
+                BaseResult(result=payload),
+                action="dataframes_list",
+                args={},
+                origin_manager="blazemeter_tools",
+                storage=session_store,
                 token=token,
                 ctx=ctx,
                 excluded_actions={"dataframes_list"},
@@ -153,24 +152,54 @@ class TestMaterializeWiring:
         assert len(finalized.result) == 300
 
 
-class TestDataframesQueryResultFormatStore:
-    def test_result_format_dataframe_registers_new_dataframe(self):
-        configure_dataframe_storage(InMemorySessionStorageProvider())
-        token = BzmToken("user-q", "secret")
-        ctx = _ctx(token, "sess-q")
-        manager = ToolsManager(ctx)
+class TestRunToolWithRuntime:
+    def test_materializes_large_result_via_runtime_storage(self, session_store):
+        token = BzmToken("user-rt", "secret")
+        ctx = make_ctx(token, "sess-rt")
+        runtime = AppRuntime(
+            transport="stdio",
+            auth=MagicMock(get_token=MagicMock(return_value=token)),
+            storage=session_store,
+            file_access=MagicMock(),
+            scope_resolver=DefaultSessionScopeResolver(),
+            user_config={},
+        )
+        payload = [{"id": i, "name": f"row-{i}", "note": "x" * 40} for i in range(300)]
 
-        meta = _run(
+        async def _dispatch():
+            return BaseResult(result=payload)
+
+        finalized = run_async(
+            run_tool_with_runtime(
+                runtime, "blazemeter_tests", "list", ctx, _dispatch,
+            )
+        )
+        assert finalized.error is None
+        assert finalized.result[0]["stored_as_dataframe"] is True
+        listed = run_async(
+            list_dataframes_metadata(session_store, SessionScope("user-rt", "sess-rt"))
+        )
+        assert len(listed) == 1
+
+
+class TestDataframesQueryResultFormatStore:
+    def test_result_format_dataframe_registers_new_dataframe(self, session_store):
+        token = BzmToken("user-q", "secret")
+        ctx = make_ctx(token, "sess-q")
+        manager = ToolsManager(ctx, session_store, DefaultSessionScopeResolver())
+        scope = SessionScope("user-q", "sess-q")
+
+        meta = run_async(
             register_dataframe(
                 result=[{"id": 1, "name": "a"}, {"id": 2, "name": "b"}],
                 origin_manager="tests",
                 origin_action="seed",
                 json_size_chars=9001,
-                user_id="user-q",
-                mcp_session_id="sess-q",
+                storage=session_store,
+                scope=scope,
             )
         )
-        queried = _run(
+        queried = run_async(
             manager.dataframes_query(
                 sql=(
                     f"SELECT id, name FROM {meta['table_name']} "
@@ -181,7 +210,5 @@ class TestDataframesQueryResultFormatStore:
         )
         assert queried.error is None
         assert queried.result[0]["stored_as_dataframe"] is True
-        listed = _run(
-            list_dataframes_metadata(user_id="user-q", mcp_session_id="sess-q")
-        )
+        listed = run_async(list_dataframes_metadata(session_store, scope))
         assert len(listed) == 2

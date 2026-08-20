@@ -25,7 +25,7 @@ from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge, search_utils
 from tools.report_manager import ReportManager
-from telemetry import run_tool
+from tools.runtime_tools import run_tool_with_runtime
 from tools.utils import api_request, timeout, user_agent, format_sanitized_traceback, require_confirmation, Operations
 
 
@@ -544,7 +544,9 @@ Hints:
                     )
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_execution", action, ctx, _dispatch)
+            return await run_tool_with_runtime(
+                runtime, f"{TOOLS_PREFIX}_execution", action, ctx, _dispatch,
+            )
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

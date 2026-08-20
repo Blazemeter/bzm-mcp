@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import httpx
 from mcp.server.fastmcp import Context
@@ -21,32 +21,25 @@ from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX
 from config.runtime import AppRuntime
-from config.storage import DefaultSessionScopeResolver, SessionScope, SessionScopeResolverPort
-from config.token import BzmToken
+from config.storage import SessionScope, SessionScopeResolverPort, SessionStoragePort
 from models.manager import Manager
 from models.result import BaseResult
-from telemetry import run_tool
 from tools.dataframe_manager import (
+    INVALID_RESULT_FORMAT_ERROR,
     clear_dataframes,
     get_dataframe_metadata,
     get_sql_capabilities,
     group_dataframe_schemas,
     list_dataframes_metadata,
+    normalize_result_format,
     query_dataframes,
     register_dataframe,
-    remove_dataframe,
-    resolve_partition_ids,
+    remove_dataframes,
     serialize_result_to_compact_json,
+    stored_as_dataframe_payload,
 )
+from tools.runtime_tools import run_tool_with_runtime
 from tools.utils import format_sanitized_traceback
-
-
-def resolve_session_partition(
-        token: Optional[BzmToken],
-        ctx: Optional[Context],
-) -> Tuple[str, str]:
-    """Map the current MCP invocation to a Storage partition key."""
-    return resolve_partition_ids(token, ctx)
 
 
 class ToolsManager(Manager):
@@ -55,24 +48,22 @@ class ToolsManager(Manager):
     def __init__(
             self,
             ctx: Context,
-            scope_resolver: Optional[SessionScopeResolverPort] = None,
+            storage: SessionStoragePort,
+            scope_resolver: SessionScopeResolverPort,
     ):
         super().__init__(ctx)
-        self.scope_resolver = scope_resolver or DefaultSessionScopeResolver()
+        self.storage = storage
+        self.scope_resolver = scope_resolver
 
     def _scope(self) -> SessionScope:
         return self.scope_resolver.resolve(self.ctx, self.token)
 
-    def _session(self) -> Tuple[str, str]:
-        scope = self._scope()
-        return scope.user_id, scope.mcp_session_id
-
     async def dataframes_list(self) -> BaseResult:
-        user_id, mcp_session_id = self._session()
+        scope = self._scope()
         metadata = await list_dataframes_metadata(
+            storage=self.storage,
+            scope=scope,
             include_schema=False,
-            user_id=user_id,
-            mcp_session_id=mcp_session_id,
         )
         return BaseResult(
             result=metadata,
@@ -86,11 +77,11 @@ class ToolsManager(Manager):
         )
 
     async def dataframes_get(self, dataframe_id: str) -> BaseResult:
-        user_id, mcp_session_id = self._session()
+        scope = self._scope()
         metadata = await get_dataframe_metadata(
             dataframe_id,
-            user_id=user_id,
-            mcp_session_id=mcp_session_id,
+            storage=self.storage,
+            scope=scope,
         )
         if not metadata:
             return BaseResult(
@@ -105,11 +96,11 @@ class ToolsManager(Manager):
             self,
             dataframe_id_list: Optional[list[str]] = None,
     ) -> BaseResult:
-        user_id, mcp_session_id = self._session()
+        scope = self._scope()
         grouped = await group_dataframe_schemas(
-            dataframe_id_list,
-            user_id=user_id,
-            mcp_session_id=mcp_session_id,
+            storage=self.storage,
+            scope=scope,
+            dataframe_id_list=dataframe_id_list,
         )
         mandatory_review_groups = [
             grp for grp in grouped.get("groups", [])
@@ -137,12 +128,10 @@ class ToolsManager(Manager):
             output_format: str = "matrix",
             result_format: str = "auto",
     ) -> BaseResult:
-        user_id, mcp_session_id = self._session()
-        normalized_result_format = str(result_format or "auto").strip().lower()
-        if normalized_result_format not in {"auto", "dataframe", "raw"}:
-            return BaseResult(
-                error="Invalid result_format value. Allowed values: auto, dataframe, raw."
-            )
+        scope = self._scope()
+        normalized_result_format = normalize_result_format(result_format)
+        if normalized_result_format == "invalid":
+            return BaseResult(error=INVALID_RESULT_FORMAT_ERROR)
         # Store path always queries as records so register_dataframe can rebuild rows.
         effective_output_format = (
             "records" if normalized_result_format == "dataframe" else output_format
@@ -155,9 +144,9 @@ class ToolsManager(Manager):
         ]
         query_response = await query_dataframes(
             sql,
+            storage=self.storage,
+            scope=scope,
             output_format=effective_output_format,
-            user_id=user_id,
-            mcp_session_id=mcp_session_id,
         )
         if query_response.get("error"):
             return BaseResult(error=query_response["error"])
@@ -166,26 +155,18 @@ class ToolsManager(Manager):
             rows = query_response["result"] or []
             try:
                 json_size_chars = len(serialize_result_to_compact_json(rows))
-            except Exception:
-                json_size_chars = 0
+            except Exception as exc:
+                return BaseResult(error=f"Could not serialize query result: {exc}")
             metadata = await register_dataframe(
                 result=rows,
                 origin_manager="blazemeter_tools",
                 origin_action="dataframes_query",
                 json_size_chars=json_size_chars,
-                user_id=user_id,
-                mcp_session_id=mcp_session_id,
+                storage=self.storage,
+                scope=scope,
             )
             return BaseResult(
-                result=[{
-                    "stored_as_dataframe": True,
-                    "dataframe_id": metadata["dataframe_id"],
-                    "table_name": metadata["table_name"],
-                    "rows": metadata["rows"],
-                    "columns": metadata["columns"],
-                    "schema_hash": metadata["schema_hash"],
-                    "json_size_chars": metadata["json_size_chars"],
-                }],
+                result=[stored_as_dataframe_payload(metadata)],
                 info=info_messages + [
                     "result_format=dataframe stored the query output as a new session dataframe."
                 ],
@@ -199,38 +180,25 @@ class ToolsManager(Manager):
         )
 
     async def dataframes_remove(self, dataframe_id_list: list[str]) -> BaseResult:
+        empty_list_error = (
+            "Missing required args for action 'dataframes_remove': "
+            "dataframe_id_list must be a non-empty list of dataframe IDs."
+        )
         if not dataframe_id_list or not isinstance(dataframe_id_list, list):
-            return BaseResult(
-                error=(
-                    "Missing required args for action 'dataframes_remove': "
-                    "dataframe_id_list must be a non-empty list of dataframe IDs."
-                )
-            )
+            return BaseResult(error=empty_list_error)
         ids = [str(df_id).strip() for df_id in dataframe_id_list if str(df_id).strip()]
         if not ids:
-            return BaseResult(
-                error=(
-                    "Missing required args for action 'dataframes_remove': "
-                    "dataframe_id_list must be a non-empty list of dataframe IDs."
-                )
-            )
+            return BaseResult(error=empty_list_error)
 
-        user_id, mcp_session_id = self._session()
         unique_ids = list(dict.fromkeys(ids))
-        removed_count = 0
-        removed_results = []
-        missing_ids = []
-        for df_id in unique_ids:
-            removed = await remove_dataframe(
-                df_id,
-                user_id=user_id,
-                mcp_session_id=mcp_session_id,
-            )
-            removed_results.append({"dataframe_id": df_id, "removed": removed})
-            if removed:
-                removed_count += 1
-            else:
-                missing_ids.append(df_id)
+        outcome = await remove_dataframes(unique_ids, self.storage, self._scope())
+        removed_ids = set(outcome["removed"])
+        missing_ids = outcome["missing"]
+        removed_count = len(outcome["removed"])
+        removed_results = [
+            {"dataframe_id": df_id, "removed": df_id in removed_ids}
+            for df_id in unique_ids
+        ]
 
         if len(unique_ids) == 1 and removed_count == 0:
             only_id = unique_ids[0]
@@ -259,10 +227,9 @@ class ToolsManager(Manager):
         )
 
     async def dataframes_clear(self) -> BaseResult:
-        user_id, mcp_session_id = self._session()
         removed_count = await clear_dataframes(
-            user_id=user_id,
-            mcp_session_id=mcp_session_id,
+            storage=self.storage,
+            scope=self._scope(),
         )
         return BaseResult(
             result=[{"removed_count": removed_count, "remaining": 0}],
@@ -309,7 +276,7 @@ Hints:
             ctx: Context = Field(description="Context object providing access to MCP capabilities"),
     ) -> BaseResult:
         runtime.configure_context(ctx)
-        manager = ToolsManager(ctx, runtime.scope_resolver)
+        manager = ToolsManager(ctx, runtime.storage, runtime.scope_resolver)
         token = manager.token
         args = args or {}
 
@@ -347,10 +314,19 @@ Hints:
                     return BaseResult(error=f"Action {action} not found in tools manager tool")
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_tools", action, ctx, _dispatch,
+            return await run_tool_with_runtime(
+                runtime, f"{TOOLS_PREFIX}_tools", action, ctx, _dispatch,
                 token=token,
                 tool_args=args,
-                dataframe_excluded_actions={"dataframes_clear", "dataframes_get", "dataframes_list", "dataframes_query", "dataframes_remove", "dataframes_schema_groups", "dataframes_sql_help"}
+                dataframe_excluded_actions={
+                    "dataframes_clear",
+                    "dataframes_get",
+                    "dataframes_list",
+                    "dataframes_query",
+                    "dataframes_remove",
+                    "dataframes_schema_groups",
+                    "dataframes_sql_help",
+                },
             )
         except httpx.HTTPStatusError:
             return BaseResult(error=f"Error: {format_sanitized_traceback()}")

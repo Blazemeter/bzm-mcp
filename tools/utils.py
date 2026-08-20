@@ -47,10 +47,6 @@ def generate_simple_id() -> str:
     return "".join(secrets.choice(SIMPLE_ID_ALPHABET) for _ in range(SIMPLE_ID_LENGTH))
 
 
-def normalize_simple_id(simple_id: str) -> str:
-    return str(simple_id).strip().lower()
-
-
 so = platform.system()  # "Windows", "Linux", "Darwin"
 version = platform.version()  # kernel / build version
 release = platform.release()  # ex. "10", "5.15.0-76-generic"
