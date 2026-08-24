@@ -56,6 +56,7 @@ docker run --rm -p 8000:8000 \
   -e FASTMCP_PORT=8000 \
   -e FASTMCP_STREAMABLE_HTTP_PATH=/mcp \
   -e BZM_STORAGE_API_BASE_URL=https://mcp-storage.internal \
+  -e BZM_STORAGE_STRATEGY=memory \
   ghcr.io/blazemeter/bzm-mcp:latest
 ```
 
@@ -70,7 +71,7 @@ docker run --rm -p 8000:8000 \
 | `BZM_STORAGE_API_BASE_URL` | Storage Service base URL (required for streamable-http) | — |
 | `BZM_STORAGE_STRATEGY` | `memory` or `http` (file-access helper; session store follows transport) | `memory` |
 
-On streamable-http, session partitions are stored via `HttpSessionStorageProvider` and local file paths are rejected (`StorageFileSource`).
+On streamable-http, session partitions are stored via `HttpSessionStorageProvider`. Local file paths are always rejected (`StorageFileSource`) regardless of `BZM_STORAGE_STRATEGY` (hosted fail-closed storage).
 
 ## Hosted MVP limitations
 

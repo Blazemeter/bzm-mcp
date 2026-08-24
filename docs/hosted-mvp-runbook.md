@@ -48,3 +48,23 @@ CAS/etag, which this service does not expose yet.
 `dataframes_clear` hydrate/persist through `SessionStoragePort`. Stdio uses
 in-memory partitions; hosted uses the HTTP Storage Service client.
 Missing storage on a path that would persist fails closed (error, not raw payload).
+
+## Load-testing concurrency (JMeter)
+
+Unit tests cannot open the Cloud Run GET/PUT window. Use
+[`tests/jmeter/hosted-dataframe-storage.jmx`](../tests/jmeter/hosted-dataframe-storage.jmx)
+(see [`tests/jmeter/README.md`](../tests/jmeter/README.md)) against hosted HTTP MCP.
+
+That plan uses the JMeter MCP plugin (`STREAMABLE_HTTP` + `Authorization` headers).
+One Client Config is one MCP session: concurrent threads share `{user_id, mcp_session_id}`.
+A second Client Config is a second session (isolation).
+`blazemeter_tests` `list` needs an integer `project_id`: pass `-Jmcp.projectId=…` or let step 05 copy `default_project_id` from user read.
+
+Interpretation of `dataframes_list.total` vs successful `result_format=dataframe` stores:
+
+- Equal, with MCP `max-instances=1`: in-process session locks serialized the writes.
+- Equal, with `max-instances>1`: merge-on-persist kept distinct ids for that run.
+- Listed &lt; stored: last-write-wins on the whole map (GET/PUT race). Raise threads
+  and Cloud Run instances to make that more likely. Set `-Jmcp.failOnLostUpdates=true`
+  if the run should fail when keys are dropped.
+
