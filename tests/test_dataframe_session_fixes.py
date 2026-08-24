@@ -181,6 +181,64 @@ class TestRunToolWithRuntime:
         )
         assert len(listed) == 1
 
+    def test_force_store_when_result_format_passed_as_tool_args(self, session_store):
+        token = BzmToken("user-rf", "secret")
+        ctx = make_ctx(token, "sess-rf")
+        runtime = AppRuntime(
+            transport="streamable-http",
+            auth=MagicMock(get_token=MagicMock(return_value=token)),
+            storage=session_store,
+            file_access=MagicMock(),
+            scope_resolver=DefaultSessionScopeResolver(),
+            user_config={},
+        )
+
+        async def _dispatch():
+            return BaseResult(result=[{"id": 1}])
+
+        finalized = run_async(
+            run_tool_with_runtime(
+                runtime, "blazemeter_user", "read", ctx, _dispatch,
+                tool_args={"result_format": "dataframe"},
+            )
+        )
+        assert finalized.error is None
+        assert finalized.result[0]["stored_as_dataframe"] is True
+        listed = run_async(
+            list_dataframes_metadata(session_store, SessionScope("user-rf", "sess-rf"))
+        )
+        assert len(listed) == 1
+
+    def test_raw_skips_materialize_when_result_format_passed_as_tool_args(
+            self, session_store):
+        token = BzmToken("user-raw", "secret")
+        ctx = make_ctx(token, "sess-raw")
+        runtime = AppRuntime(
+            transport="streamable-http",
+            auth=MagicMock(get_token=MagicMock(return_value=token)),
+            storage=session_store,
+            file_access=MagicMock(),
+            scope_resolver=DefaultSessionScopeResolver(),
+            user_config={},
+        )
+        payload = [{"id": i, "note": "x" * 40} for i in range(300)]
+
+        async def _dispatch():
+            return BaseResult(result=payload)
+
+        finalized = run_async(
+            run_tool_with_runtime(
+                runtime, "blazemeter_user", "read", ctx, _dispatch,
+                tool_args={"result_format": "raw"},
+            )
+        )
+        assert finalized.error is None
+        assert len(finalized.result) == 300
+        listed = run_async(
+            list_dataframes_metadata(session_store, SessionScope("user-raw", "sess-raw"))
+        )
+        assert listed == []
+
 
 class TestDataframesQueryResultFormatStore:
     def test_result_format_dataframe_registers_new_dataframe(self, session_store):

@@ -78,6 +78,7 @@ Hints:
         try:
             return await run_tool_with_runtime(
                 runtime, f"{TOOLS_PREFIX}_user", action, ctx, _dispatch,
+                tool_args=args,
             )
         except httpx.HTTPStatusError:
             return BaseResult(
