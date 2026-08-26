@@ -13,6 +13,8 @@ This file documents how **bzm-mcp** uses the Storage Service introduced on
 | Hosted HTTP | `streamable-http` | `HttpSessionStorageProvider` | `StorageFileSource` |
 
 Composition root: `build_runtime` → `AppRuntime.storage` / `scope_resolver`.
+`server.register_tools` also calls `configure_task_storage(runtime.storage)` so
+async tasks share the same session partitions as dataframes.
 Tool registrations call `run_tool_with_runtime(runtime, ...)` so tracing stays
 unaware of dataframe types. There is no process-global dataframe store.
 
@@ -28,10 +30,23 @@ Env: `BZM_STORAGE_API_BASE_URL` (required for streamable-http).
 | `GET` / `PUT` / `DELETE` | `/session-partitions/{user_id}/{mcp_session_id}` |
 
 `put_partition` accepts a partial `SessionPartitionPayload`. Dataframe tools
-send only `dataframes`, so tasks/metadata/uploaded_files are preserved by the
-storage merge.
+send only `dataframes`; the async task runner sends only `tasks`. Other
+sections are preserved by the storage merge.
 
-MCP workers keep Polars/SQL in-process; only the partition document is remote.
+MCP workers keep Polars/SQL and asyncio task handles in-process; only the
+partition document is remote.
+
+## Task execution affinity (hosted)
+
+- **Status / list / get** are Storage-backed and work across workers for a session.
+- **In-flight execution** (`asyncio.Task`, semaphore, cancel of a live handle) is
+  **process-local**. Only the worker that started the coroutine can cancel it via
+  the local handle.
+- Calling `tasks_cancel` on a different worker marks cancel in Storage when there
+  is no local handle, but the owning worker may still finish and overwrite status
+  to `completed` / `failed`. Do not assume multi-worker cancel stops execution.
+- Prefer sticky routing / single-writer affinity for a session while tasks are
+  active if cancel must be reliable.
 
 ### Dataframe map concurrency
 

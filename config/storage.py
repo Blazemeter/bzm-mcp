@@ -41,6 +41,10 @@ class StorageNotSupportedError(NotImplementedError):
     """Raised when a storage backend cannot fulfill a file operation."""
 
 
+class StorageNotConfiguredError(RuntimeError):
+    """Raised when session storage is used before AppRuntime wiring."""
+
+
 @runtime_checkable
 class FileStoragePort(Protocol):
     """

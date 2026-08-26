@@ -15,6 +15,7 @@ limitations under the License.
 """
 from config.runtime import AppRuntime
 from tools.account_manager import register as register_account_manager
+from tools.async_task_manager import configure_task_storage
 from tools.billing_manager import register as register_billing_manager
 from tools.execution_manager import register as register_execution_manager
 from tools.help_manager import register as register_help_manager
@@ -23,6 +24,7 @@ from tools.skills_manager import register as register_skills_manager
 from tools.test_manager import register as register_test_manager
 from tools.tools_manager import register as register_tools_manager
 from tools.user_manager import register as register_user_manager
+from tools.utils import configure_tool_auth
 from tools.workspace_manager import register as register_workspace_manager
 
 
@@ -34,6 +36,8 @@ def register_tools(mcp, runtime: AppRuntime):
         mcp: The MCP server instance
         runtime: App runtime (transport + auth port and shared collaborators)
     """
+    configure_task_storage(runtime.storage)
+    configure_tool_auth(runtime.auth)
     register_user_manager(mcp, runtime)
     register_project_manager(mcp, runtime)
     register_workspace_manager(mcp, runtime)

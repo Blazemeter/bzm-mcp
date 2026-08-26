@@ -19,7 +19,6 @@ from pathlib import Path
 from typing import Any, Dict
 from typing import Optional, List
 
-import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
@@ -37,12 +36,14 @@ from models.manager import Manager
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
 from tools import bridge, search_utils
-from tools.runtime_tools import run_tool_with_runtime
+from tools.mcp_entrypoint import register_managed_tool
 from tools.utils import (
     api_request,
     require_confirmation,
     Operations,
     format_sanitized_traceback,
+    run_as_task,
+    validate_required_args,
 )
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,7 @@ class TestManager(Manager):
     def _current_scope(self):
         return self.scope_resolver.resolve(self.ctx, self.token)
 
+    @run_as_task()
     async def read(self, test_id: Optional[int]) -> BaseResult:
         if not isinstance(test_id, int) or test_id < 1:
             return BaseResult(
@@ -91,6 +93,7 @@ class TestManager(Manager):
                 return test_result
 
     @require_confirmation(operation=Operations.CREATE)
+    @run_as_task()
     async def create(
         self, test_name: Optional[str], project_id: Optional[int]
     ) -> BaseResult:
@@ -127,6 +130,7 @@ class TestManager(Manager):
         )
 
     @require_confirmation(operation=Operations.DELETE)
+    @run_as_task()
     async def delete(self, test_id: Optional[int]) -> BaseResult:
         if not isinstance(test_id, int) or test_id < 1:
             return BaseResult(
@@ -207,6 +211,7 @@ class TestManager(Manager):
                 successful_uploads.append({"file": valid_files[i], "result": result})
 
     @require_confirmation(operation=Operations.CREATE)
+    @run_as_task()
     async def upload_assets(
         self,
         test_id: Optional[int],
@@ -378,6 +383,7 @@ class TestManager(Manager):
 
         return script_types.get(extension, "unknown")
 
+    @run_as_task()
     async def list(
         self,
         project_id: Optional[int],
@@ -415,6 +421,7 @@ class TestManager(Manager):
             params=parameters,
         )
 
+    @run_as_task()
     async def search(self, args: dict[str, Any]) -> BaseResult:
         # Check if it's valid or allowed
         account_id = args.get("account_id")
@@ -430,6 +437,7 @@ class TestManager(Manager):
             "test-union", self.token, account_id, args
         )
 
+    @run_as_task()
     async def search_filter_values(
         self, account_id: int, filter_names: List[str]
     ) -> BaseResult:
@@ -498,6 +506,7 @@ class TestManager(Manager):
         return test_data_override
 
     @require_confirmation(operation=Operations.UPDATE)
+    @run_as_task()
     async def configure(self, performance_test: PerformanceTestObject) -> BaseResult:
         if not performance_test.is_valid():
             raise ValueError("PerformanceTestObject must have a valid test_id")
@@ -532,6 +541,7 @@ class TestManager(Manager):
         )
 
     @require_confirmation(operation=Operations.UPDATE)
+    @run_as_task()
     async def configure_failure_criteria(self, args: Dict[str, Any]) -> BaseResult:
         """Replace failure criteria for a test via PATCH configuration (preserves plugins.jmeter)."""
         test_id = args.get("test_id")
@@ -562,13 +572,84 @@ class TestManager(Manager):
             json={"configuration": merged_configuration},
         )
 
+    @run_as_task()
     async def failure_criteria_meta(self, args: Dict[str, Any]) -> BaseResult:
         """Return the full KPI and condition catalog for building configure_failure_criteria rules (no API call)."""
         return BaseResult(result=[failure_criteria_meta_payload()])
 
-
 def register(mcp, runtime: AppRuntime):
-    @mcp.tool(
+    async def _dispatch(action, args, token, ctx):
+        if runtime.transport == "stdio":
+            test_manager = TestManager(
+                ctx, runtime.file_access, runtime.scope_resolver
+            )
+        else:
+            test_manager = TestManager(ctx)
+        match action:
+            case "read":
+                return await test_manager.read(args.get("test_id"))
+            case "create":
+                return await test_manager.create(
+                    args.get("test_name"), args.get("project_id")
+                )
+            case "delete":
+                return await test_manager.delete(args.get("test_id"))
+            case "list":
+                return await test_manager.list(
+                    args.get("project_id"),
+                    args.get("limit", 50),
+                    args.get("offset", 0),
+                )
+            case "search":
+                return await test_manager.search(args)
+            case "search_filter_values":
+                return await test_manager.search_filter_values(
+                    args.get("account_id"), args.get("filter_names", [])
+                )
+            case "configure_load":
+                performance_test = PerformanceTestObject.from_args(args)
+                return await test_manager.configure(performance_test)
+            case "configure_locations":
+                performance_test = PerformanceTestObject.from_args(args)
+                return await test_manager.configure(performance_test)
+            case "upload_assets":
+                if validation_error := validate_required_args(action, args, ["test_id", "file_paths"]):
+                    return validation_error
+                upload_result = await test_manager.upload_assets(
+                    args.get("test_id"),
+                    args.get("file_paths"),
+                    args.get("main_script"),
+                )
+                if isinstance(upload_result, BaseResult):
+                    if upload_result.error:
+                        return upload_result
+                    inner = (
+                        upload_result.result[0]
+                        if upload_result.result and len(upload_result.result) == 1
+                        else None
+                    )
+                    if isinstance(inner, dict) and inner.get("error"):
+                        return BaseResult(error=str(inner["error"]))
+                    return upload_result
+                if isinstance(upload_result, dict) and upload_result.get("error"):
+                    return BaseResult(error=upload_result["error"])
+                return BaseResult(result=[upload_result])
+            case "configure_failure_criteria":
+                if validation_error := validate_required_args(
+                        action, args, ["test_id", "enabled", "rules"]
+                ):
+                    return validation_error
+                return await test_manager.configure_failure_criteria(args)
+            case "failure_criteria_meta":
+                return await test_manager.failure_criteria_meta(args)
+            case _:
+                return BaseResult(
+                    error=f"Action {action} not found in tests manager tool"
+                )
+
+    register_managed_tool(
+        mcp,
+        runtime,
         name=f"{TOOLS_PREFIX}_tests",
         description="""
 Operations on tests.
@@ -669,71 +750,6 @@ Hints:
 - Before configure_failure_criteria, prefer failure_criteria_meta for kpi/condition codes and labels, then read if you must merge with existing rules.
 - For configure_failure_criteria, call read first and merge client-side if you must keep existing rules; providing rules replaces all criteria rows for that test.
 """,
+        dispatch=_dispatch,
+        support_message=("""If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""),
     )
-    async def tests(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        runtime.configure_context(ctx)
-        if runtime.transport == "stdio":
-            test_manager = TestManager(
-                ctx, runtime.file_access, runtime.scope_resolver
-            )
-        else:
-            test_manager = TestManager(ctx)
-
-        async def _dispatch():
-            match action:
-                case "read":
-                    return await test_manager.read(args.get("test_id"))
-                case "create":
-                    return await test_manager.create(
-                        args.get("test_name"), args.get("project_id")
-                    )
-                case "delete":
-                    return await test_manager.delete(args.get("test_id"))
-                case "list":
-                    return await test_manager.list(
-                        args.get("project_id"),
-                        args.get("limit", 50),
-                        args.get("offset", 0),
-                    )
-                case "search":
-                    return await test_manager.search(args)
-                case "search_filter_values":
-                    return await test_manager.search_filter_values(
-                        args.get("account_id"), args.get("filter_names", [])
-                    )
-                case "configure_load":
-                    performance_test = PerformanceTestObject.from_args(args)
-                    return await test_manager.configure(performance_test)
-                case "configure_locations":
-                    performance_test = PerformanceTestObject.from_args(args)
-                    return await test_manager.configure(performance_test)
-                case "upload_assets":
-                    upload_result = await test_manager.upload_assets(
-                        args.get("test_id"),
-                        args.get("file_paths"),
-                        args.get("main_script"),
-                    )
-                    if isinstance(upload_result, dict) and upload_result.get("error"):
-                        return BaseResult(error=upload_result["error"])
-                    return BaseResult(result=[upload_result])
-                case "configure_failure_criteria":
-                    return await test_manager.configure_failure_criteria(args)
-                case "failure_criteria_meta":
-                    return await test_manager.failure_criteria_meta(args)
-                case _:
-                    return BaseResult(
-                        error=f"Action {action} not found in tests manager tool"
-                    )
-
-        try:
-            return await run_tool_with_runtime(
-                runtime, f"{TOOLS_PREFIX}_tests", action, ctx, _dispatch,
-                tool_args=args,
-            )
-        except httpx.HTTPStatusError:
-            return BaseResult(error=f"Error: {format_sanitized_traceback()}")
-        except Exception:
-            return BaseResult(
-                error=f"""Error: {format_sanitized_traceback()}
-                          If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
-            )

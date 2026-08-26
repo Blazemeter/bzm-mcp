@@ -552,6 +552,7 @@ async def finalize_tool_result(
         scope_resolver: Optional[SessionScopeResolverPort] = None,
         token: Optional[BzmToken] = None,
         ctx: Any = None,
+        scope: Optional[SessionScope] = None,
         excluded_actions: Optional[set[str]] = None,
 ) -> Any:
     """
@@ -559,6 +560,7 @@ async def finalize_tool_result(
 
     excluded_actions: skip auto materialization (still honors result_format=dataframe).
     Storage is required once this path would persist; missing storage fails closed.
+    Pass ``scope`` to skip token/ctx resolution (used by the async task runner).
     """
     if not isinstance(result, BaseResult) or result.error or result.result is None:
         return result
@@ -576,7 +578,8 @@ async def finalize_tool_result(
     if storage is None:
         return BaseResult(error=MISSING_STORAGE_ERROR)
 
-    scope = resolve_session_scope(ctx, token=token, scope_resolver=scope_resolver)
+    if scope is None:
+        scope = resolve_session_scope(ctx, token=token, scope_resolver=scope_resolver)
     try:
         return await materialize_large_result_if_needed(
             base_result=result,

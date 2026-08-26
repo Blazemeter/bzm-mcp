@@ -27,6 +27,25 @@ import webbrowser
 from pathlib import Path
 from typing import Literal, cast
 
+# Patch MCP ArgModelBase so tools with an "arguments" param receive the full payload
+# when the client sends {"action": "x", "key": "value"} instead of {"arguments": {...}}
+from mcp.server.fastmcp.utilities import func_metadata
+from pydantic import model_validator
+
+_OriginalArgModelBase = func_metadata.ArgModelBase
+
+
+class _PatchedArgModelBase(_OriginalArgModelBase):
+    @model_validator(mode="before")
+    @classmethod
+    def _wrap_root_as_arguments(cls, data: object) -> object:
+        if isinstance(data, dict) and "arguments" not in data:
+            return {"arguments": data}
+        return data
+
+
+func_metadata.ArgModelBase = _PatchedArgModelBase
+
 from mcp.server.fastmcp import FastMCP
 
 from config.auth import run_streamable_http

@@ -15,17 +15,15 @@ limitations under the License.
 """
 from typing import Any, Dict
 
-import httpx
 from mcp.server.fastmcp import Context
-from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX, USER_ENDPOINT
 from config.runtime import AppRuntime
 from formatters.user import format_users
 from models.manager import Manager
 from models.result import BaseResult
-from tools.runtime_tools import run_tool_with_runtime
-from tools.utils import api_request, format_sanitized_traceback
+from tools.mcp_entrypoint import register_managed_tool
+from tools.utils import api_request, run_as_task
 
 
 class UserManager(Manager):
@@ -36,6 +34,7 @@ class UserManager(Manager):
     ):
         super().__init__(ctx)
 
+    @run_as_task()
     async def read(self) -> BaseResult:
         return await api_request(
             self.token,
@@ -46,7 +45,19 @@ class UserManager(Manager):
 
 
 def register(mcp, runtime: AppRuntime):
-    @mcp.tool(
+    async def _dispatch(action, args, token, ctx):
+        user_manager = UserManager(ctx)
+        match action:
+            case "read":
+                return await user_manager.read()
+            case _:
+                return BaseResult(
+                    error=f"Action {action} not found in user manager tool"
+                )
+
+    register_managed_tool(
+        mcp,
+        runtime,
         name=f"{TOOLS_PREFIX}_user",
         description="""
 Operations on user information.
@@ -54,38 +65,12 @@ Actions:
 - read: Read a current user information from BlazeMeter.
 Hints:
 - For default account, workspace and project, use the 'read' action. 
+- Optional result formatting in args: `result_format` = `auto` (default), `dataframe` (force dataframe), `raw` (disable dataframe materialization).
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
-"""
+""",
+        dispatch=_dispatch,
+        support_message=(
+            "If you think this is a bug, please contact BlazeMeter support or report issue at "
+            "https://github.com/BlazeMeter/bzm-mcp/issues"
+        ),
     )
-    async def user(
-            action: str = Field(description="The action id to execute"),
-            args: Dict[str, Any] = Field(description="Dictionary with parameters"),
-            ctx: Context = Field(description="Context object providing access to MCP capabilities")
-    ) -> BaseResult:
-
-        runtime.configure_context(ctx)
-        user_manager = UserManager(ctx)
-
-        async def _dispatch():
-            match action:
-                case "read":
-                    return await user_manager.read()
-                case _:
-                    return BaseResult(
-                        error=f"Action {action} not found in user manager tool"
-                    )
-
-        try:
-            return await run_tool_with_runtime(
-                runtime, f"{TOOLS_PREFIX}_user", action, ctx, _dispatch,
-                tool_args=args,
-            )
-        except httpx.HTTPStatusError:
-            return BaseResult(
-                error=f"Error: {format_sanitized_traceback()}"
-            )
-        except Exception:
-            return BaseResult(
-                error=f"""Error: {format_sanitized_traceback()}
-                          If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
-            )

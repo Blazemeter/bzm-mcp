@@ -15,9 +15,7 @@ limitations under the License.
 """
 from typing import Any, Dict, Optional
 
-import httpx
 from mcp.server.fastmcp import Context
-from pydantic import Field
 
 from config.blazemeter import WORKSPACES_ENDPOINT, TOOLS_PREFIX
 from config.runtime import AppRuntime
@@ -25,8 +23,8 @@ from formatters.workspace import format_workspaces, format_workspaces_detailed, 
 from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
-from tools.runtime_tools import run_tool_with_runtime
-from tools.utils import api_request, format_sanitized_traceback
+from tools.mcp_entrypoint import register_managed_tool
+from tools.utils import api_request, run_as_task
 
 
 class WorkspaceManager(Manager):
@@ -41,6 +39,7 @@ class WorkspaceManager(Manager):
     ):
         super().__init__(ctx)
 
+    @run_as_task()
     async def read(self, workspace_id: Optional[int]) -> BaseResult:
         if not isinstance(workspace_id, int) or workspace_id < 1:
             return BaseResult(error="Missing or invalid required argument 'workspace_id'. Expected integer.")
@@ -62,6 +61,7 @@ class WorkspaceManager(Manager):
             else:
                 return workspace_result
 
+    @run_as_task()
     async def list(self, account_id: Optional[int], limit: int = 50, offset: int = 0) -> BaseResult:
         if not isinstance(account_id, int) or account_id < 1:
             return BaseResult(error="Missing or invalid required argument 'account_id'. Expected integer.")
@@ -88,6 +88,7 @@ class WorkspaceManager(Manager):
             params=parameters
         )
 
+    @run_as_task()
     async def read_locations(self, workspace_id: Optional[int], purpose: str = "load") -> BaseResult:
         if not isinstance(workspace_id, int) or workspace_id < 1:
             return BaseResult(error="Missing or invalid required argument 'workspace_id'. Expected integer.")
@@ -111,9 +112,27 @@ class WorkspaceManager(Manager):
                 return account_result
             else:
                 return locations_result
-
 def register(mcp, runtime: AppRuntime):
-    @mcp.tool(
+
+    async def _dispatch(action, args, token, ctx):
+        workspace_manager = WorkspaceManager(ctx)
+        match action:
+            case "read":
+                return await workspace_manager.read(args.get("workspace_id"))
+            case "list":
+                return await workspace_manager.list(
+                    args.get("account_id"), args.get("limit", 50), args.get("offset", 0)
+                )
+            case "read_locations":
+                return await workspace_manager.read_locations(args.get("workspace_id"), args.get("purpose", "load"))
+            case _:
+                return BaseResult(
+                    error=f"Action {action} not found in workspace manager tool"
+                )
+
+    register_managed_tool(
+        mcp,
+        runtime,
         name=f"{TOOLS_PREFIX}_workspaces",
         description="""
 Operations on workspaces.
@@ -133,43 +152,7 @@ Actions:
 Hints:
 - For available locations and available billing usage use the 'read' action for a particular workspace.
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
-"""
+""",
+        dispatch=_dispatch,
+        support_message=("If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"),
     )
-    async def workspace(
-            action: str = Field(description="The action id to execute"),
-            args: Dict[str, Any] = Field(description="Dictionary with parameters"),
-            ctx: Context = Field(description="Context object providing access to MCP capabilities")
-    ) -> BaseResult:
-
-        runtime.configure_context(ctx)
-        workspace_manager = WorkspaceManager(ctx)
-
-        async def _dispatch():
-            match action:
-                case "read":
-                    return await workspace_manager.read(args.get("workspace_id"))
-                case "list":
-                    return await workspace_manager.list(
-                        args.get("account_id"), args.get("limit", 50), args.get("offset", 0)
-                    )
-                case "read_locations":
-                    return await workspace_manager.read_locations(args.get("workspace_id"), args.get("purpose", "load"))
-                case _:
-                    return BaseResult(
-                        error=f"Action {action} not found in workspace manager tool"
-                    )
-
-        try:
-            return await run_tool_with_runtime(
-                runtime, f"{TOOLS_PREFIX}_workspaces", action, ctx, _dispatch,
-                tool_args=args,
-            )
-        except httpx.HTTPStatusError:
-            return BaseResult(
-                error=f"Error: {format_sanitized_traceback()}"
-            )
-        except Exception:
-            return BaseResult(
-                error=f"""Error: {format_sanitized_traceback()}
-                          If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
-            )
