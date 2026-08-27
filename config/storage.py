@@ -305,7 +305,7 @@ class HttpSessionStorageProvider(SessionStoragePort):
 
     def ensure_available(self) -> None:
         """Fail fast if the storage API is unreachable."""
-        with httpx.Client(timeout=min(self._timeout, 5.0)) as client:
+        with httpx.Client(http2=True, timeout=min(self._timeout, 5.0)) as client:
             response = client.get(self._health_url())
             response.raise_for_status()
 
