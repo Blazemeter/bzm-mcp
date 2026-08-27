@@ -24,7 +24,7 @@ from config.runtime import AppRuntime
 from formatters.user import format_users
 from models.manager import Manager
 from models.result import BaseResult
-from telemetry import run_tool
+from tools.runtime_tools import run_tool_with_runtime
 from tools.utils import api_request, format_sanitized_traceback
 
 
@@ -76,7 +76,10 @@ Hints:
                     )
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_user", action, ctx, _dispatch)
+            return await run_tool_with_runtime(
+                runtime, f"{TOOLS_PREFIX}_user", action, ctx, _dispatch,
+                tool_args=args,
+            )
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

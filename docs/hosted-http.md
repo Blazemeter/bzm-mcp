@@ -55,6 +55,7 @@ docker run --rm -p 8000:8000 \
   -e FASTMCP_HOST=0.0.0.0 \
   -e FASTMCP_PORT=8000 \
   -e FASTMCP_STREAMABLE_HTTP_PATH=/mcp \
+  -e BZM_STORAGE_API_BASE_URL=https://mcp-storage.internal \
   -e BZM_STORAGE_STRATEGY=memory \
   ghcr.io/blazemeter/bzm-mcp:latest
 ```
@@ -67,11 +68,12 @@ docker run --rm -p 8000:8000 \
 | `FASTMCP_HOST` | Bind address (HTTP only) | `127.0.0.1` |
 | `FASTMCP_PORT` | Listen port (HTTP only). Also accepts `PORT` (e.g. Cloud Run) | `8000` |
 | `FASTMCP_STREAMABLE_HTTP_PATH` | HTTP path for the MCP endpoint | `/mcp` |
-| `BZM_STORAGE_STRATEGY` | `memory` or `http` | `memory` |
+| `BZM_STORAGE_API_BASE_URL` | Storage Service base URL (required for streamable-http) | — |
+| `BZM_STORAGE_STRATEGY` | `memory` or `http` (file-access helper; session store follows transport) | `memory` |
 
-On streamable-http, local file paths are always rejected regardless of `BZM_STORAGE_STRATEGY` (hosted fail-closed storage).
+On streamable-http, session partitions are stored via `HttpSessionStorageProvider`. Local file paths are always rejected (`StorageFileSource`) regardless of `BZM_STORAGE_STRATEGY` (hosted fail-closed storage).
 
 ## Hosted MVP limitations
 
-- In-memory / fail-closed storage: no local disk access on the shared hosted server.
-- `upload_assets` and other local file lookup/upload paths are rejected. Use a local stdio or Docker MCP installation for those workflows, or wait for remote Storage (Phase 2).
+- Session dataframes/tasks live in the Storage Service keyed by `{user_id}/{mcp_session_id}`.
+- `upload_assets` and other local file lookup/upload paths are rejected. Use a local stdio or Docker MCP installation for those workflows, or wait for remote file access.

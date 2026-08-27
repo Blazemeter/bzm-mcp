@@ -25,7 +25,7 @@ from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE
 from config.runtime import AppRuntime
 from models.manager import Manager
 from models.result import BaseResult
-from telemetry import run_tool
+from tools.runtime_tools import run_tool_with_runtime
 from tools.utils import format_sanitized_traceback
 from tools.skills_utils import list_skills, read_skill_definition, read_skill_file, parse_skill_uri, \
     is_skill_uri, list_skill_resources_uri
@@ -259,7 +259,10 @@ Hints:
                     )
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_skills", action, ctx, _dispatch)
+            return await run_tool_with_runtime(
+                runtime, f"{TOOLS_PREFIX}_skills", action, ctx, _dispatch,
+                tool_args=args,
+            )
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"

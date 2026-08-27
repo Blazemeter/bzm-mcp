@@ -29,7 +29,7 @@ from formatters.help import format_help_info
 from models.manager import Manager
 from models.result import BaseResult
 from tools.help_utils import convert_js_to_py_dict
-from telemetry import run_tool
+from tools.runtime_tools import run_tool_with_runtime
 from tools.utils import http_request, format_sanitized_traceback
 
 
@@ -353,7 +353,10 @@ Hints:
                     )
 
         try:
-            return await run_tool(f"{TOOLS_PREFIX}_help", action, ctx, _dispatch)
+            return await run_tool_with_runtime(
+                runtime, f"{TOOLS_PREFIX}_help", action, ctx, _dispatch,
+                tool_args=args,
+            )
         except httpx.HTTPStatusError:
             return BaseResult(
                 error=f"Error: {format_sanitized_traceback()}"
