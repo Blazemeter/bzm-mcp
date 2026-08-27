@@ -13,14 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import httpx
 from mcp.server.fastmcp import Context
 from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX, USER_ENDPOINT
-from config.token import BzmToken
+from config.runtime import AppRuntime
 from formatters.user import format_users
 from models.manager import Manager
 from models.result import BaseResult
@@ -30,8 +30,11 @@ from tools.utils import api_request, format_sanitized_traceback
 
 class UserManager(Manager):
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        ctx: Context,
+    ):
+        super().__init__(ctx)
 
     async def read(self) -> BaseResult:
         return await api_request(
@@ -42,7 +45,7 @@ class UserManager(Manager):
         )
 
 
-def register(mcp, token: Optional[BzmToken]):
+def register(mcp, runtime: AppRuntime):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_user",
         description="""
@@ -60,7 +63,8 @@ Hints:
             ctx: Context = Field(description="Context object providing access to MCP capabilities")
     ) -> BaseResult:
 
-        user_manager = UserManager(token, ctx)
+        runtime.configure_context(ctx)
+        user_manager = UserManager(ctx)
 
         async def _dispatch():
             match action:

@@ -15,7 +15,6 @@ limitations under the License.
 """
 import asyncio
 import logging
-import os
 from pathlib import Path
 from typing import Any, Dict
 from typing import Optional, List
@@ -24,9 +23,10 @@ import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
-from config.path_mapper import PathMapperFactory
+from config.file_access import FileAccessPort
 from config.security import detect_sensitive_upload_path_reason
-from config.token import BzmToken
+from config.storage import HOSTED_FILE_ACCESS_MESSAGE, SessionScopeResolverPort
+from config.runtime import AppRuntime
 from formatters.failure_criteria_labels import failure_criteria_meta_payload
 from formatters.test import format_tests
 from models.failure_criteria import (
@@ -51,9 +51,20 @@ logger = logging.getLogger(__name__)
 class TestManager(Manager):
     __test__ = False
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
-        self.path_mapper = PathMapperFactory.create_strategy()
+    def __init__(
+        self,
+        ctx: Context,
+        file_access: Optional[FileAccessPort] = None,
+        scope_resolver: Optional[SessionScopeResolverPort] = None,
+    ):
+        super().__init__(ctx)
+        # Upload ports are stdio-only today. HTTP create/list/read must work
+        # without them; hosted file upload will be a separate tool later.
+        self.file_access = file_access
+        self.scope_resolver = scope_resolver
+
+    def _current_scope(self):
+        return self.scope_resolver.resolve(self.ctx, self.token)
 
     async def read(self, test_id: Optional[int]) -> BaseResult:
         if not isinstance(test_id, int) or test_id < 1:
@@ -141,13 +152,14 @@ class TestManager(Manager):
     def _detect_sensitive_path_reason(cls, file_path: str) -> Optional[str]:
         return detect_sensitive_upload_path_reason(file_path)
 
-    @classmethod
     def _validate_files(
-        cls,
+        self,
         file_paths: List[str],
         valid_files: List[str],
         invalid_files: List[str],
         blocked_files: List[Dict[str, str]],
+        file_access: Optional[FileAccessPort] = None,
+        scope=None,
     ):
         # Security design note:
         # Uploads are intentionally allowed from any user working location (not restricted to one workspace root),
@@ -158,7 +170,7 @@ class TestManager(Manager):
         # locations is an administrative responsibility of the UNC share owners/administrators.
         for file_path in file_paths:
             logger.debug(f"Checking file: {file_path}")
-            sensitive_reason = cls._detect_sensitive_path_reason(file_path)
+            sensitive_reason = self._detect_sensitive_path_reason(file_path)
             if sensitive_reason:
                 logger.warning(
                     f"Blocked sensitive file path: {file_path} ({sensitive_reason})"
@@ -170,7 +182,9 @@ class TestManager(Manager):
                     }
                 )
                 continue
-            if os.path.exists(file_path) and os.path.isfile(file_path):
+            exists = file_access.exists(file_path, scope=scope) if file_access else False
+            is_file = file_access.is_file(file_path, scope=scope) if file_access else False
+            if exists and is_file:
                 logger.debug(f"File exists: {file_path}")
                 valid_files.append(file_path)
             else:
@@ -207,6 +221,8 @@ class TestManager(Manager):
             return {
                 "error": "Missing or invalid required argument 'file_paths'. Expected non-empty list."
             }
+        if self.file_access is None or self.scope_resolver is None:
+            return {"error": HOSTED_FILE_ACCESS_MESSAGE}
 
         # Check if it's valid or allowed
         test_data = await self.read(test_id)
@@ -216,13 +232,14 @@ class TestManager(Manager):
         logger.debug(f"Starting upload_assets for test_id: {test_id}")
         logger.debug(f"Original file paths: {file_paths}")
         logger.debug(f"Main script: {main_script}")
+        scope = self._current_scope()
 
-        mapped_file_paths = self.path_mapper.map_paths(file_paths)
+        mapped_file_paths = self.file_access.map_paths(file_paths, scope=scope)
         logger.debug(f"Mapped file paths: {mapped_file_paths}")
 
         mapped_main_script = None
         if main_script:
-            mapped_main_script_list = self.path_mapper.map_paths([main_script])
+            mapped_main_script_list = self.file_access.map_paths([main_script], scope=scope)
             mapped_main_script = (
                 mapped_main_script_list[0] if mapped_main_script_list else None
             )
@@ -233,7 +250,12 @@ class TestManager(Manager):
         blocked_files = []
 
         self._validate_files(
-            mapped_file_paths, valid_files, invalid_files, blocked_files
+            mapped_file_paths,
+            valid_files,
+            invalid_files,
+            blocked_files,
+            file_access=self.file_access,
+            scope=scope,
         )
 
         logger.debug(f"Valid files: {valid_files}")
@@ -249,9 +271,7 @@ class TestManager(Manager):
             }
 
         logger.debug("Starting concurrent uploads")
-        upload_tasks = [
-            self._upload_single_file(test_id, file_path) for file_path in valid_files
-        ]
+        upload_tasks = [self._upload_single_file(test_id, file_path, scope) for file_path in valid_files]
         upload_results = await asyncio.gather(*upload_tasks, return_exceptions=True)
 
         logger.debug(f"Upload results: {upload_results}")
@@ -281,16 +301,14 @@ class TestManager(Manager):
             "config_update": config_update_result,
         }
 
-    async def _upload_single_file(self, test_id: int, file_path: str) -> BaseResult:
+    async def _upload_single_file(self, test_id: int, file_path: str, scope) -> BaseResult:
         logger.debug(f"Uploading single file: {file_path} to test: {test_id}")
         try:
-            file_path_obj = Path(file_path)
-            file_name = file_path_obj.name
+            file_name = Path(file_path).name
 
             logger.debug(f"File name: {file_name}")
 
-            with open(file_path, "rb") as file:
-                file_content = file.read()
+            file_content = self.file_access.read_bytes(file_path, scope=scope)
 
             logger.debug(f"File size: {len(file_content)} bytes")
 
@@ -549,7 +567,7 @@ class TestManager(Manager):
         return BaseResult(result=[failure_criteria_meta_payload()])
 
 
-def register(mcp, token: Optional[BzmToken]):
+def register(mcp, runtime: AppRuntime):
     @mcp.tool(
         name=f"{TOOLS_PREFIX}_tests",
         description="""
@@ -653,7 +671,13 @@ Hints:
 """,
     )
     async def tests(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        test_manager = TestManager(token, ctx)
+        runtime.configure_context(ctx)
+        if runtime.transport == "stdio":
+            test_manager = TestManager(
+                ctx, runtime.file_access, runtime.scope_resolver
+            )
+        else:
+            test_manager = TestManager(ctx)
 
         async def _dispatch():
             match action:

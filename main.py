@@ -29,11 +29,13 @@ from typing import Literal, cast
 
 from mcp.server.fastmcp import FastMCP
 
+from config.auth import run_streamable_http
+from config.runtime import build_runtime
 from config.token import BzmToken, BzmTokenError
 from config.version import __version__, __executable__, __bundle__
 from server import register_tools
 from telemetry import init_telemetry
-from tools.utils import ConfirmMode, register_confirm_mode
+from tools.utils import ConfirmMode
 
 BLAZEMETER_API_KEY_FILE_PATH = os.getenv('BLAZEMETER_API_KEY')
 
@@ -404,20 +406,44 @@ def resolve_mcp_transport(raw_cli_transport: str) -> str:
     return normalized
 
 
-def build_runtime(
+def to_wire_transport(logical_transport: str) -> Literal["stdio", "streamable-http"]:
+    """Map CLI/logical transport (stdio|http|docker) to FastMCP wire transport."""
+    return "streamable-http" if logical_transport == "http" else "stdio"
+
+
+def build_mcp_server(
         log_level: str = "CRITICAL",
         confirm_mode: ConfirmMode = ConfirmMode.DELETE,
         transport: str = "stdio",
 ) -> tuple[FastMCP, str]:
+    """
+    Build FastMCP + auth wiring for a logical CLI transport (stdio|http|docker).
+
+    Returns ``(mcp, wire_transport)`` where ``wire_transport`` is the FastMCP
+    transport name (``stdio`` or ``streamable-http``).
+    """
     init_telemetry("bzm-mcp", __version__)
-    token = get_token()
     host = "127.0.0.1"
     port = 8000
     streamable_http_path = "/mcp"
     if transport == "http":
         host = os.getenv("FASTMCP_HOST", "127.0.0.1").strip() or "127.0.0.1"
-        port = int(os.getenv("FASTMCP_PORT", "8000").strip() or "8000")
+        # Cloud Run injects PORT; prefer FASTMCP_PORT when set, else PORT, else 8000.
+        port_raw = (
+            os.getenv("FASTMCP_PORT")
+            or os.getenv("PORT")
+            or "8000"
+        ).strip() or "8000"
+        port = int(port_raw)
         streamable_http_path = os.getenv("FASTMCP_STREAMABLE_HTTP_PATH", "/mcp").strip() or "/mcp"
+
+    # docker and stdio share process-lifetime credentials; http uses Bearer per request.
+    wire_transport = to_wire_transport(transport)
+    app_runtime = build_runtime(
+        wire_transport,
+        startup_token=get_token() if wire_transport == "stdio" else None,
+        startup_confirmation_mode=confirm_mode,
+    )
     instructions = """
 # BlazeMeter MCP Server
 A comprehensive integration tool that provides AI assistants with full programmatic access to BlazeMeter's cloud-based performance testing platform. Enables automated management of complete load testing workflows from creation to execution and reporting. Transforms enterprise-grade testing capabilities into an AI-accessible service for intelligent automation of complex performance testing scenarios.
@@ -482,19 +508,21 @@ A comprehensive integration tool that provides AI assistants with full programma
         streamable_http_path=streamable_http_path,
         stateless_http=False,
     )
-    register_confirm_mode(confirm_mode)
-    register_tools(mcp, token)
-    runtime_transport = "streamable-http" if transport == "http" else "stdio"
-    return mcp, runtime_transport
+    register_tools(mcp, app_runtime)
+    return mcp, wire_transport
 
 
 def run(log_level: str = "CRITICAL", confirm_mode: ConfirmMode = ConfirmMode.DELETE, transport: str = "stdio"):
-    mcp, runtime_transport = build_runtime(
+    mcp, runtime_transport = build_mcp_server(
         log_level=log_level,
         confirm_mode=confirm_mode,
         transport=transport,
     )
-    mcp.run(transport=runtime_transport)
+    if runtime_transport == "stdio":
+        mcp.run(transport=runtime_transport)
+    else:
+        # Hosted HTTP requires Bearer auth middleware around the ASGI app.
+        run_streamable_http(mcp)
 
 
 def main():

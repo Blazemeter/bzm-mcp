@@ -58,6 +58,35 @@ class BzmToken:
 
         return cls(token_id=id_val, token_secret=secret_val)
 
+    @classmethod
+    def from_bearer_credentials(cls, credentials: str) -> "BzmToken":
+        """
+        Parse Bearer credential material into a BzmToken.
+
+        Accepts plaintext ``id:secret`` or base64-encoded ``id:secret``.
+        Does not call the BlazeMeter API.
+        """
+        raw = (credentials or "").strip()
+        if not raw:
+            raise BzmTokenError("Empty bearer credentials")
+
+        # Plaintext id:secret (base64 alphabet has no ':')
+        if ":" in raw:
+            token_id, _, token_secret = raw.partition(":")
+            return cls(token_id=token_id, token_secret=token_secret)
+
+        try:
+            pad = "=" * (-len(raw) % 4)
+            decoded = base64.b64decode(raw + pad, validate=False).decode("utf-8")
+        except Exception as e:
+            raise BzmTokenError("Invalid bearer credentials encoding") from e
+
+        if ":" not in decoded:
+            raise BzmTokenError("Invalid bearer credentials format")
+
+        token_id, _, token_secret = decoded.partition(":")
+        return cls(token_id=token_id, token_secret=token_secret)
+
     def as_basic_auth(self) -> str:
         """
         Returns the HTTP Basic Authentication header:

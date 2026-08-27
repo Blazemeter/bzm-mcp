@@ -22,7 +22,7 @@ from mcp.server.fastmcp import Context
 from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE
-from config.token import BzmToken
+from config.runtime import AppRuntime
 from models.manager import Manager
 from models.result import BaseResult
 from telemetry import run_tool
@@ -42,8 +42,11 @@ class SkillsManager(Manager):
         "Skills content is sourced from curated repository resources and is trusted by design."
     )
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        ctx: Context,
+    ):
+        super().__init__(ctx)
 
     @staticmethod
     async def list_skills() -> BaseResult:
@@ -157,7 +160,7 @@ class SkillsManager(Manager):
         )
 
 
-def register(mcp, token: Optional[BzmToken]):
+def register(mcp, runtime: AppRuntime):
     @mcp.resource("blazemeter-skill-{skill_name}://{path}")
     def universal_skills_handler(skill_name: str, path: str) -> str:
         path = unquote(path)
@@ -203,7 +206,8 @@ Hints:
         if args is None:
             args = {}
 
-        skills_manager = SkillsManager(token, ctx)
+        runtime.configure_context(ctx)
+        skills_manager = SkillsManager(ctx)
 
         async def _dispatch():
             match action:

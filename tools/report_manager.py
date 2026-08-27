@@ -13,12 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Optional
+from typing import Any, Optional
 
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import EXECUTIONS_ENDPOINT
-from config.token import BzmToken
 from formatters.execution import (
     format_summary_report,
     format_request_stats,
@@ -36,8 +35,11 @@ EXECUTION_ARCHIVED_MSG = ("Execution report is archived. It is not possible to r
 
 class ReportManager(Manager):
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        ctx: Context,
+    ):
+        super().__init__(ctx)
 
     def _extract_execution_name(self, execution_result: BaseResult) -> Optional[str]:
         """Extract execution name from execution result if available."""
