@@ -5,6 +5,19 @@ Ops deploy (Cloud Run, DNS, CI) lives in
 This file documents how **bzm-mcp** uses the Storage Service introduced on
 `STREAMABLE_HTTP`.
 
+## Naming (do not rename STREAMABLE_HTTP types)
+
+Dataframe tools depend on `AppRuntime.storage: SessionStoragePort`. Story names
+map to the types already landed on `STREAMABLE_HTTP`:
+
+| Story / plan name | STREAMABLE_HTTP type | Used for dataframes |
+|-------------------|----------------------|---------------------|
+| StoragePort | `SessionStoragePort` | Yes |
+| MemoryStorageProvider | `InMemorySessionStorageProvider` | Yes (stdio) |
+| HttpStorageProvider | `HttpSessionStorageProvider` | Yes (hosted) |
+| HTTPStorageClient (story) | `HttpSessionStorageProvider` | Yes — not `HttpStorageClient` |
+| HttpStorageClient (codebase) | `FileStoragePort` stub | No (file access, Phase 3) |
+
 ## Runtime wiring
 
 | Mode | Transport | Session store | File access |
@@ -37,15 +50,15 @@ MCP workers keep Polars/SQL in-process; only the partition document is remote.
 
 `put_partition(dataframes=...)` replaces the **entire** dataframes map for that
 partition. In-process locks serialize mutations on one worker. Across Cloud Run
-instances, persist re-reads Storage and unions keys added by other writers
-(and drops ids this operation removed). Same-key concurrent writes and the
-GET/PUT race can still last-write-win. Closing that window needs Storage
+instances, commit re-reads `SessionStoragePort` and unions keys added by other
+writers (and drops ids this operation removed). Same-key concurrent writes and
+the GET/PUT race can still last-write-win. Closing that window needs Storage
 CAS/etag, which this service does not expose yet.
 
 ## Dataframe tools
 
 `dataframes_list`, `dataframes_query`, `dataframes_remove`, and
-`dataframes_clear` hydrate/persist through `SessionStoragePort`. Stdio uses
-in-memory partitions; hosted uses the HTTP Storage Service client.
-Missing storage on a path that would persist fails closed (error, not raw payload).
+`dataframes_clear` hydrate/commit through `SessionStoragePort`. Stdio uses
+`InMemorySessionStorageProvider`; hosted uses `HttpSessionStorageProvider`.
+Missing session storage on a path that would persist fails closed (error, not raw payload).
 

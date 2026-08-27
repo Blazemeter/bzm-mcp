@@ -54,7 +54,8 @@ def reset_dataframe_session_locks():
 
 
 @pytest.fixture
-def session_store():
+def in_memory_session_storage():
+    """Stdio-equivalent SessionStoragePort (InMemorySessionStorageProvider)."""
     return InMemorySessionStorageProvider()
 
 
