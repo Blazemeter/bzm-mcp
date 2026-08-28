@@ -53,6 +53,15 @@ def reset_dataframe_session_locks():
     _session_locks.clear()
 
 
+@pytest.fixture(autouse=True)
+def _configure_session_task_storage(in_memory_session_storage):
+    """Ensure @run_as_task can persist when manager methods are called in unit tests."""
+    from tools.async_task_manager import configure_task_storage
+
+    configure_task_storage(in_memory_session_storage)
+    yield in_memory_session_storage
+
+
 @pytest.fixture
 def in_memory_session_storage():
     """Stdio-equivalent SessionStoragePort (InMemorySessionStorageProvider)."""

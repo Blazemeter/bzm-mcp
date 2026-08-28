@@ -15,7 +15,6 @@ limitations under the License.
 """
 from typing import Optional, Dict, Any
 
-import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TOOLS_PREFIX, PROJECTS_ENDPOINT
@@ -24,8 +23,8 @@ from formatters.project import format_projects
 from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
-from tools.runtime_tools import run_tool_with_runtime
-from tools.utils import api_request, format_sanitized_traceback
+from tools.mcp_entrypoint import register_managed_tool
+from tools.utils import api_request, run_as_task
 
 
 class ProjectManager(Manager):
@@ -36,6 +35,7 @@ class ProjectManager(Manager):
     ):
         super().__init__(ctx)
 
+    @run_as_task()
     async def read(self, project_id: Optional[int]) -> BaseResult:
         if not isinstance(project_id, int) or project_id < 1:
             return BaseResult(error="Missing or invalid required argument 'project_id'. Expected integer.")
@@ -60,6 +60,7 @@ class ProjectManager(Manager):
         project_element.tests_count = await bridge.count_project_tests(self.token, self.ctx, project_id)
         return project_result
 
+    @run_as_task()
     async def list(self, workspace_id: Optional[int], limit: int = 50, offset: int = 0) -> BaseResult:
         if not isinstance(workspace_id, int) or workspace_id < 1:
             return BaseResult(error="Missing or invalid required argument 'workspace_id'. Expected integer.")
@@ -86,8 +87,24 @@ class ProjectManager(Manager):
             params=parameters
         )
 
+
 def register(mcp, runtime: AppRuntime):
-    @mcp.tool(
+
+    async def _dispatch(action, args, token, ctx):
+        project_manager = ProjectManager(ctx)
+        match action:
+            case "read":
+                return await project_manager.read(args.get("project_id"))
+            case "list":
+                return await project_manager.list(args.get("workspace_id"), args.get("limit", 10), args.get("offset", 0))
+            case _:
+                return BaseResult(
+                    error=f"Action {action} not found in project manager tool"
+                )
+
+    register_managed_tool(
+        mcp,
+        runtime,
         name=f"{TOOLS_PREFIX}_project",
         description="""
 Operations on projects. 
@@ -105,34 +122,7 @@ Hints:
 - For a particular project, go directly to the read action (you don't need account or workspace information).
 - Reading also allows you to obtain the number of tests the project has without having to use a list to count.
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
-"""
+""",
+        dispatch=_dispatch,
+        support_message=("If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"),
     )
-    async def project(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        runtime.configure_context(ctx)
-        project_manager = ProjectManager(ctx)
-
-        async def _dispatch():
-            match action:
-                case "read":
-                    return await project_manager.read(args.get("project_id"))
-                case "list":
-                    return await project_manager.list(args.get("workspace_id"), args.get("limit", 10), args.get("offset", 0))
-                case _:
-                    return BaseResult(
-                        error=f"Action {action} not found in project manager tool"
-                    )
-
-        try:
-            return await run_tool_with_runtime(
-                runtime, f"{TOOLS_PREFIX}_project", action, ctx, _dispatch,
-                tool_args=args,
-            )
-        except httpx.HTTPStatusError:
-            return BaseResult(
-                error=f"Error: {format_sanitized_traceback()}"
-            )
-        except Exception:
-            return BaseResult(
-                error=f"""Error: {format_sanitized_traceback()}
-                          If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""
-            )

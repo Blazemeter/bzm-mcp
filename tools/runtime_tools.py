@@ -45,6 +45,7 @@ async def run_tool_with_runtime(
             return result
         from tools.dataframe_manager import finalize_tool_result
 
+        # Idempotent if the async task runner already materialized the payload.
         return await finalize_tool_result(
             result,
             action=action,
