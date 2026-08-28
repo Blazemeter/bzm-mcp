@@ -24,7 +24,6 @@ from tools.skills_manager import register as register_skills_manager
 from tools.test_manager import register as register_test_manager
 from tools.tools_manager import register as register_tools_manager
 from tools.user_manager import register as register_user_manager
-from tools.utils import configure_tool_auth
 from tools.workspace_manager import register as register_workspace_manager
 
 
@@ -37,7 +36,6 @@ def register_tools(mcp, runtime: AppRuntime):
         runtime: App runtime (transport + auth port and shared collaborators)
     """
     configure_task_storage(runtime.storage)
-    configure_tool_auth(runtime.auth)
     register_user_manager(mcp, runtime)
     register_project_manager(mcp, runtime)
     register_workspace_manager(mcp, runtime)

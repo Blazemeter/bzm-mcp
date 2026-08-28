@@ -26,13 +26,12 @@ from typing import Any, AsyncIterator, Dict, List, Optional, Set
 
 import polars as pl
 
-from config.context_resolution import resolve_ctx_token
 from config.storage import (
-    DefaultSessionScopeResolver,
     SessionPartitionPayload,
     SessionScope,
     SessionScopeResolverPort,
     SessionStoragePort,
+    resolve_session_scope,
 )
 from config.token import BzmToken
 from models.result import BaseResult
@@ -50,7 +49,7 @@ INVALID_RESULT_FORMAT_ERROR = (
 )
 MISSING_STORAGE_ERROR = "Session storage is required to persist dataframes."
 
-# In-process mutexes only. Hosted Cloud Run workers do not share this map;
+# In-process mutexes only. Hosted MCP workers do not share this map;
 # SessionStoragePort merge-on-commit is the cross-instance safeguard (not CAS).
 _MAX_SESSION_LOCKS = 256
 _locks_guard = asyncio.Lock()
@@ -535,17 +534,6 @@ def _extract_result_format(action: Any, args_dict: Any) -> str:
     if not isinstance(args_dict, dict):
         return "auto"
     return normalize_result_format(args_dict.get("result_format", "auto"))
-
-
-def resolve_session_scope(
-        ctx: Any,
-        token: Optional[BzmToken] = None,
-        scope_resolver: Optional[SessionScopeResolverPort] = None,
-) -> SessionScope:
-    """Resolve SessionScope partition keys from auth token + MCP session context."""
-    resolver = scope_resolver or DefaultSessionScopeResolver()
-    resolved_token = token if token is not None else resolve_ctx_token(ctx)
-    return resolver.resolve(ctx, resolved_token)
 
 
 async def finalize_tool_result(

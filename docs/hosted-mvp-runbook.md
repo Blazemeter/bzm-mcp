@@ -1,6 +1,6 @@
 # Hosted MCP — session storage + dataframes
 
-Ops deploy (Cloud Run, DNS, CI) lives in
+Hosted MCP ops deploy lives in
 [`hosted-bzm-mcp`](https://github.com/Blazemeter/hosted-bzm-mcp).
 This file documents how **bzm-mcp** uses the Storage Service introduced on
 `STREAMABLE_HTTP`.
@@ -49,6 +49,15 @@ sections are preserved by the storage merge.
 MCP workers keep Polars/SQL and asyncio task handles in-process; only the
 partition document is remote.
 
+### Task map concurrency
+
+`put_partition(tasks=...)` replaces the **entire** tasks map for that
+partition. In-process locks serialize mutations on one worker. Across hosted MCP
+workers, commit re-reads `SessionStoragePort` and unions keys added by other
+writers (and drops ids this operation removed). Live local `asyncio.Task`
+handles win on overlapping keys. Same-key concurrent writes and the GET/PUT
+race can still last-write-win. Closing that window needs Storage CAS/etag.
+
 ## Task execution affinity (hosted)
 
 - **Status / list / get** are Storage-backed and work across workers for a session.
@@ -64,8 +73,8 @@ partition document is remote.
 ### Dataframe map concurrency
 
 `put_partition(dataframes=...)` replaces the **entire** dataframes map for that
-partition. In-process locks serialize mutations on one worker. Across Cloud Run
-instances, commit re-reads `SessionStoragePort` and unions keys added by other
+partition. In-process locks serialize mutations on one worker. Across hosted MCP
+workers, commit re-reads `SessionStoragePort` and unions keys added by other
 writers (and drops ids this operation removed). Same-key concurrent writes and
 the GET/PUT race can still last-write-win. Closing that window needs Storage
 CAS/etag, which this service does not expose yet.

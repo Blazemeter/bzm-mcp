@@ -15,7 +15,7 @@ limitations under the License.
 """
 import asyncio
 
-from config.storage import DefaultSessionScopeResolver, InMemorySessionStorageProvider
+from config.storage import DefaultSessionScopeResolver, InMemorySessionStorageProvider, SessionScope
 from config.token import BzmToken
 from models.result import BaseResult
 from tests.conftest import make_ctx
@@ -31,6 +31,7 @@ import tools.async_task_manager as task_manager
 
 _TOKEN = BzmToken("local", "secret")
 _SESSION_ID = "stdio"
+_STDIO_SCOPE = SessionScope(user_id="local", mcp_session_id="stdio")
 
 
 def _configure():
@@ -81,11 +82,11 @@ def test_polling_message_includes_operation_task_and_batch_summary():
             user_id="local",
             mcp_session_id="stdio",
         )
-        cache = await task_manager._get_or_create_cache("local", "stdio")
+        cache = await task_manager._get_or_create_cache(_STDIO_SCOPE)
         async with cache.lock:
             cache.hydrated = True
             cache.tasks[record.task_id] = record
-            await task_manager._persist_cache(cache, "local", "stdio")
+            await task_manager._commit_cache(cache, _STDIO_SCOPE)
 
         manager = _manager(store)
         message = await manager._polling_message(
@@ -122,11 +123,11 @@ def test_tasks_list_returns_minimal_snapshot_without_action_payload():
             user_id="local",
             mcp_session_id="stdio",
         )
-        cache = await task_manager._get_or_create_cache("local", "stdio")
+        cache = await task_manager._get_or_create_cache(_STDIO_SCOPE)
         async with cache.lock:
             cache.hydrated = True
             cache.tasks[record.task_id] = record
-            await task_manager._persist_cache(cache, "local", "stdio")
+            await task_manager._commit_cache(cache, _STDIO_SCOPE)
 
         manager = _manager(store)
         response = await manager.tasks_list()
@@ -156,11 +157,11 @@ def test_tasks_status_terminal_omits_task_result_payload():
             user_id="local",
             mcp_session_id="stdio",
         )
-        cache = await task_manager._get_or_create_cache("local", "stdio")
+        cache = await task_manager._get_or_create_cache(_STDIO_SCOPE)
         async with cache.lock:
             cache.hydrated = True
             cache.tasks[record.task_id] = record
-            await task_manager._persist_cache(cache, "local", "stdio")
+            await task_manager._commit_cache(cache, _STDIO_SCOPE)
 
         manager = _manager(store)
         response = await manager.tasks_status("done1234")
@@ -191,11 +192,11 @@ def test_tasks_get_terminal_includes_task_result_payload():
             user_id="local",
             mcp_session_id="stdio",
         )
-        cache = await task_manager._get_or_create_cache("local", "stdio")
+        cache = await task_manager._get_or_create_cache(_STDIO_SCOPE)
         async with cache.lock:
             cache.hydrated = True
             cache.tasks[record.task_id] = record
-            await task_manager._persist_cache(cache, "local", "stdio")
+            await task_manager._commit_cache(cache, _STDIO_SCOPE)
 
         manager = _manager(store)
         response = await manager.tasks_get("done5678", remove_on_terminal=False)
@@ -220,8 +221,7 @@ def test_execute_with_task_management_fast_path():
             action_payload={"manager": "TestManager", "method": "read"},
             coro_factory=action,
             fast_response_threshold_seconds=2.0,
-            user_id="local",
-            mcp_session_id="stdio",
+            scope=_STDIO_SCOPE,
         )
         assert result.error is None
         assert result.result == [{"fast": True}]
@@ -243,8 +243,7 @@ def test_execute_with_task_management_async_handoff():
             action_payload={"manager": "TestManager", "method": "read"},
             coro_factory=action,
             fast_response_threshold_seconds=0.05,
-            user_id="local",
-            mcp_session_id="stdio",
+            scope=_STDIO_SCOPE,
         )
         assert result.result is not None
         assert "task_id" in result.result[0]

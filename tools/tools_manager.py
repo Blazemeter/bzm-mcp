@@ -16,7 +16,7 @@ limitations under the License.
 import asyncio
 import re
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 from mcp.server.fastmcp import Context
 
@@ -77,10 +77,13 @@ class ToolsManager(Manager):
     def _scope(self) -> SessionScope:
         return self.scope_resolver.resolve(self.ctx, self.token)
 
-    def _session(self) -> Tuple[str, str]:
-        scope = self._scope()
-        return scope.user_id, scope.mcp_session_id
-
+    @staticmethod
+    def _poll_args_error(wait_for_terminal_ms: int, poll_interval_ms: int) -> Optional[BaseResult]:
+        if wait_for_terminal_ms < 0:
+            return BaseResult(error="wait_for_terminal_ms must be greater than or equal to 0.")
+        if poll_interval_ms <= 0:
+            return BaseResult(error="poll_interval_ms must be greater than 0.")
+        return None
 
     @staticmethod
     def _should_continue_polling(status: str) -> bool:
@@ -101,8 +104,7 @@ class ToolsManager(Manager):
 
 
     async def _batch_summary_line(self) -> str:
-        user_id, mcp_session_id = self._session()
-        records = await list_tasks(user_id=user_id, mcp_session_id=mcp_session_id)
+        records = await list_tasks(scope=self._scope())
         counts = {
             "completed": 0,
             "working": 0,
@@ -178,6 +180,75 @@ class ToolsManager(Manager):
         )
         return f"{line} | {await self._batch_summary_line()}"
 
+    async def _wait_for_terminal(
+            self,
+            task_id: str,
+            task_record,
+            wait_for_terminal_ms: int,
+            poll_interval_ms: int,
+    ):
+        """Poll Storage until terminal, timeout, or the record disappears.
+
+        Returns (record, polling_exhausted, error_result). error_result is set
+        when the task vanishes mid-poll.
+        """
+        if wait_for_terminal_ms <= 0 or is_terminal_status(task_record.status):
+            return task_record, False, None
+
+        scope = self._scope()
+        start_time = time.monotonic()
+        wait_seconds = wait_for_terminal_ms / 1000.0
+        poll_seconds = poll_interval_ms / 1000.0
+        attempt = 0
+        polling_exhausted = False
+
+        while True:
+            task_record = await get_task_record(task_id, scope=scope)
+            if not task_record:
+                return None, False, BaseResult(error=f"Task ID {task_id} was not found.")
+            if is_terminal_status(task_record.status):
+                break
+
+            elapsed = time.monotonic() - start_time
+            if elapsed >= wait_seconds:
+                polling_exhausted = True
+                break
+
+            attempt += 1
+            progress = min(100.0, (elapsed / wait_seconds) * 100.0) if wait_seconds > 0 else 100.0
+            try:
+                await self.ctx.report_progress(
+                    progress=progress,
+                    total=100.0,
+                    message=await self._polling_message(
+                        task_record=task_record,
+                        poll_count=attempt,
+                        elapsed_seconds=int(elapsed),
+                        next_poll_seconds=poll_seconds,
+                        window_seconds=wait_seconds,
+                    ),
+                )
+            except Exception:
+                pass
+
+            remaining = wait_seconds - elapsed
+            await asyncio.sleep(min(poll_seconds, remaining))
+
+        try:
+            final_elapsed = min(wait_seconds, time.monotonic() - start_time)
+            await self.ctx.report_progress(
+                progress=100.0,
+                total=100.0,
+                message=await self._polling_finished_message(
+                    task_record=task_record,
+                    elapsed_seconds=int(final_elapsed),
+                ),
+            )
+        except Exception:
+            pass
+
+        return task_record, polling_exhausted, None
+
     async def tasks_get(
             self,
             task_id: str,
@@ -185,69 +256,19 @@ class ToolsManager(Manager):
             wait_for_terminal_ms: int = 0,
             poll_interval_ms: int = 1000,
     ) -> BaseResult:
-        if wait_for_terminal_ms < 0:
-            return BaseResult(error="wait_for_terminal_ms must be greater than or equal to 0.")
-        if poll_interval_ms <= 0:
-            return BaseResult(error="poll_interval_ms must be greater than 0.")
+        if error := self._poll_args_error(wait_for_terminal_ms, poll_interval_ms):
+            return error
 
-        user_id, mcp_session_id = self._session()
-        task_record = await get_task_record(task_id, user_id=user_id, mcp_session_id=mcp_session_id)
+        scope = self._scope()
+        task_record = await get_task_record(task_id, scope=scope)
         if not task_record:
             return BaseResult(error=f"Task ID {task_id} was not found.")
 
-        polling_exhausted = False
-        if wait_for_terminal_ms > 0 and not is_terminal_status(task_record.status):
-            start_time = time.monotonic()
-            wait_seconds = wait_for_terminal_ms / 1000.0
-            poll_seconds = poll_interval_ms / 1000.0
-            attempt = 0
-
-            while True:
-                task_record = await get_task_record(
-                    task_id, user_id=user_id, mcp_session_id=mcp_session_id
-                )
-                if not task_record:
-                    return BaseResult(error=f"Task ID {task_id} was not found.")
-                if is_terminal_status(task_record.status):
-                    break
-
-                elapsed = time.monotonic() - start_time
-                if elapsed >= wait_seconds:
-                    polling_exhausted = True
-                    break
-
-                attempt += 1
-                progress = min(100.0, (elapsed / wait_seconds) * 100.0) if wait_seconds > 0 else 100.0
-                try:
-                    await self.ctx.report_progress(
-                        progress=progress,
-                        total=100.0,
-                        message=await self._polling_message(
-                            task_record=task_record,
-                            poll_count=attempt,
-                            elapsed_seconds=int(elapsed),
-                            next_poll_seconds=poll_seconds,
-                            window_seconds=wait_seconds,
-                        ),
-                    )
-                except Exception:
-                    pass
-
-                remaining = wait_seconds - elapsed
-                await asyncio.sleep(min(poll_seconds, remaining))
-
-            try:
-                final_elapsed = min(wait_seconds, time.monotonic() - start_time)
-                await self.ctx.report_progress(
-                    progress=100.0,
-                    total=100.0,
-                    message=await self._polling_finished_message(
-                        task_record=task_record,
-                        elapsed_seconds=int(final_elapsed),
-                    ),
-                )
-            except Exception:
-                pass
+        task_record, polling_exhausted, missing = await self._wait_for_terminal(
+            task_id, task_record, wait_for_terminal_ms, poll_interval_ms,
+        )
+        if missing:
+            return missing
 
         terminal = is_terminal_status(task_record.status)
         snapshot = task_snapshot(task_record, include_result=terminal)
@@ -255,7 +276,7 @@ class ToolsManager(Manager):
         snapshot["next_poll_after_ms"] = poll_interval_ms if snapshot["should_continue_polling"] else 0
 
         if terminal and remove_on_terminal:
-            await remove_task(task_id, user_id=user_id, mcp_session_id=mcp_session_id)
+            await remove_task(task_id, scope=scope)
             return BaseResult(
                 result=[snapshot],
                 info=[
@@ -290,69 +311,18 @@ class ToolsManager(Manager):
             wait_for_terminal_ms: int = 0,
             poll_interval_ms: int = 1000,
     ) -> BaseResult:
-        if wait_for_terminal_ms < 0:
-            return BaseResult(error="wait_for_terminal_ms must be greater than or equal to 0.")
-        if poll_interval_ms <= 0:
-            return BaseResult(error="poll_interval_ms must be greater than 0.")
+        if error := self._poll_args_error(wait_for_terminal_ms, poll_interval_ms):
+            return error
 
-        user_id, mcp_session_id = self._session()
-        task_record = await get_task_record(task_id, user_id=user_id, mcp_session_id=mcp_session_id)
+        task_record = await get_task_record(task_id, scope=self._scope())
         if not task_record:
             return BaseResult(error=f"Task ID {task_id} was not found.")
 
-        polling_exhausted = False
-        if wait_for_terminal_ms > 0 and not is_terminal_status(task_record.status):
-            start_time = time.monotonic()
-            wait_seconds = wait_for_terminal_ms / 1000.0
-            poll_seconds = poll_interval_ms / 1000.0
-            attempt = 0
-
-            while True:
-                task_record = await get_task_record(
-                    task_id, user_id=user_id, mcp_session_id=mcp_session_id
-                )
-                if not task_record:
-                    return BaseResult(error=f"Task ID {task_id} was not found.")
-                if is_terminal_status(task_record.status):
-                    break
-
-                elapsed = time.monotonic() - start_time
-                if elapsed >= wait_seconds:
-                    polling_exhausted = True
-                    break
-
-                attempt += 1
-                progress = min(100.0, (elapsed / wait_seconds) * 100.0) if wait_seconds > 0 else 100.0
-                try:
-                    await self.ctx.report_progress(
-                        progress=progress,
-                        total=100.0,
-                        message=await self._polling_message(
-                            task_record=task_record,
-                            poll_count=attempt,
-                            elapsed_seconds=int(elapsed),
-                            next_poll_seconds=poll_seconds,
-                            window_seconds=wait_seconds,
-                        ),
-                    )
-                except Exception:
-                    pass
-
-                remaining = wait_seconds - elapsed
-                await asyncio.sleep(min(poll_seconds, remaining))
-
-            try:
-                final_elapsed = min(wait_seconds, time.monotonic() - start_time)
-                await self.ctx.report_progress(
-                    progress=100.0,
-                    total=100.0,
-                    message=await self._polling_finished_message(
-                        task_record=task_record,
-                        elapsed_seconds=int(final_elapsed),
-                    ),
-                )
-            except Exception:
-                pass
+        task_record, polling_exhausted, missing = await self._wait_for_terminal(
+            task_id, task_record, wait_for_terminal_ms, poll_interval_ms,
+        )
+        if missing:
+            return missing
 
         snapshot = task_snapshot(task_record, include_result=False)
         snapshot["should_continue_polling"] = self._should_continue_polling(task_record.status)
@@ -374,8 +344,7 @@ class ToolsManager(Manager):
             status_list: Optional[list[str]] = None,
     ) -> BaseResult:
         filters = status_list if status_list else ([status] if status else None)
-        user_id, mcp_session_id = self._session()
-        records = await list_tasks(filters, user_id=user_id, mcp_session_id=mcp_session_id)
+        records = await list_tasks(filters, scope=self._scope())
         snapshots = []
         for record in records:
             base_snapshot = task_snapshot(record, include_result=False)
@@ -399,14 +368,14 @@ class ToolsManager(Manager):
         return BaseResult(result=snapshots, total=len(snapshots), has_more=False)
 
     async def tasks_cancel(self, task_id: str) -> BaseResult:
-        user_id, mcp_session_id = self._session()
-        prior = await get_task_record(task_id, user_id=user_id, mcp_session_id=mcp_session_id)
+        scope = self._scope()
+        prior = await get_task_record(task_id, scope=scope)
         if not prior:
             return BaseResult(error=f"Task ID {task_id} was not found.")
         was_terminal = is_terminal_status(prior.status)
         had_local_handle = bool(prior.asyncio_task and not prior.asyncio_task.done())
 
-        task_record = await cancel_task(task_id, user_id=user_id, mcp_session_id=mcp_session_id)
+        task_record = await cancel_task(task_id, scope=scope)
         if not task_record:
             return BaseResult(error=f"Task ID {task_id} was not found.")
 
@@ -431,15 +400,15 @@ class ToolsManager(Manager):
         )
 
     async def tasks_remove(self, task_id: str) -> BaseResult:
-        user_id, mcp_session_id = self._session()
-        task_record = await get_task_record(task_id, user_id=user_id, mcp_session_id=mcp_session_id)
+        scope = self._scope()
+        task_record = await get_task_record(task_id, scope=scope)
         if not task_record:
             return BaseResult(error=f"Task ID {task_id} was not found.")
 
         cancel_requested = False
         if is_active_status(task_record.status):
             cancel_requested = True
-            await cancel_task(task_id, user_id=user_id, mcp_session_id=mcp_session_id)
+            await cancel_task(task_id, scope=scope)
             if task_record.asyncio_task:
                 try:
                     await asyncio.wait_for(asyncio.shield(task_record.asyncio_task), timeout=0.2)
@@ -449,7 +418,7 @@ class ToolsManager(Manager):
                     pass
 
         snapshot = task_snapshot(task_record, include_result=is_terminal_status(task_record.status))
-        removed = await remove_task(task_id, user_id=user_id, mcp_session_id=mcp_session_id)
+        removed = await remove_task(task_id, scope=scope)
         if not removed:
             return BaseResult(error=f"Task ID {task_id} could not be removed.")
 

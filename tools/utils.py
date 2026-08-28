@@ -38,7 +38,7 @@ from mcp.types import CallToolResult
 from pydantic import BaseModel
 
 from config.blazemeter import BZM_API_BASE_URL
-from config.context_resolution import resolve_ctx_user_config
+from config.context_resolution import resolve_ctx_token, resolve_ctx_user_config
 from config.security import validate_http_request_endpoint
 from config.token import BzmToken
 from config.version import __version__
@@ -152,7 +152,6 @@ _task_management_enabled = contextvars.ContextVar("task_management_enabled", def
 _result_format_context = contextvars.ContextVar("result_format_context", default="auto")
 _tool_result_depth = contextvars.ContextVar("tool_result_depth", default=0)
 _result_debug_enabled = False
-_tool_auth_provider: Any = None
 
 
 class Operations(Enum):
@@ -179,12 +178,6 @@ TOOLS_ACTIONS_SKIP_AUTO_DATAFRAME = frozenset({
     "dataframes_clear",
     "dataframes_sql_help",
 })
-
-
-def configure_tool_auth(auth: Any) -> None:
-    """Wire AuthPort so @tool_result can resolve partition tokens for materialization."""
-    global _tool_auth_provider
-    _tool_auth_provider = auth
 
 
 def set_result_debug_enabled(enabled: bool):
@@ -256,12 +249,9 @@ def validate_non_empty_str_arg(
 
 
 def _resolve_tool_token(ctx: Any) -> Optional[BzmToken]:
-    if _tool_auth_provider is None or ctx is None:
+    if ctx is None:
         return None
-    try:
-        return _tool_auth_provider.get_token(ctx)
-    except Exception:
-        return None
+    return resolve_ctx_token(ctx)
 
 
 def _resolve_invocation(
@@ -445,24 +435,30 @@ async def execute_with_task_management(
         coro_factory: Callable[[], Awaitable[Any]],
         time_to_live_ms: Optional[int] = None,
         fast_response_threshold_seconds: float = 5.0,
-        user_id: str = "anonymous",
-        mcp_session_id: str = "default",
+        scope: Optional[Any] = None,
 ) -> BaseResult:
     # Deferred import avoids circular dependency: utils → async_task_manager → dataframe_manager → utils.
-    from tools.async_task_manager import submit_task, get_task_record, remove_task, task_snapshot
+    from config.storage import SessionScope
+    from tools.async_task_manager import (
+        DEFAULT_SCOPE,
+        submit_task,
+        get_task_record,
+        remove_task,
+        task_snapshot,
+    )
 
+    resolved_scope = scope if isinstance(scope, SessionScope) else DEFAULT_SCOPE
     wait_started = time.monotonic()
     try:
         task_id = await submit_task(
             action_payload,
             coro_factory,
             time_to_live_ms=time_to_live_ms,
-            user_id=user_id,
-            mcp_session_id=mcp_session_id,
+            scope=resolved_scope,
         )
     except RuntimeError as exc:
         return BaseResult(error=str(exc))
-    task_record = await get_task_record(task_id, user_id=user_id, mcp_session_id=mcp_session_id)
+    task_record = await get_task_record(task_id, scope=resolved_scope)
     if not task_record or not task_record.asyncio_task:
         return BaseResult(error="Task could not be scheduled.")
 
@@ -471,9 +467,9 @@ async def execute_with_task_management(
             asyncio.shield(task_record.asyncio_task),
             timeout=fast_response_threshold_seconds,
         )
-        latest_record = await get_task_record(task_id, user_id=user_id, mcp_session_id=mcp_session_id)
+        latest_record = await get_task_record(task_id, scope=resolved_scope)
         if not latest_record or latest_record.result is None:
-            await remove_task(task_id, user_id=user_id, mcp_session_id=mcp_session_id)
+            await remove_task(task_id, scope=resolved_scope)
             return BaseResult(error="Task finished without result.")
         final_result = latest_record.result
         _attach_task_debug(final_result, latest_record)
@@ -481,10 +477,10 @@ async def execute_with_task_management(
         if isinstance(debug, dict):
             debug.setdefault("task", {})
             debug["task"]["sync_wait_ms"] = int((time.monotonic() - wait_started) * 1000)
-        await remove_task(task_id, user_id=user_id, mcp_session_id=mcp_session_id)
+        await remove_task(task_id, scope=resolved_scope)
         return final_result
     except asyncio.TimeoutError:
-        latest_record = await get_task_record(task_id, user_id=user_id, mcp_session_id=mcp_session_id)
+        latest_record = await get_task_record(task_id, scope=resolved_scope)
         if not latest_record:
             return BaseResult(error="Task was not found after scheduling.")
         snapshot = task_snapshot(latest_record, include_result=False)
@@ -533,9 +529,9 @@ def run_as_task(
                 "result_format": _result_format_context.get(),
             }
 
-            from tools.async_task_manager import partition_ids_from_manager
+            from tools.async_task_manager import session_scope_from_manager
 
-            user_id, mcp_session_id = partition_ids_from_manager(self)
+            scope = session_scope_from_manager(self)
             token = _task_management_enabled.set(True)
             try:
                 coro_factory = lambda: func(self, *args, **kwargs)
@@ -544,8 +540,7 @@ def run_as_task(
                     coro_factory=coro_factory,
                     time_to_live_ms=time_to_live_ms,
                     fast_response_threshold_seconds=fast_response_threshold_seconds,
-                    user_id=user_id,
-                    mcp_session_id=mcp_session_id,
+                    scope=scope,
                 )
             finally:
                 _task_management_enabled.reset(token)

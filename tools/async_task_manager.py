@@ -18,25 +18,35 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import json
 import logging
 import time
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Awaitable, Callable, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Set
 
 from config.storage import (
-    DefaultSessionScopeResolver,
     SessionPartitionPayload,
     SessionScope,
     SessionStoragePort,
     StorageNotConfiguredError,
+    resolve_session_scope,
 )
 from models.result import BaseResult
-from tools.utils import generate_simple_id, SIMPLE_ID_ALPHABET, SIMPLE_ID_LENGTH, normalize_simple_id
+from tools.dataframe_manager import finalize_tool_result
+from tools.utils import (
+    SIMPLE_ID_ALPHABET,
+    SIMPLE_ID_LENGTH,
+    TOOLS_ACTIONS_SKIP_AUTO_DATAFRAME,
+    generate_simple_id,
+    normalize_simple_id,
+)
 
 # Match DefaultSessionScopeResolver fallbacks when token/ctx are absent.
 DEFAULT_USER_ID = "anonymous"
 DEFAULT_SESSION_ID = "default"
+DEFAULT_SCOPE = SessionScope(user_id=DEFAULT_USER_ID, mcp_session_id=DEFAULT_SESSION_ID)
 
 # Crockford-like base32 alphabet used by generate_simple_id / task ids (tests assert against this).
 TASK_ID_ALPHABET = SIMPLE_ID_ALPHABET
@@ -53,6 +63,7 @@ ACTIVE_STATES = {STATUS_PARKING, STATUS_WORKING, STATUS_INPUT_REQUIRED}
 MAX_PARALLEL_TASKS = 10
 
 TASK_ID_MAX_ATTEMPTS = 10
+_MAX_SESSION_CACHES = 256
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +93,7 @@ _semaphore = asyncio.Semaphore(MAX_PARALLEL_TASKS)
 
 _storage: Optional[SessionStoragePort] = None
 _registry_lock = asyncio.Lock()
-_session_caches: Dict[tuple[str, str], "_SessionTaskCache"] = {}
+_session_caches: OrderedDict[tuple[str, str], "_SessionTaskCache"] = OrderedDict()
 
 
 @dataclass
@@ -112,6 +123,9 @@ class TaskRecord:
         if status in TERMINAL_STATES:
             self.finished_at = self.last_updated_at
 
+    def scope(self) -> SessionScope:
+        return SessionScope(user_id=self.user_id, mcp_session_id=self.mcp_session_id)
+
 
 @dataclass
 class _SessionTaskCache:
@@ -126,7 +140,7 @@ def configure_task_storage(storage: SessionStoragePort) -> None:
     """Bind session storage from AppRuntime (composition root)."""
     global _storage, _session_caches
     _storage = storage
-    _session_caches = {}
+    _session_caches = OrderedDict()
 
 
 def _get_storage() -> SessionStoragePort:
@@ -138,17 +152,47 @@ def _get_storage() -> SessionStoragePort:
     return _storage
 
 
-def _session_key(user_id: str, mcp_session_id: str) -> tuple[str, str]:
-    return (str(user_id), str(mcp_session_id))
+def _session_key(scope: SessionScope) -> tuple[str, str]:
+    return (str(scope.user_id), str(scope.mcp_session_id))
 
 
-async def _get_or_create_cache(user_id: str, mcp_session_id: str) -> _SessionTaskCache:
-    key = _session_key(user_id, mcp_session_id)
+def _task_key(task_id: str) -> str:
+    return normalize_simple_id(task_id)
+
+
+def _cache_is_idle(cache: _SessionTaskCache) -> bool:
+    if cache.lock.locked():
+        return False
+    for record in cache.tasks.values():
+        handle = record.asyncio_task
+        if handle is not None and not handle.done():
+            return False
+    return True
+
+
+def _evict_idle_session_caches() -> None:
+    """Drop least-recent idle caches so the map cannot grow without bound."""
+    while len(_session_caches) >= _MAX_SESSION_CACHES:
+        evicted = False
+        for key, cache in list(_session_caches.items()):
+            if _cache_is_idle(cache):
+                del _session_caches[key]
+                evicted = True
+                break
+        if not evicted:
+            return
+
+
+async def _get_or_create_cache(scope: SessionScope) -> _SessionTaskCache:
+    key = _session_key(scope)
     async with _registry_lock:
         cache = _session_caches.get(key)
-        if cache is None:
-            cache = _SessionTaskCache()
-            _session_caches[key] = cache
+        if cache is not None:
+            _session_caches.move_to_end(key)
+            return cache
+        _evict_idle_session_caches()
+        cache = _SessionTaskCache()
+        _session_caches[key] = cache
         return cache
 
 
@@ -166,29 +210,23 @@ def _generate_task_id() -> str:
     return generate_simple_id()
 
 
+def _json_default(value: Any) -> Any:
+    if hasattr(value, "model_dump"):
+        return value.model_dump(mode="json")
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return str(value)
+
+
 def _result_to_storage_dict(result: Optional[BaseResult]) -> Optional[Dict[str, Any]]:
-    """Serialize a BaseResult for Storage (tolerant of non-JSON model payloads)."""
+    """Serialize a BaseResult to a JSON-compatible dict for Storage."""
     if result is None:
         return None
     try:
-        return result.model_dump(mode="json")
-    except Exception:
-        # Test doubles / unexpected objects: coerce list payloads via JSON default.
-        from tools.dataframe_manager import serialize_result_to_compact_json
-        import json
-
-        return {
-            "result": (
-                json.loads(serialize_result_to_compact_json(result.result))
-                if result.result is not None
-                else None
-            ),
-            "total": result.total,
-            "has_more": result.has_more,
-            "error": result.error,
-            "info": list(result.info) if result.info else None,
-            "warning": list(result.warning) if result.warning else None,
-        }
+        dumped = result.model_dump(mode="json")
+    except (TypeError, ValueError):
+        dumped = result.model_dump(mode="python")
+    return json.loads(json.dumps(dumped, default=_json_default))
 
 
 def _serialize_record(record: TaskRecord) -> Dict[str, Any]:
@@ -252,57 +290,79 @@ def _merge_remote_into_cache(cache: _SessionTaskCache, remote_tasks: Dict[str, A
     polling.
     """
     merged: Dict[str, TaskRecord] = {}
-    for task_id, raw in remote_tasks.items():
+    for raw in remote_tasks.values():
         if not isinstance(raw, dict) or "task_id" not in raw:
             continue
         remote = _deserialize_record(raw)
-        local = cache.tasks.get(normalize_simple_id(task_id))
+        key = _task_key(remote.task_id)
+        local = cache.tasks.get(key)
         if local is not None and local.asyncio_task is not None:
-            merged[local.task_id] = local
+            merged[key] = local
         else:
-            merged[remote.task_id] = remote
-    # Keep any purely local in-flight tasks not yet visible remotely (race).
+            merged[key] = remote
     for task_id, local in cache.tasks.items():
-        if task_id not in merged:
-            merged[task_id] = local
+        key = _task_key(task_id)
+        if key not in merged:
+            merged[key] = local
     cache.tasks = merged
 
 
-async def _hydrate_cache(
-        cache: _SessionTaskCache,
-        user_id: str,
-        mcp_session_id: str,
-) -> None:
+async def _hydrate_cache(cache: _SessionTaskCache, scope: SessionScope) -> None:
     """Load partition tasks into the session cache (caller holds cache.lock)."""
-    partition = await _get_storage().get_partition(
-        SessionScope(user_id=user_id, mcp_session_id=mcp_session_id)
-    )
+    partition = await _get_storage().get_partition(scope)
     remote = partition.tasks if partition else {}
-    if not cache.hydrated:
-        loaded: Dict[str, TaskRecord] = {}
-        for raw in remote.values():
-            if not isinstance(raw, dict) or "task_id" not in raw:
-                continue
-            record = _deserialize_record(raw)
-            loaded[record.task_id] = record
-        cache.tasks = loaded
-        cache.hydrated = True
-        return
     _merge_remote_into_cache(cache, remote)
+    cache.hydrated = True
 
 
-async def _persist_cache(
+async def _commit_cache(
         cache: _SessionTaskCache,
-        user_id: str,
-        mcp_session_id: str,
+        scope: SessionScope,
+        snapshot_ids: Optional[Set[str]] = None,
 ) -> None:
-    """Persist only tasks for this session (preserves dataframes/metadata/files)."""
+    """
+    Persist the tasks map for this SessionScope.
+
+    Atomicity: one put_partition of the full tasks map.
+    Consistency: partial payload (tasks only) so dataframes/metadata/files stay.
+    Isolation: caller holds the in-process session lock. Before PUT, re-read
+    and union keys added by other workers; drop ids this operation removed.
+    Live local asyncio handles win on overlapping keys via cache.tasks overlay.
+    Durability: delegated to SessionStoragePort.
+
+    Same-key concurrent writes and the GET/PUT race can still last-write-win;
+    closing that window requires Storage CAS/etag (not implemented here).
+    """
+    current_ids = set(cache.tasks.keys())
+    removed_ids = (
+        {_task_key(task_id) for task_id in snapshot_ids} - current_ids
+        if snapshot_ids is not None
+        else set()
+    )
+    partition = await _get_storage().get_partition(scope)
+    remote = partition.tasks if partition else {}
+
+    merged: Dict[str, TaskRecord] = {}
+    for raw in remote.values():
+        if not isinstance(raw, dict) or "task_id" not in raw:
+            continue
+        record = _deserialize_record(raw)
+        merged[_task_key(record.task_id)] = record
+
+    for removed_id in removed_ids:
+        merged.pop(removed_id, None)
+
+    merged.update(cache.tasks)
+    for removed_id in removed_ids:
+        merged.pop(removed_id, None)
+
+    cache.tasks = merged
     tasks = {
         task_id: _serialize_record(record)
-        for task_id, record in cache.tasks.items()
+        for task_id, record in merged.items()
     }
     await _get_storage().put_partition(
-        SessionScope(user_id=user_id, mcp_session_id=mcp_session_id),
+        scope,
         SessionPartitionPayload(tasks=tasks),
     )
 
@@ -330,10 +390,11 @@ async def _set_status_and_persist(
         status_message: str,
 ) -> None:
     record.set_status(status, status_message)
-    cache = await _get_or_create_cache(record.user_id, record.mcp_session_id)
+    scope = record.scope()
+    cache = await _get_or_create_cache(scope)
     async with cache.lock:
-        cache.tasks[record.task_id] = record
-        await _persist_cache(cache, record.user_id, record.mcp_session_id)
+        cache.tasks[_task_key(record.task_id)] = record
+        await _commit_cache(cache, scope)
 
 
 async def _task_runner(task_record: TaskRecord, coro_factory: Callable[[], Awaitable[Any]]):
@@ -359,20 +420,16 @@ async def _task_runner(task_record: TaskRecord, coro_factory: Callable[[], Await
             normalized = _normalize_result(action_result)
             result_format = str(task_record.action.get("result_format", "auto")).strip().lower()
             origin_action = str(task_record.action.get("method", "unknown")).strip() or "unknown"
-            # Single materialization owner: reuse finalize_tool_result (same policy as @tool_result).
-            from tools.dataframe_manager import finalize_tool_result
-            from tools.utils import TOOLS_ACTIONS_SKIP_AUTO_DATAFRAME
-
+            # Task runner owns materialization for parked work (pollers read Storage).
+            # run_tool_with_runtime may finalize again on the fast path; that path is
+            # idempotent for already-stored dataframe payloads.
             normalized = await finalize_tool_result(
                 normalized,
                 action=origin_action,
                 args={"result_format": result_format},
                 origin_manager=str(task_record.action.get("manager", "unknown")),
                 session_storage=_get_storage(),
-                scope=SessionScope(
-                    user_id=task_record.user_id,
-                    mcp_session_id=task_record.mcp_session_id,
-                ),
+                scope=task_record.scope(),
                 excluded_actions=TOOLS_ACTIONS_SKIP_AUTO_DATAFRAME,
             )
             task_record.result = normalized
@@ -410,12 +467,11 @@ async def submit_task(
         action: Dict[str, Any],
         coro_factory: Callable[[], Awaitable[Any]],
         time_to_live_ms: Optional[int] = None,
-        user_id: str = DEFAULT_USER_ID,
-        mcp_session_id: str = DEFAULT_SESSION_ID,
+        scope: SessionScope = DEFAULT_SCOPE,
 ) -> str:
-    cache = await _get_or_create_cache(user_id, mcp_session_id)
+    cache = await _get_or_create_cache(scope)
     async with cache.lock:
-        await _hydrate_cache(cache, user_id, mcp_session_id)
+        await _hydrate_cache(cache, scope)
         now = time.time()
         task_id = await _allocate_task_id(cache)
         task_record = TaskRecord(
@@ -427,41 +483,41 @@ async def submit_task(
             status=STATUS_PARKING,
             status_message="Task accepted and pending scheduling.",
             status_info=STATUS_INFO[STATUS_PARKING],
-            user_id=user_id,
-            mcp_session_id=mcp_session_id,
+            user_id=scope.user_id,
+            mcp_session_id=scope.mcp_session_id,
         )
         cache.tasks[task_id] = task_record
-        await _persist_cache(cache, user_id, mcp_session_id)
-
-    async_task = asyncio.create_task(_task_runner(task_record, coro_factory))
-    task_record.asyncio_task = async_task
+        await _commit_cache(cache, scope)
+        # Assign the handle before releasing the lock so concurrent get/cancel
+        # cannot hydrate a deserialized copy that drops asyncio.Task identity.
+        async_task = asyncio.create_task(_task_runner(task_record, coro_factory))
+        task_record.asyncio_task = async_task
     return task_id
 
 
 async def get_task_record(
         task_id: str,
-        user_id: str = DEFAULT_USER_ID,
-        mcp_session_id: str = DEFAULT_SESSION_ID,
+        scope: SessionScope = DEFAULT_SCOPE,
 ) -> Optional[TaskRecord]:
-    normalized = normalize_simple_id(task_id)
-    cache = await _get_or_create_cache(user_id, mcp_session_id)
+    normalized = _task_key(task_id)
+    cache = await _get_or_create_cache(scope)
     async with cache.lock:
-        await _hydrate_cache(cache, user_id, mcp_session_id)
+        await _hydrate_cache(cache, scope)
         return cache.tasks.get(normalized)
 
 
 async def remove_task(
         task_id: str,
-        user_id: str = DEFAULT_USER_ID,
-        mcp_session_id: str = DEFAULT_SESSION_ID,
+        scope: SessionScope = DEFAULT_SCOPE,
 ) -> bool:
-    normalized = normalize_simple_id(task_id)
-    cache = await _get_or_create_cache(user_id, mcp_session_id)
+    normalized = _task_key(task_id)
+    cache = await _get_or_create_cache(scope)
     async with cache.lock:
-        await _hydrate_cache(cache, user_id, mcp_session_id)
+        await _hydrate_cache(cache, scope)
+        snapshot_ids = set(cache.tasks.keys())
         removed = cache.tasks.pop(normalized, None) is not None
         if removed:
-            await _persist_cache(cache, user_id, mcp_session_id)
+            await _commit_cache(cache, scope, snapshot_ids=snapshot_ids)
         return removed
 
 
@@ -489,12 +545,11 @@ def task_snapshot(task_record: TaskRecord, include_result: bool = False) -> Dict
 
 async def list_tasks(
         status_list: Optional[List[str]] = None,
-        user_id: str = DEFAULT_USER_ID,
-        mcp_session_id: str = DEFAULT_SESSION_ID,
+        scope: SessionScope = DEFAULT_SCOPE,
 ) -> List[TaskRecord]:
-    cache = await _get_or_create_cache(user_id, mcp_session_id)
+    cache = await _get_or_create_cache(scope)
     async with cache.lock:
-        await _hydrate_cache(cache, user_id, mcp_session_id)
+        await _hydrate_cache(cache, scope)
         records = list(cache.tasks.values())
     if not status_list:
         return records
@@ -512,8 +567,7 @@ def is_active_status(status: str) -> bool:
 
 async def cancel_task(
         task_id: str,
-        user_id: str = DEFAULT_USER_ID,
-        mcp_session_id: str = DEFAULT_SESSION_ID,
+        scope: SessionScope = DEFAULT_SCOPE,
 ) -> Optional[TaskRecord]:
     """
     Request cancellation for a task in this session partition.
@@ -524,10 +578,10 @@ async def cancel_task(
     marked cancelled in Storage for status visibility, but the owning worker's
     coroutine may still finish and overwrite status — see hosted runbook.
     """
-    normalized_task_id = normalize_simple_id(task_id)
-    cache = await _get_or_create_cache(user_id, mcp_session_id)
+    normalized_task_id = _task_key(task_id)
+    cache = await _get_or_create_cache(scope)
     async with cache.lock:
-        await _hydrate_cache(cache, user_id, mcp_session_id)
+        await _hydrate_cache(cache, scope)
         task_record = cache.tasks.get(normalized_task_id)
         if not task_record:
             return None
@@ -553,17 +607,14 @@ async def cancel_task(
                     "Execution affinity is process-local in hosted MCP."
                 )
             )
-        await _persist_cache(cache, user_id, mcp_session_id)
+        await _commit_cache(cache, scope)
         return task_record
 
 
-def partition_ids_from_manager(manager: Any) -> tuple[str, str]:
+def session_scope_from_manager(manager: Any) -> SessionScope:
     """Resolve Storage partition keys from a Manager instance (token + ctx)."""
-    token = getattr(manager, "token", None)
-    ctx = getattr(manager, "ctx", None)
-    resolver = getattr(manager, "scope_resolver", None) or DefaultSessionScopeResolver()
-    try:
-        scope = resolver.resolve(ctx, token)
-        return scope.user_id, scope.mcp_session_id
-    except Exception:
-        return DEFAULT_USER_ID, DEFAULT_SESSION_ID
+    return resolve_session_scope(
+        getattr(manager, "ctx", None),
+        token=getattr(manager, "token", None),
+        scope_resolver=getattr(manager, "scope_resolver", None),
+    )
