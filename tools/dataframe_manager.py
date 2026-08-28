@@ -51,7 +51,7 @@ INVALID_RESULT_FORMAT_ERROR = (
 MISSING_STORAGE_ERROR = "Session storage is required to persist dataframes."
 
 # In-process mutexes only. Hosted Cloud Run workers do not share this map;
-# Storage merge-on-persist is the cross-instance safeguard (not CAS).
+# SessionStoragePort merge-on-commit is the cross-instance safeguard (not CAS).
 _MAX_SESSION_LOCKS = 256
 _locks_guard = asyncio.Lock()
 _session_locks: OrderedDict[tuple[str, str], asyncio.Lock] = OrderedDict()
@@ -121,12 +121,12 @@ def _deserialize_record(payload: Dict[str, Any]) -> "DataFrameRecord":
 
 
 async def _load_working_set(
-        storage: SessionStoragePort,
+        session_storage: SessionStoragePort,
         scope: SessionScope,
 ) -> _SessionWorkingSet:
-    """Always reload dataframes from Storage (no process-lifetime cache)."""
+    """Always reload dataframes from SessionStoragePort (no process-lifetime cache)."""
     working_set = _SessionWorkingSet()
-    partition = await storage.get_partition(scope)
+    partition = await session_storage.get_partition(scope)
     if not partition:
         return working_set
     for raw in partition.dataframes.values():
@@ -138,23 +138,27 @@ async def _load_working_set(
     return working_set
 
 
-async def _persist_working_set(
-        storage: SessionStoragePort,
+async def _commit_working_set(
+        session_storage: SessionStoragePort,
         scope: SessionScope,
         working_set: _SessionWorkingSet,
         snapshot_ids: Optional[Set[str]] = None,
 ) -> None:
     """
-    Persist only dataframes for this session (preserves tasks/metadata/files).
+    Commit the dataframes map for this SessionScope.
 
-    Re-reads Storage immediately before PUT and unions keys added by other
-    writers since hydrate, while dropping ids this operation removed.
+    Atomicity: one put_partition of the full dataframes map.
+    Consistency: partial payload (dataframes only) so tasks/metadata/files stay.
+    Isolation: caller holds the in-process session lock. Before PUT, re-read
+    and union keys added by other workers; drop ids this operation removed.
+    Durability: delegated to SessionStoragePort.
+
     Same-key concurrent writes and the GET/PUT race can still last-write-win;
     closing that window requires Storage CAS/etag (not implemented here).
     """
     current_ids = set(working_set.dataframes.keys())
     removed_ids = (snapshot_ids - current_ids) if snapshot_ids is not None else set()
-    latest = await _load_working_set(storage, scope)
+    latest = await _load_working_set(session_storage, scope)
     merged: Dict[str, "DataFrameRecord"] = dict(latest.dataframes)
     for removed_id in removed_ids:
         merged.pop(removed_id, None)
@@ -164,17 +168,19 @@ async def _persist_working_set(
         dataframe_id: _serialize_record(record)
         for dataframe_id, record in merged.items()
     }
-    await storage.put_partition(scope, SessionPartitionPayload(dataframes=dataframes))
+    await session_storage.put_partition(
+        scope, SessionPartitionPayload(dataframes=dataframes),
+    )
 
 
 @asynccontextmanager
 async def _locked_working_set(
-        storage: SessionStoragePort,
+        session_storage: SessionStoragePort,
         scope: SessionScope,
 ) -> AsyncIterator[_SessionWorkingSet]:
     lock = await _lock_for(scope)
     async with lock:
-        yield await _load_working_set(storage, scope)
+        yield await _load_working_set(session_storage, scope)
 
 
 def _unregister_table(working_set: _SessionWorkingSet, table_name: str) -> None:
@@ -379,7 +385,7 @@ async def register_dataframe(
         origin_manager: str,
         origin_action: str,
         json_size_chars: int,
-        storage: SessionStoragePort,
+        session_storage: SessionStoragePort,
         scope: SessionScope,
         flatten: bool = True,
 ) -> Dict[str, Any]:
@@ -389,7 +395,7 @@ async def register_dataframe(
         origin_manager,
         origin_action,
         json_size_chars,
-        storage=storage,
+        session_storage=session_storage,
         scope=scope,
         flatten=flatten,
     )
@@ -415,7 +421,7 @@ async def _register_dataframe_instance(
         origin_manager: str,
         origin_action: str,
         json_size_chars: int,
-        storage: SessionStoragePort,
+        session_storage: SessionStoragePort,
         scope: SessionScope,
         flatten: bool = True,
 ) -> Dict[str, Any]:
@@ -429,7 +435,7 @@ async def _register_dataframe_instance(
                 origin_action,
                 exc_info=True,
             )
-    async with _locked_working_set(storage, scope) as working_set:
+    async with _locked_working_set(session_storage, scope) as working_set:
         snapshot_ids = set(working_set.dataframes.keys())
         dataframe_id = _allocate_dataframe_id(working_set)
         table_name = f"df_{dataframe_id}"
@@ -448,8 +454,8 @@ async def _register_dataframe_instance(
         )
         working_set.sql_context.register(table_name, dataframe)
         working_set.dataframes[dataframe_id] = record
-        await _persist_working_set(
-            storage, scope, working_set, snapshot_ids=snapshot_ids,
+        await _commit_working_set(
+            session_storage, scope, working_set, snapshot_ids=snapshot_ids,
         )
     return record.to_metadata()
 
@@ -458,7 +464,7 @@ async def materialize_large_result_if_needed(
         base_result: BaseResult,
         origin_manager: str,
         origin_action: str,
-        storage: SessionStoragePort,
+        session_storage: SessionStoragePort,
         scope: SessionScope,
         force: bool = False,
 ) -> BaseResult:
@@ -504,7 +510,7 @@ async def materialize_large_result_if_needed(
         origin_manager=origin_manager,
         origin_action=origin_action,
         json_size_chars=json_size_chars,
-        storage=storage,
+        session_storage=session_storage,
         scope=scope,
     )
     base_result.result = [stored_as_dataframe_payload(metadata)]
@@ -536,7 +542,7 @@ def resolve_session_scope(
         token: Optional[BzmToken] = None,
         scope_resolver: Optional[SessionScopeResolverPort] = None,
 ) -> SessionScope:
-    """Resolve Storage partition keys from auth token + MCP session context."""
+    """Resolve SessionScope partition keys from auth token + MCP session context."""
     resolver = scope_resolver or DefaultSessionScopeResolver()
     resolved_token = token if token is not None else resolve_ctx_token(ctx)
     return resolver.resolve(ctx, resolved_token)
@@ -548,7 +554,7 @@ async def finalize_tool_result(
         action: Any,
         args: Any,
         origin_manager: str,
-        storage: Optional[SessionStoragePort] = None,
+        session_storage: Optional[SessionStoragePort] = None,
         scope_resolver: Optional[SessionScopeResolverPort] = None,
         token: Optional[BzmToken] = None,
         ctx: Any = None,
@@ -559,7 +565,7 @@ async def finalize_tool_result(
     Post-process a tool BaseResult: honor result_format and materialize large payloads.
 
     excluded_actions: skip auto materialization (still honors result_format=dataframe).
-    Storage is required once this path would persist; missing storage fails closed.
+    SessionStoragePort is required once this path would persist; missing session storage fails closed.
     Pass ``scope`` to skip token/ctx resolution (used by the async task runner).
     """
     if not isinstance(result, BaseResult) or result.error or result.result is None:
@@ -575,7 +581,7 @@ async def finalize_tool_result(
         return result
     if result_format == "auto" and isinstance(action, str) and action in excluded:
         return result
-    if storage is None:
+    if session_storage is None:
         return BaseResult(error=MISSING_STORAGE_ERROR)
 
     if scope is None:
@@ -585,7 +591,7 @@ async def finalize_tool_result(
             base_result=result,
             origin_manager=origin_manager,
             origin_action=str(action) if action is not None else "unknown",
-            storage=storage,
+            session_storage=session_storage,
             scope=scope,
             force=(result_format == "dataframe"),
         )
@@ -599,11 +605,11 @@ async def finalize_tool_result(
 
 
 async def list_dataframes_metadata(
-        storage: SessionStoragePort,
+        session_storage: SessionStoragePort,
         scope: SessionScope,
         include_schema: bool = False,
 ) -> List[Dict[str, Any]]:
-    async with _locked_working_set(storage, scope) as working_set:
+    async with _locked_working_set(session_storage, scope) as working_set:
         return [
             record.to_metadata(include_schema=include_schema)
             for record in working_set.dataframes.values()
@@ -612,11 +618,11 @@ async def list_dataframes_metadata(
 
 async def get_dataframe_metadata(
         dataframe_id: str,
-        storage: SessionStoragePort,
+        session_storage: SessionStoragePort,
         scope: SessionScope,
         include_schema: bool = True,
 ) -> Optional[Dict[str, Any]]:
-    async with _locked_working_set(storage, scope) as working_set:
+    async with _locked_working_set(session_storage, scope) as working_set:
         record = working_set.dataframes.get(dataframe_id)
         if not record:
             return None
@@ -624,11 +630,11 @@ async def get_dataframe_metadata(
 
 
 async def group_dataframe_schemas(
-        storage: SessionStoragePort,
+        session_storage: SessionStoragePort,
         scope: SessionScope,
         dataframe_id_list: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
-    async with _locked_working_set(storage, scope) as working_set:
+    async with _locked_working_set(session_storage, scope) as working_set:
         if dataframe_id_list:
             requested = [str(df_id) for df_id in dataframe_id_list]
             selected = [
@@ -782,7 +788,7 @@ def _validate_sql_read_only(sql: str) -> Optional[str]:
 
 async def query_dataframes(
         sql: str,
-        storage: SessionStoragePort,
+        session_storage: SessionStoragePort,
         scope: SessionScope,
         output_format: str = "matrix",
 ) -> Dict[str, Any]:
@@ -792,7 +798,7 @@ async def query_dataframes(
     normalized_output_format = str(output_format or "matrix").strip().lower()
     if normalized_output_format not in {"matrix", "columnar", "records"}:
         return {"error": "Invalid output_format. Allowed values: matrix, columnar, records."}
-    async with _locked_working_set(storage, scope) as working_set:
+    async with _locked_working_set(session_storage, scope) as working_set:
         return _execute_sql_on_working_set(working_set, sql, normalized_output_format)
 
 
@@ -871,41 +877,41 @@ def _remove_ids_from_working_set(
 
 async def remove_dataframes(
         dataframe_ids: List[str],
-        storage: SessionStoragePort,
+        session_storage: SessionStoragePort,
         scope: SessionScope,
 ) -> Dict[str, List[str]]:
     unique_ids = list(dict.fromkeys(dataframe_ids))
-    async with _locked_working_set(storage, scope) as working_set:
+    async with _locked_working_set(session_storage, scope) as working_set:
         snapshot_ids = set(working_set.dataframes.keys())
         removed, missing = _remove_ids_from_working_set(working_set, unique_ids)
         if removed:
-            await _persist_working_set(
-                storage, scope, working_set, snapshot_ids=snapshot_ids,
+            await _commit_working_set(
+                session_storage, scope, working_set, snapshot_ids=snapshot_ids,
             )
     return {"removed": removed, "missing": missing}
 
 
 async def remove_dataframe(
         dataframe_id: str,
-        storage: SessionStoragePort,
+        session_storage: SessionStoragePort,
         scope: SessionScope,
 ) -> bool:
-    result = await remove_dataframes([dataframe_id], storage, scope)
+    result = await remove_dataframes([dataframe_id], session_storage, scope)
     return bool(result["removed"])
 
 
 async def clear_dataframes(
-        storage: SessionStoragePort,
+        session_storage: SessionStoragePort,
         scope: SessionScope,
 ) -> int:
-    async with _locked_working_set(storage, scope) as working_set:
+    async with _locked_working_set(session_storage, scope) as working_set:
         snapshot_ids = set(working_set.dataframes.keys())
         removed, _ = _remove_ids_from_working_set(
             working_set, list(working_set.dataframes.keys()),
         )
         if removed:
-            await _persist_working_set(
-                storage, scope, working_set, snapshot_ids=snapshot_ids,
+            await _commit_working_set(
+                session_storage, scope, working_set, snapshot_ids=snapshot_ids,
             )
         return len(removed)
 

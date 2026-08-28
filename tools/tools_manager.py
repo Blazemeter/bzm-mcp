@@ -23,7 +23,6 @@ from mcp.server.fastmcp import Context
 from config.blazemeter import TOOLS_PREFIX
 from config.runtime import AppRuntime
 from config.storage import (
-    DefaultSessionScopeResolver,
     SessionScope,
     SessionScopeResolverPort,
     SessionStoragePort,
@@ -68,16 +67,14 @@ class ToolsManager(Manager):
     def __init__(
             self,
             ctx: Context,
-            storage: Optional[SessionStoragePort] = None,
-            scope_resolver: Optional[SessionScopeResolverPort] = None,
+            session_storage: SessionStoragePort,
+            scope_resolver: SessionScopeResolverPort,
     ):
         super().__init__(ctx)
-        self.storage = storage
-        self.scope_resolver = scope_resolver or DefaultSessionScopeResolver()
+        self.session_storage = session_storage
+        self.scope_resolver = scope_resolver
 
     def _scope(self) -> SessionScope:
-        if self.scope_resolver is None:
-            return DefaultSessionScopeResolver().resolve(self.ctx, self.token)
         return self.scope_resolver.resolve(self.ctx, self.token)
 
     def _session(self) -> Tuple[str, str]:
@@ -475,7 +472,7 @@ class ToolsManager(Manager):
     async def dataframes_list(self) -> BaseResult:
         scope = self._scope()
         metadata = await list_dataframes_metadata(
-            storage=self.storage,
+            session_storage=self.session_storage,
             scope=scope,
             include_schema=False,
         )
@@ -495,7 +492,7 @@ class ToolsManager(Manager):
         scope = self._scope()
         metadata = await get_dataframe_metadata(
             dataframe_id,
-            storage=self.storage,
+            session_storage=self.session_storage,
             scope=scope,
         )
         if not metadata:
@@ -514,7 +511,7 @@ class ToolsManager(Manager):
     ) -> BaseResult:
         scope = self._scope()
         grouped = await group_dataframe_schemas(
-            storage=self.storage,
+            session_storage=self.session_storage,
             scope=scope,
             dataframe_id_list=dataframe_id_list,
         )
@@ -561,7 +558,7 @@ class ToolsManager(Manager):
         ]
         query_response = await query_dataframes(
             sql,
-            storage=self.storage,
+            session_storage=self.session_storage,
             scope=scope,
             output_format=effective_output_format,
         )
@@ -579,7 +576,7 @@ class ToolsManager(Manager):
                 origin_manager="blazemeter_tools",
                 origin_action="dataframes_query",
                 json_size_chars=json_size_chars,
-                storage=self.storage,
+                session_storage=self.session_storage,
                 scope=scope,
             )
             return BaseResult(
@@ -609,7 +606,7 @@ class ToolsManager(Manager):
             return BaseResult(error=empty_list_error)
 
         unique_ids = list(dict.fromkeys(ids))
-        outcome = await remove_dataframes(unique_ids, self.storage, self._scope())
+        outcome = await remove_dataframes(unique_ids, self.session_storage, self._scope())
         removed_ids = set(outcome["removed"])
         missing_ids = outcome["missing"]
         removed_count = len(outcome["removed"])
@@ -647,7 +644,7 @@ class ToolsManager(Manager):
     @run_as_task()
     async def dataframes_clear(self) -> BaseResult:
         removed_count = await clear_dataframes(
-            storage=self.storage,
+            session_storage=self.session_storage,
             scope=self._scope(),
         )
         return BaseResult(

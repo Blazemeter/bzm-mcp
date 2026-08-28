@@ -5,6 +5,19 @@ Ops deploy (Cloud Run, DNS, CI) lives in
 This file documents how **bzm-mcp** uses the Storage Service introduced on
 `STREAMABLE_HTTP`.
 
+## Naming (do not rename STREAMABLE_HTTP types)
+
+Dataframe tools depend on `AppRuntime.storage: SessionStoragePort`. Story names
+map to the types already landed on `STREAMABLE_HTTP`:
+
+| Story / plan name | STREAMABLE_HTTP type | Used for dataframes |
+|-------------------|----------------------|---------------------|
+| StoragePort | `SessionStoragePort` | Yes |
+| MemoryStorageProvider | `InMemorySessionStorageProvider` | Yes (stdio) |
+| HttpStorageProvider | `HttpSessionStorageProvider` | Yes (hosted) |
+| HTTPStorageClient (story) | `HttpSessionStorageProvider` | Yes — not `HttpStorageClient` |
+| HttpStorageClient (codebase) | `FileStoragePort` stub | No (file access, Phase 3) |
+
 ## Runtime wiring
 
 | Mode | Transport | Session store | File access |
@@ -52,34 +65,15 @@ partition document is remote.
 
 `put_partition(dataframes=...)` replaces the **entire** dataframes map for that
 partition. In-process locks serialize mutations on one worker. Across Cloud Run
-instances, persist re-reads Storage and unions keys added by other writers
-(and drops ids this operation removed). Same-key concurrent writes and the
-GET/PUT race can still last-write-win. Closing that window needs Storage
+instances, commit re-reads `SessionStoragePort` and unions keys added by other
+writers (and drops ids this operation removed). Same-key concurrent writes and
+the GET/PUT race can still last-write-win. Closing that window needs Storage
 CAS/etag, which this service does not expose yet.
 
 ## Dataframe tools
 
 `dataframes_list`, `dataframes_query`, `dataframes_remove`, and
-`dataframes_clear` hydrate/persist through `SessionStoragePort`. Stdio uses
-in-memory partitions; hosted uses the HTTP Storage Service client.
-Missing storage on a path that would persist fails closed (error, not raw payload).
-
-## Load-testing concurrency (JMeter)
-
-Unit tests cannot open the Cloud Run GET/PUT window. Use
-[`tests/jmeter/hosted-dataframe-storage.jmx`](../tests/jmeter/hosted-dataframe-storage.jmx)
-(see [`tests/jmeter/README.md`](../tests/jmeter/README.md)) against hosted HTTP MCP.
-
-That plan uses the JMeter MCP plugin (`STREAMABLE_HTTP` + `Authorization` headers).
-One Client Config is one MCP session: concurrent threads share `{user_id, mcp_session_id}`.
-A second Client Config is a second session (isolation).
-`blazemeter_tests` `list` needs an integer `project_id`: pass `-Jmcp.projectId=…` or let step 05 copy `default_project_id` from user read.
-
-Interpretation of `dataframes_list.total` vs successful `result_format=dataframe` stores:
-
-- Equal, with MCP `max-instances=1`: in-process session locks serialized the writes.
-- Equal, with `max-instances>1`: merge-on-persist kept distinct ids for that run.
-- Listed &lt; stored: last-write-wins on the whole map (GET/PUT race). Raise threads
-  and Cloud Run instances to make that more likely. Set `-Jmcp.failOnLostUpdates=true`
-  if the run should fail when keys are dropped.
+`dataframes_clear` hydrate/commit through `SessionStoragePort`. Stdio uses
+`InMemorySessionStorageProvider`; hosted uses `HttpSessionStorageProvider`.
+Missing session storage on a path that would persist fails closed (error, not raw payload).
 

@@ -33,10 +33,10 @@ class TestResolveSessionScope:
 
 
 class TestToolsManagerDataframesAgainstStorage:
-    def test_list_query_remove_clear(self, session_store):
+    def test_list_query_remove_clear(self, in_memory_session_storage):
         token = BzmToken("user-tools", "secret")
         ctx = make_ctx(token, "session-tools")
-        manager = ToolsManager(ctx, session_store, DefaultSessionScopeResolver())
+        manager = ToolsManager(ctx, in_memory_session_storage, DefaultSessionScopeResolver())
         scope = SessionScope("user-tools", "session-tools")
 
         meta = run_async(
@@ -45,7 +45,7 @@ class TestToolsManagerDataframesAgainstStorage:
                 origin_manager="tests",
                 origin_action="seed",
                 json_size_chars=9001,
-                storage=session_store,
+                session_storage=in_memory_session_storage,
                 scope=scope,
             )
         )
@@ -75,7 +75,7 @@ class TestToolsManagerDataframesAgainstStorage:
                 origin_manager="tests",
                 origin_action="seed2",
                 json_size_chars=9001,
-                storage=session_store,
+                session_storage=in_memory_session_storage,
                 scope=scope,
             )
         )

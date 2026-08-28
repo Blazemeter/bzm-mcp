@@ -33,14 +33,14 @@ from tools.tools_manager import ToolsManager
 
 
 class TestConcurrentSessionIsolation:
-    def test_concurrent_registers_do_not_cross_write(self, session_store):
+    def test_concurrent_registers_do_not_cross_write(self, in_memory_session_storage):
         async def _register(user_id: str, session_id: str, value: int):
             return await register_dataframe(
                 result=[{"v": value}],
                 origin_manager="tests",
                 origin_action="seed",
                 json_size_chars=9001,
-                storage=session_store,
+                session_storage=in_memory_session_storage,
                 scope=SessionScope(user_id, session_id),
             )
 
@@ -52,9 +52,9 @@ class TestConcurrentSessionIsolation:
                 _register("u1", "s1", 11),
             )
             listed = await asyncio.gather(
-                list_dataframes_metadata(session_store, SessionScope("u1", "s1")),
-                list_dataframes_metadata(session_store, SessionScope("u1", "s2")),
-                list_dataframes_metadata(session_store, SessionScope("u2", "s1")),
+                list_dataframes_metadata(in_memory_session_storage, SessionScope("u1", "s1")),
+                list_dataframes_metadata(in_memory_session_storage, SessionScope("u1", "s2")),
+                list_dataframes_metadata(in_memory_session_storage, SessionScope("u2", "s1")),
             )
             return listed
 
@@ -69,7 +69,7 @@ class TestConcurrentSessionIsolation:
 
 
 class TestMaterializeWiring:
-    def test_finalize_materializes_large_auto_result(self, session_store):
+    def test_finalize_materializes_large_auto_result(self, in_memory_session_storage):
         token = BzmToken("user-mat", "secret")
         ctx = make_ctx(token, "sess-mat")
         payload = [{"id": i, "name": f"row-{i}", "note": "x" * 40} for i in range(300)]
@@ -81,7 +81,7 @@ class TestMaterializeWiring:
                 action="list",
                 args={},
                 origin_manager="blazemeter_tests",
-                storage=session_store,
+                session_storage=in_memory_session_storage,
                 scope_resolver=DefaultSessionScopeResolver(),
                 token=token,
                 ctx=ctx,
@@ -90,18 +90,18 @@ class TestMaterializeWiring:
         assert finalized.error is None
         assert finalized.result[0]["stored_as_dataframe"] is True
         listed = run_async(
-            list_dataframes_metadata(session_store, SessionScope("user-mat", "sess-mat"))
+            list_dataframes_metadata(in_memory_session_storage, SessionScope("user-mat", "sess-mat"))
         )
         assert len(listed) == 1
 
-    def test_force_dataframe_even_when_small(self, session_store):
+    def test_force_dataframe_even_when_small(self, in_memory_session_storage):
         base = BaseResult(result=[{"id": 1}])
         finalized = run_async(
             materialize_large_result_if_needed(
                 base,
                 origin_manager="tests",
                 origin_action="list",
-                storage=session_store,
+                session_storage=in_memory_session_storage,
                 scope=SessionScope("user-force", "sess-force"),
                 force=True,
             )
@@ -133,7 +133,7 @@ class TestMaterializeWiring:
         )
         assert len(finalized.result) == 300
 
-    def test_excluded_action_skips_auto_materialize(self, session_store):
+    def test_excluded_action_skips_auto_materialize(self, in_memory_session_storage):
         token = BzmToken("user-ex", "secret")
         ctx = make_ctx(token, "sess-ex")
         payload = [{"id": i, "note": "x" * 40} for i in range(300)]
@@ -143,7 +143,7 @@ class TestMaterializeWiring:
                 action="dataframes_list",
                 args={},
                 origin_manager="blazemeter_tools",
-                storage=session_store,
+                session_storage=in_memory_session_storage,
                 token=token,
                 ctx=ctx,
                 excluded_actions={"dataframes_list"},
@@ -153,13 +153,13 @@ class TestMaterializeWiring:
 
 
 class TestRunToolWithRuntime:
-    def test_materializes_large_result_via_runtime_storage(self, session_store):
+    def test_materializes_large_result_via_runtime_storage(self, in_memory_session_storage):
         token = BzmToken("user-rt", "secret")
         ctx = make_ctx(token, "sess-rt")
         runtime = AppRuntime(
             transport="stdio",
             auth=MagicMock(get_token=MagicMock(return_value=token)),
-            storage=session_store,
+            storage=in_memory_session_storage,
             file_access=MagicMock(),
             scope_resolver=DefaultSessionScopeResolver(),
             user_config={},
@@ -177,17 +177,17 @@ class TestRunToolWithRuntime:
         assert finalized.error is None
         assert finalized.result[0]["stored_as_dataframe"] is True
         listed = run_async(
-            list_dataframes_metadata(session_store, SessionScope("user-rt", "sess-rt"))
+            list_dataframes_metadata(in_memory_session_storage, SessionScope("user-rt", "sess-rt"))
         )
         assert len(listed) == 1
 
-    def test_force_store_when_result_format_passed_as_tool_args(self, session_store):
+    def test_force_store_when_result_format_passed_as_tool_args(self, in_memory_session_storage):
         token = BzmToken("user-rf", "secret")
         ctx = make_ctx(token, "sess-rf")
         runtime = AppRuntime(
             transport="streamable-http",
             auth=MagicMock(get_token=MagicMock(return_value=token)),
-            storage=session_store,
+            storage=in_memory_session_storage,
             file_access=MagicMock(),
             scope_resolver=DefaultSessionScopeResolver(),
             user_config={},
@@ -205,18 +205,18 @@ class TestRunToolWithRuntime:
         assert finalized.error is None
         assert finalized.result[0]["stored_as_dataframe"] is True
         listed = run_async(
-            list_dataframes_metadata(session_store, SessionScope("user-rf", "sess-rf"))
+            list_dataframes_metadata(in_memory_session_storage, SessionScope("user-rf", "sess-rf"))
         )
         assert len(listed) == 1
 
     def test_raw_skips_materialize_when_result_format_passed_as_tool_args(
-            self, session_store):
+            self, in_memory_session_storage):
         token = BzmToken("user-raw", "secret")
         ctx = make_ctx(token, "sess-raw")
         runtime = AppRuntime(
             transport="streamable-http",
             auth=MagicMock(get_token=MagicMock(return_value=token)),
-            storage=session_store,
+            storage=in_memory_session_storage,
             file_access=MagicMock(),
             scope_resolver=DefaultSessionScopeResolver(),
             user_config={},
@@ -235,16 +235,16 @@ class TestRunToolWithRuntime:
         assert finalized.error is None
         assert len(finalized.result) == 300
         listed = run_async(
-            list_dataframes_metadata(session_store, SessionScope("user-raw", "sess-raw"))
+            list_dataframes_metadata(in_memory_session_storage, SessionScope("user-raw", "sess-raw"))
         )
         assert listed == []
 
 
 class TestDataframesQueryResultFormatStore:
-    def test_result_format_dataframe_registers_new_dataframe(self, session_store):
+    def test_result_format_dataframe_registers_new_dataframe(self, in_memory_session_storage):
         token = BzmToken("user-q", "secret")
         ctx = make_ctx(token, "sess-q")
-        manager = ToolsManager(ctx, session_store, DefaultSessionScopeResolver())
+        manager = ToolsManager(ctx, in_memory_session_storage, DefaultSessionScopeResolver())
         scope = SessionScope("user-q", "sess-q")
 
         meta = run_async(
@@ -253,7 +253,7 @@ class TestDataframesQueryResultFormatStore:
                 origin_manager="tests",
                 origin_action="seed",
                 json_size_chars=9001,
-                storage=session_store,
+                session_storage=in_memory_session_storage,
                 scope=scope,
             )
         )
@@ -268,5 +268,5 @@ class TestDataframesQueryResultFormatStore:
         )
         assert queried.error is None
         assert queried.result[0]["stored_as_dataframe"] is True
-        listed = run_async(list_dataframes_metadata(session_store, scope))
+        listed = run_async(list_dataframes_metadata(in_memory_session_storage, scope))
         assert len(listed) == 2

@@ -368,7 +368,7 @@ async def _task_runner(task_record: TaskRecord, coro_factory: Callable[[], Await
                 action=origin_action,
                 args={"result_format": result_format},
                 origin_manager=str(task_record.action.get("manager", "unknown")),
-                storage=_get_storage(),
+                session_storage=_get_storage(),
                 scope=SessionScope(
                     user_id=task_record.user_id,
                     mcp_session_id=task_record.mcp_session_id,

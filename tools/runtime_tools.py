@@ -32,10 +32,10 @@ async def run_tool_with_runtime(
         disable_dataframe_materialization: bool = False,
 ) -> Any:
     """
-    Run a tool action inside telemetry, then materialize large results via Storage.
+    Run a tool action inside telemetry, then materialize large results via SessionStoragePort.
 
     Managers pass ``runtime`` once; tracing stays unaware of dataframe types.
-    Materialization runs inside the tool span so duration includes persist.
+    Materialization runs inside the tool span so duration includes the commit.
     """
     resolved_token = token if token is not None else runtime.auth.get_token(ctx)
 
@@ -50,7 +50,7 @@ async def run_tool_with_runtime(
             action=action,
             args=tool_args,
             origin_manager=tool_name,
-            storage=runtime.storage,
+            session_storage=runtime.storage,
             scope_resolver=runtime.scope_resolver,
             token=resolved_token,
             ctx=ctx,
