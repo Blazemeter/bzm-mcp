@@ -1,0 +1,115 @@
+name: Publish to MCP Registry
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version already published to the public OCI registry
+        required: true
+        default: "1.3.1"
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: mcp-registry-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'Blazemeter/bzm-mcp'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v6
+
+      - name: Verify release metadata
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]]; then
+            echo "::error::Registry publication must run from the default branch ($DEFAULT_BRANCH)."
+            exit 1
+          fi
+
+          python - <<'PY'
+          import json
+          import os
+          import tomllib
+          from pathlib import Path
+
+          release_version = os.environ["RELEASE_VERSION"]
+          project = tomllib.loads(Path("pyproject.toml").read_text())
+          server = json.loads(Path("server.json").read_text())
+
+          project_version = project["project"]["version"]
+          server_version = server["version"]
+          oci_packages = [
+              package
+              for package in server.get("packages", [])
+              if package.get("registryType") == "oci"
+          ]
+
+          if project_version != release_version:
+              raise SystemExit(
+                  f"pyproject.toml version {project_version!r} does not match "
+                  f"requested version {release_version!r}"
+              )
+          if server_version != release_version:
+              raise SystemExit(
+                  f"server.json version {server_version!r} does not match "
+                  f"requested version {release_version!r}"
+              )
+          if len(oci_packages) != 1:
+              raise SystemExit("server.json must contain exactly one OCI package")
+
+          image = oci_packages[0]["identifier"]
+          expected_image = f"ghcr.io/blazemeter/bzm-mcp:{release_version}"
+          if image != expected_image:
+              raise SystemExit(
+                  f"server.json image {image!r} does not match {expected_image!r}"
+              )
+
+          with Path(os.environ["GITHUB_ENV"]).open("a") as github_env:
+              github_env.write(f"MCP_IMAGE={image}\n")
+          PY
+
+      - name: Verify public OCI ownership label
+        run: |
+          required_label="io.github.blazemeter/bzm-mcp"
+          rebuild_message="$MCP_IMAGE must be rebuilt and republished from the updated Dockerfile first."
+
+          if ! docker pull "$MCP_IMAGE"; then
+            echo "::error::$rebuild_message"
+            exit 1
+          fi
+
+          label="$(
+            docker image inspect \
+              --format '{{ index .Config.Labels "io.modelcontextprotocol.server.name" }}' \
+              "$MCP_IMAGE"
+          )"
+          if [[ "$label" != "$required_label" ]]; then
+            echo "::error::OCI image has missing or incorrect MCP ownership label: $label"
+            echo "::error::$rebuild_message It must contain io.modelcontextprotocol.server.name=$required_label."
+            exit 1
+          fi
+
+      - name: Install mcp-publisher
+        run: |
+          curl --fail --location --silent --show-error \
+            "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" \
+            | tar xz mcp-publisher
+
+      - name: Validate server metadata
+        run: ./mcp-publisher validate server.json
+
+      - name: Authenticate to MCP Registry
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish server
+        run: ./mcp-publisher publish server.json

@@ -209,6 +209,17 @@ When using custom CA certificate bundles, you must configure both:
 
 ---
 
+### MCP Registry publication
+
+Official MCP Registry publication of version `1.3.1` remains blocked until
+`ghcr.io/blazemeter/bzm-mcp:1.3.1` is rebuilt and republished from this
+`Dockerfile` with the
+`io.modelcontextprotocol.server.name=io.github.blazemeter/bzm-mcp` ownership
+label. Once the image is ready, run the **Publish to MCP Registry** workflow
+manually from the `main` branch with version `1.3.1`.
+
+---
+
 ## OpenTelemetry
 
 BlazeMeter MCP reports traces and metrics for MCP tool calls using [OpenTelemetry](https://opentelemetry.io/). This gives you visibility into which tools are used, how long they take, and when errors occur.
@@ -309,4 +320,3 @@ This project is licensed under the Apache License, Version 2.0. Please refer to 
 - **API Documentation**: [BlazeMeter API Documentation](https://help.blazemeter.com/apidocs/)
 - **Issues**: [GitHub Issues](https://github.com/BlazeMeter/bzm-mcp/issues)
 - **Support**: Contact BlazeMeter support for enterprise assistance
-

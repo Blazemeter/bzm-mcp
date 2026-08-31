@@ -14,6 +14,7 @@
 
 FROM ubuntu:26.04
 
+LABEL io.modelcontextprotocol.server.name="io.github.blazemeter/bzm-mcp"
 
 WORKDIR /app
 
