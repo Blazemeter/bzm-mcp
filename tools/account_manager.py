@@ -14,16 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from typing import Optional, Dict, Any
-import httpx
+
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import ACCOUNTS_ENDPOINT, TOOLS_PREFIX, SUPPORT_MESSAGE
-from config.token import BzmToken
+from config.runtime import AppRuntime
 from formatters.account import format_accounts
 from models.manager import Manager
 from models.result import BaseResult
-from telemetry import run_tool
-from tools.utils import api_request, format_sanitized_traceback
+from tools.mcp_entrypoint import register_managed_tool
+from tools.utils import api_request, run_as_task
 
 
 class AccountManager(Manager):
@@ -32,9 +32,13 @@ class AccountManager(Manager):
     # the format_accounts only expose minimum information to user
     # The read operation verify permissions and don't allow to share if don't have permissions.
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        ctx: Context,
+    ):
+        super().__init__(ctx)
 
+    @run_as_task()
     async def read(self, account_id: Optional[int]) -> BaseResult:
         if not isinstance(account_id, int) or account_id < 1:
             return BaseResult(error="Missing or invalid required argument 'account_id'. Expected integer.")
@@ -56,6 +60,7 @@ class AccountManager(Manager):
             else:
                 return account_result
 
+    @run_as_task()
     async def list(self, limit: int = 50, offset: int = 0) -> BaseResult:
         if not isinstance(limit, int) or not isinstance(offset, int):
             return BaseResult(error="Invalid arguments 'limit'/'offset'. Expected integers.")
@@ -76,8 +81,24 @@ class AccountManager(Manager):
             params=parameters
         )
 
-def register(mcp, token: Optional[BzmToken]) -> None:
-    @mcp.tool(
+
+def register(mcp, runtime: AppRuntime):
+
+    async def _dispatch(action, args, token, ctx):
+        account_manager = AccountManager(ctx)
+        match action:
+            case "read":
+                return await account_manager.read(args.get("account_id"))
+            case "list":
+                return await account_manager.list(args.get("limit", 50), args.get("offset", 0))
+            case _:
+                return BaseResult(
+                    error=f"Action {action} not found in account manager tool"
+                )
+
+    register_managed_tool(
+        mcp,
+        runtime,
         name=f"{TOOLS_PREFIX}_account",
         description="""
 Operations on account users. 
@@ -94,29 +115,7 @@ Hints:
 - If you need to get the default account, use the project id to get the workspace and with that the account.
 - Use the read operation if AI consent information is needed. The AI Consent it's located at account level.
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
-"""
+""",
+        dispatch=_dispatch,
+        support_message=SUPPORT_MESSAGE,
     )
-    async def account(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        account_manager = AccountManager(token, ctx)
-
-        async def _dispatch():
-            match action:
-                case "read":
-                    return await account_manager.read(args.get("account_id"))
-                case "list":
-                    return await account_manager.list(args.get("limit", 50), args.get("offset", 0))
-                case _:
-                    return BaseResult(
-                        error=f"Action {action} not found in account manager tool"
-                    )
-
-        try:
-            return await run_tool(f"{TOOLS_PREFIX}_account", action, ctx, _dispatch)
-        except httpx.HTTPStatusError:
-            return BaseResult(
-                error=f"Error: {format_sanitized_traceback()}"
-            )
-        except Exception:
-            return BaseResult(
-                error=f"Error: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}"
-            )

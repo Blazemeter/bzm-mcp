@@ -19,31 +19,35 @@ import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TOOLS_PREFIX, EXECUTIONS_ENDPOINT, SUPPORT_MESSAGE
-from config.token import BzmToken
+from config.runtime import AppRuntime
 from formatters.execution import format_executions, format_executions_detailed, format_executions_status
 from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge, search_utils
 from tools.report_manager import ReportManager
-from telemetry import run_tool
-from tools.utils import api_request, timeout, user_agent, format_sanitized_traceback, require_confirmation, Operations
+from tools.mcp_entrypoint import register_managed_tool
+from tools.utils import api_request, timeout, user_agent, format_sanitized_traceback, require_confirmation, Operations, run_as_task
 
 
 class ExecutionManager(Manager):
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        ctx: Context,
+    ):
+        super().__init__(ctx)
 
     async def _request_log_analyzer_api(self, method: str, execution_id: int,
                                         json_body: Optional[Dict[str, Any]] = None) -> BaseResult:
-        if not self.token:
+        token = self.token
+        if not token:
             return BaseResult(
                 error="No API token. Set BLAZEMETER_API_KEY env var with file path or API_KEY_ID and API_KEY_SECRET secrets."
             )
 
         url = f"https://log-analyzer.blazemeter.com/analyzer/{execution_id}"
         headers = {
-            "Authorization": self.token.as_basic_auth(),
+            "Authorization": token.as_basic_auth(),
             "User-Agent": user_agent,
             "Accept": "application/json",
             "Content-Type": "application/json"
@@ -99,6 +103,7 @@ class ExecutionManager(Manager):
                 return BaseResult(error=f"HTTP {status_code}: {e.response.text[:200]}")
 
     @require_confirmation(operation=Operations.CREATE)
+    @run_as_task()
     async def start(self, test_id: Optional[int], delayed_start_ready: bool = True,
                     is_debug_run: bool = False) -> BaseResult:
         if not isinstance(test_id, int) or test_id < 1:
@@ -120,6 +125,7 @@ class ExecutionManager(Manager):
             json=start_body
         )
 
+    @run_as_task()
     async def read(self, execution_id: Optional[int]) -> BaseResult:
         if not isinstance(execution_id, int) or execution_id < 1:
             return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
@@ -184,6 +190,7 @@ class ExecutionManager(Manager):
             "When it is archived, it is not possible to read the detailed execution information.\n"
         )
 
+    @run_as_task()
     async def list(self, test_id: Optional[int], limit: int = 50, offset: int = 0) -> BaseResult:
         if not isinstance(test_id, int) or test_id < 1:
             return BaseResult(error="Missing or invalid required argument 'test_id'. Expected integer.")
@@ -209,6 +216,7 @@ class ExecutionManager(Manager):
             params=parameters
         )
 
+    @run_as_task()
     async def search(self, args: dict[str, Any]) -> BaseResult:
 
         # Check if it's valid or allowed
@@ -221,6 +229,7 @@ class ExecutionManager(Manager):
 
         return await search_utils.test_execution_search("master", self.token, account_id, args)
 
+    @run_as_task()
     async def search_filter_values(self, account_id: int, filter_names: List[str]) -> BaseResult:
 
         # Check if it's valid or allowed
@@ -228,8 +237,14 @@ class ExecutionManager(Manager):
         if account_data.error:
             return account_data
 
-        return await search_utils.test_execution_search_filter_values("master", account_id, self.token, filter_names)
+        return await search_utils.test_execution_search_filter_values(
+            "master",
+            account_id,
+            self.token,
+            filter_names,
+        )
 
+    @run_as_task()
     async def ai_analysis(self, execution_id: Optional[int]) -> BaseResult:
         if not isinstance(execution_id, int) or execution_id < 1:
             return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
@@ -391,11 +406,12 @@ class ExecutionManager(Manager):
         }
         return BaseResult(result=[result])
 
+    @run_as_task()
     async def read_all_reports(self, execution_id: Optional[int]) -> BaseResult:
         if not isinstance(execution_id, int) or execution_id < 1:
             return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
 
-        report_manager = ReportManager(self.token, self.ctx)
+        report_manager = ReportManager(self.ctx)
         summary_result = await report_manager.read_summary(execution_id)
         error_result = await report_manager.read_error(execution_id)
         stats_result = await report_manager.read_request_stats(execution_id)
@@ -429,9 +445,46 @@ class ExecutionManager(Manager):
                 "The analysis will be available once processing is complete."
             )
 
+def register(mcp, runtime: AppRuntime):
+    async def _dispatch(action, args, token, ctx):
+        execution_manager = ExecutionManager(ctx)
+        report_manager = ReportManager(ctx)
+        match action:
+            case "start":
+                return await execution_manager.start(args.get("test_id"))
+            case "read":
+                return await execution_manager.read(args.get("execution_id"))
+            case "list":
+                return await execution_manager.list(
+                    args.get("test_id"),
+                    args.get("limit", 50),
+                    args.get("offset", 0),
+                )
+            case "search":
+                return await execution_manager.search(args)
+            case "search_filter_values":
+                return await execution_manager.search_filter_values(args.get("account_id"),
+                                                                    args.get("filter_names", []))
+            case "read_summary":
+                return await report_manager.read_summary(args.get("execution_id"))
+            case "read_errors":
+                return await report_manager.read_error(args.get("execution_id"))
+            case "read_request_stats":
+                return await report_manager.read_request_stats(args.get("execution_id"))
+            case "read_all_reports":
+                return await execution_manager.read_all_reports(args.get("execution_id"))
+            case "read_anomalies_stats":
+                return await report_manager.read_anomalies_stats(args.get("execution_id"))
+            case "ai_analysis":
+                return await execution_manager.ai_analysis(args.get("execution_id"))
+            case _:
+                return BaseResult(
+                    error=f"Action {action} not found in test execution manager tool"
+                )
 
-def register(mcp, token: Optional[BzmToken]):
-    @mcp.tool(
+    register_managed_tool(
+        mcp,
+        runtime,
         name=f"{TOOLS_PREFIX}_execution",
         description="""
 Operations on tests executions and results reports.
@@ -493,53 +546,7 @@ Actions:
     or create a new analysis entry. It provides dynamic responses indicating whether the analysis is ready or still processing.
 Hints:
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
-"""
+""",
+        dispatch=_dispatch,
+        support_message=SUPPORT_MESSAGE,
     )
-    async def execution(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        execution_manager = ExecutionManager(token, ctx)
-        report_manager = ReportManager(token, ctx)
-
-        async def _dispatch():
-            match action:
-                case "start":
-                    return await execution_manager.start(args.get("test_id"))
-                case "read":
-                    return await execution_manager.read(args.get("execution_id"))
-                case "list":
-                    return await execution_manager.list(
-                        args.get("test_id"),
-                        args.get("limit", 50),
-                        args.get("offset", 0),
-                    )
-                case "search":
-                    return await execution_manager.search(args)
-                case "search_filter_values":
-                    return await execution_manager.search_filter_values(args.get("account_id"),
-                                                                        args.get("filter_names", []))
-                case "read_summary":
-                    return await report_manager.read_summary(args.get("execution_id"))
-                case "read_errors":
-                    return await report_manager.read_error(args.get("execution_id"))
-                case "read_request_stats":
-                    return await report_manager.read_request_stats(args.get("execution_id"))
-                case "read_all_reports":
-                    return await execution_manager.read_all_reports(args.get("execution_id"))
-                case "read_anomalies_stats":
-                    return await report_manager.read_anomalies_stats(args.get("execution_id"))
-                case "ai_analysis":
-                    return await execution_manager.ai_analysis(args.get("execution_id"))
-                case _:
-                    return BaseResult(
-                        error=f"Action {action} not found in test execution manager tool"
-                    )
-
-        try:
-            return await run_tool(f"{TOOLS_PREFIX}_execution", action, ctx, _dispatch)
-        except httpx.HTTPStatusError:
-            return BaseResult(
-                error=f"Error: {format_sanitized_traceback()}"
-            )
-        except Exception:
-            return BaseResult(
-                error=f"Error: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}"
-            )

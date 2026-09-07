@@ -13,12 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Optional
+from typing import Any, Optional
 
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import EXECUTIONS_ENDPOINT
-from config.token import BzmToken
 from formatters.execution import (
     format_summary_report,
     format_request_stats,
@@ -28,7 +27,7 @@ from formatters.execution import (
 from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
-from tools.utils import api_request
+from tools.utils import api_request, run_as_task
 
 EXECUTION_ARCHIVED_MSG = ("Execution report is archived. It is not possible to read execution "
                           "information from an archived execution.")
@@ -36,8 +35,11 @@ EXECUTION_ARCHIVED_MSG = ("Execution report is archived. It is not possible to r
 
 class ReportManager(Manager):
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        ctx: Context,
+    ):
+        super().__init__(ctx)
 
     def _extract_execution_name(self, execution_result: BaseResult) -> Optional[str]:
         """Extract execution name from execution result if available."""
@@ -52,6 +54,7 @@ class ReportManager(Manager):
         return (execution_result.result and len(execution_result.result) > 0 and
                 execution_result.result[0].get("result").archived)
 
+    @run_as_task()
     async def read_summary(self, master_id: int):
         execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
@@ -76,6 +79,7 @@ class ReportManager(Manager):
             }
         )
 
+    @run_as_task()
     async def read_error(self, master_id: Optional[int]):
         """
         Get error report for a given master_id with formatted, AI-friendly structure.
@@ -106,6 +110,7 @@ class ReportManager(Manager):
             }
         )
 
+    @run_as_task()
     async def read_request_stats(self, master_id: Optional[int]):
         """
         Get request statistics report for a given master_id with formatted, AI-friendly structure.
@@ -137,6 +142,7 @@ class ReportManager(Manager):
             }
         )
 
+    @run_as_task()
     async def read_anomalies_stats(self, master_id: Optional[int]):
         """
         Get anomaly statistics for a given master_id (test execution).

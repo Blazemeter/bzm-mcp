@@ -15,40 +15,79 @@ limitations under the License.
 """
 from mcp.server.fastmcp import Context
 
+from config.auth import BZM_TOKEN_STATE_ATTR, BZM_USER_CONFIG_STATE_ATTR
 from config.token import BzmToken
 from models.result import BaseResult
+from types import SimpleNamespace
 
 
 # NOTE: Imports are performed locally in each method to avoid cyclical import problems.
 # This file currently acts as a bridge between different managers to access specific methods,
 # primarily for validation of reference elements.
 
+def _with_token_context(ctx: Context, token: BzmToken) -> Context:
+    context = ctx or SimpleNamespace()
+    request_context = getattr(context, "request_context", None)
+    request = getattr(request_context, "request", None)
+    request_state = getattr(request, "state", None)
+
+    current_config = (
+        getattr(request_context, BZM_USER_CONFIG_STATE_ATTR, None)
+        or getattr(request_state, BZM_USER_CONFIG_STATE_ATTR, None)
+        or getattr(context, "user_config", None)
+        or {}
+    )
+    user_config = dict(current_config) if isinstance(current_config, dict) else {}
+    user_config["token"] = token
+
+    if request_context is not None:
+        setattr(request_context, BZM_USER_CONFIG_STATE_ATTR, dict(user_config))
+
+    if request_state is not None:
+        setattr(request_state, BZM_USER_CONFIG_STATE_ATTR, dict(user_config))
+        setattr(request_state, BZM_TOKEN_STATE_ATTR, token)
+
+    # Keep compatibility for non-FastMCP contexts used in tests.
+    try:
+        setattr(context, "user_config", user_config)
+    except Exception:
+        pass
+
+    return context
+
+
 async def read_account(token: BzmToken, ctx: Context, account_id: int) -> BaseResult:
     from tools.account_manager import AccountManager
-    return await AccountManager(token, ctx).read(account_id)
+    return await AccountManager(_with_token_context(ctx, token)).read(account_id)
 
 
 async def read_project(token: BzmToken, ctx: Context, project_id: int) -> BaseResult:
     from tools.project_manager import ProjectManager
-    return await ProjectManager(token, ctx).read(project_id)
+    return await ProjectManager(_with_token_context(ctx, token)).read(project_id)
 
 
 async def read_workspace(token: BzmToken, ctx: Context, workspace_id: int) -> BaseResult:
     from tools.workspace_manager import WorkspaceManager
-    return await WorkspaceManager(token, ctx).read(workspace_id)
+    return await WorkspaceManager(_with_token_context(ctx, token)).read(workspace_id)
 
 
 async def read_test(token: BzmToken, ctx: Context, test_id: int) -> BaseResult:
     from tools.test_manager import TestManager
-    return await TestManager(token, ctx).read(test_id)
+    return await TestManager(_with_token_context(ctx, token)).read(test_id)
 
 
 async def count_project_tests(token: BzmToken, ctx: Context, project_id: int) -> int:
     from tools.test_manager import TestManager
     return (
-        await TestManager(token, ctx).list(project_id=project_id, limit=1, offset=0, control_ai_consent=False)).total
+        await TestManager(_with_token_context(ctx, token)).list(
+            project_id=project_id,
+            limit=1,
+            offset=0,
+            control_ai_consent=False,
+        )
+    ).total
 
 
 async def read_execution(token: BzmToken, ctx: Context, execution_id: int) -> BaseResult:
     from tools.execution_manager import ExecutionManager
-    return await ExecutionManager(token, ctx).read(execution_id)
+    return await ExecutionManager(_with_token_context(ctx, token)).read(execution_id)

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from config.runtime import AppRuntime, build_runtime
 import asyncio
 
 from config.blazemeter import TOOLS_PREFIX
@@ -41,7 +42,7 @@ class FakeMcp:
 class TestBatchControls:
     def test_help_batch_respects_concurrency_limit(self, monkeypatch):
         mcp = FakeMcp()
-        register_help_tool(mcp, token=None)
+        register_help_tool(mcp, build_runtime("stdio"))
         help_tool = mcp.tools[f"{TOOLS_PREFIX}_help"]
         HelpManager.help_tree = {}
         monkeypatch.setattr(HelpManager, "MAX_BATCH_CONCURRENCY", 2)
@@ -60,14 +61,14 @@ class TestBatchControls:
         monkeypatch.setattr(HelpManager, "list_help_categories", slow_list_help_categories)
 
         batch_calls = [{"action": "list_help_categories", "args": {}} for _ in range(6)]
-        result = asyncio.run(help_tool("batch", {"batch_calls": batch_calls}, ctx=None))
+        result = asyncio.run(help_tool({"action": "batch", "args": {"batch_calls": batch_calls}}, ctx=None))
 
         assert result.error is None
         assert active_calls["max"] <= 2
 
     def test_skills_batch_respects_concurrency_limit(self, monkeypatch):
         mcp = FakeMcp()
-        register_skills_tool(mcp, token=None)
+        register_skills_tool(mcp, build_runtime("stdio"))
         skills_tool = mcp.tools[f"{TOOLS_PREFIX}_skills"]
         monkeypatch.setattr(SkillsManager, "MAX_BATCH_CONCURRENCY", 2)
 
@@ -85,7 +86,7 @@ class TestBatchControls:
         monkeypatch.setattr(SkillsManager, "list_skills", staticmethod(slow_list_skills))
 
         batch_calls = [{"action": "list_skills", "args": {}} for _ in range(6)]
-        result = asyncio.run(skills_tool("batch", {"batch_calls": batch_calls}, ctx=None))
+        result = asyncio.run(skills_tool({"action": "batch", "args": {"batch_calls": batch_calls}}, ctx=None))
 
         assert result.error is None
         assert active_calls["max"] <= 2
