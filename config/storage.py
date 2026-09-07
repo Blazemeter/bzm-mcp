@@ -41,6 +41,10 @@ class StorageNotSupportedError(NotImplementedError):
     """Raised when a storage backend cannot fulfill a file operation."""
 
 
+class StorageNotConfiguredError(RuntimeError):
+    """Raised when session storage is used before AppRuntime wiring."""
+
+
 @runtime_checkable
 class FileStoragePort(Protocol):
     """
@@ -213,7 +217,7 @@ class SessionStoragePort(ABC):
 
 class SessionScopeResolverPort(ABC):
     @abstractmethod
-    def resolve(self, ctx: Context, token: Optional[BzmToken]) -> SessionScope:
+    def resolve(self, ctx: Optional[Context], token: Optional[BzmToken]) -> SessionScope:
         raise NotImplementedError
 
 
@@ -226,7 +230,9 @@ class DefaultSessionScopeResolver(SessionScopeResolverPort):
     """
 
     @staticmethod
-    def _resolve_session_id(ctx: Context) -> str:
+    def _resolve_session_id(ctx: Optional[Context]) -> str:
+        if ctx is None:
+            return "default"
         request = getattr(getattr(ctx, "request_context", None), "request", None)
         if request is not None:
             session_id = request.headers.get("mcp-session-id")
@@ -243,11 +249,25 @@ class DefaultSessionScopeResolver(SessionScopeResolverPort):
             return token.id.strip()
         return "anonymous"
 
-    def resolve(self, ctx: Context, token: Optional[BzmToken]) -> SessionScope:
+    def resolve(self, ctx: Optional[Context], token: Optional[BzmToken]) -> SessionScope:
         return SessionScope(
             user_id=self._resolve_user_id(token),
             mcp_session_id=self._resolve_session_id(ctx),
         )
+
+
+def resolve_session_scope(
+        ctx: Any,
+        token: Optional[BzmToken] = None,
+        scope_resolver: Optional[SessionScopeResolverPort] = None,
+) -> SessionScope:
+    """Resolve partition keys from auth token + MCP session context."""
+    resolver = scope_resolver or DefaultSessionScopeResolver()
+    resolved_token = token
+    if resolved_token is None:
+        from config.context_resolution import resolve_ctx_token
+        resolved_token = resolve_ctx_token(ctx)
+    return resolver.resolve(ctx, resolved_token)
 
 
 class InMemorySessionStorageProvider(SessionStoragePort):
