@@ -13,6 +13,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import hashlib
+import json
+
 import pytest
 
 from config.storage import (
@@ -32,6 +35,8 @@ from tests.storage_fakes import (
 )
 from tools import dataframe_manager as dataframe_manager_module
 from tools.dataframe_manager import (
+    _schema_hash,
+    _stable_hash,
     clear_dataframes,
     list_dataframes_metadata,
     query_dataframes,
@@ -305,3 +310,58 @@ class TestSessionLockBound:
             return len(dataframe_manager_module._session_locks)
 
         assert run_async(_exercise()) <= 4
+
+    def test_overflow_lock_keeps_map_bounded_when_all_locks_held(self, monkeypatch):
+        monkeypatch.setattr(dataframe_manager_module, "_MAX_SESSION_LOCKS", 2)
+
+        async def _exercise():
+            lock_a = await dataframe_manager_module._lock_for(SessionScope("user-1", "sess-a"))
+            lock_b = await dataframe_manager_module._lock_for(SessionScope("user-1", "sess-b"))
+            await lock_a.acquire()
+            await lock_b.acquire()
+            try:
+                lock_c = await dataframe_manager_module._lock_for(SessionScope("user-1", "sess-c"))
+                lock_d = await dataframe_manager_module._lock_for(SessionScope("user-1", "sess-d"))
+                assert len(dataframe_manager_module._session_locks) == 2
+                overflow = dataframe_manager_module._overflow_lock
+                assert overflow is not None
+                assert lock_c is overflow
+                assert lock_d is overflow
+                assert overflow is not lock_a
+                assert overflow is not lock_b
+            finally:
+                lock_a.release()
+                lock_b.release()
+
+        run_async(_exercise())
+
+    def test_overflow_session_can_still_read_metadata(self, in_memory_session_storage, monkeypatch):
+        monkeypatch.setattr(dataframe_manager_module, "_MAX_SESSION_LOCKS", 2)
+
+        async def _exercise():
+            lock_a = await dataframe_manager_module._lock_for(SessionScope("user-1", "held-a"))
+            lock_b = await dataframe_manager_module._lock_for(SessionScope("user-1", "held-b"))
+            await lock_a.acquire()
+            await lock_b.acquire()
+            try:
+                listed = await list_dataframes_metadata(
+                    in_memory_session_storage, SessionScope("user-1", "overflow")
+                )
+                assert listed == []
+                assert len(dataframe_manager_module._session_locks) == 2
+            finally:
+                lock_a.release()
+                lock_b.release()
+
+        run_async(_exercise())
+
+
+class TestContentHashes:
+    def test_stable_hash_uses_sha256(self):
+        payload = '{"name":"id","dtype":"Int64"}'
+        assert _stable_hash(payload) == hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    def test_schema_hash_reuses_stable_hash(self):
+        schema_rows = [{"name": "id", "dtype": "Int64"}, {"name": "label", "dtype": "String"}]
+        canonical = json.dumps(schema_rows, separators=(",", ":"), ensure_ascii=False)
+        assert _schema_hash(schema_rows) == _stable_hash(canonical)

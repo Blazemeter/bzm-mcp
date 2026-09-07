@@ -46,11 +46,13 @@ def make_ctx(token: BzmToken, session_id: str):
 
 @pytest.fixture(autouse=True)
 def reset_dataframe_session_locks():
-    from tools.dataframe_manager import _session_locks
+    from tools import dataframe_manager as dataframe_manager_module
 
-    _session_locks.clear()
+    dataframe_manager_module._session_locks.clear()
+    dataframe_manager_module._overflow_lock = None
     yield
-    _session_locks.clear()
+    dataframe_manager_module._session_locks.clear()
+    dataframe_manager_module._overflow_lock = None
 
 
 @pytest.fixture(autouse=True)

@@ -54,6 +54,7 @@ MISSING_STORAGE_ERROR = "Session storage is required to persist dataframes."
 _MAX_SESSION_LOCKS = 256
 _locks_guard = asyncio.Lock()
 _session_locks: OrderedDict[tuple[str, str], asyncio.Lock] = OrderedDict()
+_overflow_lock: Optional[asyncio.Lock] = None
 
 
 @dataclass
@@ -81,6 +82,13 @@ def _evict_unlocked_session_locks() -> None:
             return
 
 
+def _shared_overflow_lock() -> asyncio.Lock:
+    global _overflow_lock
+    if _overflow_lock is None:
+        _overflow_lock = asyncio.Lock()
+    return _overflow_lock
+
+
 async def _lock_for(scope: SessionScope) -> asyncio.Lock:
     key = _scope_key(scope)
     async with _locks_guard:
@@ -89,6 +97,8 @@ async def _lock_for(scope: SessionScope) -> asyncio.Lock:
             _session_locks.move_to_end(key)
             return lock
         _evict_unlocked_session_locks()
+        if len(_session_locks) >= _MAX_SESSION_LOCKS:
+            return _shared_overflow_lock()
         lock = asyncio.Lock()
         _session_locks[key] = lock
         return lock
@@ -345,13 +355,13 @@ def _to_schema_rows(dataframe: pl.DataFrame) -> List[Dict[str, str]]:
     return [{"name": name, "dtype": str(dtype)} for name, dtype in schema.items()]
 
 
+def _stable_hash(payload: str) -> str:
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 def _schema_hash(schema_rows: List[Dict[str, str]]) -> str:
     payload = json.dumps(schema_rows, separators=(",", ":"), ensure_ascii=False)
-    return hashlib.md5(payload.encode("utf-8")).hexdigest()
-
-
-def _stable_hash(payload: str) -> str:
-    return hashlib.md5(payload.encode("utf-8")).hexdigest()
+    return _stable_hash(payload)
 
 
 def _normalize_root_dtype(dtype: str) -> str:

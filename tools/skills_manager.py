@@ -244,5 +244,7 @@ Hints:
 """,
         dispatch=_dispatch,
         excluded_actions={'batch'},
+        # Skills are documents (one content cell), not tabular result sets.
+        disable_materialization=True,
         support_message=SUPPORT_MESSAGE,
     )

@@ -141,6 +141,34 @@ class TestAsyncTaskManagerMemoryStorage:
 
         _run(scenario())
 
+    def test_submit_skips_materialization_when_action_disables_it(self, memory_store):
+        payload = [{"id": index, "note": "x" * 40} for index in range(300)]
+
+        async def scenario():
+            async def action():
+                return BaseResult(result=payload)
+
+            task_id = await submit_task(
+                {
+                    "manager": "SkillsManager",
+                    "method": "read_skill",
+                    "result_format": "auto",
+                    "disable_dataframe_materialization": True,
+                },
+                action,
+                scope=SCOPE_A,
+            )
+            record = await _wait_terminal(task_id, SCOPE_A)
+            assert record.status == STATUS_COMPLETED
+            assert record.result is not None
+            assert record.result.result == payload
+            assert record.result.result[0].get("stored_as_dataframe") is not True
+            partition = await memory_store.get_partition(SCOPE_A)
+            assert partition is not None
+            assert partition.dataframes == {}
+
+        _run(scenario())
+
     def test_session_isolation(self, memory_store):
         async def scenario():
             async def action():

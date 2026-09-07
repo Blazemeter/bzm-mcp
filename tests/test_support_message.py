@@ -45,6 +45,10 @@ MANAGER_MODULES = (
 # tools_manager wraps other tools; it opts out so callers do not see the message twice.
 OPT_OUT_MODULES = frozenset({"tools.tools_manager"})
 
+# Skills return document text, not tabular rows; storing them as dataframes
+# would add an extra MCP round-trip to retrieve the same string.
+DATAFRAME_MATERIALIZATION_OPT_OUT = frozenset({"tools.skills_manager"})
+
 
 class FakeMcp:
     def __init__(self):
@@ -110,6 +114,29 @@ def test_managers_pass_central_support_message(module_name, monkeypatch):
         return
 
     assert captured.get("support_message", SUPPORT_MESSAGE) is SUPPORT_MESSAGE
+
+
+@pytest.mark.parametrize("module_name", MANAGER_MODULES)
+def test_managers_dataframe_materialization_policy(module_name, monkeypatch):
+    captured: dict = {}
+
+    def fake_register(*args, **kwargs):
+        captured.update(kwargs)
+
+        async def _tool(*_args, **_kwargs):
+            return None
+
+        return _tool
+
+    module = importlib.import_module(module_name)
+    monkeypatch.setattr(module, "register_managed_tool", fake_register)
+    module.register(FakeMcp(), build_runtime("stdio"))
+
+    if module_name in DATAFRAME_MATERIALIZATION_OPT_OUT:
+        assert captured.get("disable_materialization") is True
+        return
+
+    assert not captured.get("disable_materialization")
 
 
 def test_unexpected_error_appends_support_message_by_default(monkeypatch):

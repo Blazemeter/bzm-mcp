@@ -239,6 +239,35 @@ class TestRunToolWithRuntime:
         )
         assert listed == []
 
+    def test_disable_dataframe_materialization_skips_persist(self, in_memory_session_storage):
+        token = BzmToken("user-off", "secret")
+        ctx = make_ctx(token, "sess-off")
+        runtime = AppRuntime(
+            transport="stdio",
+            auth=MagicMock(get_token=MagicMock(return_value=token)),
+            storage=in_memory_session_storage,
+            file_access=MagicMock(),
+            scope_resolver=DefaultSessionScopeResolver(),
+            user_config={},
+        )
+        payload = [{"id": i, "note": "x" * 40} for i in range(300)]
+
+        async def _dispatch():
+            return BaseResult(result=payload)
+
+        finalized = run_async(
+            run_tool_with_runtime(
+                runtime, "blazemeter_skills", "read_skill", ctx, _dispatch,
+                disable_dataframe_materialization=True,
+            )
+        )
+        assert finalized.error is None
+        assert len(finalized.result) == 300
+        listed = run_async(
+            list_dataframes_metadata(in_memory_session_storage, SessionScope("user-off", "sess-off"))
+        )
+        assert listed == []
+
 
 class TestDataframesQueryResultFormatStore:
     def test_result_format_dataframe_registers_new_dataframe(self, in_memory_session_storage):

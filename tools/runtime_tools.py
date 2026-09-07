@@ -17,6 +17,10 @@ from typing import Any, Awaitable, Callable, Optional
 
 from config.runtime import AppRuntime
 from telemetry import run_tool
+from tools.utils import (
+    reset_disable_dataframe_materialization,
+    set_disable_dataframe_materialization,
+)
 
 
 async def run_tool_with_runtime(
@@ -40,22 +44,26 @@ async def run_tool_with_runtime(
     resolved_token = token if token is not None else runtime.auth.get_token(ctx)
 
     async def _dispatch_and_finalize() -> Any:
-        result = await dispatch()
-        if disable_dataframe_materialization or result is None:
-            return result
-        from tools.dataframe_manager import finalize_tool_result
+        policy_token = set_disable_dataframe_materialization(disable_dataframe_materialization)
+        try:
+            result = await dispatch()
+            if disable_dataframe_materialization or result is None:
+                return result
+            from tools.dataframe_manager import finalize_tool_result
 
-        # Idempotent if the async task runner already materialized the payload.
-        return await finalize_tool_result(
-            result,
-            action=action,
-            args=tool_args,
-            origin_manager=tool_name,
-            session_storage=runtime.storage,
-            scope_resolver=runtime.scope_resolver,
-            token=resolved_token,
-            ctx=ctx,
-            excluded_actions=dataframe_excluded_actions,
-        )
+            # Idempotent if the async task runner already materialized the payload.
+            return await finalize_tool_result(
+                result,
+                action=action,
+                args=tool_args,
+                origin_manager=tool_name,
+                session_storage=runtime.storage,
+                scope_resolver=runtime.scope_resolver,
+                token=resolved_token,
+                ctx=ctx,
+                excluded_actions=dataframe_excluded_actions,
+            )
+        finally:
+            reset_disable_dataframe_materialization(policy_token)
 
     return await run_tool(tool_name, action, ctx, _dispatch_and_finalize)

@@ -18,8 +18,16 @@ import asyncio
 
 import pytest
 
+from config.auth import StdioAuthProvider
+from config.blazemeter import TOOLS_PREFIX
+from config.file_access import build_file_access
+from config.runtime import AppRuntime
+from config.storage import DefaultSessionScopeResolver, SessionScope
+from config.token import BzmToken
+from tests.conftest import make_ctx, run_async
 from tools import skills_utils
-from tools.skills_manager import SkillsManager
+from tools.dataframe_manager import list_dataframes_metadata
+from tools.skills_manager import SkillsManager, register as register_skills_tool
 
 
 @pytest.fixture
@@ -58,3 +66,57 @@ class TestSkillsManagerListResourcesErrors:
         assert result.error is not None
         assert "Skill folder not found" in result.error
         assert result.result is None
+
+
+class FakeMcp:
+    def __init__(self):
+        self.tools = {}
+
+    def tool(self, name, description):
+        def decorator(func):
+            self.tools[name] = func
+            return func
+
+        return decorator
+
+
+class TestSkillsSkipDataframeMaterialization:
+    def test_read_skill_keeps_large_document_inline(self, isolated_skills_resources, in_memory_session_storage):
+        large_body = "x" * 12000
+        skill_dir = isolated_skills_resources / "skills" / "safe-skill"
+        (skill_dir / "SKILL.md").write_text(
+            "---\n"
+            "name: safe-skill\n"
+            "description: Security test skill\n"
+            "---\n"
+            f"{large_body}\n",
+            encoding="utf-8",
+        )
+        SkillsManager.skills = None
+        token = BzmToken("user-skills", "secret")
+        runtime = AppRuntime(
+            transport="stdio",
+            auth=StdioAuthProvider(token),
+            storage=in_memory_session_storage,
+            file_access=build_file_access("stdio"),
+            scope_resolver=DefaultSessionScopeResolver(),
+            user_config={"token": token},
+        )
+        mcp = FakeMcp()
+        register_skills_tool(mcp, runtime)
+        tool = mcp.tools[f"{TOOLS_PREFIX}_skills"]
+        ctx = make_ctx(token, "sess-skills")
+
+        result = asyncio.run(
+            tool({"action": "read_skill", "args": {"skill_name": "safe-skill"}}, ctx=ctx)
+        )
+
+        assert result.error is None
+        assert result.result[0].get("stored_as_dataframe") is not True
+        assert large_body in result.result[0]["content"]
+        listed = run_async(
+            list_dataframes_metadata(
+                in_memory_session_storage, SessionScope("user-skills", "sess-skills")
+            )
+        )
+        assert listed == []

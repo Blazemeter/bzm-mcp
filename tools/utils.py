@@ -150,6 +150,9 @@ class ConfirmMode(Enum):
 
 _task_management_enabled = contextvars.ContextVar("task_management_enabled", default=False)
 _result_format_context = contextvars.ContextVar("result_format_context", default="auto")
+_disable_dataframe_materialization = contextvars.ContextVar(
+    "disable_dataframe_materialization", default=False
+)
 _tool_result_depth = contextvars.ContextVar("tool_result_depth", default=0)
 _result_debug_enabled = False
 
@@ -187,6 +190,14 @@ def set_result_debug_enabled(enabled: bool):
 
 def is_result_debug_enabled() -> bool:
     return _result_debug_enabled
+
+
+def set_disable_dataframe_materialization(disabled: bool) -> contextvars.Token:
+    return _disable_dataframe_materialization.set(bool(disabled))
+
+
+def reset_disable_dataframe_materialization(token: contextvars.Token) -> None:
+    _disable_dataframe_materialization.reset(token)
 
 
 def normalize_action_args(arguments: Optional[Dict[str, Any]] = None) -> tuple[str, Dict[str, Any]]:
@@ -527,6 +538,9 @@ def run_as_task(
                 "kwargs": _serialize_action_value(kwargs),
                 "params": named_params,
                 "result_format": _result_format_context.get(),
+                "disable_dataframe_materialization": bool(
+                    _disable_dataframe_materialization.get()
+                ),
             }
 
             from tools.async_task_manager import session_scope_from_manager

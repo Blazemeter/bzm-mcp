@@ -418,20 +418,21 @@ async def _task_runner(task_record: TaskRecord, coro_factory: Callable[[], Await
                     timeout=task_record.time_to_live_ms / 1000,
                 )
             normalized = _normalize_result(action_result)
-            result_format = str(task_record.action.get("result_format", "auto")).strip().lower()
-            origin_action = str(task_record.action.get("method", "unknown")).strip() or "unknown"
-            # Task runner owns materialization for parked work (pollers read Storage).
-            # run_tool_with_runtime may finalize again on the fast path; that path is
-            # idempotent for already-stored dataframe payloads.
-            normalized = await finalize_tool_result(
-                normalized,
-                action=origin_action,
-                args={"result_format": result_format},
-                origin_manager=str(task_record.action.get("manager", "unknown")),
-                session_storage=_get_storage(),
-                scope=task_record.scope(),
-                excluded_actions=TOOLS_ACTIONS_SKIP_AUTO_DATAFRAME,
-            )
+            if not task_record.action.get("disable_dataframe_materialization"):
+                result_format = str(task_record.action.get("result_format", "auto")).strip().lower()
+                origin_action = str(task_record.action.get("method", "unknown")).strip() or "unknown"
+                # Task runner owns materialization for parked work (pollers read Storage).
+                # run_tool_with_runtime may finalize again on the fast path; that path is
+                # idempotent for already-stored dataframe payloads.
+                normalized = await finalize_tool_result(
+                    normalized,
+                    action=origin_action,
+                    args={"result_format": result_format},
+                    origin_manager=str(task_record.action.get("manager", "unknown")),
+                    session_storage=_get_storage(),
+                    scope=task_record.scope(),
+                    excluded_actions=TOOLS_ACTIONS_SKIP_AUTO_DATAFRAME,
+                )
             task_record.result = normalized
             if normalized.error:
                 await _set_status_and_persist(
