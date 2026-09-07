@@ -15,7 +15,6 @@ limitations under the License.
 """
 from typing import Dict, Any
 
-import httpx
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE
@@ -23,8 +22,8 @@ from config.runtime import AppRuntime
 from models.manager import Manager
 from models.result import BaseResult
 from tools.billing_utils import calculate_test_cost
-from tools.runtime_tools import run_tool_with_runtime
-from tools.utils import format_sanitized_traceback
+from tools.mcp_entrypoint import register_managed_tool
+from tools.utils import run_as_task
 
 
 class BillingManager(Manager):
@@ -35,6 +34,7 @@ class BillingManager(Manager):
     ):
         super().__init__(ctx)
 
+    @run_as_task()
     async def calculate_cost_from_config(self, args: Dict) -> BaseResult:
         result = calculate_test_cost(args)
         return BaseResult(result=[
@@ -48,9 +48,21 @@ class BillingManager(Manager):
             }
         ])
 
+def register(mcp, runtime: AppRuntime):
 
-def register(mcp, runtime: AppRuntime) -> None:
-    @mcp.tool(
+    async def _dispatch(action, args, token, ctx):
+        billing_manager = BillingManager(ctx)
+        match action:
+            case "calculate_cost_from_config":
+                return await billing_manager.calculate_cost_from_config(args)
+            case _:
+                return BaseResult(
+                    error=f"Action {action} not found in billing manager tool"
+                )
+
+    register_managed_tool(
+        mcp,
+        runtime,
         name=f"{TOOLS_PREFIX}_billing",
         description="""
 Operations on Billing.
@@ -87,31 +99,7 @@ Hints:
 - Server hours calculation can use provided number_of_servers or estimate based on concurrency (~1000 users per engine).
 - All calculations are based on official BlazeMeter documentation (blazemeter-usage-billing skill).
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
-"""
+""",
+        dispatch=_dispatch,
+        support_message=SUPPORT_MESSAGE,
     )
-    async def billing(action: str, args: Dict[str, Any], ctx: Context) -> BaseResult:
-        runtime.configure_context(ctx)
-        billing_manager = BillingManager(ctx)
-
-        async def _dispatch():
-            match action:
-                case "calculate_cost_from_config":
-                    return await billing_manager.calculate_cost_from_config(args)
-                case _:
-                    return BaseResult(
-                        error=f"Action {action} not found in billing manager tool"
-                    )
-
-        try:
-            return await run_tool_with_runtime(
-                runtime, f"{TOOLS_PREFIX}_billing", action, ctx, _dispatch,
-                tool_args=args,
-            )
-        except httpx.HTTPStatusError:
-            return BaseResult(
-                error=f"Error: {format_sanitized_traceback()}"
-            )
-        except Exception:
-            return BaseResult(
-                error=f"Error: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}"
-            )

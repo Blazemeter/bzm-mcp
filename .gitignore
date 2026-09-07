@@ -22,3 +22,10 @@ whitesource/
 mend
 mend-cli
 *.mend.json
+# Local credentials (never commit)
+dist/api-key.json
+api-key.json
+
+# Local/PyInstaller build artifacts
+bzm-mcp-linux-arm64.spec
+*.spec

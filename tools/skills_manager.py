@@ -19,14 +19,13 @@ from urllib.parse import unquote
 
 import httpx
 from mcp.server.fastmcp import Context
-from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE
 from config.runtime import AppRuntime
 from models.manager import Manager
 from models.result import BaseResult
-from tools.runtime_tools import run_tool_with_runtime
-from tools.utils import format_sanitized_traceback
+from tools.mcp_entrypoint import register_managed_tool
+from tools.utils import format_sanitized_traceback, run_as_task
 from tools.skills_utils import list_skills, read_skill_definition, read_skill_file, parse_skill_uri, \
     is_skill_uri, list_skill_resources_uri
 
@@ -48,8 +47,8 @@ class SkillsManager(Manager):
     ):
         super().__init__(ctx)
 
-    @staticmethod
-    async def list_skills() -> BaseResult:
+    @run_as_task()
+    async def list_skills(self) -> BaseResult:
         errors = []
         if SkillsManager.skills is None:
             skills, errors = list_skills()
@@ -62,8 +61,8 @@ class SkillsManager(Manager):
             error=errors[0] if errors and len(errors) > 0 else None  # Only the first error
         )
 
-    @staticmethod
-    async def read_skill(skill_name: Optional[str]) -> BaseResult:
+    @run_as_task()
+    async def read_skill(self, skill_name: Optional[str]) -> BaseResult:
         if not isinstance(skill_name, str) or not skill_name.strip():
             return BaseResult(
                 error="Missing required argument 'skill_name'. Please specify a non-empty skill name."
@@ -83,8 +82,8 @@ class SkillsManager(Manager):
             error=error
         )
 
-    @staticmethod
-    async def read_skill_file_path(skill_name: str, file_path: str) -> BaseResult:
+    @run_as_task()
+    async def read_skill_file_path(self, skill_name: str, file_path: str) -> BaseResult:
         skill_content, error = read_skill_file(skill_name, file_path)
         return BaseResult(
             result=[{
@@ -97,8 +96,8 @@ class SkillsManager(Manager):
             error=error
         )
 
-    @staticmethod
-    async def list_skill_resources(skill_name: Optional[str]) -> BaseResult:
+    @run_as_task()
+    async def list_skill_resources(self, skill_name: Optional[str]) -> BaseResult:
         if not isinstance(skill_name, str) or not skill_name.strip():
             return BaseResult(
                 error="Missing required argument 'skill_name'. Please specify a non-empty skill name."
@@ -120,8 +119,8 @@ class SkillsManager(Manager):
             has_more=False,
         )
 
-    @staticmethod
-    async def read_skill_resource_uri(skill_uri: Optional[str]) -> BaseResult:
+    @run_as_task()
+    async def read_skill_resource_uri(self, skill_uri: Optional[str]) -> BaseResult:
         if not isinstance(skill_uri, str) or not skill_uri.strip():
             return BaseResult(
                 error="Missing required argument 'skill_resource_uri'. Please specify a non-empty skill URI."
@@ -145,31 +144,77 @@ class SkillsManager(Manager):
                 error=f"Invalid Skill URI: {skill_uri}"
             )
 
-    @staticmethod
-    async def read_skill_resource_uri_list(skill_uri_list: Optional[List[str]]) -> BaseResult:
+    @run_as_task()
+    async def read_skill_resource_uri_list(self, skill_uri_list: Optional[List[str]]) -> BaseResult:
         if not isinstance(skill_uri_list, list) or not skill_uri_list:
             return BaseResult(
                 error="Missing required argument 'skill_resource_uri_list'. Please provide a non-empty list of skill URIs."
             )
         results = await asyncio.gather(
-            *(SkillsManager.read_skill_resource_uri(skill_uri) for skill_uri in skill_uri_list)
+            *(self.read_skill_resource_uri(skill_uri) for skill_uri in skill_uri_list)
         )
         return BaseResult(
             result=results,
             total=len(results),
         )
 
-
 def register(mcp, runtime: AppRuntime):
-    @mcp.resource("blazemeter-skill-{skill_name}://{path}")
-    def universal_skills_handler(skill_name: str, path: str) -> str:
-        path = unquote(path)
-        content, error = read_skill_file(skill_name, path)
-        if error:
-            return error
-        return content
+    skills_tool = None
 
-    @mcp.tool(
+    async def _dispatch(action, args, token, ctx):
+        args = args or {}
+        skills_manager = SkillsManager(ctx)
+        match action:
+            case "list_skills":
+                return await skills_manager.list_skills()
+            case "read_skill":
+                return await skills_manager.read_skill(args.get("skill_name"))
+            case "list_skill_resources":
+                return await skills_manager.list_skill_resources(args.get("skill_name"))
+            case "read_skill_resource_uri":
+                return await skills_manager.read_skill_resource_uri(args.get("skill_resource_uri"))
+            case "read_skill_resource_uri_list":
+                return await skills_manager.read_skill_resource_uri_list(args.get("skill_resource_uri_list"))
+            case "batch":
+                batch_calls = args.get("batch_calls", [])
+                if not isinstance(batch_calls, list) or not batch_calls:
+                    return BaseResult(
+                        error="batch_calls must be a non-empty list of dicts with 'action' and 'args'")
+
+                semaphore = asyncio.Semaphore(SkillsManager.MAX_BATCH_CONCURRENCY)
+
+                async def process_call(call: Dict[str, Any]) -> BaseResult | List[BaseResult]:
+                    sub_action = call.get("action", "")
+                    sub_args = call.get("args", {})
+                    async with semaphore:
+                        try:
+                            # Recursively call the skills function itself
+                            return await skills_tool({"action": sub_action, "args": sub_args}, ctx)
+                        except httpx.HTTPStatusError:
+                            return BaseResult(
+                                error=f"HTTP error in sub-action {sub_action}: {format_sanitized_traceback()}"
+                            )
+                        except Exception:
+                            return BaseResult(
+                                error=f"Error in sub-action {sub_action}: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}")
+
+                # Parallel execution with asyncio.gather
+                results = await asyncio.gather(*[process_call(call) for call in batch_calls],
+                                               return_exceptions=True)
+                # Handle any exceptions returned
+                processed_results = [
+                    r if not isinstance(r, Exception) else BaseResult(error=f"Unhandled exception: {str(r)}")
+                    for r in results
+                ]
+                return BaseResult(result=processed_results)
+            case _:
+                return BaseResult(
+                    error=f"Action {action} not found in skills manager tool"
+                )
+
+    skills_tool = register_managed_tool(
+        mcp,
+        runtime,
         name=f"{TOOLS_PREFIX}_skills",
         description="""
 Operations to obtain Skills around BlazeMeter.
@@ -196,78 +241,8 @@ Hints:
 - Always generates the url attributes as a link in markdown format (like command_url).
 - **CRITICAL**: For multiple actions, always use the 'batch' action.
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
-"""
+""",
+        dispatch=_dispatch,
+        excluded_actions={'batch'},
+        support_message=SUPPORT_MESSAGE,
     )
-    async def skills(
-            action: str = Field(description="The action id to execute"),
-            args: Dict[str, Any] = Field(description="Dictionary with parameters", default=None),
-            ctx: Context = Field(description="Context object providing access to MCP capabilities")
-    ) -> BaseResult:
-        if args is None:
-            args = {}
-
-        runtime.configure_context(ctx)
-        skills_manager = SkillsManager(ctx)
-
-        async def _dispatch():
-            match action:
-                case "list_skills":
-                    return await skills_manager.list_skills()
-                case "read_skill":
-                    return await skills_manager.read_skill(args.get("skill_name"))
-                case "list_skill_resources":
-                    return await skills_manager.list_skill_resources(args.get("skill_name"))
-                case "read_skill_resource_uri":
-                    return await skills_manager.read_skill_resource_uri(args.get("skill_resource_uri"))
-                case "read_skill_resource_uri_list":
-                    return await skills_manager.read_skill_resource_uri_list(args.get("skill_resource_uri_list"))
-                case "batch":
-                    batch_calls = args.get("batch_calls", [])
-                    if not isinstance(batch_calls, list) or not batch_calls:
-                        return BaseResult(
-                            error="batch_calls must be a non-empty list of dicts with 'action' and 'args'")
-
-                    semaphore = asyncio.Semaphore(SkillsManager.MAX_BATCH_CONCURRENCY)
-
-                    async def process_call(call: Dict[str, Any]) -> BaseResult | List[BaseResult]:
-                        sub_action = call.get("action", "")
-                        sub_args = call.get("args", {})
-                        async with semaphore:
-                            try:
-                                # Recursively call the skills function itself
-                                return await skills(sub_action, sub_args, ctx)
-                            except httpx.HTTPStatusError:
-                                return BaseResult(
-                                    error=f"HTTP error in sub-action {sub_action}: {format_sanitized_traceback()}"
-                                )
-                            except Exception:
-                                return BaseResult(
-                                    error=f"Error in sub-action {sub_action}: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}")
-
-                    # Parallel execution with asyncio.gather
-                    results = await asyncio.gather(*[process_call(call) for call in batch_calls],
-                                                   return_exceptions=True)
-                    # Handle any exceptions returned
-                    processed_results = [
-                        r if not isinstance(r, Exception) else BaseResult(error=f"Unhandled exception: {str(r)}")
-                        for r in results
-                    ]
-                    return BaseResult(result=processed_results)
-                case _:
-                    return BaseResult(
-                        error=f"Action {action} not found in skills manager tool"
-                    )
-
-        try:
-            return await run_tool_with_runtime(
-                runtime, f"{TOOLS_PREFIX}_skills", action, ctx, _dispatch,
-                tool_args=args,
-            )
-        except httpx.HTTPStatusError:
-            return BaseResult(
-                error=f"Error: {format_sanitized_traceback()}"
-            )
-        except Exception:
-            return BaseResult(
-                error=f"Error: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}"
-            )

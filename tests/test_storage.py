@@ -125,12 +125,23 @@ class TestUploadAssetsHostedRejection:
         result = asyncio.run(
             manager.upload_assets(1, ["/tmp/demo.jmx"], main_script=None)
         )
-        assert "error" in result
-        assert "No valid files found to upload" in result["error"]
+        if hasattr(result, "error"):
+            # @run_as_task normalizes dict errors into BaseResult(result=[{error:...}]).
+            inner = result.result[0] if result.result else {}
+            error_text = result.error or (inner.get("error") if isinstance(inner, dict) else None)
+        else:
+            error_text = result.get("error") if isinstance(result, dict) else None
+        assert error_text is not None
+        assert "No valid files found to upload" in error_text
 
     def test_upload_assets_without_file_ports_returns_hosted_message(self):
         manager = TestManager(ctx=None)
         result = asyncio.run(
             manager.upload_assets(1, ["/tmp/demo.jmx"], main_script=None)
         )
-        assert result["error"] == HOSTED_FILE_ACCESS_MESSAGE
+        if hasattr(result, "error"):
+            inner = result.result[0] if result.result else {}
+            error_text = result.error or (inner.get("error") if isinstance(inner, dict) else None)
+        else:
+            error_text = result.get("error") if isinstance(result, dict) else None
+        assert error_text == HOSTED_FILE_ACCESS_MESSAGE

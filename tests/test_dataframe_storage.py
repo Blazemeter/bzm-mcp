@@ -13,9 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import json
-
-import httpx
 import pytest
 
 from config.storage import (
@@ -28,6 +25,11 @@ from config.storage import (
     SessionStoragePort,
 )
 from tests.conftest import run_async
+from tests.storage_fakes import (
+    MergingSessionTransport,
+    RecordingSessionStorageProvider,
+    http_session_storage_provider,
+)
 from tools import dataframe_manager as dataframe_manager_module
 from tools.dataframe_manager import (
     clear_dataframes,
@@ -52,60 +54,6 @@ def _seed(session_storage, scope, rows, action="seed"):
     )
 
 
-class RecordingSessionStorageProvider(InMemorySessionStorageProvider):
-    def __init__(self) -> None:
-        super().__init__()
-        self.put_payloads: list[SessionPartitionPayload] = []
-
-    async def put_partition(self, scope: SessionScope, payload: SessionPartitionPayload) -> None:
-        self.put_payloads.append(payload)
-        await super().put_partition(scope, payload)
-
-
-class MergingSessionTransport(httpx.AsyncBaseTransport):
-    """Simulates Storage API merge-on-PUT for /session-partitions/{user}/{session}."""
-
-    def __init__(self) -> None:
-        self.partitions: dict[str, dict] = {}
-
-    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-        path = request.url.path
-        prefix = "/session-partitions/"
-        if not path.startswith(prefix):
-            return httpx.Response(404, json={"error": "not found"})
-        key = path[len(prefix):]
-        if request.method == "GET":
-            if key not in self.partitions:
-                return httpx.Response(404, json={"error": "not found"})
-            return httpx.Response(200, json=self.partitions[key])
-        if request.method == "PUT":
-            incoming = json.loads(request.content.decode("utf-8"))
-            existing = dict(self.partitions.get(key) or {})
-            for section in ("metadata", "dataframes", "tasks", "uploaded_files"):
-                if section in incoming:
-                    existing[section] = incoming[section]
-            user_id, _, session_id = key.partition("/")
-            existing["user_id"] = user_id
-            existing["mcp_session_id"] = session_id
-            self.partitions[key] = existing
-            return httpx.Response(200, json=existing)
-        if request.method == "DELETE":
-            deleted = key in self.partitions
-            self.partitions.pop(key, None)
-            return httpx.Response(200, json={"deleted": deleted})
-        return httpx.Response(405)
-
-
-def _http_session_storage_provider(monkeypatch, transport: MergingSessionTransport) -> HttpSessionStorageProvider:
-    class _Client(httpx.AsyncClient):
-        def __init__(self, *args, **kwargs):
-            kwargs["transport"] = transport
-            super().__init__(*args, **kwargs)
-
-    monkeypatch.setattr("config.storage.httpx.AsyncClient", _Client)
-    return HttpSessionStorageProvider(base_url="http://storage.test")
-
-
 class TestSessionStoragePortContract:
     """Dataframes use STREAMABLE_HTTP SessionStoragePort names, not FileStoragePort."""
 
@@ -114,7 +62,7 @@ class TestSessionStoragePortContract:
         assert isinstance(in_memory_session_storage, SessionStoragePort)
 
     def test_http_session_provider_is_session_storage_port(self, monkeypatch):
-        session_storage = _http_session_storage_provider(
+        session_storage = http_session_storage_provider(
             monkeypatch, MergingSessionTransport(),
         )
         assert isinstance(session_storage, HttpSessionStorageProvider)
@@ -183,7 +131,7 @@ class TestDataframeManagerInMemorySessionStorageProvider:
 
     def test_external_put_is_visible_on_next_read(self, monkeypatch):
         transport = MergingSessionTransport()
-        client_a = _http_session_storage_provider(monkeypatch, transport)
+        client_a = http_session_storage_provider(monkeypatch, transport)
         client_b = HttpSessionStorageProvider(base_url="http://storage.test")
         scope = SessionScope("user-1", "sess-a")
         first = _seed(client_a, scope, [{"id": 1}])
@@ -292,9 +240,9 @@ class TestDataframeMapMerge:
 
 
 class TestHttpSessionStorageProviderDataframes:
-    def test_http_session_storage_provider_roundtrip_and_task_merge(self, monkeypatch):
+    def testhttp_session_storage_provider_roundtrip_and_task_merge(self, monkeypatch):
         transport = MergingSessionTransport()
-        client = _http_session_storage_provider(monkeypatch, transport)
+        client = http_session_storage_provider(monkeypatch, transport)
         scope = SessionScope("user-9", "sess-http")
 
         run_async(

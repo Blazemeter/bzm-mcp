@@ -66,7 +66,7 @@ docker run --rm -p 8000:8000 \
 |----------|-------------|---------|
 | `BZM_MCP_TRANSPORT` | Logical transport: `stdio`, `http`, or `docker` | `stdio` |
 | `FASTMCP_HOST` | Bind address (HTTP only) | `127.0.0.1` |
-| `FASTMCP_PORT` | Listen port (HTTP only). Also accepts `PORT` (e.g. Cloud Run) | `8000` |
+| `FASTMCP_PORT` | Listen port (HTTP only). Also accepts `PORT` | `8000` |
 | `FASTMCP_STREAMABLE_HTTP_PATH` | HTTP path for the MCP endpoint | `/mcp` |
 | `BZM_STORAGE_API_BASE_URL` | Storage Service base URL (required for streamable-http) | — |
 | `BZM_STORAGE_STRATEGY` | `memory` or `http` (file-access helper; session store follows transport) | `memory` |

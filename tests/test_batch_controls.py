@@ -61,7 +61,7 @@ class TestBatchControls:
         monkeypatch.setattr(HelpManager, "list_help_categories", slow_list_help_categories)
 
         batch_calls = [{"action": "list_help_categories", "args": {}} for _ in range(6)]
-        result = asyncio.run(help_tool("batch", {"batch_calls": batch_calls}, ctx=None))
+        result = asyncio.run(help_tool({"action": "batch", "args": {"batch_calls": batch_calls}}, ctx=None))
 
         assert result.error is None
         assert active_calls["max"] <= 2
@@ -86,7 +86,7 @@ class TestBatchControls:
         monkeypatch.setattr(SkillsManager, "list_skills", staticmethod(slow_list_skills))
 
         batch_calls = [{"action": "list_skills", "args": {}} for _ in range(6)]
-        result = asyncio.run(skills_tool("batch", {"batch_calls": batch_calls}, ctx=None))
+        result = asyncio.run(skills_tool({"action": "batch", "args": {"batch_calls": batch_calls}}, ctx=None))
 
         assert result.error is None
         assert active_calls["max"] <= 2
