@@ -17,7 +17,7 @@ from typing import Any, Dict
 
 from mcp.server.fastmcp import Context
 
-from config.blazemeter import TOOLS_PREFIX, USER_ENDPOINT
+from config.blazemeter import TOOLS_PREFIX, USER_ENDPOINT, SUPPORT_MESSAGE
 from config.runtime import AppRuntime
 from formatters.user import format_users
 from models.manager import Manager
@@ -69,8 +69,5 @@ Hints:
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
 """,
         dispatch=_dispatch,
-        support_message=(
-            "If you think this is a bug, please contact BlazeMeter support or report issue at "
-            "https://github.com/BlazeMeter/bzm-mcp/issues"
-        ),
+        support_message=SUPPORT_MESSAGE,
     )

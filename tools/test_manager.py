@@ -21,7 +21,7 @@ from typing import Optional, List
 
 from mcp.server.fastmcp import Context
 
-from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX
+from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX, SUPPORT_MESSAGE
 from config.file_access import FileAccessPort
 from config.security import detect_sensitive_upload_path_reason
 from config.storage import HOSTED_FILE_ACCESS_MESSAGE, SessionScopeResolverPort
@@ -751,5 +751,5 @@ Hints:
 - For configure_failure_criteria, call read first and merge client-side if you must keep existing rules; providing rules replaces all criteria rows for that test.
 """,
         dispatch=_dispatch,
-        support_message=("""If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"""),
+        support_message=SUPPORT_MESSAGE,
     )

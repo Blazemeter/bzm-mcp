@@ -17,7 +17,7 @@ from typing import Any, Dict, Optional
 
 from mcp.server.fastmcp import Context
 
-from config.blazemeter import WORKSPACES_ENDPOINT, TOOLS_PREFIX
+from config.blazemeter import WORKSPACES_ENDPOINT, TOOLS_PREFIX, SUPPORT_MESSAGE
 from config.runtime import AppRuntime
 from formatters.workspace import format_workspaces, format_workspaces_detailed, format_workspaces_locations
 from models.manager import Manager
@@ -154,5 +154,5 @@ Hints:
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
 """,
         dispatch=_dispatch,
-        support_message=("If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/BlazeMeter/bzm-mcp/issues"),
+        support_message=SUPPORT_MESSAGE,
     )
