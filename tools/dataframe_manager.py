@@ -53,6 +53,7 @@ MISSING_STORAGE_ERROR = "Session storage is required to persist dataframes."
 # SessionStoragePort merge-on-commit is the cross-instance safeguard (not CAS).
 _MAX_SESSION_LOCKS = 256
 _locks_guard = asyncio.Lock()
+_overflow_lock = asyncio.Lock()
 _session_locks: OrderedDict[tuple[str, str], asyncio.Lock] = OrderedDict()
 _overflow_lock: Optional[asyncio.Lock] = None
 
