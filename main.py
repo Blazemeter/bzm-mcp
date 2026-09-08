@@ -517,6 +517,7 @@ A comprehensive integration tool that provides AI assistants with full programma
 - **Always confirm context**: Always identify and confirm workspace/project before operations.
 - **Proactive Troubleshooting**: Use the skills for troubleshooting any detected issues.
 - **Failure criteria**: The same field names appear when you read a test and when you configure failure criteria (`failure_criteria` on the test); the server handles BlazeMeter’s REST format internally. Use `failure_criteria_meta` for field definitions and KPI/condition catalogs. When describing criteria to the user, use `meta.general_labels`, `meta.rule_field_labels`, `meta.kpi_labels`, and `meta.condition_labels`; use raw metric and operator ids only inside tool calls. Use `configure_failure_criteria` only after user confirmation; it replaces all rules unless you merge from a prior read.
+- **Session isolation**: Successful tool results include `session_scope_id`. Pass that same value as `args.session_scope_id` on later tool calls in this chat so tasks and dataframes stay in the same store. Do not reuse a `session_scope_id` from another chat.
     """
     mcp = FastMCP(
         "blazemeter-mcp",
