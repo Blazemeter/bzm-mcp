@@ -714,14 +714,16 @@ Actions:
 - tasks_status: Lightweight task status by task ID (no task_result payload).
     args(dict): task_id (str, required); wait_for_terminal_ms (int, optional);
                 poll_interval_ms (int, optional)
-- tasks_list: List tasks for the current MCP session.
-    args(dict): status (str, optional); status_list (list[str], optional)
+- tasks_list: List tasks for the current chat-scoped session.
+    args(dict): status (str, optional); status_list (list[str], optional);
+                session_scope_id (str, optional)
 - tasks_cancel: Cancel a running/queued task on this worker when a local handle exists.
     Hosted note: cancel is process-local; other workers may only record cancel in Storage.
     args(dict): task_id (str, required)
 - tasks_remove: Remove a task from the session registry.
     args(dict): task_id (str, required)
-- dataframes_list: List dataframes and metadata for the current MCP session.
+- dataframes_list: List dataframes and metadata for the current chat-scoped session.
+    args(dict): session_scope_id (str, optional)
 - dataframes_get: Get dataframe metadata and schema by dataframe ID.
     args(dict): dataframe_id (str, required)
 - dataframes_schema_groups: Group dataframe schemas for multi-dataframe queries.
@@ -739,6 +741,7 @@ Hints:
 - **CRITICAL**: Before writing any dataframe SQL query, call `dataframes_sql_help` first.
 - ORDER BY + LIMIT + OFFSET are mandatory in every dataframe query.
 - After a long-running tool returns a task snapshot, poll with tasks_status then tasks_get.
+- **CRITICAL**: Reuse `session_scope_id` from this chat's previous successful tool result in `args.session_scope_id`. Never copy a `session_scope_id` from another chat.
 """,
         dispatch=_dispatch,
         excluded_actions=set(TOOLS_ACTIONS_SKIP_AUTO_DATAFRAME),
