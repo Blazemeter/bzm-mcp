@@ -22,6 +22,7 @@ from mcp.server.fastmcp import Context
 
 from config.blazemeter import SUPPORT_MESSAGE
 from config.runtime import AppRuntime
+from config.storage import _tool_session_scope_id
 from config.token import BzmToken
 from models.result import BaseResult
 from tools.runtime_tools import run_tool_with_runtime
@@ -69,6 +70,10 @@ def register_managed_tool(
         action, args = normalize_action_args(arguments)
         if not action:
             return BaseResult(error="Missing required argument 'action' within tool arguments.")
+        explicit = args.pop("session_scope_id", None)
+        scope_token = _tool_session_scope_id.set(
+            explicit.strip() if isinstance(explicit, str) and explicit.strip() else None
+        )
         runtime.configure_context(ctx)
         token = runtime.auth.get_token(ctx)
 
@@ -76,7 +81,7 @@ def register_managed_tool(
             return await dispatch(action, args, token, ctx)
 
         try:
-            return await run_tool_with_runtime(
+            result = await run_tool_with_runtime(
                 runtime,
                 name,
                 action,
@@ -87,6 +92,9 @@ def register_managed_tool(
                 dataframe_excluded_actions=excluded_actions,
                 disable_dataframe_materialization=disable_materialization,
             )
+            if isinstance(result, BaseResult) and not result.error:
+                result.session_scope_id = runtime.scope_resolver.resolve(ctx, token).mcp_session_id
+            return result
         except httpx.HTTPStatusError:
             return BaseResult(error=f"Error: {format_sanitized_traceback()}")
         except Exception:
@@ -94,5 +102,7 @@ def register_managed_tool(
             if support_message:
                 return BaseResult(error=f"Error: {detail}\n{support_message}")
             return BaseResult(error=f"Error: {detail}")
+        finally:
+            _tool_session_scope_id.reset(scope_token)
 
     return _tool

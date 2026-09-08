@@ -31,8 +31,14 @@ async tasks share the same session partitions as dataframes.
 Tool registrations call `run_tool_with_runtime(runtime, ...)` so tracing stays
 unaware of dataframe types. There is no process-global dataframe store.
 
-Partition key: `{user_id}/{mcp_session_id}` via `DefaultSessionScopeResolver`
-(`Mcp-Session-Id` header, then FastMCP `ctx.session_id`).
+Storage path: `{user_id}/{mcp_session_id}` via `DefaultSessionScopeResolver`.
+The second segment is a **chat** key, not the HTTP `Mcp-Session-Id` header:
+
+1. `args.session_scope_id` (reuse the id from a previous successful tool result)
+2. otherwise a minted id for this tool call
+
+`Mcp-Session-Id` / FastMCP `ctx.session_id` are transport session ids only. They
+are not used as the dataframe/task partition key.
 
 ## Session Storage Service
 

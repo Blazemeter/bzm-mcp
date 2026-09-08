@@ -17,7 +17,9 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+import contextvars
 import os
+import secrets
 from pathlib import Path
 from typing import Any, List, Literal, Optional, Protocol, runtime_checkable
 from urllib.parse import quote
@@ -221,27 +223,29 @@ class SessionScopeResolverPort(ABC):
         raise NotImplementedError
 
 
+# Per tool call: args.session_scope_id, or a minted id when none is provided.
+_tool_session_scope_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
+    "tool_session_scope_id", default=None
+)
+
+
 class DefaultSessionScopeResolver(SessionScopeResolverPort):
     """
-    Resolve scope from request/ctx metadata.
+    Resolve scope from args.session_scope_id (same chat).
 
-    Hosted HTTP receives `Mcp-Session-Id` via header.
-    Local stdio/docker falls back to FastMCP context session_id when available.
+    Otherwise mint an id so a shared MCP session cannot leak across chats.
     """
 
     @staticmethod
     def _resolve_session_id(ctx: Optional[Context]) -> str:
+        explicit = _tool_session_scope_id.get()
+        if explicit:
+            return explicit
         if ctx is None:
             return "default"
-        request = getattr(getattr(ctx, "request_context", None), "request", None)
-        if request is not None:
-            session_id = request.headers.get("mcp-session-id")
-            if session_id and session_id.strip():
-                return session_id.strip()
-        session_id = getattr(ctx, "session_id", None)
-        if session_id is not None and str(session_id).strip():
-            return str(session_id).strip()
-        return "default"
+        minted = secrets.token_hex(8)
+        _tool_session_scope_id.set(minted)
+        return minted
 
     @staticmethod
     def _resolve_user_id(token: Optional[BzmToken]) -> str:
