@@ -22,6 +22,7 @@ from mcp.server.fastmcp import Context
 
 from config.blazemeter import SUPPORT_MESSAGE
 from config.runtime import AppRuntime
+from config.storage import _tool_session_scope_id
 from config.token import BzmToken
 from models.result import BaseResult
 from tools.runtime_tools import run_tool_with_runtime
@@ -69,6 +70,10 @@ def register_managed_tool(
         action, args = normalize_action_args(arguments)
         if not action:
             return BaseResult(error="Missing required argument 'action' within tool arguments.")
+        explicit = args.pop("session_scope_id", None)
+        scope_token = _tool_session_scope_id.set(
+            explicit.strip() if isinstance(explicit, str) and explicit.strip() else None
+        )
         runtime.configure_context(ctx)
         token = runtime.auth.get_token(ctx)
 
@@ -97,5 +102,7 @@ def register_managed_tool(
             if support_message:
                 return BaseResult(error=f"Error: {detail}\n{support_message}")
             return BaseResult(error=f"Error: {detail}")
+        finally:
+            _tool_session_scope_id.reset(scope_token)
 
     return _tool
