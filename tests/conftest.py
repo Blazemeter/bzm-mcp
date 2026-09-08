@@ -28,6 +28,10 @@ def run_async(coro):
 
 
 def make_ctx(token: BzmToken, session_id: str):
+    from config.storage import _tool_session_scope_id
+
+    # Stand-in for args.session_scope_id so manager tests share a stable partition.
+    _tool_session_scope_id.set(session_id)
     request_state = SimpleNamespace(
         **{
             BZM_TOKEN_STATE_ATTR: token,
@@ -42,6 +46,15 @@ def make_ctx(token: BzmToken, session_id: str):
         session_id=session_id,
         request_context=SimpleNamespace(request=request),
     )
+
+
+@pytest.fixture(autouse=True)
+def reset_tool_session_scope_id():
+    from config.storage import _tool_session_scope_id
+
+    token = _tool_session_scope_id.set(None)
+    yield
+    _tool_session_scope_id.reset(token)
 
 
 @pytest.fixture(autouse=True)
