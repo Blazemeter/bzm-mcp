@@ -76,7 +76,7 @@ def register_managed_tool(
             return await dispatch(action, args, token, ctx)
 
         try:
-            return await run_tool_with_runtime(
+            result = await run_tool_with_runtime(
                 runtime,
                 name,
                 action,
@@ -87,6 +87,9 @@ def register_managed_tool(
                 dataframe_excluded_actions=excluded_actions,
                 disable_dataframe_materialization=disable_materialization,
             )
+            if isinstance(result, BaseResult) and not result.error:
+                result.session_scope_id = runtime.scope_resolver.resolve(ctx, token).mcp_session_id
+            return result
         except httpx.HTTPStatusError:
             return BaseResult(error=f"Error: {format_sanitized_traceback()}")
         except Exception:
