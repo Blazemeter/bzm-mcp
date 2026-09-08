@@ -226,6 +226,7 @@ class DefaultSessionScopeResolver(SessionScopeResolverPort):
     Resolve scope from request/ctx metadata.
 
     Hosted HTTP receives `Mcp-Session-Id` via header.
+    If the client also sends `x-conversation-id`, that value is the partition key.
     Local stdio/docker falls back to FastMCP context session_id when available.
     """
 
@@ -235,9 +236,14 @@ class DefaultSessionScopeResolver(SessionScopeResolverPort):
             return "default"
         request = getattr(getattr(ctx, "request_context", None), "request", None)
         if request is not None:
-            session_id = request.headers.get("mcp-session-id")
-            if session_id and session_id.strip():
-                return session_id.strip()
+            headers = getattr(request, "headers", None)
+            if headers is not None:
+                conversation_id = headers.get("x-conversation-id")
+                if conversation_id and str(conversation_id).strip():
+                    return str(conversation_id).strip()
+                session_id = headers.get("mcp-session-id")
+                if session_id and session_id.strip():
+                    return session_id.strip()
         session_id = getattr(ctx, "session_id", None)
         if session_id is not None and str(session_id).strip():
             return str(session_id).strip()
