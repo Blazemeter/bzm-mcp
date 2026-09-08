@@ -35,8 +35,7 @@ Storage path: `{user_id}/{mcp_session_id}` via `DefaultSessionScopeResolver`.
 The second segment is a **chat** key, not the HTTP `Mcp-Session-Id` header:
 
 1. `args.session_scope_id` (reuse the id from a previous successful tool result)
-2. `x-conversation-id` header, if the client sends one
-3. otherwise a minted id for this tool call
+2. otherwise a minted id for this tool call
 
 `Mcp-Session-Id` / FastMCP `ctx.session_id` are transport session ids only. They
 are not used as the dataframe/task partition key.

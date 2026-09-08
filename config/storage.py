@@ -223,7 +223,7 @@ class SessionScopeResolverPort(ABC):
         raise NotImplementedError
 
 
-# Per tool call: args.session_scope_id, or a minted id when no chat key is provided.
+# Per tool call: args.session_scope_id, or a minted id when none is provided.
 _tool_session_scope_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
     "tool_session_scope_id", default=None
 )
@@ -231,9 +231,8 @@ _tool_session_scope_id: contextvars.ContextVar[Optional[str]] = contextvars.Cont
 
 class DefaultSessionScopeResolver(SessionScopeResolverPort):
     """
-    Resolve scope from request/ctx metadata.
+    Resolve scope from args.session_scope_id (same chat).
 
-    Prefer args.session_scope_id (same chat), then `x-conversation-id`.
     Otherwise mint an id so a shared MCP session cannot leak across chats.
     """
 
@@ -244,12 +243,6 @@ class DefaultSessionScopeResolver(SessionScopeResolverPort):
             return explicit
         if ctx is None:
             return "default"
-        request = getattr(getattr(ctx, "request_context", None), "request", None)
-        headers = getattr(request, "headers", None) if request is not None else None
-        if headers is not None:
-            conversation_id = headers.get("x-conversation-id")
-            if conversation_id and str(conversation_id).strip():
-                return str(conversation_id).strip()
         minted = secrets.token_hex(8)
         _tool_session_scope_id.set(minted)
         return minted
