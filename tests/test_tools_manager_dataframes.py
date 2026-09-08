@@ -23,10 +23,14 @@ from tools.tools_manager import ToolsManager
 
 
 class TestResolveSessionScope:
-    def test_uses_token_id_and_ctx_session(self):
+    def test_uses_token_id_and_mints_when_no_chat_key(self):
         token = BzmToken("api-key-id", "secret")
         ctx = SimpleNamespace(session_id="mcp-abc")
-        assert resolve_session_scope(ctx, token) == SessionScope("api-key-id", "mcp-abc")
+        first = resolve_session_scope(ctx, token)
+        second = resolve_session_scope(ctx, token)
+        assert first.user_id == "api-key-id"
+        assert first.mcp_session_id != "mcp-abc"
+        assert first == second
 
     def test_defaults_when_missing(self):
         assert resolve_session_scope(None, None) == SessionScope("anonymous", "default")
