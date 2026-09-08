@@ -29,6 +29,7 @@ class BaseResult(BaseModel):
     tool_call_finished_at: Optional[str] = Field(description="ISO timestamp when tool action finished", default=None)
     tool_call_duration_ms: Optional[int] = Field(description="Tool action duration in milliseconds", default=None)
     debug: Optional[dict[str, Any]] = Field(description="Optional debug metrics for tool calls", default=None)
+    session_scope_id: Optional[str] = Field(description="Partition key used for tasks and dataframes in this tool call.",default=None,)
 
     def append_warnings(self, messages: List[str]):
         if not self.warning:
@@ -121,3 +122,9 @@ class ToolResult(CallToolResult):
         if not isinstance(self.structuredContent, dict):
             return None
         return self.structuredContent.get("debug")
+
+    @property
+    def session_scope_id(self) -> Optional[str]:
+        if not isinstance(self.structuredContent, dict):
+            return None
+        return self.structuredContent.get("session_scope_id")
