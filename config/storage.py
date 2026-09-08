@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+import contextvars
 import os
 from pathlib import Path
 from typing import Any, List, Literal, Optional, Protocol, runtime_checkable
@@ -221,17 +222,25 @@ class SessionScopeResolverPort(ABC):
         raise NotImplementedError
 
 
+# Set for one tool call when args.session_scope_id is present (see mcp_entrypoint).
+_tool_session_scope_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
+    "tool_session_scope_id", default=None
+)
+
+
 class DefaultSessionScopeResolver(SessionScopeResolverPort):
     """
     Resolve scope from request/ctx metadata.
 
-    Hosted HTTP receives `Mcp-Session-Id` via header.
-    If the client also sends `x-conversation-id`, that value is the partition key.
-    Local stdio/docker falls back to FastMCP context session_id when available.
+    Prefer args.session_scope_id (same chat), then `x-conversation-id`,
+    then `Mcp-Session-Id` / FastMCP ``ctx.session_id``.
     """
 
     @staticmethod
     def _resolve_session_id(ctx: Optional[Context]) -> str:
+        explicit = _tool_session_scope_id.get()
+        if explicit:
+            return explicit
         if ctx is None:
             return "default"
         request = getattr(getattr(ctx, "request_context", None), "request", None)
