@@ -19,6 +19,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import contextvars
 import os
+import secrets
 from pathlib import Path
 from typing import Any, List, Literal, Optional, Protocol, runtime_checkable
 from urllib.parse import quote
@@ -222,7 +223,7 @@ class SessionScopeResolverPort(ABC):
         raise NotImplementedError
 
 
-# Set for one tool call when args.session_scope_id is present (see mcp_entrypoint).
+# Per tool call: args.session_scope_id, or a minted id when no chat key is provided.
 _tool_session_scope_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
     "tool_session_scope_id", default=None
 )
@@ -232,8 +233,8 @@ class DefaultSessionScopeResolver(SessionScopeResolverPort):
     """
     Resolve scope from request/ctx metadata.
 
-    Prefer args.session_scope_id (same chat), then `x-conversation-id`,
-    then `Mcp-Session-Id` / FastMCP ``ctx.session_id``.
+    Prefer args.session_scope_id (same chat), then `x-conversation-id`.
+    Otherwise mint an id so a shared MCP session cannot leak across chats.
     """
 
     @staticmethod
@@ -244,19 +245,14 @@ class DefaultSessionScopeResolver(SessionScopeResolverPort):
         if ctx is None:
             return "default"
         request = getattr(getattr(ctx, "request_context", None), "request", None)
-        if request is not None:
-            headers = getattr(request, "headers", None)
-            if headers is not None:
-                conversation_id = headers.get("x-conversation-id")
-                if conversation_id and str(conversation_id).strip():
-                    return str(conversation_id).strip()
-                session_id = headers.get("mcp-session-id")
-                if session_id and session_id.strip():
-                    return session_id.strip()
-        session_id = getattr(ctx, "session_id", None)
-        if session_id is not None and str(session_id).strip():
-            return str(session_id).strip()
-        return "default"
+        headers = getattr(request, "headers", None) if request is not None else None
+        if headers is not None:
+            conversation_id = headers.get("x-conversation-id")
+            if conversation_id and str(conversation_id).strip():
+                return str(conversation_id).strip()
+        minted = secrets.token_hex(8)
+        _tool_session_scope_id.set(minted)
+        return minted
 
     @staticmethod
     def _resolve_user_id(token: Optional[BzmToken]) -> str:
