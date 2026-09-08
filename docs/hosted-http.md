@@ -75,5 +75,8 @@ On streamable-http, session partitions are stored via `HttpSessionStorageProvide
 
 ## Hosted MVP limitations
 
-- Session dataframes/tasks live in the Storage Service keyed by `{user_id}/{mcp_session_id}`.
+- Session dataframes/tasks live in the Storage Service at
+  `/session-partitions/{user_id}/{mcp_session_id}`. The second segment is
+  `args.session_scope_id`, `x-conversation-id`, or a minted id — not the
+  HTTP `Mcp-Session-Id` header.
 - `upload_assets` and other local file lookup/upload paths are rejected. Use a local stdio or Docker MCP installation for those workflows, or wait for remote file access.
