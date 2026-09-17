@@ -104,8 +104,16 @@ Configure test ID {test_id} to distribute load across two locations: us-east4-a 
 
 ### 5.6 upload_assets
 
+Stdio / local Docker (MCP reads disk and may set the main script):
+
 ```
 Upload the file /path/to/script.jmx to test ID {test_id} and set it as the main script.
+```
+
+Hosted HTTP (MCP mints a one-shot URL; you POST the file; no `main_script`):
+
+```
+Prepare an upload URL for Retail-Demo.jmx on test ID {test_id}. The uncompressed file is 128 bytes. SHA-256 is {sha256}. I will POST it myself with Content-Encoding identity.
 ```
 
 ### 5.7 delete

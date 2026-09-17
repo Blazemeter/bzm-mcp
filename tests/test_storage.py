@@ -7,7 +7,7 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-    10|Unless required by applicable law or agreed to in writing, software
+Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
@@ -15,10 +15,9 @@ limitations under the License.
 """
 import asyncio
 
-from config.file_access import LocalPathFileSource, StorageFileSource
+from config.file_access import LocalPathFileSource
 from config.runtime import build_runtime
 from config.storage import (
-    DefaultSessionScopeResolver,
     HOSTED_FILE_ACCESS_MESSAGE,
     HttpSessionStorageProvider,
     InMemorySessionStorageProvider,
@@ -27,46 +26,24 @@ from tools.test_manager import TestManager
 
 
 class TestRuntimeStorageWiring:
-    def test_http_runtime_gets_http_storage(self, monkeypatch):
+    def test_http_runtime_gets_session_storage_and_tickets(self, monkeypatch):
         monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
         monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
         runtime = build_runtime("streamable-http")
         assert isinstance(runtime.storage, HttpSessionStorageProvider)
-        assert isinstance(runtime.file_access, StorageFileSource)
+        assert runtime.file_access is None
+        assert runtime.tickets is not None
 
     def test_stdio_runtime_gets_local_storage(self, monkeypatch):
         monkeypatch.delenv("MCP_DOCKER", raising=False)
         runtime = build_runtime("stdio")
         assert isinstance(runtime.storage, InMemorySessionStorageProvider)
         assert isinstance(runtime.file_access, LocalPathFileSource)
+        assert runtime.tickets is None
 
 
 class TestUploadAssetsHostedRejection:
-    def test_upload_assets_returns_clear_error_on_http_storage(self):
-        manager = TestManager(
-            ctx=None,
-            file_access=StorageFileSource("https://mcp-storage.internal"),
-            scope_resolver=DefaultSessionScopeResolver(),
-        )
-
-        async def _fake_read(_test_id):
-            from models.result import BaseResult
-            return BaseResult(result=[{"id": 1}])
-
-        manager.read = _fake_read  # type: ignore[method-assign]
-        result = asyncio.run(
-            manager.upload_assets(1, ["/tmp/demo.jmx"], main_script=None)
-        )
-        if hasattr(result, "error"):
-            # @run_as_task normalizes dict errors into BaseResult(result=[{error:...}]).
-            inner = result.result[0] if result.result else {}
-            error_text = result.error or (inner.get("error") if isinstance(inner, dict) else None)
-        else:
-            error_text = result.get("error") if isinstance(result, dict) else None
-        assert error_text is not None
-        assert "No valid files found to upload" in error_text
-
-    def test_upload_assets_without_file_ports_returns_hosted_message(self):
+    def test_local_upload_assets_without_file_ports_returns_hosted_message(self):
         manager = TestManager(ctx=None)
         result = asyncio.run(
             manager.upload_assets(1, ["/tmp/demo.jmx"], main_script=None)

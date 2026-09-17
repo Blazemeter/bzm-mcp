@@ -13,19 +13,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 import asyncio
+import builtins
 import logging
+import re
 from pathlib import Path
-from typing import Any, Dict
-from typing import Optional, List
+from typing import Any
 
 from mcp.server.fastmcp import Context
 
-from config.blazemeter import TESTS_ENDPOINT, TOOLS_PREFIX, SUPPORT_MESSAGE
+from config.blazemeter import SUPPORT_MESSAGE, TESTS_ENDPOINT, TOOLS_PREFIX
 from config.file_access import FileAccessPort
+from config.runtime import AppRuntime
 from config.security import detect_sensitive_upload_path_reason
 from config.storage import HOSTED_FILE_ACCESS_MESSAGE, SessionScopeResolverPort
-from config.runtime import AppRuntime
+from config.tickets import TicketClientError, TicketPort
 from formatters.failure_criteria_labels import failure_criteria_meta_payload
 from formatters.test import format_tests
 from models.failure_criteria import (
@@ -36,14 +39,14 @@ from models.manager import Manager
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
 from tools import bridge, search_utils
-from tools.action_spec import action_by_name, filter_actions
+from tools.action_spec import STDIO, action_by_name, filter_actions
 from tools.mcp_entrypoint import register_managed_tool
 from tools.test_actions import TEST_ACTIONS, TEST_HINTS, TEST_TOOL_HEADER
 from tools.utils import (
-    api_request,
-    require_confirmation,
     Operations,
+    api_request,
     format_sanitized_traceback,
+    require_confirmation,
     run_as_task,
     validate_required_args,
 )
@@ -65,6 +68,12 @@ TEST_DISPATCH_ACTIONS = frozenset(
         "failure_criteria_meta",
     }
 )
+_FILENAME_RE = re.compile(r"^[A-Za-z0-9_-]+\.[A-Za-z0-9]+$")
+_SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
+_ALLOWED_ENCODINGS = frozenset({"identity", "gzip"})
+_FORBIDDEN_UPLOAD_KEYS = frozenset(
+    {"file", "file_paths", "content", "bytes", "base64", "main_script"}
+)
 
 
 class TestManager(Manager):
@@ -73,20 +82,20 @@ class TestManager(Manager):
     def __init__(
         self,
         ctx: Context,
-        file_access: Optional[FileAccessPort] = None,
-        scope_resolver: Optional[SessionScopeResolverPort] = None,
+        file_access: FileAccessPort | None = None,
+        scope_resolver: SessionScopeResolverPort | None = None,
+        tickets: TicketPort | None = None,
     ):
         super().__init__(ctx)
-        # Upload ports are stdio-only today. HTTP create/list/read must work
-        # without them; hosted file upload will be a separate tool later.
         self.file_access = file_access
         self.scope_resolver = scope_resolver
+        self.tickets = tickets
 
     def _current_scope(self):
         return self.scope_resolver.resolve(self.ctx, self.token)
 
     @run_as_task()
-    async def read(self, test_id: Optional[int]) -> BaseResult:
+    async def read(self, test_id: int | None) -> BaseResult:
         if not isinstance(test_id, int) or test_id < 1:
             return BaseResult(
                 error="Missing or invalid required argument 'test_id'. Expected integer."
@@ -112,9 +121,7 @@ class TestManager(Manager):
 
     @require_confirmation(operation=Operations.CREATE)
     @run_as_task()
-    async def create(
-        self, test_name: Optional[str], project_id: Optional[int]
-    ) -> BaseResult:
+    async def create(self, test_name: str | None, project_id: int | None) -> BaseResult:
         if not isinstance(test_name, str) or not test_name.strip():
             return BaseResult(
                 error="Missing or invalid required argument 'test_name'. Expected non-empty string."
@@ -149,7 +156,7 @@ class TestManager(Manager):
 
     @require_confirmation(operation=Operations.DELETE)
     @run_as_task()
-    async def delete(self, test_id: Optional[int]) -> BaseResult:
+    async def delete(self, test_id: int | None) -> BaseResult:
         if not isinstance(test_id, int) or test_id < 1:
             return BaseResult(
                 error="Missing or invalid required argument 'test_id'. Expected integer."
@@ -171,16 +178,16 @@ class TestManager(Manager):
                 return test_deleted_result
 
     @classmethod
-    def _detect_sensitive_path_reason(cls, file_path: str) -> Optional[str]:
+    def _detect_sensitive_path_reason(cls, file_path: str) -> str | None:
         return detect_sensitive_upload_path_reason(file_path)
 
     def _validate_files(
         self,
-        file_paths: List[str],
-        valid_files: List[str],
-        invalid_files: List[str],
-        blocked_files: List[Dict[str, str]],
-        file_access: Optional[FileAccessPort] = None,
+        file_paths: list[str],
+        valid_files: list[str],
+        invalid_files: list[str],
+        blocked_files: list[dict[str, str]],
+        file_access: FileAccessPort | None = None,
         scope=None,
     ):
         # Security design note:
@@ -204,8 +211,12 @@ class TestManager(Manager):
                     }
                 )
                 continue
-            exists = file_access.exists(file_path, scope=scope) if file_access else False
-            is_file = file_access.is_file(file_path, scope=scope) if file_access else False
+            exists = (
+                file_access.exists(file_path, scope=scope) if file_access else False
+            )
+            is_file = (
+                file_access.is_file(file_path, scope=scope) if file_access else False
+            )
             if exists and is_file:
                 logger.debug(f"File exists: {file_path}")
                 valid_files.append(file_path)
@@ -215,10 +226,10 @@ class TestManager(Manager):
 
     @staticmethod
     def _process_upload_results(
-        upload_results: List[Dict[str, Any]],
-        valid_files: List[str],
-        successful_uploads: List[Dict[str, Any]],
-        failed_uploads: List[Dict[str, Any]],
+        upload_results: list[dict[str, Any]],
+        valid_files: list[str],
+        successful_uploads: list[dict[str, Any]],
+        failed_uploads: list[dict[str, Any]],
     ):
         for i, result in enumerate(upload_results):
             if isinstance(result, Exception):
@@ -232,10 +243,10 @@ class TestManager(Manager):
     @run_as_task()
     async def upload_assets(
         self,
-        test_id: Optional[int],
-        file_paths: Optional[List[str]],
-        main_script: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        test_id: int | None,
+        file_paths: list[str] | None,
+        main_script: str | None = None,
+    ) -> dict[str, Any]:
         if not isinstance(test_id, int) or test_id < 1:
             return {
                 "error": "Missing or invalid required argument 'test_id'. Expected integer."
@@ -262,7 +273,9 @@ class TestManager(Manager):
 
         mapped_main_script = None
         if main_script:
-            mapped_main_script_list = self.file_access.map_paths([main_script], scope=scope)
+            mapped_main_script_list = self.file_access.map_paths(
+                [main_script], scope=scope
+            )
             mapped_main_script = (
                 mapped_main_script_list[0] if mapped_main_script_list else None
             )
@@ -294,7 +307,10 @@ class TestManager(Manager):
             }
 
         logger.debug("Starting concurrent uploads")
-        upload_tasks = [self._upload_single_file(test_id, file_path, scope) for file_path in valid_files]
+        upload_tasks = [
+            self._upload_single_file(test_id, file_path, scope)
+            for file_path in valid_files
+        ]
         upload_results = await asyncio.gather(*upload_tasks, return_exceptions=True)
 
         logger.debug(f"Upload results: {upload_results}")
@@ -324,7 +340,101 @@ class TestManager(Manager):
             "config_update": config_update_result,
         }
 
-    async def _upload_single_file(self, test_id: int, file_path: str, scope) -> BaseResult:
+    @require_confirmation(operation=Operations.CREATE)
+    @run_as_task()
+    async def upload_assets_remote(self, args: dict[str, Any]) -> dict[str, Any]:
+        forbidden = sorted(_FORBIDDEN_UPLOAD_KEYS.intersection(args))
+        if forbidden:
+            return {
+                "error": (
+                    "HTTP upload_assets does not accept file bytes, paths, or main_script. "
+                    f"Remove: {', '.join(forbidden)}."
+                )
+            }
+        if self.tickets is None or self.scope_resolver is None:
+            return {"error": "Upload tickets are not configured for this runtime."}
+        if self.token is None:
+            return {"error": "Missing BlazeMeter credentials for this request."}
+
+        test_id = args.get("test_id")
+        filename = args.get("filename")
+        declared_size = args.get("declared_size")
+        encoding = args.get("encoding")
+        sha256 = args.get("sha256")
+
+        if not isinstance(test_id, int) or isinstance(test_id, bool) or test_id < 1:
+            return {
+                "error": "Missing or invalid required argument 'test_id'. Expected integer."
+            }
+        if (
+            not isinstance(filename, str)
+            or not (3 <= len(filename) <= 255)
+            or not _FILENAME_RE.fullmatch(filename)
+        ):
+            return {
+                "error": (
+                    "Invalid filename. Use ASCII letters, digits, underscore, hyphen, "
+                    "and a required extension (length 3-255)."
+                )
+            }
+        if (
+            not isinstance(declared_size, int)
+            or isinstance(declared_size, bool)
+            or declared_size <= 0
+        ):
+            return {
+                "error": "Invalid declared_size. Expected an integer greater than 0."
+            }
+        if encoding not in _ALLOWED_ENCODINGS:
+            return {"error": "Invalid encoding. Expected 'identity' or 'gzip'."}
+        if not isinstance(sha256, str) or not _SHA256_RE.fullmatch(sha256):
+            return {"error": "Invalid sha256. Expected 64 hexadecimal characters."}
+        sha256 = sha256.lower()
+
+        test_data = await self.read(test_id)
+        if test_data.error:
+            return {"error": test_data.error}
+
+        scope = self._current_scope()
+        try:
+            await self.tickets.put_credential(
+                scope.user_id, scope.mcp_session_id, self.token.as_basic_auth()
+            )
+            minted = await self.tickets.mint(
+                scope.user_id,
+                scope.mcp_session_id,
+                test_id,
+                filename,
+                declared_size,
+                encoding,
+                sha256,
+            )
+        except TicketClientError as exc:
+            return {"error": str(exc)}
+
+        logger.info("minted upload ticket %s for test %s", minted.id, test_id)
+        return {
+            "method": "POST",
+            "url": self.tickets.public_upload_url(minted.id),
+            "authorization": f"Bearer {minted.token}",
+            "headers": {
+                "Authorization": f"Bearer {minted.token}",
+                "X-Upload-Filename": filename,
+                "X-Content-SHA256": sha256,
+                "Content-Encoding": encoding,
+            },
+            "size_ceiling": minted.size_ceiling,
+            "redeem_deadline": minted.redeem_deadline,
+            "upload_deadline": minted.upload_deadline,
+            "one_file_per_url": True,
+            "success_status": 201,
+            "test_id": test_id,
+            "filename": filename,
+        }
+
+    async def _upload_single_file(
+        self, test_id: int, file_path: str, scope
+    ) -> BaseResult:
         logger.debug(f"Uploading single file: {file_path} to test: {test_id}")
         try:
             file_name = Path(file_path).name
@@ -349,7 +459,7 @@ class TestManager(Manager):
         except Exception as e:
             logger.error(f"Exception in _upload_single_file: {e}")
             logger.error(f"Traceback: {format_sanitized_traceback(e)}")
-            raise Exception(f"Failed to upload {file_path}: {str(e)}")
+            raise Exception(f"Failed to upload {file_path}: {e!s}")
 
     async def _update_test_configuration(
         self, test_id: int, main_script_path: str
@@ -368,7 +478,7 @@ class TestManager(Manager):
             )
 
         except Exception as e:
-            raise Exception(f"Failed to update test configuration: {str(e)}")
+            raise Exception(f"Failed to update test configuration: {e!s}")
 
     @staticmethod
     def _get_mime_type(file_path: str) -> str:
@@ -404,7 +514,7 @@ class TestManager(Manager):
     @run_as_task()
     async def list(
         self,
-        project_id: Optional[int],
+        project_id: int | None,
         limit: int = 50,
         offset: int = 0,
         control_ai_consent: bool = True,
@@ -457,7 +567,7 @@ class TestManager(Manager):
 
     @run_as_task()
     async def search_filter_values(
-        self, account_id: int, filter_names: List[str]
+        self, account_id: int, filter_names: builtins.list[str]
     ) -> BaseResult:
         # Check if it's valid or allowed
         account_data = await bridge.read_account(self.token, self.ctx, account_id)
@@ -515,9 +625,9 @@ class TestManager(Manager):
                 first_location is not None
                 and locations_concurrency[first_location] == 0
             ):
-                locations_concurrency[
-                    first_location
-                ] = 1  # Default behaviour on BlazeMeter
+                locations_concurrency[first_location] = (
+                    1  # Default behaviour on BlazeMeter
+                )
 
             test_data_override["locations"] = locations_concurrency
 
@@ -560,7 +670,7 @@ class TestManager(Manager):
 
     @require_confirmation(operation=Operations.UPDATE)
     @run_as_task()
-    async def configure_failure_criteria(self, args: Dict[str, Any]) -> BaseResult:
+    async def configure_failure_criteria(self, args: dict[str, Any]) -> BaseResult:
         """Replace failure criteria for a test via PATCH configuration (preserves plugins.jmeter)."""
         test_id = args.get("test_id")
         if not isinstance(test_id, int) or test_id < 1:
@@ -591,7 +701,7 @@ class TestManager(Manager):
         )
 
     @run_as_task()
-    async def failure_criteria_meta(self, args: Dict[str, Any]) -> BaseResult:
+    async def failure_criteria_meta(self, args: dict[str, Any]) -> BaseResult:
         """Return the full KPI and condition catalog for building configure_failure_criteria rules (no API call)."""
         return BaseResult(result=[failure_criteria_meta_payload()])
 
@@ -617,12 +727,12 @@ def register(mcp, runtime: AppRuntime):
     visible = filter_actions(runtime.transport, TEST_ACTIONS)
 
     async def _dispatch(action, args, token, ctx):
-        if runtime.transport == "stdio":
-            test_manager = TestManager(
-                ctx, runtime.file_access, runtime.scope_resolver
-            )
-        else:
-            test_manager = TestManager(ctx)
+        test_manager = TestManager(
+            ctx,
+            runtime.file_access,
+            runtime.scope_resolver,
+            runtime.tickets,
+        )
         match action:
             case "read":
                 return await test_manager.read(args.get("test_id"))
@@ -660,15 +770,18 @@ def register(mcp, runtime: AppRuntime):
                     action, args, list(spec.required_args)
                 ):
                     return validation_error
-                upload_result = await test_manager.upload_assets(
-                    args.get("test_id"),
-                    args.get("file_paths"),
-                    args.get("main_script"),
-                )
+                if runtime.transport == STDIO:
+                    upload_result = await test_manager.upload_assets(
+                        args.get("test_id"),
+                        args.get("file_paths"),
+                        args.get("main_script"),
+                    )
+                else:
+                    upload_result = await test_manager.upload_assets_remote(args)
                 return _unwrap_upload_result(upload_result)
             case "configure_failure_criteria":
                 if validation_error := validate_required_args(
-                        action, args, ["test_id", "enabled", "rules"]
+                    action, args, ["test_id", "enabled", "rules"]
                 ):
                     return validation_error
                 return await test_manager.configure_failure_criteria(args)
