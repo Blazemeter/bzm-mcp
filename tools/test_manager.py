@@ -36,7 +36,9 @@ from models.manager import Manager
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
 from tools import bridge, search_utils
+from tools.action_spec import action_by_name, filter_actions
 from tools.mcp_entrypoint import register_managed_tool
+from tools.test_actions import TEST_ACTIONS, TEST_HINTS, TEST_TOOL_HEADER
 from tools.utils import (
     api_request,
     require_confirmation,
@@ -47,6 +49,22 @@ from tools.utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+TEST_DISPATCH_ACTIONS = frozenset(
+    {
+        "read",
+        "create",
+        "delete",
+        "list",
+        "search",
+        "search_filter_values",
+        "configure_load",
+        "configure_locations",
+        "upload_assets",
+        "configure_failure_criteria",
+        "failure_criteria_meta",
+    }
+)
 
 
 class TestManager(Manager):
@@ -577,7 +595,27 @@ class TestManager(Manager):
         """Return the full KPI and condition catalog for building configure_failure_criteria rules (no API call)."""
         return BaseResult(result=[failure_criteria_meta_payload()])
 
+
+def _unwrap_upload_result(upload_result: Any) -> BaseResult:
+    if isinstance(upload_result, BaseResult):
+        if upload_result.error:
+            return upload_result
+        inner = (
+            upload_result.result[0]
+            if upload_result.result and len(upload_result.result) == 1
+            else None
+        )
+        if isinstance(inner, dict) and inner.get("error"):
+            return BaseResult(error=str(inner["error"]))
+        return upload_result
+    if isinstance(upload_result, dict) and upload_result.get("error"):
+        return BaseResult(error=upload_result["error"])
+    return BaseResult(result=[upload_result])
+
+
 def register(mcp, runtime: AppRuntime):
+    visible = filter_actions(runtime.transport, TEST_ACTIONS)
+
     async def _dispatch(action, args, token, ctx):
         if runtime.transport == "stdio":
             test_manager = TestManager(
@@ -613,27 +651,21 @@ def register(mcp, runtime: AppRuntime):
                 performance_test = PerformanceTestObject.from_args(args)
                 return await test_manager.configure(performance_test)
             case "upload_assets":
-                if validation_error := validate_required_args(action, args, ["test_id", "file_paths"]):
+                spec = action_by_name(visible, "upload_assets")
+                if spec is None:
+                    return BaseResult(
+                        error=f"Action upload_assets is not available on {runtime.transport}."
+                    )
+                if validation_error := validate_required_args(
+                    action, args, list(spec.required_args)
+                ):
                     return validation_error
                 upload_result = await test_manager.upload_assets(
                     args.get("test_id"),
                     args.get("file_paths"),
                     args.get("main_script"),
                 )
-                if isinstance(upload_result, BaseResult):
-                    if upload_result.error:
-                        return upload_result
-                    inner = (
-                        upload_result.result[0]
-                        if upload_result.result and len(upload_result.result) == 1
-                        else None
-                    )
-                    if isinstance(inner, dict) and inner.get("error"):
-                        return BaseResult(error=str(inner["error"]))
-                    return upload_result
-                if isinstance(upload_result, dict) and upload_result.get("error"):
-                    return BaseResult(error=upload_result["error"])
-                return BaseResult(result=[upload_result])
+                return _unwrap_upload_result(upload_result)
             case "configure_failure_criteria":
                 if validation_error := validate_required_args(
                         action, args, ["test_id", "enabled", "rules"]
@@ -651,105 +683,9 @@ def register(mcp, runtime: AppRuntime):
         mcp,
         runtime,
         name=f"{TOOLS_PREFIX}_tests",
-        description="""
-Operations on tests.
-Actions:
-- read: Read a test. Get the detailed information of a test.
-    args(dict): Dictionary with the following required parameters:
-        test_id (int): The only required parameter. The id of the test to read.
-    When presenting failure_criteria to the user, use meta.general_labels, meta.rule_field_labels, meta.kpi_labels, and meta.condition_labels for readable text; avoid leading with raw kpi ids or op codes.
-- create: Create a new test. Do not create a test if the user has not confirmed the location for validation of workspace, project and account.
-    args(dict): Dictionary with the following required parameters:
-        test_name (str): The required name of the test to create.
-        project_id (int): The id of the project to list tests from.
-- delete: Delete a test.
-    args(dict): Dictionary with the following required parameters:
-        test_id (int): The only required parameter. The id of the test to be deleted.
-- list: List all tests. 
-    args(dict): Dictionary with the following required parameters:
-        project_id (int): The id of the project to list tests from.
-        limit (int, default=10, valid=[1 to 50]): The number of tests to list.
-        offset (int, default=0): Number of tests to skip.
-    Each listed test may include failure_criteria; when describing it to the user, use meta labels like read (see read action).
-- search: Search tests across an account
-    args(dict): Dictionary with the following optional filter parameters:
-        account_id (int, mandatory): The id of the account to use.
-        test_name (str): Case- and diacritic-insensitive (ilike) match on test name.
-        workspace_id_list (list[int], values= use search_filter_values with 'workspace_id_list'): Workspace IDs to filter test results.
-        time_frame (str, default='latest', values=['latest','last24','lastWeek','lastMonth','custom']):
-            Filter by test create date. latest=Today, last24=Last 24 hours, lastWeek=Last 7 days,
-            lastMonth=Last 30 days, custom=use start_time and end_time.
-        start_time (str): Start of create-date range in ISO format (only when time_frame is 'custom').
-        end_time (str): End of create-date range in ISO format (only when time_frame is 'custom').
-        cloud_provider_name_list (list[str], values= use search_filter_values with 'cloud_provider_name_list'): Cloud provider names.
-        created_by_id_list (list[int], values= use search_filter_values with 'created_by_id_list'): Owner user IDs (test creator, not execution runner).
-        locations_id_list (list[str], values= use search_filter_values with 'locations_id_list'): Location IDs configured on the test.
-        project_id_list (list[int], values= use search_filter_values with 'project_id_list'): Project IDs.
-        duration_list (list[dict], values= use search_filter_values with 'duration_list'): Duration in seconds. Example: [{">=": 5}].
-        number_of_engines_list (list[dict], values= use search_filter_values with 'number_of_engines_list'): Engine count. Example: [{">=": 2}].
-        virtual_users_list (list[dict], values= use search_filter_values with 'virtual_users_list'): Virtual user count. Example: [{">=": 10}].
-        page_index (int, default=1): Page number. If has_more is true, ask the user before fetching the next page.
-    Returns test_id, test_name, test_url, project/workspace info, configuration summary, and timestamps (created, updated).
-- search_filter_values: List allowed values for test search filters.
-    args(dict): Dictionary with the following required filter parameters:
-        account_id (int, mandatory): The id of the account to use.
-        filter_names (list[str], values=['workspace_id_list', 'cloud_provider_name_list', 'created_by_id_list', 'locations_id_list', 'project_id_list', 'tag_id_list', 'duration_list', 'number_of_engines_list', 'virtual_users_list']): Filter names to resolve.
-- configure_load: Configure the load of a test for the given test id. The test id is the only required parameter. 
-             The test will be configured based on the following parameters only if user confirms the configuration:
-    args(dict): Dictionary with the following parameters:
-        test_id (int): The only required parameter. The id of the test to configure.
-        iterations (int, default=1, infinite=-1): The number of iterations to run the test with. Don't use if hold-for is provided.
-        hold-for (str, default=1m): The length of time the test will run at the peak concurrency. Values can be provided in m (minutes) only. Don't use if iterations is provided.
-        concurrency (int, default=20, disable=0, max=500000): The number of concurrent virtual users simulated to run. For example, 20 will set the test to run with 20 concurrent users. To disable it set to 0.
-        ramp-up (str, disable=""): The length of time the test will take to ramp-up to full concurrency. Values can be provided in m (minutes) only. Can be empty.
-        steps (int, default=1, disable=-1): The number of ramp-up steps. Can be empty.
-        executor (str, default=jmeter): The script type you are running. Includes the following options: (gatling,grinder,jmeter,locust,pbench,selenium,siege).
-- configure_locations: Configure the distribution of a test for given test id. The test id is the only required parameter. 
-             The test will be configured based on the following parameters only if user confirms the configuration:
-    args(dict): Dictionary with the following parameters:
-        test_id (int): The only required parameter. The id of the test to configure.
-        locations (list[str]): List of all locations with their percentage distribution of user load in a key value format "location_id=percent_value". Example: ["us-east4-a=25", "us-east1-b=25", "us-west1-a=25", "us-central1-a=25"]
-- upload_assets: Upload main script test as well as multiple related assets to a test. Supports .zip, .csv, .jmx, .yaml and other file types.
-    args(dict): Dictionary with the following required parameters:
-        test_id (int): The id of the test to upload assets to.
-        file_paths (list): List of full file paths to upload.
-        main_script (str, optional): Path to the main script file. If provided, will update test configuration to use this script.
-- failure_criteria_meta: Read-only catalog: overview (layers), top_level_tool_args, rule_fields, general, general_labels, rule_field_labels, kpis, conditions. Field names align with reading and configuring tests. No BlazeMeter API call.
-    args(dict): Optional; may be empty {}. Unknown keys are ignored.
-- configure_failure_criteria: Set failure criteria (BlazeMeter configuration.enableFailureCriteria and configuration.plugins.thresholds). Replaces the full rules list for the test.
-    args(dict): Dictionary with the following parameters:
-        test_id (int): Required. The test id.
-        enabled (bool): Required. Master switch for the Failure Criteria section (API enableFailureCriteria).
-        rules (list): Required. List of rule objects; use an empty list to clear all rules. Each object may include:
-            kpi (str): Required per rule. API metric field name (`field`). Documented values (product may offer more):
-                responseTime.avg, responseTime.min, responseTime.max, responseTime.std,
-                responseTime.percentile.0, responseTime.percentile.50, responseTime.percentile.90,
-                responseTime.percentile.95, responseTime.percentile.99,
-                latency.avg, connectTime.avg, size.count, size.avg, size.rate,
-                hits.count, hits.avg, hits.rate, duration.count,
-                errors.count, errors.percent, errors.rate
-            label (str, default=ALL): Label scope for the metric (default ALL labels).
-            condition (str or null): API operator (`op`). Allowed string values:
-                lt (Less than), gt (Greater than), eq (Equal to), ne (Not equal to),
-                lte (Less than or equal to), gte (Greater than or equal to).
-                Omit the key or use JSON null for no operator (incomplete / initial state).
-            value (str): Threshold as string (numeric text, e.g. "500", "1"; may be empty until set).
-            offset_percent (str, default=0.0): Baseline offset percentage string (API offsetPercentage).
-            stop_test_on_violation (bool, default=false): Stop Test on violation (API stopTestOnViolation); product expects 1-min slide window when used.
-            sliding_window (bool, default=false): 1-min slide window eval for this rule (API slidingWindow). Per-row "1-min slide window eval"; bulk "Enable 1-min slide window eval for all" means every rule has sliding_window true.
-            ignore_rampup (bool, optional): Per-rule ignore ramp-up when the API includes it on the item.
-            is_empty (bool, default=false): Incomplete row flag (API isEmpty).
-        ignore_rampup (bool, optional): Container-level "Ignore failure criteria during ramp-up" (advanced); omit to keep existing value on merge.
-        sliding_window_for_all (bool, optional): If set, sets every rule's sliding_window to this value after parsing rules (bulk convenience).
-        from_taurus (bool, optional): plugins.thresholds.fromTaurus; omit to preserve existing.
-        criteria_overridden_in_interface (bool, optional): Threshold-block metadata (maps to plugins.thresholds when merging); omit to preserve existing.
-    Reading a test and configuring failure criteria use the same field names; BlazeMeter’s REST JSON is only used in HTTP calls inside the server.
-Hints:
-- **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
-- To search test runs/reports (executions), use the execution tool search action instead of tests search.
-- Before configure_failure_criteria, prefer failure_criteria_meta for kpi/condition codes and labels, then read if you must merge with existing rules.
-- For configure_failure_criteria, call read first and merge client-side if you must keep existing rules; providing rules replaces all criteria rows for that test.
-""",
+        actions=TEST_ACTIONS,
+        header=TEST_TOOL_HEADER,
+        hints=TEST_HINTS,
         dispatch=_dispatch,
         support_message=SUPPORT_MESSAGE,
     )
