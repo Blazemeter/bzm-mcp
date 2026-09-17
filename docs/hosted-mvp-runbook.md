@@ -15,8 +15,7 @@ map to the types already landed on `STREAMABLE_HTTP`:
 | StoragePort | `SessionStoragePort` | Yes |
 | MemoryStorageProvider | `InMemorySessionStorageProvider` | Yes (stdio) |
 | HttpStorageProvider | `HttpSessionStorageProvider` | Yes (hosted) |
-| HTTPStorageClient (story) | `HttpSessionStorageProvider` | Yes — not `HttpStorageClient` |
-| HttpStorageClient (codebase) | `FileStoragePort` stub | No (file access, Phase 3) |
+| HTTPStorageClient (story) | `HttpSessionStorageProvider` | Yes |
 
 ## Runtime wiring
 
