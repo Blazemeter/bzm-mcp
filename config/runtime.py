@@ -31,6 +31,7 @@ from config.storage import (
     SessionScopeResolverPort,
     SessionStoragePort,
 )
+from config.tickets import TicketPort, build_ticket_client
 from config.token import BzmToken
 from tools.utils import ConfirmMode
 
@@ -44,9 +45,10 @@ class AppRuntime:
     transport: Transport
     auth: AuthPort
     storage: SessionStoragePort
-    file_access: FileAccessPort
+    file_access: Optional[FileAccessPort]
     scope_resolver: SessionScopeResolverPort
     user_config: dict[str, Any]
+    tickets: Optional[TicketPort] = None
 
     def resolve_user_config(self, ctx: Any) -> dict[str, Any]:
         user_config = dict(self.user_config)
@@ -121,6 +123,7 @@ def build_runtime(
             file_access=build_file_access(transport),
             scope_resolver=DefaultSessionScopeResolver(),
             user_config=stdio_user_config,
+            tickets=None,
         )
 
     if transport == "streamable-http":
@@ -140,6 +143,7 @@ def build_runtime(
             file_access=build_file_access(transport),
             scope_resolver=DefaultSessionScopeResolver(),
             user_config={},
+            tickets=build_ticket_client(transport, storage_base_url),
         )
 
     raise ValueError(f"Unknown transport: {transport}")

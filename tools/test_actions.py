@@ -15,7 +15,7 @@ limitations under the License.
 """
 from __future__ import annotations
 
-from tools.action_spec import ALL, ActionSpec
+from tools.action_spec import ALL, HTTP, STDIO, ActionSpec
 
 TEST_TOOL_HEADER = "Operations on tests."
 
@@ -124,7 +124,7 @@ TEST_ACTIONS: tuple[ActionSpec, ...] = (
     ),
     ActionSpec(
         name="upload_assets",
-        transports=ALL,
+        transports=frozenset({STDIO}),
         required_args=("test_id", "file_paths"),
         optional_args=("main_script",),
         body="""- upload_assets: Upload main script test as well as multiple related assets to a test. Supports .zip, .csv, .jmx, .yaml and other file types.
@@ -132,6 +132,22 @@ TEST_ACTIONS: tuple[ActionSpec, ...] = (
         test_id (int): The id of the test to upload assets to.
         file_paths (list): List of full file paths to upload.
         main_script (str, optional): Path to the main script file. If provided, will update test configuration to use this script.""",
+    ),
+    ActionSpec(
+        name="upload_assets",
+        transports=frozenset({HTTP}),
+        required_args=("test_id", "filename", "declared_size", "encoding", "sha256"),
+        body="""- upload_assets: Prepare a one-shot upload URL for a single test asset. MCP does not accept file bytes, paths, or base64. You POST the file yourself.
+    args(dict): Dictionary with the following required parameters:
+        test_id (int): The id of the test to upload to. Authorized before mint.
+        filename (str): ASCII letters, digits, underscore, hyphen, plus a required extension, length 3-255. Example: Retail-Demo.jmx
+        declared_size (int): Uncompressed size in bytes, greater than 0. Hard ceiling is 100 MiB.
+        encoding (str, values=['identity','gzip']): Transport encoding you will send on the POST. Hash the uncompressed file first; gzip only after hashing.
+        sha256 (str): 64 hex characters of the uncompressed asset.
+    Returns immediately: method POST, url, authorization (the upload capability, once), headers (Authorization, X-Upload-Filename, X-Content-SHA256, Content-Encoding), size_ceiling, redeem_deadline, upload_deadline, one_file_per_url, success_status 201.
+    POST exactly one raw asset as the body (not multipart). 201 means the file landed. After real bytes the URL is spent; call upload_assets again. Empty body is 422 and the ticket stays reusable. If the POST returns 503 after bytes were sent, GET /api/v4/tests/{test_id}/files before retrying so a lost 201 does not become a duplicate.
+    Example:
+      curl -X POST "$URL" -H "Authorization: Bearer $TOKEN" -H "X-Upload-Filename: Retail-Demo.jmx" -H "X-Content-SHA256: $SHA" -H "Content-Encoding: identity" --data-binary @Retail-Demo.jmx""",
     ),
     ActionSpec(
         name="failure_criteria_meta",

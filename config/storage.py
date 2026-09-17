@@ -26,9 +26,9 @@ from mcp.server.fastmcp import Context
 from config.token import BzmToken
 
 HOSTED_FILE_ACCESS_MESSAGE = (
-    "Local file lookup and upload are not supported on the hosted MCP server. "
-    "Use a local stdio/Docker MCP installation for upload_assets, or wait for "
-    "Phase 2 remote Storage."
+    "Local file paths are not supported on streamable-http. "
+    "Call blazemeter_tests / upload_assets with filename, declared_size, "
+    "encoding, and sha256 to mint an upload URL."
 )
 
 

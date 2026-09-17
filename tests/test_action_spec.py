@@ -7,7 +7,7 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-    10|Unless required by applicable law or agreed to in writing, software
+Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
@@ -15,9 +15,10 @@ limitations under the License.
 """
 import pytest
 
+from config.auth import HttpAuthProvider
 from config.blazemeter import TOOLS_PREFIX
-from config.runtime import build_runtime
-from config.storage import HttpSessionStorageProvider
+from config.runtime import AppRuntime, build_runtime
+from config.storage import DefaultSessionScopeResolver, InMemorySessionStorageProvider
 from tools.action_spec import ALL, HTTP, STDIO, ActionSpec, filter_actions, render_description
 from tools.test_actions import TEST_ACTIONS, TEST_HINTS, TEST_TOOL_HEADER
 from tools.test_manager import TEST_DISPATCH_ACTIONS, register as register_tests_tool
@@ -37,10 +38,16 @@ class RecordingMcp:
         return decorator
 
 
-def _http_runtime(monkeypatch):
-    monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
-    monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
-    return build_runtime("streamable-http")
+def _http_runtime():
+    return AppRuntime(
+        transport="streamable-http",
+        auth=HttpAuthProvider(),
+        storage=InMemorySessionStorageProvider(),
+        file_access=None,
+        scope_resolver=DefaultSessionScopeResolver(),
+        user_config={},
+        tickets=object(),
+    )
 
 
 class TestFilterActions:
@@ -85,12 +92,13 @@ class TestTestActionsCatalog:
     def test_unique_catalog_names_match_dispatch_arms(self):
         assert {spec.name for spec in TEST_ACTIONS} == TEST_DISPATCH_ACTIONS
 
-    def test_http_description_uses_local_path_schema(self, monkeypatch):
+    def test_http_description_is_mint_contract(self):
         mcp = RecordingMcp()
-        register_tests_tool(mcp, _http_runtime(monkeypatch))
+        register_tests_tool(mcp, _http_runtime())
         description = mcp.descriptions[f"{TOOLS_PREFIX}_tests"]
-        assert "file_paths" in description
-        assert "X-Content-SHA256" not in description
+        assert "sha256" in description
+        assert "does not accept file bytes" in description
+        assert "file_paths" not in description
 
     def test_stdio_description_is_local_paths(self):
         mcp = RecordingMcp()

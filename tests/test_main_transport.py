@@ -2,9 +2,9 @@ import pytest
 
 import main
 from config.auth import HttpAuthProvider, StdioAuthProvider
-from config.file_access import StorageFileSource
 from config.runtime import AppRuntime
 from config.storage import HttpSessionStorageProvider, InMemorySessionStorageProvider
+from config.tickets import HttpTicketClient
 
 
 class _DummyFastMCP:
@@ -24,7 +24,6 @@ def _patch_mcp_server_dependencies(monkeypatch):
     monkeypatch.setattr(main, "FastMCP", _DummyFastMCP)
     monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
     monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
-    monkeypatch.setattr(StorageFileSource, "ensure_available", lambda self: None)
 
 
 class TestResolveMcpTransport:
@@ -109,6 +108,7 @@ class TestBuildMcpServerAuthWiring:
         assert runtime.transport == "streamable-http"
         assert isinstance(runtime.auth, HttpAuthProvider)
         assert isinstance(runtime.storage, HttpSessionStorageProvider)
+        assert isinstance(runtime.tickets, HttpTicketClient)
 
     def test_stdio_and_docker_register_stdio_auth_provider(self, monkeypatch):
         captured = {}
@@ -121,7 +121,6 @@ class TestBuildMcpServerAuthWiring:
         monkeypatch.setattr(main, "get_token", lambda: token)
         monkeypatch.setattr(main, "register_tools", capture_register)
         monkeypatch.delenv("MCP_DOCKER", raising=False)
-        monkeypatch.delenv("BZM_STORAGE_STRATEGY", raising=False)
 
         main.build_mcp_server(transport="stdio")
         main.build_mcp_server(transport="docker")
@@ -131,6 +130,7 @@ class TestBuildMcpServerAuthWiring:
             assert isinstance(runtime.auth, StdioAuthProvider)
             assert runtime.auth.get_token(ctx=None) is token
             assert isinstance(runtime.storage, InMemorySessionStorageProvider)
+            assert runtime.tickets is None
 
 
 class TestRunTransportDispatch:
