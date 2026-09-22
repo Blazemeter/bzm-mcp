@@ -23,10 +23,10 @@ from config.runtime import AppRuntime
 from formatters.execution import format_executions, format_executions_detailed, format_executions_status
 from models.manager import Manager
 from models.result import BaseResult
-from tools import bridge, search_utils
+from tools import bridge
 from tools.report_manager import ReportManager
 from tools.mcp_entrypoint import register_managed_tool
-from tools.utils import api_request, timeout, user_agent, format_sanitized_traceback, require_confirmation, Operations, run_as_task
+from tools.utils import api_request, timeout, user_agent, format_sanitized_traceback, require_confirmation, Operations, run_as_task, search
 
 
 class ExecutionManager(Manager):
@@ -227,7 +227,7 @@ class ExecutionManager(Manager):
         if account_data.error:
             return account_data
 
-        return await search_utils.test_execution_search("master", self.token, account_id, args)
+        return await search.test_execution_search("master", self.token, account_id, args)
 
     @run_as_task()
     async def search_filter_values(self, account_id: int, filter_names: List[str]) -> BaseResult:
@@ -237,7 +237,7 @@ class ExecutionManager(Manager):
         if account_data.error:
             return account_data
 
-        return await search_utils.test_execution_search_filter_values(
+        return await search.test_execution_search_filter_values(
             "master",
             account_id,
             self.token,

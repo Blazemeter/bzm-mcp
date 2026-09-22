@@ -21,7 +21,7 @@ from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE
 from config.runtime import AppRuntime
 from models.manager import Manager
 from models.result import BaseResult
-from tools.billing_utils import calculate_test_cost
+from tools.utils.billing import calculate_test_cost
 from tools.mcp_entrypoint import register_managed_tool
 from tools.utils import run_as_task
 

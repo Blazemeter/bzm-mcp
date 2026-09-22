@@ -26,7 +26,7 @@ from models.manager import Manager
 from models.result import BaseResult
 from tools.mcp_entrypoint import register_managed_tool
 from tools.utils import format_sanitized_traceback, run_as_task
-from tools.skills_utils import list_skills, read_skill_definition, read_skill_file, parse_skill_uri, \
+from tools.utils.skills import list_skills, read_skill_definition, read_skill_file, parse_skill_uri, \
     is_skill_uri, list_skill_resources_uri
 
 

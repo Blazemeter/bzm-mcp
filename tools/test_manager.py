@@ -34,13 +34,14 @@ from models.failure_criteria import (
 from models.manager import Manager
 from models.performance_test import PerformanceTestObject
 from models.result import BaseResult
-from tools import bridge, search_utils
+from tools import bridge
 from tools.actions import STDIO
 from tools.actions.tests import ACTIONS, HEADER, HINTS
 from tools.mcp_entrypoint import register_managed_tool
 from tools.utils import (
     Operations,
     api_request,
+    search,
     require_confirmation,
     run_as_task,
 )
@@ -214,7 +215,7 @@ class TestManager(Manager):
         if account_data.error:
             return account_data
 
-        return await search_utils.test_execution_search(
+        return await search.test_execution_search(
             "test-union", self.token, account_id, args
         )
 
@@ -226,7 +227,7 @@ class TestManager(Manager):
         if account_data.error:
             return account_data
 
-        return await search_utils.test_execution_search_filter_values(
+        return await search.test_execution_search_filter_values(
             "test-union", account_id, self.token, filter_names
         )
 

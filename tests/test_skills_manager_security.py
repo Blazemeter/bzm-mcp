@@ -25,7 +25,7 @@ from config.runtime import AppRuntime
 from config.storage import DefaultSessionScopeResolver, SessionScope
 from config.token import BzmToken
 from tests.conftest import make_ctx, run_async
-from tools import skills_utils
+from tools.utils import skills
 from tools.dataframe_manager import list_dataframes_metadata
 from tools.skills_manager import SkillsManager, register as register_skills_tool
 
@@ -46,7 +46,7 @@ def isolated_skills_resources(tmp_path, monkeypatch):
     )
     (refs_dir / "guide.md").write_text("# Guide\n", encoding="utf-8")
 
-    monkeypatch.setattr(skills_utils, "get_resources_path", lambda: resources_path)
+    monkeypatch.setattr(skills, "get_resources_path", lambda: resources_path)
     return resources_path
 
 
