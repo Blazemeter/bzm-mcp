@@ -15,7 +15,7 @@ limitations under the License.
 """
 import pytest
 
-from tools.billing_utils import (
+from tools.utils.billing import (
     BlazeMeterCostCalculator,
     TestConfiguration as BillingTestConfiguration,
     TestType as BillingTestType,

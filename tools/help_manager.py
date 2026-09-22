@@ -27,7 +27,7 @@ from config.runtime import AppRuntime
 from formatters.help import format_help_info
 from models.manager import Manager
 from models.result import BaseResult
-from tools.help_utils import convert_js_to_py_dict
+from tools.utils.help import convert_js_to_py_dict
 from tools.mcp_entrypoint import register_managed_tool
 from tools.utils import http_request, format_sanitized_traceback, run_as_task
 
