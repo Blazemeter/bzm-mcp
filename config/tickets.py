@@ -26,7 +26,6 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-DEV_MCP_CALLER_TOKEN = "dev-mcp-caller"
 DEFAULT_UPLOAD_PUBLIC_BASE_URL = "http://127.0.0.1:8090"
 DEFAULT_TICKET_TIMEOUT_SECONDS = 2.0
 
@@ -214,12 +213,14 @@ def build_ticket_client(
     timeout_seconds = (
         float(timeout_raw) if timeout_raw.strip() else DEFAULT_TICKET_TIMEOUT_SECONDS
     )
+    caller_token = os.getenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "").strip()
+    if not caller_token:
+        raise ValueError(
+            "BZM_MCP_TICKET_STORAGE_CALLER_TOKEN is required for streamable-http transport."
+        )
     return HttpTicketClient(
         base_url=base_url,
-        caller_token=os.getenv(
-            "BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", DEV_MCP_CALLER_TOKEN
-        ).strip()
-        or DEV_MCP_CALLER_TOKEN,
+        caller_token=caller_token,
         public_base_url=os.getenv(
             "BZM_MCP_UPLOAD_PUBLIC_BASE_URL", DEFAULT_UPLOAD_PUBLIC_BASE_URL
         ).strip()

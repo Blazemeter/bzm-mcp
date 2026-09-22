@@ -255,6 +255,7 @@ class TestBuildRuntime:
     def test_build_runtime_stdio_and_http(self, monkeypatch):
         monkeypatch.delenv("MCP_DOCKER", raising=False)
         monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "caller-secret")
         monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
 
         stdio = build_runtime("stdio")
@@ -275,6 +276,7 @@ class TestBuildRuntime:
 
     def test_build_runtime_http_uses_storage_api_when_configured(self, monkeypatch):
         monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "caller-secret")
         monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
 
         runtime = build_runtime("streamable-http")
@@ -296,6 +298,7 @@ class TestBuildRuntime:
 
     def test_configure_context_merges_http_request_state(self, monkeypatch):
         monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "caller-secret")
         monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
         runtime = build_runtime("streamable-http")
         token = BzmToken("key-id", "key-secret")
@@ -318,6 +321,7 @@ class TestBuildRuntime:
 
     def test_configure_context_hydrates_request_context_when_ctx_is_strict(self, monkeypatch):
         monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "caller-secret")
         monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
         runtime = build_runtime("streamable-http")
         token = BzmToken("key-id", "key-secret")
