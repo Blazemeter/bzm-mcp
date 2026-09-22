@@ -90,18 +90,24 @@ class HttpTicketClient(TicketPort):
         self.public_base_url = public_base_url.rstrip("/")
         self._timeout = timeout_seconds
         self._http = http
+        self._owned_http: httpx.AsyncClient | None = None
 
     def _headers(self) -> dict[str, str]:
         return {"Authorization": f"Bearer {self._caller_token}"}
+
+    def _client(self) -> httpx.AsyncClient:
+        if self._http is not None:
+            return self._http
+        if self._owned_http is None:
+            self._owned_http = httpx.AsyncClient(timeout=self._timeout)
+        return self._owned_http
 
     async def _request(
         self, method: str, path: str, json: dict[str, Any]
     ) -> httpx.Response:
         url = f"{self._base_url}{path}"
-        owns_client = self._http is None
-        client = self._http or httpx.AsyncClient(timeout=self._timeout)
         try:
-            response = await client.request(
+            return await self._client().request(
                 method, url, headers=self._headers(), json=json
             )
         except httpx.HTTPError as exc:
@@ -109,10 +115,6 @@ class HttpTicketClient(TicketPort):
                 "storage-api %s %s unreachable: %s", method, path, type(exc).__name__
             )
             raise TicketClientError("Upload ticket service is unreachable.") from exc
-        finally:
-            if owns_client:
-                await client.aclose()
-        return response
 
     @staticmethod
     def _map_error(status_code: int, operation: str) -> TicketClientError:
@@ -180,16 +182,21 @@ class HttpTicketClient(TicketPort):
         if response.status_code >= 400:
             logger.info("mint status %s test %s", response.status_code, test_id)
             raise self._map_error(response.status_code, "mint")
-        payload = response.json()
-        ticket_id = str(payload["id"])
-        logger.info("minted ticket %s test %s", ticket_id, test_id)
-        return MintedTicket(
-            id=ticket_id,
-            token=str(payload["token"]),
-            redeem_deadline=str(payload["redeem_deadline"]),
-            upload_deadline=str(payload["upload_deadline"]),
-            size_ceiling=int(payload["size_ceiling"]),
-        )
+        try:
+            payload = response.json()
+            minted = MintedTicket(
+                id=str(payload["id"]),
+                token=str(payload["token"]),
+                redeem_deadline=str(payload["redeem_deadline"]),
+                upload_deadline=str(payload["upload_deadline"]),
+                size_ceiling=int(payload["size_ceiling"]),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise TicketClientError(
+                "Upload ticket service returned an invalid response."
+            ) from exc
+        logger.info("minted ticket %s test %s", minted.id, test_id)
+        return minted
 
 
 def build_ticket_client(

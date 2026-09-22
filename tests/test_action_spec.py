@@ -7,21 +7,23 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
+    10|Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from unittest.mock import MagicMock
+
 import pytest
 
 from config.auth import HttpAuthProvider
 from config.blazemeter import TOOLS_PREFIX
 from config.runtime import AppRuntime, build_runtime
 from config.storage import DefaultSessionScopeResolver, InMemorySessionStorageProvider
-from tools.action_spec import ALL, HTTP, STDIO, ActionSpec, filter_actions, render_description
-from tools.test_actions import TEST_ACTIONS, TEST_HINTS, TEST_TOOL_HEADER
-from tools.test_manager import TEST_DISPATCH_ACTIONS, register as register_tests_tool
+from tools.actions import ALL, HTTP, STDIO, ActionSpec, filter_actions, render_description
+from tools.actions.tests import ACTIONS, HEADER, HINTS
+from tools.test_manager import build_test_handlers, register as register_tests_tool
 
 
 class RecordingMcp:
@@ -53,25 +55,21 @@ def _http_runtime():
 class TestFilterActions:
     def test_keeps_matching_transport_and_drops_the_other(self):
         specs = (
-            ActionSpec("shared", ALL, "- shared: ok"),
-            ActionSpec("upload_assets", frozenset({STDIO}), "- upload_assets: files"),
-            ActionSpec("upload_assets", frozenset({HTTP}), "- upload_assets: mint"),
+            ActionSpec("shared", ALL, "ok"),
+            ActionSpec("upload_assets", frozenset({STDIO}), "files"),
+            ActionSpec("upload_assets", frozenset({HTTP}), "mint"),
         )
         stdio = filter_actions(STDIO, specs)
         http = filter_actions(HTTP, specs)
-        assert [spec.body for spec in stdio if spec.name == "upload_assets"] == [
-            "- upload_assets: files"
-        ]
-        assert [spec.body for spec in http if spec.name == "upload_assets"] == [
-            "- upload_assets: mint"
-        ]
+        assert [spec.body for spec in stdio if spec.name == "upload_assets"] == ["files"]
+        assert [spec.body for spec in http if spec.name == "upload_assets"] == ["mint"]
         assert {spec.name for spec in stdio} == {"shared", "upload_assets"}
         assert {spec.name for spec in http} == {"shared", "upload_assets"}
 
     def test_duplicate_name_after_filter_raises(self):
         specs = (
-            ActionSpec("read", ALL, "- read: a"),
-            ActionSpec("read", frozenset({STDIO}), "- read: b"),
+            ActionSpec("read", ALL, "a"),
+            ActionSpec("read", frozenset({STDIO}), "b"),
         )
         with pytest.raises(ValueError, match="Duplicate action names for stdio"):
             filter_actions(STDIO, specs)
@@ -81,7 +79,7 @@ class TestRenderDescription:
     def test_joins_header_actions_and_hints(self):
         rendered = render_description(
             "Operations on tests.",
-            (ActionSpec("read", ALL, "- read: Read a test."),),
+            (ActionSpec("read", ALL, "Read a test."),),
             ("- Follow the schema.",),
         )
         assert rendered.startswith("Operations on tests.\nActions:\n- read: Read a test.")
@@ -90,7 +88,17 @@ class TestRenderDescription:
 
 class TestTestActionsCatalog:
     def test_unique_catalog_names_match_dispatch_arms(self):
-        assert {spec.name for spec in TEST_ACTIONS} == TEST_DISPATCH_ACTIONS
+        handler_names = set(build_test_handlers(MagicMock(), STDIO))
+        assert {spec.name for spec in ACTIONS} == handler_names
+
+    def test_required_args_appear_in_body(self):
+        for spec in ACTIONS:
+            for arg_name in spec.required_args:
+                assert arg_name in spec.body, f"{spec.name} missing {arg_name} in body"
+
+    def test_bodies_do_not_repeat_name_prefix(self):
+        for spec in ACTIONS:
+            assert not spec.body.lstrip().startswith(f"- {spec.name}:")
 
     def test_http_description_is_mint_contract(self):
         mcp = RecordingMcp()
@@ -106,5 +114,5 @@ class TestTestActionsCatalog:
         description = mcp.descriptions[f"{TOOLS_PREFIX}_tests"]
         assert "file_paths" in description
         assert "X-Content-SHA256" not in description
-        assert TEST_TOOL_HEADER in description
-        assert TEST_HINTS[0] in description
+        assert HEADER in description
+        assert HINTS[0] in description

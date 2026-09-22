@@ -15,10 +15,9 @@ limitations under the License.
 """
 import asyncio
 
-from config.file_access import LocalPathFileSource
+from config.file_access import HOSTED_FILE_ACCESS_MESSAGE, LocalPathFileSource
 from config.runtime import build_runtime
 from config.storage import (
-    HOSTED_FILE_ACCESS_MESSAGE,
     HttpSessionStorageProvider,
     InMemorySessionStorageProvider,
 )

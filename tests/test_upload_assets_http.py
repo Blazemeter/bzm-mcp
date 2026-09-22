@@ -19,11 +19,12 @@ from config.auth import HttpAuthProvider
 from config.blazemeter import TOOLS_PREFIX
 from config.runtime import AppRuntime
 from config.storage import DefaultSessionScopeResolver, InMemorySessionStorageProvider
-from config.tickets import MintedTicket, TicketPort
+from config.tickets import MintedTicket, TicketClientError, TicketPort
 from config.token import BzmToken
 from models.result import BaseResult
 from tests.conftest import make_ctx
 from tools.test_manager import TestManager, register as register_tests_tool
+from tools.utils.uploads import MAX_DECLARED_SIZE, MintUploadRequest
 
 SHA256 = "a" * 64
 CAPABILITY = "capability-secret-token"
@@ -205,6 +206,53 @@ class TestUploadAssetsRemote:
         assert tickets.credentials == []
         assert tickets.mints == []
 
+    def test_rejects_invalid_filename(self):
+        token = BzmToken("key-id", "key-secret")
+        tickets = FakeTicketClient()
+        manager = _manager(token, tickets)
+        result = asyncio.run(
+            manager.upload_assets_remote(_mint_args(filename="bad name.jmx"))
+        )
+        assert "Invalid filename" in _error_text(result)
+        assert tickets.mints == []
+
+    def test_rejects_bool_declared_size(self):
+        token = BzmToken("key-id", "key-secret")
+        tickets = FakeTicketClient()
+        manager = _manager(token, tickets)
+        result = asyncio.run(
+            manager.upload_assets_remote(_mint_args(declared_size=True))
+        )
+        assert "declared_size" in _error_text(result)
+        assert tickets.mints == []
+
+    def test_rejects_declared_size_above_ceiling(self):
+        parsed = MintUploadRequest.from_args(
+            _mint_args(declared_size=MAX_DECLARED_SIZE + 1)
+        )
+        assert isinstance(parsed, BaseResult)
+        assert "100 MiB" in parsed.error
+
+    def test_rejects_bad_sha256(self):
+        token = BzmToken("key-id", "key-secret")
+        tickets = FakeTicketClient()
+        manager = _manager(token, tickets)
+        result = asyncio.run(
+            manager.upload_assets_remote(_mint_args(sha256="not-a-hash"))
+        )
+        assert "sha256" in _error_text(result)
+        assert tickets.mints == []
+
+    def test_rejects_bad_encoding(self):
+        token = BzmToken("key-id", "key-secret")
+        tickets = FakeTicketClient()
+        manager = _manager(token, tickets)
+        result = asyncio.run(
+            manager.upload_assets_remote(_mint_args(encoding="br"))
+        )
+        assert "encoding" in _error_text(result)
+        assert tickets.mints == []
+
 
 class TestUploadAssetsHttpDispatch:
     def test_http_file_paths_only_is_validation_error(self):
@@ -249,3 +297,27 @@ class TestUploadAssetsHttpDispatch:
         assert payload["success_status"] == 201
         assert len(tickets.mints) == 1
         assert len(tickets.credentials) == 1
+
+    def test_ticket_client_error_surfaces_through_dispatch(self, monkeypatch):
+        class FailingTickets(FakeTicketClient):
+            async def put_credential(self, user_id, mcp_session_id, api_token):
+                raise TicketClientError("Upload ticket quota exceeded.", 429)
+
+        tickets = FailingTickets()
+        mcp = FakeMcp()
+        register_tests_tool(mcp, _http_runtime(tickets))
+        tool = mcp.tools[f"{TOOLS_PREFIX}_tests"]
+
+        async def _fake_read(self, test_id):
+            return BaseResult(result=[{"id": test_id}])
+
+        monkeypatch.setattr(TestManager, "read", _fake_read)
+        token = BzmToken("key-id", "key-secret")
+        result = asyncio.run(
+            tool(
+                {"action": "upload_assets", "args": _mint_args()},
+                ctx=make_ctx(token, "sess-a"),
+            )
+        )
+        assert result.error is not None
+        assert "quota" in result.error

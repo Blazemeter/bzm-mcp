@@ -69,7 +69,7 @@ timeout = httpx.Timeout(
     write=15.0,
     pool=60.0
 )
-project_root = Path(__file__).resolve().parent.parent
+project_root = Path(__file__).resolve().parents[2]
 # Match Windows absolute paths (backslash or forward slash; latter may appear on POSIX).
 # Negative lookbehind ensures we don't match URL protocols like https:// (where the
 # letter before ':' is preceded by more letters, e.g. 'http' in 'https://').
@@ -686,7 +686,7 @@ def get_resources_path():
         if getattr(sys, 'frozen', False):
             base_path = sys._MEIPASS
         else:
-            base_path = os.path.dirname(os.path.abspath(__file__))
+            base_path = Path(__file__).resolve().parents[2]
         resources_path = Path(base_path) / 'resources'
     return resources_path
 
