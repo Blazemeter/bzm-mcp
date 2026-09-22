@@ -25,12 +25,6 @@ from mcp.server.fastmcp import Context
 
 from config.token import BzmToken
 
-HOSTED_FILE_ACCESS_MESSAGE = (
-    "Local file paths are not supported on streamable-http. "
-    "Call blazemeter_tests / upload_assets with filename, declared_size, "
-    "encoding, and sha256 to mint an upload URL."
-)
-
 
 class StorageNotConfiguredError(RuntimeError):
     """Raised when session storage is used before AppRuntime wiring."""

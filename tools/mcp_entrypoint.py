@@ -25,12 +25,13 @@ from config.blazemeter import SUPPORT_MESSAGE
 from config.runtime import AppRuntime
 from config.token import BzmToken
 from models.result import BaseResult
-from tools.action_spec import ActionSpec, filter_actions, render_description
+from tools.actions import ActionSpec, action_by_name, filter_actions, render_description
 from tools.runtime_tools import run_tool_with_runtime
 from tools.utils import (
     format_sanitized_traceback,
     normalize_action_args,
     tool_result,
+    validate_required_args,
 )
 
 ToolDispatch = Callable[
@@ -58,12 +59,14 @@ def register_managed_tool(
     run_tool_with_runtime → @tool_result wrap.
 
     Pass either a literal ``description`` (legacy managers) or ``actions``
-    (filtered by ``runtime.transport``). ``dispatch`` owns action routing.
+    (filtered by ``runtime.transport``). Catalog ``required_args`` are enforced
+    here. ``dispatch`` owns action routing.
     Materialization stays inside ``run_tool_with_runtime`` so tracing includes persist.
     Returns the registered tool coroutine (needed for help/skills batch re-entry).
     """
     catalog_names: set[str] = set()
     visible_names: set[str] = set()
+    visible: tuple[ActionSpec, ...] = ()
     if actions is not None:
         visible = filter_actions(runtime.transport, actions)
         description = render_description(header, visible, hints)
@@ -88,6 +91,12 @@ def register_managed_tool(
             return BaseResult(
                 error=f"Action {action} is not available on {runtime.transport}."
             )
+        spec = action_by_name(visible, action)
+        if spec is not None and spec.required_args:
+            if validation_error := validate_required_args(
+                action, args, list(spec.required_args)
+            ):
+                return validation_error
         runtime.configure_context(ctx)
         token = runtime.auth.get_token(ctx)
 

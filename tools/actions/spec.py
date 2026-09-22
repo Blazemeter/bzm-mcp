@@ -7,7 +7,7 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
+    10|Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
@@ -25,13 +25,12 @@ ALL = frozenset({STDIO, HTTP})
 
 @dataclass(frozen=True)
 class ActionSpec:
-    """Policy of one tool action: which transports advertise it, and its args."""
+    """Policy of one tool action: transports, required args, and LLM prose."""
 
     name: str
     transports: frozenset[str]
     body: str
     required_args: tuple[str, ...] = ()
-    optional_args: tuple[str, ...] = ()
 
 
 def filter_actions(transport: str, specs: Sequence[ActionSpec]) -> tuple[ActionSpec, ...]:
@@ -61,9 +60,7 @@ def render_description(
     parts.append("Actions:")
     for spec in actions:
         body = spec.body.strip()
-        if not body.startswith("- "):
-            body = f"- {spec.name}: {body}"
-        parts.append(body)
+        parts.append(f"- {spec.name}: {body}")
     if hints:
         parts.append("Hints:")
         parts.extend(hint.rstrip() for hint in hints)

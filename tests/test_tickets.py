@@ -15,6 +15,7 @@ limitations under the License.
 """
 import asyncio
 
+import httpx
 import pytest
 
 from config.tickets import (
@@ -122,3 +123,54 @@ def test_mint_maps_429():
         asyncio.run(
             client.mint("u", "s", 1, "a.jmx", 1, "identity", "a" * 64)
         )
+
+
+def test_mint_maps_401():
+    http = _FakeAsyncClient(_FakeResponse(401))
+    client = HttpTicketClient("https://storage.internal", "caller", http=http)
+    with pytest.raises(TicketClientError, match="caller identity"):
+        asyncio.run(
+            client.mint("u", "s", 1, "a.jmx", 1, "identity", "a" * 64)
+        )
+
+
+def test_mint_maps_malformed_json():
+    http = _FakeAsyncClient(_FakeResponse(201, {"id": "only-id"}))
+    client = HttpTicketClient("https://storage.internal", "caller", http=http)
+    with pytest.raises(TicketClientError, match="invalid response"):
+        asyncio.run(
+            client.mint("u", "s", 1, "a.jmx", 1, "identity", "a" * 64)
+        )
+
+
+def test_request_maps_network_error():
+    class _BrokenClient:
+        async def request(self, *args, **kwargs):
+            raise httpx.ConnectError("boom")
+
+        async def aclose(self):
+            return None
+
+    client = HttpTicketClient(
+        "https://storage.internal", "caller", http=_BrokenClient()
+    )
+    with pytest.raises(TicketClientError, match="unreachable"):
+        asyncio.run(client.put_credential("u", "s", "Basic abc"))
+
+
+def test_owned_client_is_reused(monkeypatch):
+    created = []
+
+    class _TrackingClient(_FakeAsyncClient):
+        def __init__(self, response):
+            super().__init__(response)
+            created.append(self)
+
+    monkeypatch.setattr(
+        "config.tickets.httpx.AsyncClient",
+        lambda timeout: _TrackingClient(_FakeResponse(204)),
+    )
+    client = HttpTicketClient("https://storage.internal", "caller")
+    asyncio.run(client.put_credential("u", "s", "Basic abc"))
+    asyncio.run(client.put_credential("u", "s", "Basic abc"))
+    assert len(created) == 1

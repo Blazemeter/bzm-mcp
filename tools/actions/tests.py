@@ -7,7 +7,7 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
+    10|Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
@@ -15,23 +15,23 @@ limitations under the License.
 """
 from __future__ import annotations
 
-from tools.action_spec import ALL, HTTP, STDIO, ActionSpec
+from tools.actions.spec import ALL, HTTP, STDIO, ActionSpec
 
-TEST_TOOL_HEADER = "Operations on tests."
+HEADER = "Operations on tests."
 
-TEST_HINTS = (
+HINTS = (
     "- **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.",
     "- To search test runs/reports (executions), use the execution tool search action instead of tests search.",
     "- Before configure_failure_criteria, prefer failure_criteria_meta for kpi/condition codes and labels, then read if you must merge with existing rules.",
     "- For configure_failure_criteria, call read first and merge client-side if you must keep existing rules; providing rules replaces all criteria rows for that test.",
 )
 
-TEST_ACTIONS: tuple[ActionSpec, ...] = (
+ACTIONS: tuple[ActionSpec, ...] = (
     ActionSpec(
         name="read",
         transports=ALL,
         required_args=("test_id",),
-        body="""- read: Read a test. Get the detailed information of a test.
+        body="""Read a test. Get the detailed information of a test.
     args(dict): Dictionary with the following required parameters:
         test_id (int): The only required parameter. The id of the test to read.
     When presenting failure_criteria to the user, use meta.general_labels, meta.rule_field_labels, meta.kpi_labels, and meta.condition_labels for readable text; avoid leading with raw kpi ids or op codes.""",
@@ -40,7 +40,7 @@ TEST_ACTIONS: tuple[ActionSpec, ...] = (
         name="create",
         transports=ALL,
         required_args=("test_name", "project_id"),
-        body="""- create: Create a new test. Do not create a test if the user has not confirmed the location for validation of workspace, project and account.
+        body="""Create a new test. Do not create a test if the user has not confirmed the location for validation of workspace, project and account.
     args(dict): Dictionary with the following required parameters:
         test_name (str): The required name of the test to create.
         project_id (int): The id of the project to list tests from.""",
@@ -49,7 +49,7 @@ TEST_ACTIONS: tuple[ActionSpec, ...] = (
         name="delete",
         transports=ALL,
         required_args=("test_id",),
-        body="""- delete: Delete a test.
+        body="""Delete a test.
     args(dict): Dictionary with the following required parameters:
         test_id (int): The only required parameter. The id of the test to be deleted.""",
     ),
@@ -57,7 +57,7 @@ TEST_ACTIONS: tuple[ActionSpec, ...] = (
         name="list",
         transports=ALL,
         required_args=("project_id",),
-        body="""- list: List all tests. 
+        body="""List all tests.
     args(dict): Dictionary with the following required parameters:
         project_id (int): The id of the project to list tests from.
         limit (int, default=10, valid=[1 to 50]): The number of tests to list.
@@ -68,7 +68,7 @@ TEST_ACTIONS: tuple[ActionSpec, ...] = (
         name="search",
         transports=ALL,
         required_args=("account_id",),
-        body="""- search: Search tests across an account
+        body="""Search tests across an account
     args(dict): Dictionary with the following optional filter parameters:
         account_id (int, mandatory): The id of the account to use.
         test_name (str): Case- and diacritic-insensitive (ilike) match on test name.
@@ -92,7 +92,7 @@ TEST_ACTIONS: tuple[ActionSpec, ...] = (
         name="search_filter_values",
         transports=ALL,
         required_args=("account_id", "filter_names"),
-        body="""- search_filter_values: List allowed values for test search filters.
+        body="""List allowed values for test search filters.
     args(dict): Dictionary with the following required filter parameters:
         account_id (int, mandatory): The id of the account to use.
         filter_names (list[str], values=['workspace_id_list', 'cloud_provider_name_list', 'created_by_id_list', 'locations_id_list', 'project_id_list', 'tag_id_list', 'duration_list', 'number_of_engines_list', 'virtual_users_list']): Filter names to resolve.""",
@@ -101,7 +101,7 @@ TEST_ACTIONS: tuple[ActionSpec, ...] = (
         name="configure_load",
         transports=ALL,
         required_args=("test_id",),
-        body="""- configure_load: Configure the load of a test for the given test id. The test id is the only required parameter. 
+        body="""Configure the load of a test for the given test id. The test id is the only required parameter.
              The test will be configured based on the following parameters only if user confirms the configuration:
     args(dict): Dictionary with the following parameters:
         test_id (int): The only required parameter. The id of the test to configure.
@@ -116,7 +116,7 @@ TEST_ACTIONS: tuple[ActionSpec, ...] = (
         name="configure_locations",
         transports=ALL,
         required_args=("test_id",),
-        body="""- configure_locations: Configure the distribution of a test for given test id. The test id is the only required parameter. 
+        body="""Configure the distribution of a test for given test id. The test id is the only required parameter.
              The test will be configured based on the following parameters only if user confirms the configuration:
     args(dict): Dictionary with the following parameters:
         test_id (int): The only required parameter. The id of the test to configure.
@@ -126,8 +126,7 @@ TEST_ACTIONS: tuple[ActionSpec, ...] = (
         name="upload_assets",
         transports=frozenset({STDIO}),
         required_args=("test_id", "file_paths"),
-        optional_args=("main_script",),
-        body="""- upload_assets: Upload main script test as well as multiple related assets to a test. Supports .zip, .csv, .jmx, .yaml and other file types.
+        body="""Upload main script test as well as multiple related assets to a test. Supports .zip, .csv, .jmx, .yaml and other file types.
     args(dict): Dictionary with the following required parameters:
         test_id (int): The id of the test to upload assets to.
         file_paths (list): List of full file paths to upload.
@@ -137,7 +136,7 @@ TEST_ACTIONS: tuple[ActionSpec, ...] = (
         name="upload_assets",
         transports=frozenset({HTTP}),
         required_args=("test_id", "filename", "declared_size", "encoding", "sha256"),
-        body="""- upload_assets: Prepare a one-shot upload URL for a single test asset. MCP does not accept file bytes, paths, or base64. You POST the file yourself.
+        body="""Prepare a one-shot upload URL for a single test asset. MCP does not accept file bytes, paths, or base64. You POST the file yourself.
     args(dict): Dictionary with the following required parameters:
         test_id (int): The id of the test to upload to. Authorized before mint.
         filename (str): ASCII letters, digits, underscore, hyphen, plus a required extension, length 3-255. Example: Retail-Demo.jmx
@@ -152,14 +151,14 @@ TEST_ACTIONS: tuple[ActionSpec, ...] = (
     ActionSpec(
         name="failure_criteria_meta",
         transports=ALL,
-        body="""- failure_criteria_meta: Read-only catalog: overview (layers), top_level_tool_args, rule_fields, general, general_labels, rule_field_labels, kpis, conditions. Field names align with reading and configuring tests. No BlazeMeter API call.
+        body="""Read-only catalog: overview (layers), top_level_tool_args, rule_fields, general, general_labels, rule_field_labels, kpis, conditions. Field names align with reading and configuring tests. No BlazeMeter API call.
     args(dict): Optional; may be empty {}. Unknown keys are ignored.""",
     ),
     ActionSpec(
         name="configure_failure_criteria",
         transports=ALL,
         required_args=("test_id", "enabled", "rules"),
-        body="""- configure_failure_criteria: Set failure criteria (BlazeMeter configuration.enableFailureCriteria and configuration.plugins.thresholds). Replaces the full rules list for the test.
+        body="""Set failure criteria (BlazeMeter configuration.enableFailureCriteria and configuration.plugins.thresholds). Replaces the full rules list for the test.
     args(dict): Dictionary with the following parameters:
         test_id (int): Required. The test id.
         enabled (bool): Required. Master switch for the Failure Criteria section (API enableFailureCriteria).
