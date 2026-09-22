@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any
 
 from config.blazemeter import TESTS_ENDPOINT
-from config.file_access import HOSTED_FILE_ACCESS_MESSAGE, FileAccessPort
+from config.file_access import LOCAL_FILE_ACCESS_UNAVAILABLE_MESSAGE, FileAccessPort
 from config.security import detect_sensitive_upload_path_reason
 from config.storage import SessionScope, SessionScopeResolverPort
 from config.tickets import TicketClientError, TicketPort
@@ -154,7 +154,7 @@ class StdioAssetUploader:
                 error="Missing or invalid required argument 'file_paths'. Expected non-empty list."
             )
         if self._file_access is None or self._scope_resolver is None:
-            return BaseResult(error=HOSTED_FILE_ACCESS_MESSAGE)
+            return BaseResult(error=LOCAL_FILE_ACCESS_UNAVAILABLE_MESSAGE)
 
         test_data = await read_test(test_id)
         if test_data.error:
