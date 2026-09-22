@@ -27,6 +27,7 @@ from tools.test_manager import TestManager
 class TestRuntimeStorageWiring:
     def test_http_runtime_gets_session_storage_and_tickets(self, monkeypatch):
         monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "caller-secret")
         monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
         runtime = build_runtime("streamable-http")
         assert isinstance(runtime.storage, HttpSessionStorageProvider)
