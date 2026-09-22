@@ -9,10 +9,8 @@ from pathlib import Path
 
 from config.storage import SessionScope
 
-HOSTED_FILE_ACCESS_MESSAGE = (
-    "Local file paths are not supported on streamable-http. "
-    "Call blazemeter_tests / upload_assets with filename, declared_size, "
-    "encoding, and sha256 to mint an upload URL."
+LOCAL_FILE_ACCESS_UNAVAILABLE_MESSAGE = (
+    "Local file access is not configured for this runtime."
 )
 
 

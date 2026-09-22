@@ -15,7 +15,7 @@ limitations under the License.
 """
 import asyncio
 
-from config.file_access import HOSTED_FILE_ACCESS_MESSAGE, LocalPathFileSource
+from config.file_access import LOCAL_FILE_ACCESS_UNAVAILABLE_MESSAGE, LocalPathFileSource
 from config.runtime import build_runtime
 from config.storage import (
     HttpSessionStorageProvider,
@@ -43,8 +43,8 @@ class TestRuntimeStorageWiring:
         assert runtime.tickets is None
 
 
-class TestUploadAssetsHostedRejection:
-    def test_local_upload_assets_without_file_ports_returns_hosted_message(self):
+class TestUploadAssetsLocalRejection:
+    def test_local_upload_assets_without_file_ports_returns_stdio_message(self):
         manager = TestManager(ctx=None)
         result = asyncio.run(
             manager.upload_assets(1, ["/tmp/demo.jmx"], main_script=None)
@@ -54,4 +54,4 @@ class TestUploadAssetsHostedRejection:
             error_text = result.error or (inner.get("error") if isinstance(inner, dict) else None)
         else:
             error_text = result.get("error") if isinstance(result, dict) else None
-        assert error_text == HOSTED_FILE_ACCESS_MESSAGE
+        assert error_text == LOCAL_FILE_ACCESS_UNAVAILABLE_MESSAGE
