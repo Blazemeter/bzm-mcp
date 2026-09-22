@@ -14,7 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from config.auth import HttpAuthProvider
 from config.runtime import AppRuntime, build_runtime
+from config.storage import DefaultSessionScopeResolver, InMemorySessionStorageProvider
+from config.token import BzmToken
+from tests.conftest import make_ctx
 import asyncio
 
 from config.blazemeter import TOOLS_PREFIX
@@ -88,6 +92,29 @@ class TestRequiredArgumentsForTools:
         result = asyncio.run(tool({"action": "upload_assets", "args": {"test_id": 123}}, ctx=None))
         assert result.error is not None
         assert "file_paths" in result.error
+
+    def test_tests_upload_assets_http_requires_mint_args(self):
+        mcp = FakeMcp()
+        runtime = AppRuntime(
+            transport="streamable-http",
+            auth=HttpAuthProvider(),
+            storage=InMemorySessionStorageProvider(),
+            file_access=None,
+            scope_resolver=DefaultSessionScopeResolver(),
+            user_config={},
+            tickets=object(),
+        )
+        register_tests_tool(mcp, runtime)
+        tool = mcp.tools[f"{TOOLS_PREFIX}_tests"]
+        result = asyncio.run(
+            tool(
+                {"action": "upload_assets", "args": {"test_id": 123, "file_paths": ["/tmp/a.jmx"]}},
+                ctx=make_ctx(BzmToken("id", "secret"), "sess-1"),
+            )
+        )
+        assert result.error is not None
+        assert "filename" in result.error
+        assert "sha256" in result.error
 
     def test_tests_configure_failure_criteria_requires_enabled_and_rules(self):
         mcp = FakeMcp()

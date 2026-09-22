@@ -15,15 +15,14 @@ map to the types already landed on `STREAMABLE_HTTP`:
 | StoragePort | `SessionStoragePort` | Yes |
 | MemoryStorageProvider | `InMemorySessionStorageProvider` | Yes (stdio) |
 | HttpStorageProvider | `HttpSessionStorageProvider` | Yes (hosted) |
-| HTTPStorageClient (story) | `HttpSessionStorageProvider` | Yes — not `HttpStorageClient` |
-| HttpStorageClient (codebase) | `FileStoragePort` stub | No (file access, Phase 3) |
+| HTTPStorageClient (story) | `HttpSessionStorageProvider` | Yes |
 
 ## Runtime wiring
 
 | Mode | Transport | Session store | File access |
 |------|-----------|---------------|-------------|
 | Stdio / local Docker | `stdio` | `InMemorySessionStorageProvider` | `LocalPathFileSource` / Docker mapped paths |
-| Hosted HTTP | `streamable-http` | `HttpSessionStorageProvider` | `StorageFileSource` |
+| Hosted HTTP | `streamable-http` | `HttpSessionStorageProvider` | `None` (mint via `TicketPort`) |
 
 Composition root: `build_runtime` → `AppRuntime.storage` / `scope_resolver`.
 `server.register_tools` also calls `configure_task_storage(runtime.storage)` so

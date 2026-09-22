@@ -15,6 +15,7 @@ limitations under the License.
 """
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any, Awaitable, Callable, Dict, Optional, Set
 
 import httpx
@@ -24,11 +25,13 @@ from config.blazemeter import SUPPORT_MESSAGE
 from config.runtime import AppRuntime
 from config.token import BzmToken
 from models.result import BaseResult
+from tools.actions import ActionSpec, action_by_name, filter_actions, render_description
 from tools.runtime_tools import run_tool_with_runtime
 from tools.utils import (
     format_sanitized_traceback,
     normalize_action_args,
     tool_result,
+    validate_required_args,
 )
 
 ToolDispatch = Callable[
@@ -42,8 +45,11 @@ def register_managed_tool(
         runtime: AppRuntime,
         *,
         name: str,
-        description: str,
         dispatch: ToolDispatch,
+        description: Optional[str] = None,
+        actions: Optional[Sequence[ActionSpec]] = None,
+        header: str = "",
+        hints: Sequence[str] = (),
         excluded_actions: Optional[Set[str]] = None,
         disable_materialization: bool = False,
         support_message: Optional[str] = SUPPORT_MESSAGE,
@@ -52,10 +58,22 @@ def register_managed_tool(
     Shared MCP tool entrypoint: arguments= normalize → configure_context →
     run_tool_with_runtime → @tool_result wrap.
 
-    ``dispatch(action, args, token, ctx)`` owns action routing and validation.
+    Pass either a literal ``description`` (legacy managers) or ``actions``
+    (filtered by ``runtime.transport``). Catalog ``required_args`` are enforced
+    here. ``dispatch`` owns action routing.
     Materialization stays inside ``run_tool_with_runtime`` so tracing includes persist.
     Returns the registered tool coroutine (needed for help/skills batch re-entry).
     """
+    catalog_names: set[str] = set()
+    visible_names: set[str] = set()
+    visible: tuple[ActionSpec, ...] = ()
+    if actions is not None:
+        visible = filter_actions(runtime.transport, actions)
+        description = render_description(header, visible, hints)
+        catalog_names = {spec.name for spec in actions}
+        visible_names = {spec.name for spec in visible}
+    if not description:
+        raise ValueError("register_managed_tool requires description= or actions=")
 
     @mcp.tool(name=name, description=description)
     @tool_result(
@@ -69,6 +87,16 @@ def register_managed_tool(
         action, args = normalize_action_args(arguments)
         if not action:
             return BaseResult(error="Missing required argument 'action' within tool arguments.")
+        if action in catalog_names and action not in visible_names:
+            return BaseResult(
+                error=f"Action {action} is not available on {runtime.transport}."
+            )
+        spec = action_by_name(visible, action)
+        if spec is not None and spec.required_args:
+            if validation_error := validate_required_args(
+                action, args, list(spec.required_args)
+            ):
+                return validation_error
         runtime.configure_context(ctx)
         token = runtime.auth.get_token(ctx)
 

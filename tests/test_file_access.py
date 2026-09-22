@@ -19,7 +19,6 @@ import pytest
 from config.file_access import (
     DockerMappedFileSource,
     LocalPathFileSource,
-    StorageFileSource,
     build_file_access,
 )
 
@@ -42,16 +41,8 @@ class TestBuildFileAccess:
         source = build_file_access("stdio")
         assert isinstance(source, DockerMappedFileSource)
 
-    def test_streamable_http_requires_storage_api_base_url(self, monkeypatch):
-        monkeypatch.delenv("BZM_STORAGE_API_BASE_URL", raising=False)
-        with pytest.raises(ValueError, match="BZM_STORAGE_API_BASE_URL is required"):
-            build_file_access("streamable-http")
-
-    def test_streamable_http_uses_storage_file_source(self, monkeypatch):
-        monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
-        monkeypatch.setattr(StorageFileSource, "ensure_available", lambda self: None)
-        source = build_file_access("streamable-http")
-        assert isinstance(source, StorageFileSource)
+    def test_streamable_http_has_no_disk_source(self):
+        assert build_file_access("streamable-http") is None
 
 
 class TestLocalPathFileSource:

@@ -19,9 +19,7 @@ import json
 import pytest
 
 from config.storage import (
-    FileStoragePort,
     HttpSessionStorageProvider,
-    HttpStorageClient,
     InMemorySessionStorageProvider,
     SessionPartitionPayload,
     SessionScope,
@@ -60,8 +58,6 @@ def _seed(session_storage, scope, rows, action="seed"):
 
 
 class TestSessionStoragePortContract:
-    """Dataframes use STREAMABLE_HTTP SessionStoragePort names, not FileStoragePort."""
-
     def test_in_memory_provider_is_session_storage_port(self, in_memory_session_storage):
         assert isinstance(in_memory_session_storage, InMemorySessionStorageProvider)
         assert isinstance(in_memory_session_storage, SessionStoragePort)
@@ -72,17 +68,6 @@ class TestSessionStoragePortContract:
         )
         assert isinstance(session_storage, HttpSessionStorageProvider)
         assert isinstance(session_storage, SessionStoragePort)
-
-    def test_file_http_storage_client_is_not_session_storage_port(self):
-        file_client = HttpStorageClient()
-        assert isinstance(file_client, FileStoragePort)
-        assert not isinstance(file_client, SessionStoragePort)
-        assert not hasattr(file_client, "put_partition")
-        assert not hasattr(file_client, "get_partition")
-
-    def test_register_rejects_file_http_storage_client(self, session_scope):
-        with pytest.raises(AttributeError):
-            _seed(HttpStorageClient(), session_scope, [{"id": 1}])
 
 
 class TestDataframeManagerInMemorySessionStorageProvider:

@@ -56,7 +56,8 @@ docker run --rm -p 8000:8000 \
   -e FASTMCP_PORT=8000 \
   -e FASTMCP_STREAMABLE_HTTP_PATH=/mcp \
   -e BZM_STORAGE_API_BASE_URL=https://mcp-storage.internal \
-  -e BZM_STORAGE_STRATEGY=memory \
+  -e BZM_MCP_TICKET_STORAGE_CALLER_TOKEN=dev-mcp-caller \
+  -e BZM_MCP_UPLOAD_PUBLIC_BASE_URL=http://127.0.0.1:8090 \
   ghcr.io/blazemeter/bzm-mcp:latest
 ```
 
@@ -68,12 +69,23 @@ docker run --rm -p 8000:8000 \
 | `FASTMCP_HOST` | Bind address (HTTP only) | `127.0.0.1` |
 | `FASTMCP_PORT` | Listen port (HTTP only). Also accepts `PORT` | `8000` |
 | `FASTMCP_STREAMABLE_HTTP_PATH` | HTTP path for the MCP endpoint | `/mcp` |
-| `BZM_STORAGE_API_BASE_URL` | Storage Service base URL (required for streamable-http) | — |
-| `BZM_STORAGE_STRATEGY` | `memory` or `http` (file-access helper; session store follows transport) | `memory` |
+| `BZM_STORAGE_API_BASE_URL` | Storage Service base URL (required for streamable-http). Session partitions and upload-ticket mint use this origin. | — |
+| `BZM_MCP_TICKET_STORAGE_CALLER_TOKEN` | Bearer token MCP uses when calling storage-api mint/credential endpoints. Must match storage-api `BZM_STORAGE_MCP_CALLER_TOKEN`. Required for streamable-http. | — |
+| `BZM_MCP_UPLOAD_PUBLIC_BASE_URL` | Public origin returned in mint results (`{base}/services/uploads/{id}`). Required for streamable-http. Production is `https://mcp.blazemeter.com`. | — |
+| `BZM_MCP_TICKET_STORAGE_TIMEOUT_SECONDS` | Timeout for storage-api mint and credential writes | `2` |
 
-On streamable-http, session partitions are stored via `HttpSessionStorageProvider`. Local file paths are always rejected (`StorageFileSource`) regardless of `BZM_STORAGE_STRATEGY` (hosted fail-closed storage).
+On streamable-http, session partitions use `HttpSessionStorageProvider`. There is no disk adapter (`file_access` is `None`). Upload is `TicketPort` mint, not a file read.
+
+## Hosted file upload
+
+`blazemeter_tests` / `upload_assets` is the same action name as stdio, with a different schema on HTTP:
+
+- Required args: `test_id`, `filename`, `declared_size`, `encoding`, `sha256`.
+- MCP authorizes the test, writes the session credential, mints a one-shot URL, and returns immediately.
+- MCP does not accept file bytes, paths, or `main_script` on HTTP. The client POSTs the raw file to the returned URL (`201` means the file landed).
+- After real bytes the URL is spent; call `upload_assets` again. If the POST returns `503` after bytes were sent, list test files before retrying.
 
 ## Hosted MVP limitations
 
 - Session dataframes/tasks live in the Storage Service keyed by `{user_id}/{mcp_session_id}`.
-- `upload_assets` and other local file lookup/upload paths are rejected. Use a local stdio or Docker MCP installation for those workflows, or wait for remote file access.
+- HTTP `upload_assets` mints a URL; it does not read local disk or set the test main script. Use stdio/Docker MCP when you want MCP to upload paths and optionally PATCH the entrypoint.

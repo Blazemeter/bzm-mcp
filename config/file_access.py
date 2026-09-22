@@ -9,6 +9,10 @@ from pathlib import Path
 
 from config.storage import SessionScope
 
+LOCAL_FILE_ACCESS_UNAVAILABLE_MESSAGE = (
+    "Local file access is not configured for this runtime."
+)
+
 
 class FileAccessPort(ABC):
     """Abstraction for file path mapping and file content reads."""
@@ -76,54 +80,13 @@ class DockerMappedFileSource(LocalPathFileSource):
         return mapped_paths
 
 
-class StorageFileSource(FileAccessPort):
+def build_file_access(transport: str) -> FileAccessPort | None:
     """
-    Mock placeholder for streamable-http file access.
-
-    Real implementation will be provided in a future task where file-upload UI
-    mediates uploads and storage API integration.
-    """
-
-    def __init__(self, base_url: str) -> None:
-        self._base_url = base_url.rstrip("/")
-
-    def ensure_available(self) -> None:
-        # Mocked source: no network checks for now.
-        return None
-
-    def map_paths(self, file_paths: list[str], scope: SessionScope | None = None) -> list[str]:
-        # Keep paths untouched until backend file-source semantics are defined.
-        return file_paths
-
-    def exists(self, file_path: str, scope: SessionScope | None = None) -> bool:
-        # Mocked behavior: storage-backed files are not available yet.
-        return False
-
-    def is_file(self, file_path: str, scope: SessionScope | None = None) -> bool:
-        return False
-
-    def read_bytes(self, file_path: str, scope: SessionScope | None = None) -> bytes:
-        raise NotImplementedError(
-            "StorageFileSource.read_bytes is not implemented yet. "
-            "Use file-upload UI flow until storage-backed file access is implemented."
-        )
-
-
-def build_file_access(transport: str) -> FileAccessPort:
-    """
-    Build file-access implementation for the runtime transport.
-
-    - Docker stdio uses path mapping (host -> mounted container path).
-    - Streamable HTTP uses storage API-backed file source.
-    - Other modes use local path access.
+    Build disk access for stdio / Docker stdio. Streamable-http has no disk:
+    return None; HTTP upload_assets mints a URL via TicketPort instead.
     """
     if transport == "streamable-http":
-        base_url = os.getenv("BZM_STORAGE_API_BASE_URL", "").strip()
-        if not base_url:
-            raise ValueError(
-                "BZM_STORAGE_API_BASE_URL is required for streamable-http transport."
-            )
-        return StorageFileSource(base_url=base_url)
+        return None
 
     is_docker = os.getenv("MCP_DOCKER", "false").lower() == "true"
     if transport == "stdio" and is_docker:

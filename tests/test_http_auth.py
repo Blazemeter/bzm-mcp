@@ -33,7 +33,7 @@ from config.auth import (
     StdioAuthProvider,
     parse_authorization_header,
 )
-from config.file_access import LocalPathFileSource, StorageFileSource
+from config.file_access import LocalPathFileSource
 from config.runtime import build_runtime
 from config.storage import (
     HttpSessionStorageProvider,
@@ -254,8 +254,9 @@ class TestBearerAuthMiddleware:
 class TestBuildRuntime:
     def test_build_runtime_stdio_and_http(self, monkeypatch):
         monkeypatch.delenv("MCP_DOCKER", raising=False)
-        monkeypatch.delenv("BZM_STORAGE_STRATEGY", raising=False)
         monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "caller-secret")
+        monkeypatch.setenv("BZM_MCP_UPLOAD_PUBLIC_BASE_URL", "http://127.0.0.1:8090")
         monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
 
         stdio = build_runtime("stdio")
@@ -264,24 +265,27 @@ class TestBuildRuntime:
         assert isinstance(stdio.storage, InMemorySessionStorageProvider)
         assert isinstance(stdio.file_access, LocalPathFileSource)
         assert stdio.user_config["confirmation_mode"] == "DELETE"
+        assert stdio.tickets is None
 
         http = build_runtime("streamable-http")
         assert http.transport == "streamable-http"
         assert isinstance(http.auth, HttpAuthProvider)
         assert isinstance(http.storage, HttpSessionStorageProvider)
-        assert isinstance(http.file_access, StorageFileSource)
+        assert http.file_access is None
         assert http.user_config == {}
+        assert http.tickets is not None
 
     def test_build_runtime_http_uses_storage_api_when_configured(self, monkeypatch):
         monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "caller-secret")
+        monkeypatch.setenv("BZM_MCP_UPLOAD_PUBLIC_BASE_URL", "http://127.0.0.1:8090")
         monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
-        monkeypatch.setattr(StorageFileSource, "ensure_available", lambda self: None)
 
         runtime = build_runtime("streamable-http")
         assert runtime.transport == "streamable-http"
         assert isinstance(runtime.auth, HttpAuthProvider)
         assert isinstance(runtime.storage, HttpSessionStorageProvider)
-        assert isinstance(runtime.file_access, StorageFileSource)
+        assert runtime.file_access is None
 
     def test_configure_context_injects_request_context_for_stdio(self, monkeypatch):
         monkeypatch.delenv("MCP_DOCKER", raising=False)
@@ -296,6 +300,8 @@ class TestBuildRuntime:
 
     def test_configure_context_merges_http_request_state(self, monkeypatch):
         monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "caller-secret")
+        monkeypatch.setenv("BZM_MCP_UPLOAD_PUBLIC_BASE_URL", "http://127.0.0.1:8090")
         monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
         runtime = build_runtime("streamable-http")
         token = BzmToken("key-id", "key-secret")
@@ -318,6 +324,8 @@ class TestBuildRuntime:
 
     def test_configure_context_hydrates_request_context_when_ctx_is_strict(self, monkeypatch):
         monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
+        monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "caller-secret")
+        monkeypatch.setenv("BZM_MCP_UPLOAD_PUBLIC_BASE_URL", "http://127.0.0.1:8090")
         monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
         runtime = build_runtime("streamable-http")
         token = BzmToken("key-id", "key-secret")
