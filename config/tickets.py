@@ -218,12 +218,14 @@ def build_ticket_client(
         raise ValueError(
             "BZM_MCP_TICKET_STORAGE_CALLER_TOKEN is required for streamable-http transport."
         )
+    public_base_url = os.getenv("BZM_MCP_UPLOAD_PUBLIC_BASE_URL", "").strip()
+    if not public_base_url:
+        raise ValueError(
+            "BZM_MCP_UPLOAD_PUBLIC_BASE_URL is required for streamable-http transport."
+        )
     return HttpTicketClient(
         base_url=base_url,
         caller_token=caller_token,
-        public_base_url=os.getenv(
-            "BZM_MCP_UPLOAD_PUBLIC_BASE_URL", DEFAULT_UPLOAD_PUBLIC_BASE_URL
-        ).strip()
-        or DEFAULT_UPLOAD_PUBLIC_BASE_URL,
+        public_base_url=public_base_url,
         timeout_seconds=timeout_seconds,
     )
