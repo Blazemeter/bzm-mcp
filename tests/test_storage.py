@@ -28,6 +28,7 @@ class TestRuntimeStorageWiring:
     def test_http_runtime_gets_session_storage_and_tickets(self, monkeypatch):
         monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
         monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "caller-secret")
+        monkeypatch.setenv("BZM_MCP_UPLOAD_PUBLIC_BASE_URL", "http://127.0.0.1:8090")
         monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
         runtime = build_runtime("streamable-http")
         assert isinstance(runtime.storage, HttpSessionStorageProvider)

@@ -67,10 +67,18 @@ def test_build_ticket_client_requires_caller_token(monkeypatch):
         build_ticket_client("streamable-http")
 
 
-def test_build_ticket_client_http_defaults(monkeypatch):
+def test_build_ticket_client_requires_public_base_url(monkeypatch):
     monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://storage.internal")
     monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "caller-secret")
     monkeypatch.delenv("BZM_MCP_UPLOAD_PUBLIC_BASE_URL", raising=False)
+    with pytest.raises(ValueError, match="BZM_MCP_UPLOAD_PUBLIC_BASE_URL"):
+        build_ticket_client("streamable-http")
+
+
+def test_build_ticket_client_http_success(monkeypatch):
+    monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://storage.internal")
+    monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "caller-secret")
+    monkeypatch.setenv("BZM_MCP_UPLOAD_PUBLIC_BASE_URL", DEFAULT_UPLOAD_PUBLIC_BASE_URL)
     client = build_ticket_client("streamable-http")
     assert isinstance(client, HttpTicketClient)
     assert client.public_base_url == DEFAULT_UPLOAD_PUBLIC_BASE_URL

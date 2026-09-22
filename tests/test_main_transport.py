@@ -24,6 +24,7 @@ def _patch_mcp_server_dependencies(monkeypatch):
     monkeypatch.setattr(main, "FastMCP", _DummyFastMCP)
     monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://mcp-storage.internal")
     monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "caller-secret")
+    monkeypatch.setenv("BZM_MCP_UPLOAD_PUBLIC_BASE_URL", "http://127.0.0.1:8090")
     monkeypatch.setattr(HttpSessionStorageProvider, "ensure_available", lambda self: None)
 
 
