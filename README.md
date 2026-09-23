@@ -78,7 +78,7 @@ The easiest way to configure your MCP client is using our interactive CLI tool:
 1. **Prerequisites:** [uv](https://docs.astral.sh/uv/) and Python 3.11+
 2. **One-click install** or configure your MCP client manually:
 
-[![Add to Cursor (uvx)](https://img.shields.io/badge/Add_to_Cursor-uvx_install-blue?style=for-the-badge)](https://cursor.com/en-US/install-mcp?name=BlazeMeter%20MCP&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyItLWZyb20iLCJnaXQraHR0cHM6Ly9naXRodWIuY29tL0JsYXplbWV0ZXIvYnptLW1jcC5naXRAdjEuMi4wIiwiLXEiLCJiem0tbWNwIiwiLS1tY3AiXSwiZW52Ijp7IkJMQVpFTUVURVJfQVBJX0tFWSI6IiJ9fQ==) [![Add to VS Code (uvx)](https://img.shields.io/badge/Add_to_VS_Code-uvx_install-007ACC?style=for-the-badge&logo=visualstudiocode)](https://insiders.vscode.dev/redirect/mcp/install?name=BlazeMeter%20MCP&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22--from%22%2C%22git%2Bhttps%3A%2F%2Fgithub.com%2FBlazemeter%2Fbzm-mcp.git%40v1.0.1%22%2C%22-q%22%2C%22bzm-mcp%22%2C%22--mcp%22%5D%2C%22env%22%3A%7B%22BLAZEMETER_API_KEY%22%3A%22%22%7D%7D)
+[![Add to Cursor (uvx)](https://img.shields.io/badge/Add_to_Cursor-uvx_install-blue?style=for-the-badge)](https://cursor.com/en-US/install-mcp?name=BlazeMeter%20MCP&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyItLWZyb20iLCJnaXQraHR0cHM6Ly9naXRodWIuY29tL0JsYXplbWV0ZXIvYnptLW1jcC5naXRAdjEuMi4wIiwiLXEiLCJiem0tbWNwIiwiLS1tY3AiXSwiZW52Ijp7IkJMQVpFTUVURVJfQVBJX0tFWSI6IiJ9fQ==) [![Add to VS Code (uvx)](https://img.shields.io/badge/Add_to_VS_Code-uvx_install-007ACC?style=for-the-badge&logo=visualstudiocode)](https://insiders.vscode.dev/redirect/mcp/install?name=BlazeMeter%20MCP&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22--from%22%2C%22git%2Bhttps%3A%2F%2Fgithub.com%2FBlazemeter%2Fbzm-mcp.git%40v1.3.1%22%2C%22-q%22%2C%22bzm-mcp%22%2C%22--mcp%22%5D%2C%22env%22%3A%7B%22BLAZEMETER_API_KEY%22%3A%22%22%7D%7D)
 
 After installing, set `BLAZEMETER_API_KEY` to your `api-key.json` path in your client's MCP settings.
 
@@ -90,7 +90,7 @@ After installing, set `BLAZEMETER_API_KEY` to your `api-key.json` path in your c
     "BlazeMeter MCP": {
       "command": "uvx",
       "args": [
-        "--from", "git+https://github.com/Blazemeter/bzm-mcp.git@v1.0.1",
+        "--from", "git+https://github.com/Blazemeter/bzm-mcp.git@v1.3.1",
         "-q", "bzm-mcp", "--mcp"
       ],
       "env": {
