@@ -15,7 +15,7 @@ limitations under the License.
 """
 from typing import Any, Optional
 
-from tools.help_utils import html_to_markdown
+from tools.utils.help import html_to_markdown
 
 
 def format_help_info(html_content: str, params: Optional[dict] = None) -> dict[str, Any]:
