@@ -56,6 +56,17 @@ def reset_dataframe_session_locks():
 
 
 @pytest.fixture(autouse=True)
+def isolated_cache():
+    """Fresh process cache per test (no background sweeper across event loops)."""
+    from config.cache import InMemoryTTLCache, configure_cache
+
+    cache = InMemoryTTLCache(sweep_interval_seconds=0)
+    configure_cache(cache)
+    yield cache
+    configure_cache(None)
+
+
+@pytest.fixture(autouse=True)
 def _configure_session_task_storage(in_memory_session_storage):
     """Ensure @run_as_task can persist when manager methods are called in unit tests."""
     from tools.async_task_manager import configure_task_storage

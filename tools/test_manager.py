@@ -44,6 +44,7 @@ from tools.utils import (
     search,
     require_confirmation,
     run_as_task,
+    ttl_cache_method,
 )
 from tools.utils.uploads import HttpAssetMinter, StdioAssetUploader
 
@@ -65,6 +66,7 @@ class TestManager(Manager):
         self.scope_resolver = scope_resolver
         self.tickets = tickets
 
+    @ttl_cache_method(ttl_seconds=30)
     @run_as_task()
     async def read(self, test_id: int | None) -> BaseResult:
         if not isinstance(test_id, int) or test_id < 1:

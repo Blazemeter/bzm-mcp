@@ -211,6 +211,18 @@ def stored_as_dataframe_payload(metadata: Dict[str, Any]) -> Dict[str, Any]:
         "json_size_chars": metadata["json_size_chars"],
     }
 
+
+def is_dataframe_reference(base_result: Any) -> bool:
+    """True when the result is a stored_as_dataframe_payload (a session dataframe reference)."""
+    return (
+            isinstance(base_result, BaseResult)
+            and isinstance(base_result.result, list)
+            and len(base_result.result) == 1
+            and isinstance(base_result.result[0], dict)
+            and base_result.result[0].get("stored_as_dataframe") is True
+            and bool(base_result.result[0].get("dataframe_id"))
+    )
+
 _DISALLOWED_SQL_PATTERN = re.compile(
     r"\b(insert|update|delete|create|drop|alter|truncate|replace|merge|call|copy|grant|revoke)\b",
     re.IGNORECASE,
@@ -480,13 +492,7 @@ async def materialize_large_result_if_needed(
 ) -> BaseResult:
     if not isinstance(base_result, BaseResult) or base_result.error or base_result.result is None:
         return base_result
-    if (
-            isinstance(base_result.result, list)
-            and len(base_result.result) == 1
-            and isinstance(base_result.result[0], dict)
-            and base_result.result[0].get("stored_as_dataframe") is True
-            and base_result.result[0].get("dataframe_id")
-    ):
+    if is_dataframe_reference(base_result):
         # Avoid rematerializing a payload that is already a dataframe reference.
         return base_result
     try:

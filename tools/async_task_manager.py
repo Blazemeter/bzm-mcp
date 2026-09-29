@@ -94,6 +94,10 @@ _semaphore = asyncio.Semaphore(MAX_PARALLEL_TASKS)
 _storage: Optional[SessionStoragePort] = None
 _registry_lock = asyncio.Lock()
 _session_caches: OrderedDict[tuple[str, str], "_SessionTaskCache"] = OrderedDict()
+# Process-local hooks run once a task reaches a terminal state on this worker
+# (e.g. drop a cached task snapshot). Not persisted: a task owned by another
+# worker never fires them, and the caller's TTL applies instead.
+_terminal_callbacks: Dict[tuple[str, str, str], List[Callable[[], Awaitable[None]]]] = {}
 
 
 @dataclass
@@ -141,6 +145,7 @@ def configure_task_storage(storage: SessionStoragePort) -> None:
     global _storage, _session_caches
     _storage = storage
     _session_caches = OrderedDict()
+    _terminal_callbacks.clear()
 
 
 def _get_storage() -> SessionStoragePort:
@@ -398,12 +403,13 @@ async def _set_status_and_persist(
 
 
 async def _task_runner(task_record: TaskRecord, coro_factory: Callable[[], Awaitable[Any]]):
-    await _set_status_and_persist(
-        task_record,
-        STATUS_PARKING,
-        "Task is waiting for an available execution slot.",
-    )
     try:
+        # Inside the try so a failure or cancellation here still drains terminal callbacks.
+        await _set_status_and_persist(
+            task_record,
+            STATUS_PARKING,
+            "Task is waiting for an available execution slot.",
+        )
         async with _semaphore:
             await _set_status_and_persist(
                 task_record,
@@ -462,6 +468,43 @@ async def _task_runner(task_record: TaskRecord, coro_factory: Callable[[], Await
         error_message = f"Task failed with exception: {str(exc)}"
         task_record.result = BaseResult(error=error_message)
         await _set_status_and_persist(task_record, STATUS_FAILED, error_message)
+    finally:
+        await _run_terminal_callbacks(task_record)
+
+
+def _terminal_callback_key(task_id: str, scope: SessionScope) -> tuple[str, str, str]:
+    user_id, mcp_session_id = _session_key(scope)
+    return user_id, mcp_session_id, _task_key(task_id)
+
+
+async def _run_terminal_callbacks(task_record: TaskRecord) -> None:
+    callbacks = _terminal_callbacks.pop(
+        _terminal_callback_key(task_record.task_id, task_record.scope()), []
+    )
+    for callback in callbacks:
+        try:
+            await callback()
+        except Exception:
+            logger.exception("Task terminal callback failed for task %s", task_record.task_id)
+
+
+async def add_task_terminal_callback(
+        task_id: str,
+        scope: SessionScope,
+        callback: Callable[[], Awaitable[None]],
+) -> None:
+    """
+    Run ``callback`` once the task reaches a terminal state on this worker.
+
+    Runs it right away when the task is already terminal or unknown here.
+    """
+    record = await get_task_record(task_id, scope=scope)
+    # No await between the status check and the registration: the runner sets the
+    # terminal status before it drains callbacks, so a callback cannot be missed.
+    if record is None or is_terminal_status(record.status):
+        await callback()
+        return
+    _terminal_callbacks.setdefault(_terminal_callback_key(task_id, scope), []).append(callback)
 
 
 async def submit_task(
