@@ -198,6 +198,14 @@ class HttpTicketClient(TicketPort):
         return minted
 
 
+def storage_caller_token() -> str:
+    """MCP caller identity for the storage API; tickets and the cache share it."""
+    return (
+        os.getenv("BZM_MCP_STORAGE_CALLER_TOKEN", "").strip()
+        or os.getenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "").strip()
+    )
+
+
 def build_ticket_client(
     transport: Literal["stdio", "streamable-http"],
     storage_base_url: str | None = None,
@@ -213,10 +221,11 @@ def build_ticket_client(
     timeout_seconds = (
         float(timeout_raw) if timeout_raw.strip() else DEFAULT_TICKET_TIMEOUT_SECONDS
     )
-    caller_token = os.getenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "").strip()
+    caller_token = storage_caller_token()
     if not caller_token:
         raise ValueError(
-            "BZM_MCP_TICKET_STORAGE_CALLER_TOKEN is required for streamable-http transport."
+            "BZM_MCP_STORAGE_CALLER_TOKEN (or BZM_MCP_TICKET_STORAGE_CALLER_TOKEN) is required "
+            "for streamable-http transport."
         )
     public_base_url = os.getenv("BZM_MCP_UPLOAD_PUBLIC_BASE_URL", "").strip()
     if not public_base_url:

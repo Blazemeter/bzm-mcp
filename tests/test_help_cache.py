@@ -33,19 +33,27 @@ class FakeClock:
 
 def _fake_index():
     return {
-        "tree": {"guide": {"self": [{"title": "Intro", "help_id": "intro", "help_tree_id": 1}]}},
-        "items_index": {"guide:self:intro": 1},
-        "index_nodes": {1: {"category": "guide", "subcategory": "self", "help_id": "intro", "sub_nodes": []}},
+        "tree": {
+            "guide": {
+                "self": [
+                    {"title": "Intro", "help_id": "intro", "help_tree_id": 1},
+                    {"title": "Child", "help_id": "child", "help_tree_id": 2},
+                ],
+                "api": [{"title": "Auth", "help_id": "auth", "help_tree_id": 3}],
+            },
+            "admin": {"self": [{"title": "Users", "help_id": "users", "help_tree_id": 4}]},
+        },
+        "items_index": {"guide:self:intro": 1, "guide:self:child": 2, "guide:api:auth": 3, "admin:self:users": 4},
+        "index_nodes": {
+            1: {"category": "guide", "subcategory": "self", "help_id": "intro", "sub_nodes": [2]},
+            2: {"category": "guide", "subcategory": "self", "help_id": "child", "sub_nodes": []},
+            3: {"category": "guide", "subcategory": "api", "help_id": "auth", "sub_nodes": []},
+            4: {"category": "admin", "subcategory": "self", "help_id": "users", "sub_nodes": []},
+        },
     }
 
 
-def test_help_ttl_is_twelve_hours():
-    assert HelpManager.HELP_CACHE_TTL_SECONDS == TWELVE_HOURS
-
-
-def test_help_index_is_global_and_refreshed_after_twelve_hours(monkeypatch):
-    clock = FakeClock()
-    configure_cache(InMemoryTTLCache(sweep_interval_seconds=0, clock=clock))
+def _counting_build(monkeypatch):
     calls = {"count": 0}
 
     async def fake_build():
@@ -53,16 +61,68 @@ def test_help_index_is_global_and_refreshed_after_twelve_hours(monkeypatch):
         return _fake_index()
 
     monkeypatch.setattr(HelpManager, "_build_help_index", staticmethod(fake_build))
+    return calls
+
+
+def test_help_ttl_is_twelve_hours():
+    assert HelpManager.HELP_CACHE_TTL_SECONDS == TWELVE_HOURS
+
+
+def test_index_is_split_into_small_independent_pieces():
+    pieces = HelpManager.split_help_index(_fake_index())
+    assert pieces["global:help:categories"] == [
+        {"category": "guide", "subcategories": ["self", "api"]},
+        {"category": "admin", "subcategories": ["self"]},
+    ]
+    assert [item["help_id"] for item in pieces["global:help:section:guide:self"]] == ["intro", "child"]
+    assert pieces["global:help:subnodes:guide"] == {
+        "self:intro": [{"category": "guide", "subcategory": "self", "help_id": "child", "sub_nodes": []}]
+    }
+    assert pieces["global:help:subnodes:admin"] == {}
+    assert "global:help:index" not in pieces  # no single large value any more
+
+
+def test_pieces_are_built_once_and_refreshed_after_twelve_hours(monkeypatch):
+    clock = FakeClock()
+    configure_cache(InMemoryTTLCache(sweep_interval_seconds=0, clock=clock))
+    calls = _counting_build(monkeypatch)
 
     async def scenario():
-        await asyncio.gather(*(HelpManager.get_help_index() for _ in range(3)))
+        await asyncio.gather(*(HelpManager(None).list_help_categories() for _ in range(3)))
+        await HelpManager(None).list_help_category_content("guide", ["self", "api"])
         assert calls["count"] == 1
         clock.now += TWELVE_HOURS - 1
-        await HelpManager.get_help_index()
+        await HelpManager(None).list_help_categories()
         assert calls["count"] == 1
         clock.now += 2
-        await HelpManager.get_help_index()
+        await HelpManager(None).list_help_categories()
         assert calls["count"] == 2
+
+    asyncio.run(scenario())
+
+
+def test_listings_read_their_piece(monkeypatch):
+    _counting_build(monkeypatch)
+
+    async def scenario():
+        categories = await HelpManager(None).list_help_categories()
+        assert [c["category"] for c in categories.result] == ["guide", "admin"]
+        content = await HelpManager(None).list_help_category_content("guide", ["api", "missing"])
+        assert content.result[0] == [{"title": "Auth", "help_id": "auth", "help_tree_id": 3}]
+        assert content.result[1].warning  # unknown subcategory reported, not rebuilt
+
+    asyncio.run(scenario())
+
+
+def test_unknown_ids_never_trigger_a_rebuild(monkeypatch):
+    calls = _counting_build(monkeypatch)
+
+    async def scenario():
+        await HelpManager(None).list_help_categories()
+        for _ in range(3):
+            await HelpManager(None).list_help_category_content("nope", ["self"])
+            assert await HelpManager._page_sub_nodes("nope", "self", "x") == []
+        assert calls["count"] == 1
 
     asyncio.run(scenario())
 
@@ -107,17 +167,11 @@ def test_help_page_errors_are_not_cached(monkeypatch):
     asyncio.run(scenario())
 
 
-def test_section_pages_expand_sub_nodes_from_the_cached_index(monkeypatch):
-    async def fake_build():
-        index = _fake_index()
-        index["index_nodes"][1]["sub_nodes"] = [2]
-        index["index_nodes"][2] = {"category": "guide", "subcategory": "self", "help_id": "child", "sub_nodes": []}
-        return index
-
+def test_section_pages_expand_sub_nodes_from_their_category_piece(monkeypatch):
     async def fake_http_request(method, endpoint, result_formatter=None, result_formatter_params=None, **kwargs):
         return HttpBaseResult(result={"help_content": "Overview. In this section:"})
 
-    monkeypatch.setattr(HelpManager, "_build_help_index", staticmethod(fake_build))
+    _counting_build(monkeypatch)
     monkeypatch.setattr(help_manager_module, "http_request", fake_http_request)
 
     help_object = asyncio.run(HelpManager.get_help_object("guide", "self", "intro"))
@@ -126,19 +180,13 @@ def test_section_pages_expand_sub_nodes_from_the_cached_index(monkeypatch):
     ]
 
 
-def test_help_index_is_shared_read_only_and_listings_return_copies(monkeypatch):
-    async def fake_build():
-        return _fake_index()
-
-    monkeypatch.setattr(HelpManager, "_build_help_index", staticmethod(fake_build))
+def test_listing_results_are_copies(monkeypatch):
+    _counting_build(monkeypatch)
 
     async def scenario():
-        first = await HelpManager.get_help_index()
-        second = await HelpManager.get_help_index()
-        assert first is second  # no deep copy of the whole index per call
-
         listing = await HelpManager(None).list_help_category_content("guide", ["self"])
         listing.result[0][0]["title"] = "mutated by caller"
-        assert (await HelpManager.get_help_index())["tree"]["guide"]["self"][0]["title"] == "Intro"
+        again = await HelpManager(None).list_help_category_content("guide", ["self"])
+        assert again.result[0][0]["title"] == "Intro"
 
     asyncio.run(scenario())

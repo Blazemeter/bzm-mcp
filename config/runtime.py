@@ -32,7 +32,7 @@ from config.storage import (
     SessionScopeResolverPort,
     SessionStoragePort,
 )
-from config.tickets import TicketPort, build_ticket_client
+from config.tickets import TicketPort, build_ticket_client, storage_caller_token
 from config.token import BzmToken
 from tools.utils import ConfirmMode
 
@@ -111,7 +111,7 @@ def build_runtime(
 
     - stdio: process-lifetime ``startup_token`` and in-memory session storage.
     - streamable-http: request-scoped auth and storage API-backed partitions.
-    - both: process-local TTL cache from BZM_CACHE_* env vars.
+    - cache: in-memory on stdio; the storage API cache (/cache) on streamable-http.
     """
     if transport == "stdio":
         stdio_user_config = {
@@ -148,7 +148,12 @@ def build_runtime(
             scope_resolver=DefaultSessionScopeResolver(),
             user_config={},
             tickets=build_ticket_client(transport, storage_base_url),
-            cache=build_cache_from_env(),
+            # Same MCP caller identity the ticket client uses.
+            cache=build_cache_from_env(
+                transport,
+                storage_base_url=storage_base_url,
+                caller_token=storage_caller_token(),
+            ),
         )
 
     raise ValueError(f"Unknown transport: {transport}")

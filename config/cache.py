@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import heapq
+import json
 import logging
 import os
 import time
@@ -26,12 +27,20 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Awaitable, Callable, Optional
+from urllib.parse import quote
+
+import httpx
+
+from config import cache_codec
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_MAX_ENTRIES = 2048
 DEFAULT_SWEEP_INTERVAL_SECONDS = 30.0
 DEFAULT_SWEEP_BATCH_SIZE = 500
+DEFAULT_HTTP_TIMEOUT_SECONDS = 2.0
+# Match the storage API BZM_STORAGE_CACHE_MAX_VALUE_BYTES (request body limit).
+DEFAULT_HTTP_MAX_VALUE_BYTES = 1048576
 
 CacheObserver = Callable[[str, int], None]
 
@@ -461,15 +470,206 @@ def _env_number(name: str, default: float, cast: Callable[[str], Any]) -> Any:
         return default
 
 
-def build_cache_from_env() -> CachePort:
-    """
-    Build the process cache from BZM_CACHE_* env vars (same for stdio and hosted).
+class CacheValueTooLarge(ValueError):
+    """The encoded value exceeds what the remote cache accepts; it is not cached."""
 
-    BZM_CACHE_ENABLED (default true), BZM_CACHE_MAX_ENTRIES (2048),
-    BZM_CACHE_SWEEP_INTERVAL_SECONDS (30), BZM_CACHE_SWEEP_BATCH_SIZE (500).
+
+class HttpCache(CachePort):
+    """
+    Hosted: the cache lives behind the storage API (``/cache/entries``).
+
+    What backs the API (in-memory today, a shared cache service later) can change
+    without touching the MCP. Values go through ``cache_codec`` so a hit returns
+    the same types as a local cache. Reads never raise (a failure is a miss);
+    writes raise and ``get_or_load``'s best-effort store serves the value uncached.
+    Values larger than ``max_value_bytes`` are rejected here, without a request.
+    """
+
+    def __init__(
+            self,
+            base_url: str,
+            caller_token: str,
+            *,
+            timeout_seconds: float = DEFAULT_HTTP_TIMEOUT_SECONDS,
+            max_value_bytes: int = DEFAULT_HTTP_MAX_VALUE_BYTES,
+            transport: Optional[httpx.AsyncBaseTransport] = None,
+    ) -> None:
+        super().__init__()
+        self._base_url = base_url.rstrip("/")
+        self._headers = {"Authorization": f"Bearer {caller_token}"}
+        self._timeout = timeout_seconds
+        self._max_value_bytes = max_value_bytes
+        self._transport = transport
+        self._client: Optional[httpx.AsyncClient] = None
+        self._client_loop: Optional[asyncio.AbstractEventLoop] = None
+        self._degraded = False
+
+    def _http(self) -> httpx.AsyncClient:
+        # One pooled client per event loop (a pool cannot be shared across loops).
+        loop = asyncio.get_running_loop()
+        if self._client is None or self._client_loop is not loop or self._client.is_closed:
+            self._retire_client()
+            if self._transport is not None:
+                self._client = httpx.AsyncClient(transport=self._transport, timeout=self._timeout)
+            else:
+                self._client = httpx.AsyncClient(http2=True, timeout=self._timeout)
+            self._client_loop = loop
+        return self._client
+
+    def _retire_client(self) -> None:
+        client, loop = self._client, self._client_loop
+        self._client, self._client_loop = None, None
+        if client is None or client.is_closed:
+            return
+        # A client can only be closed on its own loop; a finished loop already
+        # released its connections.
+        if loop is not None and not loop.is_closed() and loop.is_running():
+            asyncio.run_coroutine_threadsafe(client.aclose(), loop)
+
+    def _url(self, key: str) -> str:
+        return f"{self._base_url}/cache/entries/{quote(key, safe='')}"
+
+    def _report_failure(self, operation: str, key: Optional[str], exc: BaseException) -> None:
+        status = exc.response.status_code if isinstance(exc, httpx.HTTPStatusError) else None
+        if status in (401, 403):
+            if not self._degraded:
+                logger.error(
+                    "remote cache rejected the MCP caller (HTTP %s): check the storage caller "
+                    "token. The cache is effectively disabled until this is fixed.", status,
+                )
+        elif not self._degraded:
+            logger.warning(
+                "remote cache %s failed (key %s); serving without cache until it recovers",
+                operation, key, exc_info=True,
+            )
+        else:
+            logger.debug("remote cache %s failed (key %s): %s", operation, key, exc)
+        self._degraded = True
+
+    def _report_success(self) -> None:
+        if self._degraded:
+            logger.info("remote cache recovered")
+            self._degraded = False
+
+    async def get(self, key: str) -> Optional[CacheEntry]:
+        try:
+            response = await self._http().get(self._url(key), headers=self._headers)
+            if response.status_code == 404:
+                self._report_success()
+                return None
+            response.raise_for_status()
+            body = response.json()
+            entry = CacheEntry(
+                value=cache_codec.decode(body.get("value")),
+                bound_to=body.get("bound_to"),
+                tag=body.get("tag"),
+            )
+        except Exception as exc:
+            self._report_failure("read", key, exc)
+            return None
+        self._report_success()
+        return entry
+
+    async def set(
+            self,
+            key: str,
+            value: Any,
+            ttl_seconds: float,
+            *,
+            bound_to: Optional[str] = None,
+            tag: Optional[str] = None,
+            copy_values: bool = True,
+    ) -> None:
+        # copy_values does not apply: a remote value is always a fresh copy.
+        if ttl_seconds is None or ttl_seconds <= 0:
+            await self.delete(key)
+            return
+        body = json.dumps(
+            {
+                "value": cache_codec.encode(value),
+                "ttl_seconds": float(ttl_seconds),
+                "bound_to": bound_to,
+                "tag": tag,
+            },
+            separators=(",", ":"),
+        ).encode("utf-8")
+        if len(body) > self._max_value_bytes:
+            raise CacheValueTooLarge(
+                f"Encoded cache value is {len(body)} bytes; the remote cache accepts {self._max_value_bytes}."
+            )
+        try:
+            response = await self._http().put(
+                self._url(key),
+                headers={**self._headers, "Content-Type": "application/json"},
+                content=body,
+            )
+            response.raise_for_status()
+        except Exception as exc:
+            self._report_failure("write", key, exc)
+            raise
+        self._report_success()
+
+    async def delete(self, key: str, *, if_tag: Optional[str] = None) -> bool:
+        params = {"if_tag": if_tag} if if_tag is not None else None
+        try:
+            response = await self._http().delete(self._url(key), headers=self._headers, params=params)
+            response.raise_for_status()
+            deleted = bool(response.json().get("deleted"))
+        except Exception as exc:
+            self._report_failure("delete", key, exc)
+            return False
+        self._report_success()
+        return deleted
+
+    async def clear(self) -> None:
+        try:
+            response = await self._http().delete(f"{self._base_url}/cache/entries", headers=self._headers)
+            response.raise_for_status()
+        except Exception as exc:
+            self._report_failure("clear", None, exc)
+            return
+        self._report_success()
+
+    async def close(self) -> None:
+        client, self._client, self._client_loop = self._client, None, None
+        if client is not None and not client.is_closed:
+            await client.aclose()
+
+
+def build_cache_from_env(
+        transport: str = "stdio",
+        storage_base_url: Optional[str] = None,
+        caller_token: Optional[str] = None,
+) -> CachePort:
+    """
+    Build the process cache from BZM_CACHE_* env vars.
+
+    - stdio: in-memory (BZM_CACHE_MAX_ENTRIES 2048, BZM_CACHE_SWEEP_INTERVAL_SECONDS 30,
+      BZM_CACHE_SWEEP_BATCH_SIZE 500).
+    - streamable-http: only the storage API cache (BZM_CACHE_HTTP_TIMEOUT_SECONDS 2,
+      BZM_CACHE_HTTP_MAX_VALUE_BYTES 1048576); no in-process state, so what backs
+      the API can change without touching the MCP.
+    - BZM_CACHE_ENABLED=false (default true): no cache in either transport.
     """
     if not _env_bool("BZM_CACHE_ENABLED", True):
         return NullCache()
+    if transport == "streamable-http":
+        if not storage_base_url or not caller_token:
+            raise ValueError("The hosted cache needs the storage API base URL and caller token.")
+        return HttpCache(
+            storage_base_url,
+            caller_token,
+            timeout_seconds=_env_number(
+                "BZM_CACHE_HTTP_TIMEOUT_SECONDS", DEFAULT_HTTP_TIMEOUT_SECONDS, float
+            ),
+            max_value_bytes=_env_number(
+                "BZM_CACHE_HTTP_MAX_VALUE_BYTES", DEFAULT_HTTP_MAX_VALUE_BYTES, int
+            ),
+        )
+    return _build_in_memory_cache()
+
+
+def _build_in_memory_cache() -> InMemoryTTLCache:
     return InMemoryTTLCache(
         max_entries=_env_number("BZM_CACHE_MAX_ENTRIES", DEFAULT_MAX_ENTRIES, int),
         sweep_interval_seconds=_env_number(

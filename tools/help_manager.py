@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import asyncio
+import logging
 from copy import deepcopy
 from itertools import chain
 from typing import Any, Dict, List
@@ -33,10 +34,23 @@ from tools.mcp_entrypoint import register_managed_tool
 from tools.utils import http_request, format_sanitized_traceback, run_as_task
 
 
+logger = logging.getLogger(__name__)
+
+
+def _help_key(*parts: str) -> str:
+    return build_cache_key(CacheScope.GLOBAL, "help", *parts)
+
+
 class HelpManager(Manager):
     # Help index and pages are static content shared by every caller: GLOBAL cache,
     # refreshed every 12 hours so long-lived hosted workers pick up doc updates.
     HELP_CACHE_TTL_SECONDS = 12 * 60 * 60
+    # The full index can be several MB, so it is cached as small pieces that each
+    # fit the remote cache limits and are read on their own:
+    #   help:categories                 categories and their subcategories
+    #   help:section:<cat>:<sub>        the entries of one subcategory
+    #   help:subnodes:<cat>             "<sub>:<help_id>" -> child pages, per category
+    HELP_PUBLISH_CONCURRENCY = 16
     MAX_BATCH_CONCURRENCY = 100
     CONTENT_TRUST = "trusted"
     CONTENT_TRUST_NOTE = (
@@ -50,18 +64,74 @@ class HelpManager(Manager):
         super().__init__(ctx)
 
     @staticmethod
-    async def get_help_index() -> Dict[str, Any]:
-        """
-        Help tree plus lookup indexes: ``tree``, ``items_index``, ``index_nodes``.
+    def split_help_index(help_index: Dict[str, Any]) -> Dict[str, Any]:
+        """Cut the full index into the cache pieces (key -> value) described above."""
+        tree = help_index.get("tree", {})
+        pieces: Dict[str, Any] = {
+            _help_key("categories"): [
+                {"category": category, "subcategories": list(subcategories.keys())}
+                for category, subcategories in tree.items()
+            ]
+        }
+        for category, subcategories in tree.items():
+            children_by_page: Dict[str, Any] = {}
+            for subcategory, items in subcategories.items():
+                pieces[_help_key("section", category, subcategory)] = items
+                for item in items:
+                    children = HelpManager.get_sub_nodes(help_index, category, subcategory, item["help_id"])
+                    if children:
+                        children_by_page[f"{subcategory}:{item['help_id']}"] = children
+            pieces[_help_key("subnodes", category)] = children_by_page
+        return pieces
 
-        Shared read-only (not copied per call, it is large): never mutate it; copy
-        whatever part is returned to a caller.
-        """
+    @staticmethod
+    async def _rebuild_help_pieces() -> Dict[str, Any]:
+        """Build the index once (single-flight), publish every piece, return them all."""
+
+        async def _build_and_publish() -> Dict[str, Any]:
+            pieces = HelpManager.split_help_index(await HelpManager._build_help_index())
+            cache = get_cache()
+            limit = asyncio.Semaphore(HelpManager.HELP_PUBLISH_CONCURRENCY)
+
+            async def _publish(key: str, value: Any) -> None:
+                async with limit:
+                    try:
+                        await cache.set(key, value, HelpManager.HELP_CACHE_TTL_SECONDS)
+                    except Exception as exc:
+                        logger.warning("help cache piece %s not stored: %s", key, exc)
+
+            categories_key = _help_key("categories")
+            await asyncio.gather(*(
+                _publish(key, value) for key, value in pieces.items() if key != categories_key
+            ))
+            # Categories last: once they are visible, the other pieces already are.
+            await _publish(categories_key, pieces[categories_key])
+            return pieces
+
         return await get_cache().get_or_load(
-            build_cache_key(CacheScope.GLOBAL, "help", "index"),
-            HelpManager._build_help_index,
+            _help_key("rebuild"),
+            _build_and_publish,
             HelpManager.HELP_CACHE_TTL_SECONDS,
-            store_policy=lambda _index: StorePlan(copy_values=False),
+            store_policy=lambda _pieces: None,  # the pieces are the cache; this only single-flights
+        )
+
+    @staticmethod
+    async def _help_piece(*parts: str, default: Any = None) -> Any:
+        key = _help_key(*parts)
+        entry = await get_cache().get(key)
+        if entry is not None:
+            return entry.value
+        return (await HelpManager._rebuild_help_pieces()).get(key, default)
+
+    @staticmethod
+    async def get_help_categories() -> List[Dict[str, Any]]:
+        return await HelpManager._help_piece("categories", default=[])
+
+    @staticmethod
+    async def _has_subcategory(category_id: str, subcategory_id: str) -> bool:
+        return any(
+            entry["category"] == category_id and subcategory_id in entry["subcategories"]
+            for entry in await HelpManager.get_help_categories()
         )
 
     @staticmethod
@@ -163,16 +233,8 @@ class HelpManager(Manager):
 
     @run_as_task()
     async def list_help_categories(self) -> BaseResult:
-        help_tree = (await HelpManager.get_help_index())["tree"]
-        categories = []
-        for key in help_tree.keys():
-            category = {
-                "category": key,
-                "subcategories": list(help_tree[key].keys()),
-            }
-            categories.append(category)
         return BaseResult(
-            result=categories,
+            result=await HelpManager.get_help_categories(),
             info=["A list of subcategories is provided for each category"]
         )
 
@@ -182,13 +244,13 @@ class HelpManager(Manager):
             return BaseResult(
                 error="Missing required argument 'subcategory_id_list'. Please provide a non-empty list."
             )
-        help_tree = (await HelpManager.get_help_index())["tree"]
         results = []
         for subcategory_id in subcategory_id_list:
             if subcategory_id == "":
                 subcategory_id = "self"
-            if category_id in help_tree.keys() and subcategory_id in help_tree[category_id]:
-                results.append(deepcopy(help_tree[category_id][subcategory_id]))
+            # Check the (small) categories piece first so unknown ids never trigger a rebuild.
+            if await HelpManager._has_subcategory(category_id, subcategory_id):
+                results.append(await HelpManager._help_piece("section", category_id, subcategory_id, default=[]))
             else:
                 results.append(
                     BaseResult(warning=[f"Category '{category_id}' and subcategory '{subcategory_id}' not found."]))
@@ -211,6 +273,13 @@ class HelpManager(Manager):
         return sub_nodes_items
 
     @staticmethod
+    async def _page_sub_nodes(category_id: str, subcategory_id: str, help_id: str) -> List[Any]:
+        if not any(entry["category"] == category_id for entry in await HelpManager.get_help_categories()):
+            return []
+        children_by_page = await HelpManager._help_piece("subnodes", category_id, default={})
+        return children_by_page.get(f"{subcategory_id}:{help_id}", [])
+
+    @staticmethod
     async def get_help_object(category_id: str, subcategory_id: str, help_id: str) -> Any:
         help_base_url = HELP_BASE_CONTENT_URL
         help_url = f"{help_base_url}/"  # BlazeMeter doesn't use category_id
@@ -230,9 +299,8 @@ class HelpManager(Manager):
                 # Expand or "Augment" the content ending with ""
                 if result.result is not None:
                     if result.result.get("help_content", "").endswith("In this section:"):
-                        help_index = await HelpManager.get_help_index()
-                        loaded["sub_nodes"] = HelpManager.get_sub_nodes(
-                            help_index, category_id, subcategory_id, help_id
+                        loaded["sub_nodes"] = await HelpManager._page_sub_nodes(
+                            category_id, subcategory_id, help_id
                         )
                     loaded["help_result"] = result.result
                 else:

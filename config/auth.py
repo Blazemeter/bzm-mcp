@@ -169,6 +169,12 @@ def run_streamable_http(mcp: FastMCP) -> None:
             port=mcp.settings.port,
             log_level=mcp.settings.log_level.lower(),
         )
-        await uvicorn.Server(config).serve()
+        try:
+            await uvicorn.Server(config).serve()
+        finally:
+            # Release pooled connections (e.g. the remote cache client) on shutdown.
+            from config.cache import get_cache
+
+            await get_cache().close()
 
     anyio.run(_serve)
