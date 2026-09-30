@@ -23,6 +23,7 @@ from config.auth import (
     HttpAuthProvider,
     StdioAuthProvider,
 )
+from config.cache import CachePort, build_cache_from_env
 from config.file_access import FileAccessPort, build_file_access
 from config.storage import (
     DefaultSessionScopeResolver,
@@ -31,7 +32,7 @@ from config.storage import (
     SessionScopeResolverPort,
     SessionStoragePort,
 )
-from config.tickets import TicketPort, build_ticket_client
+from config.tickets import TicketPort, build_ticket_client, storage_caller_token
 from config.token import BzmToken
 from tools.utils import ConfirmMode
 
@@ -49,6 +50,7 @@ class AppRuntime:
     scope_resolver: SessionScopeResolverPort
     user_config: dict[str, Any]
     tickets: Optional[TicketPort] = None
+    cache: Optional[CachePort] = None
 
     def resolve_user_config(self, ctx: Any) -> dict[str, Any]:
         user_config = dict(self.user_config)
@@ -105,10 +107,11 @@ def build_runtime(
         startup_confirmation_mode: ConfirmMode = ConfirmMode.DELETE,
 ) -> AppRuntime:
     """
-    Compose auth, file access, and session storage for the selected transport.
+    Compose auth, file access, session storage and cache for the selected transport.
 
     - stdio: process-lifetime ``startup_token`` and in-memory session storage.
     - streamable-http: request-scoped auth and storage API-backed partitions.
+    - cache: in-memory on stdio; the storage API cache (/cache) on streamable-http.
     """
     if transport == "stdio":
         stdio_user_config = {
@@ -124,6 +127,7 @@ def build_runtime(
             scope_resolver=DefaultSessionScopeResolver(),
             user_config=stdio_user_config,
             tickets=None,
+            cache=build_cache_from_env(),
         )
 
     if transport == "streamable-http":
@@ -144,6 +148,12 @@ def build_runtime(
             scope_resolver=DefaultSessionScopeResolver(),
             user_config={},
             tickets=build_ticket_client(transport, storage_base_url),
+            # Same MCP caller identity the ticket client uses.
+            cache=build_cache_from_env(
+                transport,
+                storage_base_url=storage_base_url,
+                caller_token=storage_caller_token(),
+            ),
         )
 
     raise ValueError(f"Unknown transport: {transport}")

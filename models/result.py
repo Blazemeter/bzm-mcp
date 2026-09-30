@@ -16,7 +16,7 @@ limitations under the License.
 from typing import Any, Optional, List
 
 from mcp.types import CallToolResult, TextContent
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 
 class BaseResult(BaseModel):
     result: Optional[List[Any]] = Field(description="Result List", default=None)
@@ -29,6 +29,16 @@ class BaseResult(BaseModel):
     tool_call_finished_at: Optional[str] = Field(description="ISO timestamp when tool action finished", default=None)
     tool_call_duration_ms: Optional[int] = Field(description="Tool action duration in milliseconds", default=None)
     debug: Optional[dict[str, Any]] = Field(description="Optional debug metrics for tool calls", default=None)
+    # In-process only (never serialized): (task_id, scope) when this result is the
+    # snapshot of a task that is still running.
+    _pending_task: Optional[tuple[str, Any]] = PrivateAttr(default=None)
+
+    def mark_pending_task(self, task_id: str, scope: Any) -> None:
+        self._pending_task = (task_id, scope)
+
+    @property
+    def pending_task(self) -> Optional[tuple[str, Any]]:
+        return self._pending_task
 
     def append_warnings(self, messages: List[str]):
         if not self.warning:
