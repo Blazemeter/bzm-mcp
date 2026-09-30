@@ -39,6 +39,10 @@ taken only from the validated chat session of the current tool call:
    `blazemeter_session` action `get`, once per conversation). The entrypoint checks it
    is ACTIVE and owned by that user (`AppRuntime.sessions`: in memory on stdio,
    storage-api `/sessions` on streamable-http) and records the keep-alive.
+   `session_id` is a top-level parameter in each tool's published input schema:
+   required on every tool, optional on `blazemeter_help`/`blazemeter_skills`, absent
+   on `blazemeter_session`. A call without it still reaches the gate, which answers
+   `SESSION_REQUIRED` with the recovery guidance.
 3. Only then are identity and session bound in request-scoped ContextVars; outside a
    validated call the resolver fails closed (no shared `anonymous`/`default` partition).
 

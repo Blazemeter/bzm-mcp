@@ -432,3 +432,53 @@ def test_real_skills_tool_works_without_api_key_or_session():
     assert body.get("error") is None
     assert body.get("error_code") is None
     assert body["result"]
+
+
+# --- published input schema -----------------------------------------------------
+
+
+def _published_schemas():
+    from mcp.server.fastmcp import FastMCP
+
+    from server import register_tools
+
+    mcp = FastMCP("schema-check")
+    register_tools(mcp, build_runtime("stdio"))
+    return mcp, {tool.name: tool.inputSchema for tool in asyncio.run(mcp.list_tools())}
+
+
+def test_session_id_is_a_required_parameter_in_the_published_schema():
+    _, schemas = _published_schemas()
+    for name, schema in schemas.items():
+        if name in {SESSION_TOOL_NAME, "blazemeter_help", "blazemeter_skills"}:
+            continue
+        assert "session_id" in schema.get("required", []), name
+        prop = schema["properties"]["session_id"]
+        assert prop["type"] == "string"
+        assert SESSION_TOOL_NAME in prop["description"]
+
+
+def test_public_tools_declare_session_id_as_optional_and_the_session_tool_does_not_have_it():
+    _, schemas = _published_schemas()
+    for name in ("blazemeter_help", "blazemeter_skills"):
+        assert "session_id" in schemas[name]["properties"]
+        assert "session_id" not in schemas[name].get("required", [])
+    assert "session_id" not in schemas[SESSION_TOOL_NAME]["properties"]
+
+
+def test_missing_session_id_reaches_the_gate_instead_of_a_bare_validation_error():
+    mcp, _ = _published_schemas()
+    arg_model = mcp._tool_manager.get_tool("blazemeter_tests").fn_metadata.arg_model
+    # FastMCP validates with this model: it must accept the call so the gate answers SESSION_REQUIRED.
+    arg_model.model_validate({"arguments": {"action": "read", "args": {"test_id": 1}}})
+
+
+def test_declared_session_id_parameter_is_used_and_wins_over_a_nested_one(harness):
+    session_id = harness["open_session"]()  # leaves ALICE as the current token
+    other = harness["open_session"]()
+    probe = harness["mcp"].tools["probe"]
+    result = asyncio.run(
+        probe({"action": "whoami", "args": {"session_id": other}}, None, session_id=session_id)
+    )
+    assert result.structuredContent.get("error") is None
+    assert harness["seen"][-1][1].session_id == session_id

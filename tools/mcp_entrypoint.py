@@ -19,10 +19,11 @@ import logging
 from collections.abc import Sequence
 from contextlib import nullcontext
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Dict, Optional, Set, Union
+from typing import Annotated, Any, Awaitable, Callable, Dict, Optional, Set, Union
 
 import httpx
 from mcp.server.fastmcp import Context
+from pydantic import Field
 
 from config.blazemeter import SUPPORT_MESSAGE
 from config.identity import Identity, IdentityError
@@ -66,6 +67,17 @@ SESSION_HINT = (
     "SESSION_REQUIRED, SESSION_INVALID or SESSION_EXPIRED, get a new session_id, use it from then on, "
     "and re-run the calls whose tasks or dataframes you still need."
 )
+SESSION_ID_DESCRIPTION = (
+    f"Chat session id returned by `{SESSION_TOOL_NAME}` action 'get', called once at the start of "
+    "this conversation. Pass the same value in every call of this conversation; never one from "
+    "another conversation."
+)
+PUBLIC_SESSION_ID_DESCRIPTION = (
+    f"Optional: this conversation's session id from `{SESSION_TOOL_NAME}`, when it already has one."
+)
+# Module-level so the (string) annotations of the generated tool functions resolve.
+SessionIdParam = Annotated[Optional[str], Field(description=SESSION_ID_DESCRIPTION)]
+PublicSessionIdParam = Annotated[Optional[str], Field(description=PUBLIC_SESSION_ID_DESCRIPTION)]
 PUBLIC_SESSION_HINT = (
     f"- Session: works without an API key or `{SESSION_ID_ARG}`. When the conversation already has a "
     f"`{SESSION_ID_ARG}` from `{SESSION_TOOL_NAME}`, pass it too so long-running results stay in that session."
@@ -125,6 +137,7 @@ async def _enter_call(
         token: Optional[BzmToken],
         requires_session: bool,
         public: bool,
+        explicit_session_id: Optional[str] = None,
 ) -> Union[BaseResult, _CallContext]:
     """
     Validate who is calling and in which session, or return the error to send back.
@@ -136,7 +149,10 @@ async def _enter_call(
     Public tools (static help/skills content) never block: without a valid token
     or session they run with no identity and no session, plus a warning.
     """
-    requested = args.pop(SESSION_ID_ARG, None)
+    # The declared top-level parameter wins; a session_id nested in `arguments`
+    # (older clients) is still accepted. Never forwarded to the managers.
+    nested_session_id = args.pop(SESSION_ID_ARG, None)
+    requested = explicit_session_id if explicit_session_id is not None else nested_session_id
 
     inherited_identity = current_identity()
     if inherited_identity is not None:
@@ -215,14 +231,10 @@ def register_managed_tool(
     elif requires_session:
         description = f"{description.rstrip()}\n{SESSION_HINT}\n"
 
-    @mcp.tool(name=name, description=description)
-    @tool_result(
-        excluded_actions=excluded_actions,
-        disable_materialization=True,
-    )
-    async def _tool(
-            arguments: Dict[str, Any] = None,
-            ctx: Context = None,
+    async def _handle(
+            arguments: Optional[Dict[str, Any]],
+            ctx: Optional[Context],
+            session_id: Optional[str],
     ) -> BaseResult:
         action, args = normalize_action_args(arguments)
         if not action:
@@ -240,7 +252,7 @@ def register_managed_tool(
         runtime.configure_context(ctx)
         token = runtime.auth.get_token(ctx)
 
-        entered = await _enter_call(runtime, args, token, requires_session, public)
+        entered = await _enter_call(runtime, args, token, requires_session, public, session_id)
         if isinstance(entered, BaseResult):
             # TODO(telemetry): gate rejections (AUTH_*, SESSION_*) return before
             # run_tool_with_runtime, so they produce no span/metric. Record them
@@ -277,4 +289,55 @@ def register_managed_tool(
                 result.session_id = entered.session.session_id
         return result
 
-    return _tool
+    # The tool signature is the published input schema: expose session_id as a
+    # parameter of its own so agents see it (required for session tools, optional
+    # for public ones, absent on the session tool itself).
+    if public:
+        async def _tool(
+                arguments: Dict[str, Any] = None,
+                ctx: Context = None,
+                session_id: PublicSessionIdParam = None,
+        ) -> BaseResult:
+            return await _handle(arguments, ctx, session_id)
+    elif requires_session:
+        async def _tool(
+                arguments: Dict[str, Any] = None,
+                ctx: Context = None,
+                session_id: SessionIdParam = None,
+        ) -> BaseResult:
+            return await _handle(arguments, ctx, session_id)
+    else:
+        async def _tool(
+                arguments: Dict[str, Any] = None,
+                ctx: Context = None,
+        ) -> BaseResult:
+            return await _handle(arguments, ctx, None)
+
+    registered = mcp.tool(name=name, description=description)(
+        tool_result(excluded_actions=excluded_actions, disable_materialization=True)(_tool)
+    )
+    if requires_session and not public:
+        _declare_session_id_required(mcp, name)
+    return registered
+
+
+def _declare_session_id_required(mcp: Any, name: str) -> None:
+    """
+    Publish ``session_id`` as a required string in the tool's input schema.
+
+    The Python parameter keeps a default on purpose: a call without it reaches the
+    gate, which answers SESSION_REQUIRED with the recovery guidance instead of a
+    bare schema validation error.
+    """
+    manager = getattr(mcp, "_tool_manager", None)
+    tool = manager.get_tool(name) if manager is not None else None
+    if tool is None:  # test doubles that are not FastMCP
+        return
+    tool.parameters.setdefault("properties", {})[SESSION_ID_ARG] = {
+        "type": "string",
+        "title": "Session Id",
+        "description": SESSION_ID_DESCRIPTION,
+    }
+    required = tool.parameters.setdefault("required", [])
+    if SESSION_ID_ARG not in required:
+        required.append(SESSION_ID_ARG)
