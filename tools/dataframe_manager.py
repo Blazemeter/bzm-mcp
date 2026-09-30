@@ -33,6 +33,7 @@ from config.storage import (
     SessionStoragePort,
     resolve_session_scope,
 )
+from config.session_context import SessionContextMissing
 from config.token import BzmToken
 from models.result import BaseResult
 from tools.utils import generate_simple_id, SIMPLE_ID_LENGTH
@@ -127,6 +128,8 @@ def _deserialize_record(payload: Dict[str, Any]) -> "DataFrameRecord":
         schema_hash=str(payload.get("schema_hash") or _schema_hash(schema_rows)),
         json_size_chars=int(payload.get("json_size_chars") or 0),
         dataframe=dataframe,
+        session_id=str(payload.get("session_id") or ""),
+        owner_id=str(payload.get("owner_id") or ""),
     )
 
 
@@ -239,6 +242,9 @@ class DataFrameRecord:
     schema_hash: str
     json_size_chars: int
     dataframe: pl.DataFrame
+    # Chat session that created it (the partition it lives in); kept in its metadata.
+    session_id: str = ""
+    owner_id: str = ""
 
     def to_metadata(self, include_schema: bool = True) -> Dict[str, Any]:
         metadata = asdict(self)
@@ -461,6 +467,8 @@ async def _register_dataframe_instance(
             schema_hash=_schema_hash(schema_rows),
             json_size_chars=json_size_chars,
             dataframe=dataframe,
+            session_id=scope.mcp_session_id,
+            owner_id=scope.user_id,
         )
         working_set.sql_context.register(table_name, dataframe)
         working_set.dataframes[dataframe_id] = record
@@ -584,7 +592,11 @@ async def finalize_tool_result(
         return BaseResult(error=MISSING_STORAGE_ERROR)
 
     if scope is None:
-        scope = resolve_session_scope(ctx, token=token, scope_resolver=scope_resolver)
+        try:
+            scope = resolve_session_scope(ctx, token=token, scope_resolver=scope_resolver)
+        except SessionContextMissing:
+            # Public tools running without a session keep results inline.
+            return result
     try:
         return await materialize_large_result_if_needed(
             base_result=result,

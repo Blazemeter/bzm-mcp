@@ -70,7 +70,12 @@ docker run --rm -p 8000:8000 \
 | `FASTMCP_PORT` | Listen port (HTTP only). Also accepts `PORT` | `8000` |
 | `FASTMCP_STREAMABLE_HTTP_PATH` | HTTP path for the MCP endpoint | `/mcp` |
 | `BZM_STORAGE_API_BASE_URL` | Storage Service base URL (required for streamable-http). Session partitions and upload-ticket mint use this origin. | — |
+| `BZM_MCP_STORAGE_CALLER_TOKEN` | Bearer token MCP uses for storage-api sessions and partitions. Must match storage-api `BZM_STORAGE_MCP_CALLER_TOKEN`. Falls back to `BZM_MCP_TICKET_STORAGE_CALLER_TOKEN`; one of them is required for streamable-http. | — |
 | `BZM_MCP_TICKET_STORAGE_CALLER_TOKEN` | Bearer token MCP uses when calling storage-api mint/credential endpoints. Must match storage-api `BZM_STORAGE_MCP_CALLER_TOKEN`. Required for streamable-http. | — |
+| `BZM_MCP_SESSION_STORAGE_TIMEOUT_SECONDS` | Timeout for storage-api session and partition calls | `15` |
+| `BZM_MCP_IDENTITY_CACHE_TTL_SECONDS` | Reuse window for a verified token once the cache is integrated (not active yet) | `300` |
+| `BZM_MCP_MAX_PARALLEL_TASKS` | Async tasks running at once per process | `10` |
+| `BZM_MCP_MAX_SESSION_TASK_CACHES` | In-process task caches kept before idle ones are evicted | `256` |
 | `BZM_MCP_UPLOAD_PUBLIC_BASE_URL` | Public origin returned in mint results (`{base}/services/uploads/{id}`). Required for streamable-http. Production is `https://mcp.blazemeter.com`. | — |
 | `BZM_MCP_TICKET_STORAGE_TIMEOUT_SECONDS` | Timeout for storage-api mint and credential writes | `2` |
 

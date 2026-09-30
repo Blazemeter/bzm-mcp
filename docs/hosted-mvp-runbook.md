@@ -30,8 +30,35 @@ async tasks share the same session partitions as dataframes.
 Tool registrations call `run_tool_with_runtime(runtime, ...)` so tracing stays
 unaware of dataframe types. There is no process-global dataframe store.
 
-Partition key: `{user_id}/{mcp_session_id}` via `DefaultSessionScopeResolver`
-(`Mcp-Session-Id` header, then FastMCP `ctx.session_id`).
+Partition key: `{user_id}/{mcp_session_id}` via `DefaultSessionScopeResolver`,
+taken only from the validated chat session of the current tool call:
+
+1. Every tool call verifies the token with BlazeMeter `GET /user`
+   (`AppRuntime.identity`); `user_id` is the verified BlazeMeter user id.
+2. Every tool except `blazemeter_session` requires `session_id` (from
+   `blazemeter_session` action `get`, once per conversation). The entrypoint checks it
+   is ACTIVE and owned by that user (`AppRuntime.sessions`: in memory on stdio,
+   storage-api `/sessions` on streamable-http) and records the keep-alive.
+3. Only then are identity and session bound in request-scoped ContextVars; outside a
+   validated call the resolver fails closed (no shared `anonymous`/`default` partition).
+
+Sessions are bound to the credential they were opened with (opaque; today the
+BlazeMeter `Authorization` value). The storage-api keeps only its HMAC and every
+storage call (touch, partitions, mint, credentials) sends it in `X-Bzm-Credential`;
+a different credential, even a rotated key of the same user, is `SESSION_INVALID`.
+
+Hosted session lifecycle (owned by the storage-api): 7 days without a keep-alive →
+`SESSION_EXPIRED` ("get a new session"); one hour after that first answer the session
+and its partitions are purged, and the id then answers `SESSION_INVALID`, which asks
+for a new session as well. stdio sessions last as long as the process.
+
+`blazemeter_help` and `blazemeter_skills` are public: no API key needed and
+`session_id` optional. With a valid token + session they run in that session;
+otherwise they run inline without a session (no task, no partition) and add a warning.
+
+`Mcp-Session-Id` / FastMCP `ctx.session_id` are transport sessions and are not used.
+Errors: `SESSION_REQUIRED`, `SESSION_INVALID` (unknown or someone else's),
+`SESSION_EXPIRED`, `AUTH_INVALID`, `AUTH_UNAVAILABLE`.
 
 ## Session Storage Service
 

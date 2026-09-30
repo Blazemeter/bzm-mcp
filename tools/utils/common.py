@@ -451,14 +451,16 @@ async def execute_with_task_management(
     # Deferred import avoids circular dependency: utils → async_task_manager → dataframe_manager → utils.
     from config.storage import SessionScope
     from tools.async_task_manager import (
-        DEFAULT_SCOPE,
         submit_task,
         get_task_record,
         remove_task,
         task_snapshot,
     )
 
-    resolved_scope = scope if isinstance(scope, SessionScope) else DEFAULT_SCOPE
+    if not isinstance(scope, SessionScope):
+        # Fail closed: a task without its chat session would land in a shared partition.
+        return BaseResult(error="Task could not be scheduled: no session scope for this call.")
+    resolved_scope = scope
     wait_started = time.monotonic()
     try:
         task_id = await submit_task(
@@ -543,9 +545,15 @@ def run_as_task(
                 ),
             }
 
+            from config.session_context import SessionContextMissing
             from tools.async_task_manager import session_scope_from_manager
 
-            scope = session_scope_from_manager(self)
+            try:
+                scope = session_scope_from_manager(self)
+            except SessionContextMissing:
+                # Only public tools (help/skills) run without a session: no task and
+                # no partition, just run inline. Gated tools always have a session.
+                return await func(self, *args, **kwargs)
             token = _task_management_enabled.set(True)
             try:
                 coro_factory = lambda: func(self, *args, **kwargs)

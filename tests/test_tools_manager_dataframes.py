@@ -15,21 +15,34 @@ limitations under the License.
 """
 from types import SimpleNamespace
 
+import pytest
+
+from config.session_context import SessionContextMissing
 from config.storage import DefaultSessionScopeResolver, SessionScope
 from config.token import BzmToken
-from tests.conftest import make_ctx, run_async
+from tests.conftest import make_ctx, run_async, use_session
 from tools.dataframe_manager import register_dataframe, resolve_session_scope
 from tools.tools_manager import ToolsManager
 
 
 class TestResolveSessionScope:
-    def test_uses_token_id_and_ctx_session(self):
+    @pytest.mark.no_session_context
+    def test_uses_only_the_validated_session_not_token_or_transport(self):
         token = BzmToken("api-key-id", "secret")
-        ctx = SimpleNamespace(session_id="mcp-abc")
-        assert resolve_session_scope(ctx, token) == SessionScope("api-key-id", "mcp-abc")
+        ctx = SimpleNamespace(
+            session_id="mcp-abc",
+            request_context=SimpleNamespace(
+                request=SimpleNamespace(headers={"mcp-session-id": "mcp-abc"})
+            ),
+        )
+        with use_session(user_id="bzm-user-7", session_id="bzs_" + "a" * 32):
+            assert resolve_session_scope(ctx, token) == SessionScope("bzm-user-7", "bzs_" + "a" * 32)
 
-    def test_defaults_when_missing(self):
-        assert resolve_session_scope(None, None) == SessionScope("anonymous", "default")
+    @pytest.mark.no_session_context
+    def test_fails_closed_without_a_validated_session(self):
+        # No more "anonymous"/"default" shared partition.
+        with pytest.raises(SessionContextMissing):
+            resolve_session_scope(None, None)
 
 
 class TestToolsManagerDataframesAgainstStorage:

@@ -469,6 +469,7 @@ A comprehensive integration tool that provides AI assistants with full programma
 
 ## General Rules
 
+- **Session first (CRITICAL)**: At the start of each conversation call `blazemeter_session` with action `get` once and keep the returned `session_id` in context. Pass that `session_id` in every call to every other BlazeMeter tool. Never reuse a `session_id` from another conversation. If a tool returns error_code `SESSION_REQUIRED`, `SESSION_INVALID` or `SESSION_EXPIRED`, call `blazemeter_session` `get` again, use the new `session_id` from then on, and re-run the calls whose tasks or dataframes you still need.
 - **If you have the information needed to call a tool action with its arguments, do so.**
 - **Read action always gets more information** about a particular item than the list action. List only displays minimal information.
 - **Read the current user information at startup** to learn the username, default account, workspace and project, and other important information.

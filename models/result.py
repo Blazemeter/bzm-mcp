@@ -23,6 +23,14 @@ class BaseResult(BaseModel):
     total: Optional[int] = Field(description="Total available records", default=None)
     has_more: Optional[bool] = Field(description="More records per page to list", default=None)
     error: Optional[str] = Field(description="Error message", default=None)
+    error_code: Optional[str] = Field(
+        description="Machine-readable error code (e.g. SESSION_REQUIRED, SESSION_INVALID, SESSION_EXPIRED)",
+        default=None,
+    )
+    session_id: Optional[str] = Field(
+        description="Chat session this call ran in; keep passing it as session_id in every tool call",
+        default=None,
+    )
     info: Optional[List[str]] = Field(description="Info messages", default=None)
     warning: Optional[List[str]] = Field(description="Warning messages", default=None)
     tool_call_started_at: Optional[str] = Field(description="ISO timestamp when tool action started", default=None)

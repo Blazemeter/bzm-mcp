@@ -24,6 +24,8 @@ from typing import Any, Literal
 
 import httpx
 
+from config.env import env_str
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_UPLOAD_PUBLIC_BASE_URL = "http://127.0.0.1:8090"
@@ -92,7 +94,15 @@ class HttpTicketClient(TicketPort):
         self._owned_http: httpx.AsyncClient | None = None
 
     def _headers(self) -> dict[str, str]:
-        return {"Authorization": f"Bearer {self._caller_token}"}
+        from config.session import CREDENTIAL_HEADER
+        from config.session_context import current_credential
+
+        headers = {"Authorization": f"Bearer {self._caller_token}"}
+        # The storage API verifies the promoted session against this credential.
+        credential = current_credential()
+        if credential:
+            headers[CREDENTIAL_HEADER] = credential
+        return headers
 
     def _client(self) -> httpx.AsyncClient:
         if self._http is not None:
@@ -198,6 +208,11 @@ class HttpTicketClient(TicketPort):
         return minted
 
 
+def storage_caller_token() -> str:
+    """MCP caller identity for the storage API; sessions, partitions and tickets share it."""
+    return env_str("STORAGE_CALLER_TOKEN") or env_str("TICKET_STORAGE_CALLER_TOKEN")
+
+
 def build_ticket_client(
     transport: Literal["stdio", "streamable-http"],
     storage_base_url: str | None = None,
@@ -213,10 +228,11 @@ def build_ticket_client(
     timeout_seconds = (
         float(timeout_raw) if timeout_raw.strip() else DEFAULT_TICKET_TIMEOUT_SECONDS
     )
-    caller_token = os.getenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "").strip()
+    caller_token = storage_caller_token()
     if not caller_token:
         raise ValueError(
-            "BZM_MCP_TICKET_STORAGE_CALLER_TOKEN is required for streamable-http transport."
+            "BZM_MCP_STORAGE_CALLER_TOKEN (or BZM_MCP_TICKET_STORAGE_CALLER_TOKEN) is required "
+            "for streamable-http transport."
         )
     public_base_url = os.getenv("BZM_MCP_UPLOAD_PUBLIC_BASE_URL", "").strip()
     if not public_base_url:
