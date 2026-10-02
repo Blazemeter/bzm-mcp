@@ -216,6 +216,8 @@ def register(mcp, runtime: AppRuntime):
         mcp,
         runtime,
         name=f"{TOOLS_PREFIX}_skills",
+        # Static content: usable without an API key; session_id optional.
+        public=True,
         description="""
 Operations to obtain Skills around BlazeMeter.
 **Note**: If you need to call this action multiple times (even with different parameters), 
