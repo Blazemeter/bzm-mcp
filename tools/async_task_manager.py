@@ -615,9 +615,5 @@ async def cancel_task(
 
 
 def session_scope_from_manager(manager: Any) -> SessionScope:
-    """Resolve Storage partition keys from a Manager instance (token + ctx)."""
-    return resolve_session_scope(
-        getattr(manager, "ctx", None),
-        token=getattr(manager, "token", None),
-        scope_resolver=getattr(manager, "scope_resolver", None),
-    )
+    """Storage partition keys of the validated session (using the manager's resolver, if any)."""
+    return resolve_session_scope(scope_resolver=getattr(manager, "scope_resolver", None))

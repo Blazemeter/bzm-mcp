@@ -83,8 +83,6 @@ class TestMaterializeWiring:
                 origin_manager="blazemeter_tests",
                 session_storage=in_memory_session_storage,
                 scope_resolver=DefaultSessionScopeResolver(),
-                token=token,
-                ctx=ctx,
             )
         )
         assert finalized.error is None
@@ -144,8 +142,6 @@ class TestMaterializeWiring:
                 args={},
                 origin_manager="blazemeter_tools",
                 session_storage=in_memory_session_storage,
-                token=token,
-                ctx=ctx,
                 excluded_actions={"dataframes_list"},
             )
         )

@@ -74,6 +74,10 @@ docker run --rm -p 8000:8000 \
 | `BZM_MCP_TICKET_STORAGE_CALLER_TOKEN` | Bearer token MCP uses when calling storage-api mint/credential endpoints. Must match storage-api `BZM_STORAGE_MCP_CALLER_TOKEN`. Required for streamable-http. | — |
 | `BZM_MCP_SESSION_STORAGE_TIMEOUT_SECONDS` | Timeout for storage-api session and partition calls | `15` |
 | `BZM_MCP_IDENTITY_CACHE_TTL_SECONDS` | Reuse window for a verified token once the cache is integrated (not active yet) | `300` |
+| `BZM_MCP_IDENTITY_TIMEOUT_SECONDS` | Timeout for the BlazeMeter `GET /user` check that runs before every tool call | `10` |
+| `BZM_MCP_SESSION_IDLE_TIMEOUT_SECONDS` | stdio only: a session expires after this long without a call (hosted: storage-api `BZM_STORAGE_SESSION_IDLE_TIMEOUT_SECONDS`) | `604800` |
+| `BZM_MCP_SESSION_PURGE_GRACE_SECONDS` | stdio only: an expired session and its partition are purged this long after the first "expired" answer | `3600` |
+| `BZM_MCP_SESSION_SWEEP_INTERVAL_SECONDS` | stdio only: minimum seconds between expiry/purge sweeps (run on session calls) | `60` |
 | `BZM_MCP_MAX_PARALLEL_TASKS` | Async tasks running at once per process | `10` |
 | `BZM_MCP_MAX_SESSION_TASK_CACHES` | In-process task caches kept before idle ones are evicted | `256` |
 | `BZM_MCP_UPLOAD_PUBLIC_BASE_URL` | Public origin returned in mint results (`{base}/services/uploads/{id}`). Required for streamable-http. Production is `https://mcp.blazemeter.com`. | — |

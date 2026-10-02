@@ -33,7 +33,8 @@ from config.storage import (
     SessionScopeResolverPort,
     SessionStoragePort,
 )
-from config.tickets import TicketPort, build_ticket_client, storage_caller_token
+from config.service_auth import service_caller_token
+from config.tickets import TicketPort, build_ticket_client
 from config.token import BzmToken
 from tools.utils import ConfirmMode
 
@@ -122,16 +123,18 @@ def build_runtime(
             "token": startup_token,
             "confirmation_mode": startup_confirmation_mode.name,
         }
+        stdio_storage = InMemorySessionStorageProvider()
         return AppRuntime(
             transport=transport,
             auth=StdioAuthProvider(startup_token),
-            storage=InMemorySessionStorageProvider(),
+            storage=stdio_storage,
             file_access=build_file_access(transport),
             scope_resolver=DefaultSessionScopeResolver(),
             user_config=stdio_user_config,
             tickets=None,
             identity=BlazeMeterIdentityVerifier(),
-            sessions=InMemorySessionProvider(),
+            # A purged session releases its partition.
+            sessions=InMemorySessionProvider(on_purge=stdio_storage.discard_session),
         )
 
     if transport == "streamable-http":
@@ -140,7 +143,7 @@ def build_runtime(
             raise ValueError(
                 "BZM_STORAGE_API_BASE_URL is required for streamable-http transport."
             )
-        caller_token = storage_caller_token()
+        caller_token = service_caller_token()
         if not caller_token:
             raise ValueError(
                 "BZM_MCP_STORAGE_CALLER_TOKEN (or BZM_MCP_TICKET_STORAGE_CALLER_TOKEN) is required "

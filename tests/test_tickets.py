@@ -38,6 +38,7 @@ class _FakeResponse:
 class _FakeAsyncClient:
     def __init__(self, response):
         self.response = response
+        self.is_closed = False
         self.calls = []
 
     async def request(self, method, url, headers=None, json=None):

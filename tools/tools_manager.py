@@ -75,7 +75,7 @@ class ToolsManager(Manager):
         self.scope_resolver = scope_resolver
 
     def _scope(self) -> SessionScope:
-        return self.scope_resolver.resolve(self.ctx, self.token)
+        return self.scope_resolver.resolve()
 
     @staticmethod
     def _poll_args_error(wait_for_terminal_ms: int, poll_interval_ms: int) -> Optional[BaseResult]:

@@ -17,14 +17,20 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
-from config.blazemeter import USER_ENDPOINT
-from config.env import env_int
+import httpx
+
+from config.blazemeter import BZM_API_BASE_URL, NO_API_TOKEN_MESSAGE, USER_ENDPOINT
+from config.env import env_float, env_int
+from config.http_clients import SharedAsyncClient
 from config.token import BzmToken
 
 # How long a successful verification may be reused once the cache is integrated.
 IDENTITY_CACHE_TTL_SECONDS = env_int("IDENTITY_CACHE_TTL_SECONDS", 300, minimum=0)
+# Every tool call waits for this check, so it gets its own short budget
+# instead of the general API timeout.
+IDENTITY_TIMEOUT_SECONDS = env_float("IDENTITY_TIMEOUT_SECONDS", 10.0, minimum=0.1)
 
 
 @dataclass(frozen=True)
@@ -48,7 +54,7 @@ class InvalidCredentials(IdentityError):
 
 
 class IdentityUnavailable(IdentityError):
-    """BlazeMeter could not be reached; never cached, the next call retries."""
+    """Identity could not be confirmed (outage, unexpected status or body); never cached."""
 
     code = "AUTH_UNAVAILABLE"
     public_detail = "Could not verify credentials with BlazeMeter. Try again."
@@ -61,7 +67,27 @@ class IdentityPort(ABC):
 
 
 class BlazeMeterIdentityVerifier(IdentityPort):
-    """Resolve the BlazeMeter user behind a token with ``GET /user`` on every call."""
+    """
+    Resolve the BlazeMeter user behind a token with ``GET /user`` on every call.
+
+    Classified by the real HTTP status (``api_request`` folds every failure into
+    one error string): only 401/403 mean the credentials are invalid. Anything
+    else (404, 5xx, network, an unexpected body) is IdentityUnavailable, so an
+    outage is never reported to the agent as a bad API key.
+    """
+
+    def __init__(
+            self,
+            transport: Optional[httpx.AsyncBaseTransport] = None,
+            timeout_seconds: float = IDENTITY_TIMEOUT_SECONDS,
+    ) -> None:
+        options: dict[str, Any] = {"base_url": BZM_API_BASE_URL, "timeout": timeout_seconds}
+        if transport is not None:
+            options["transport"] = transport
+        else:
+            options["http2"] = True
+        # Shared: this runs before every tool call.
+        self._http = SharedAsyncClient(lambda: httpx.AsyncClient(**options))
 
     async def verify(self, token: Optional[BzmToken]) -> Identity:
         # TODO(cache): once CachePort (CACHE_METHOD) is integrated, reuse successful
@@ -69,21 +95,44 @@ class BlazeMeterIdentityVerifier(IdentityPort):
         # credential (id:secret), never on the token id alone: a key without the
         # secret would let a forged "id:anything" token inherit a cached identity.
         # Do not cache failures from IdentityUnavailable.
-        from tools.utils import api_request
-
         if token is None:
-            raise InvalidCredentials(
-                "No API token. Set BLAZEMETER_API_KEY env var with file path or API_KEY_ID and "
-                "API_KEY_SECRET secrets in docker catalog configuration."
-            )
+            raise InvalidCredentials(NO_API_TOKEN_MESSAGE)
+        from tools.utils.common import user_agent
+
         try:
-            response = await api_request(token, "GET", USER_ENDPOINT)
-        except Exception as exc:
+            response = await self._http.get().get(
+                USER_ENDPOINT,
+                headers={"Authorization": token.as_basic_auth(), "User-Agent": user_agent},
+            )
+        except httpx.HTTPError as exc:
             raise IdentityUnavailable() from exc
-        if response.error:
-            raise InvalidCredentials(str(response.error))
-        user = response.result[0] if response.result else None
+
+        if response.status_code in (401, 403):
+            raise InvalidCredentials(_error_message(response))
+        if response.status_code != 200:
+            raise IdentityUnavailable()
+        try:
+            result = response.json().get("result")
+        except (ValueError, AttributeError) as exc:
+            raise IdentityUnavailable() from exc
+        user = result[0] if isinstance(result, list) and result else result
         user_id = user.get("id") if isinstance(user, dict) else None
         if user_id is None or not str(user_id).strip():
-            raise InvalidCredentials()
+            raise IdentityUnavailable()  # 200 without a user: BlazeMeter's problem, not the key's
         return Identity(user_id=str(user_id).strip())
+
+
+def _error_message(response: httpx.Response) -> Optional[str]:
+    """BlazeMeter's reason for a rejection (``error.message`` or ``message``), if any."""
+    try:
+        payload = response.json()
+    except ValueError:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    error = payload.get("error")
+    message = error.get("message") if isinstance(error, dict) else error
+    message = message or payload.get("message")
+    if not isinstance(message, str) or not message.strip():
+        return None
+    return f"{InvalidCredentials.public_detail} BlazeMeter: {message.strip()[:200]}"

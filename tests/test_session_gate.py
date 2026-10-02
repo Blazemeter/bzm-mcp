@@ -119,14 +119,14 @@ def harness():
                 seen.append((current_identity(), current_session()))
                 return BaseResult(result=[{"ok": True}])
             case "store":
-                scope = resolve_session_scope(ctx)
+                scope = resolve_session_scope()
                 await register_dataframe(
                     result=[{"row": 1}], origin_manager="t", origin_action="store",
                     json_size_chars=10, session_storage=storage, scope=scope,
                 )
                 return BaseResult(result=[{"stored": True}])
             case "count":
-                listed = await list_dataframes_metadata(storage, resolve_session_scope(ctx))
+                listed = await list_dataframes_metadata(storage, resolve_session_scope())
                 return BaseResult(result=[{"dataframes": len(listed)}])
             case "batch":
                 return await mcp.tools["probe"]({"action": "whoami", "args": args.get("sub_args", {})}, None)
@@ -200,14 +200,14 @@ def test_forged_token_cannot_use_the_owner_session(harness):
 
 def test_valid_session_binds_context_echoes_session_and_records_keep_alive(harness):
     session_id = harness["open_session"]()
-    before = harness["sessions"]._sessions[session_id].last_seen_at
+    before = harness["sessions"]._entries[session_id].session.last_seen_at
     body = harness["call"]("probe", "whoami", ALICE, session_id=session_id)
     assert body.get("error") is None
     assert body["session_id"] == session_id
     identity, session = harness["seen"][0]
     assert identity.user_id == "bzm-alice"
     assert session.session_id == session_id
-    assert harness["sessions"]._sessions[session_id].last_seen_at >= before
+    assert harness["sessions"]._entries[session_id].session.last_seen_at >= before
     # Nothing leaks out of the call.
     assert current_identity() is None and current_session() is None
 
@@ -223,8 +223,8 @@ def test_session_id_is_accepted_at_top_level_of_arguments(harness):
 
 def test_expired_session_asks_for_a_new_one(harness):
     session_id = harness["open_session"]()
-    sessions = harness["sessions"]._sessions
-    sessions[session_id] = replace(sessions[session_id], state=SessionState.EXPIRED)
+    entry = harness["sessions"]._entries[session_id]
+    entry.session = replace(entry.session, state=SessionState.EXPIRED)
     body = harness["call"]("probe", "whoami", ALICE, session_id=session_id)
     assert body["error_code"] == SessionErrorCode.EXPIRED.value
     assert SESSION_TOOL_NAME in body["error"]
@@ -324,33 +324,70 @@ def test_http_provider_maps_storage_api_contract():
     assert requests[1].url.path == f"/sessions/{'bzs_' + 'b' * 32}/touch"
 
 
-def test_blazemeter_verifier_maps_user_endpoint(monkeypatch):
-    import tools.utils as tools_utils
+def _verifier(handler):
+    return BlazeMeterIdentityVerifier(transport=httpx.MockTransport(handler))
 
-    responses = {
-        "ok": BaseResult(result=[{"id": 12345, "email": "a@b.c"}]),
-        "denied": BaseResult(error="Invalid credentials"),
+
+def test_blazemeter_verifier_reads_the_user_id_from_user_endpoint():
+    seen = []
+
+    def handler(request):
+        seen.append(request)
+        return httpx.Response(200, json={"result": {"id": 12345, "email": "a@b.c"}})
+
+    assert asyncio.run(_verifier(handler).verify(BzmToken("k", "s"))) == Identity(user_id="12345")
+    assert seen[0].url.path.endswith("/user")
+    assert seen[0].headers["authorization"].startswith("Basic ")
+
+
+@pytest.mark.parametrize("status", [401, 403])
+def test_only_401_and_403_mean_invalid_credentials(status):
+    verifier = _verifier(lambda request: httpx.Response(status, json={"error": {"message": "nope"}}))
+    with pytest.raises(InvalidCredentials):
+        asyncio.run(verifier.verify(BzmToken("k", "s")))
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        httpx.Response(404, json={"error": "not found"}),
+        httpx.Response(500, text="boom"),
+        httpx.Response(503, text="maintenance"),
+        httpx.Response(200, json={"result": {}}),  # no user id: not the key's fault
+        httpx.Response(200, text="<html>not json</html>"),
+    ],
+)
+def test_other_failures_are_unavailable_not_bad_credentials(response):
+    verifier = _verifier(lambda request: response)
+    with pytest.raises(IdentityUnavailable):
+        asyncio.run(verifier.verify(BzmToken("k", "s")))
+
+
+def test_network_errors_are_unavailable():
+    def handler(request):
+        raise httpx.ConnectError("down")
+
+    with pytest.raises(IdentityUnavailable):
+        asyncio.run(_verifier(handler).verify(BzmToken("k", "s")))
+
+
+def test_missing_token_uses_the_shared_no_token_message():
+    from config.blazemeter import NO_API_TOKEN_MESSAGE
+
+    with pytest.raises(InvalidCredentials) as failed:
+        asyncio.run(_verifier(lambda request: httpx.Response(200)).verify(None))
+    assert failed.value.detail == NO_API_TOKEN_MESSAGE
+
+
+def test_service_headers_build_the_shared_contract():
+    from config.service_auth import CREDENTIAL_HEADER, service_headers
+
+    assert service_headers("caller", "Basic cred") == {
+        "Authorization": "Bearer caller",
+        CREDENTIAL_HEADER: "Basic cred",
     }
-
-    async def fake_api_request(token, method, endpoint, **kwargs):
-        assert (method, endpoint) == ("GET", "/user")
-        if token.secret == "boom":
-            raise httpx.ConnectError("down")
-        return responses[token.secret]
-
-    monkeypatch.setattr(tools_utils, "api_request", fake_api_request)
-    verifier = BlazeMeterIdentityVerifier()
-
-    async def scenario():
-        assert await verifier.verify(BzmToken("k", "ok")) == Identity(user_id="12345")
-        with pytest.raises(InvalidCredentials):
-            await verifier.verify(BzmToken("k", "denied"))
-        with pytest.raises(InvalidCredentials):
-            await verifier.verify(None)
-        with pytest.raises(IdentityUnavailable):
-            await verifier.verify(BzmToken("k", "boom"))
-
-    asyncio.run(scenario())
+    assert service_headers("caller") == {"Authorization": "Bearer caller"}
+    assert service_headers(None) == {}
 
 
 def test_session_is_bound_to_the_credential_that_created_it(harness):
@@ -401,7 +438,7 @@ def test_ticket_client_accepts_the_generic_storage_caller_token(monkeypatch):
     assert client._headers()["Authorization"] == "Bearer storage-token"
 
 
-def test_storage_clients_send_the_session_credential_of_the_call():
+def test_service_clients_send_the_session_credential_of_the_call():
     from config.identity import Identity
     from config.session_context import bind_session_context
     from config.storage import HttpSessionStorageProvider

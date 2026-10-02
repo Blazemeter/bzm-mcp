@@ -13,8 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from types import SimpleNamespace
-
 import pytest
 
 from config.session_context import SessionContextMissing
@@ -27,22 +25,15 @@ from tools.tools_manager import ToolsManager
 
 class TestResolveSessionScope:
     @pytest.mark.no_session_context
-    def test_uses_only_the_validated_session_not_token_or_transport(self):
-        token = BzmToken("api-key-id", "secret")
-        ctx = SimpleNamespace(
-            session_id="mcp-abc",
-            request_context=SimpleNamespace(
-                request=SimpleNamespace(headers={"mcp-session-id": "mcp-abc"})
-            ),
-        )
+    def test_uses_only_the_validated_session(self):
         with use_session(user_id="bzm-user-7", session_id="bzs_" + "a" * 32):
-            assert resolve_session_scope(ctx, token) == SessionScope("bzm-user-7", "bzs_" + "a" * 32)
+            assert resolve_session_scope() == SessionScope("bzm-user-7", "bzs_" + "a" * 32)
 
     @pytest.mark.no_session_context
     def test_fails_closed_without_a_validated_session(self):
         # No more "anonymous"/"default" shared partition.
         with pytest.raises(SessionContextMissing):
-            resolve_session_scope(None, None)
+            resolve_session_scope()
 
 
 class TestToolsManagerDataframesAgainstStorage:

@@ -30,7 +30,6 @@ async def run_tool_with_runtime(
         ctx: Any,
         dispatch: Callable[[], Awaitable[Any]],
         *,
-        token: Any = None,
         tool_args: Any = None,
         dataframe_excluded_actions: Optional[set[str]] = None,
         disable_dataframe_materialization: bool = False,
@@ -41,8 +40,6 @@ async def run_tool_with_runtime(
     Managers pass ``runtime`` once; tracing stays unaware of dataframe types.
     Materialization runs inside the tool span so duration includes the commit.
     """
-    resolved_token = token if token is not None else runtime.auth.get_token(ctx)
-
     async def _dispatch_and_finalize() -> Any:
         policy_token = set_disable_dataframe_materialization(disable_dataframe_materialization)
         try:
@@ -59,8 +56,6 @@ async def run_tool_with_runtime(
                 origin_manager=tool_name,
                 session_storage=runtime.storage,
                 scope_resolver=runtime.scope_resolver,
-                token=resolved_token,
-                ctx=ctx,
                 excluded_actions=dataframe_excluded_actions,
             )
         finally:

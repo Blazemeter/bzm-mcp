@@ -18,36 +18,41 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import hmac
+import logging
 import re
 import secrets
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 from urllib.parse import quote
 
 import httpx
 
-from config.env import env_float
+from config.env import env_float, env_int
+from config.http_clients import SharedAsyncClient
+from config.ids import SIMPLE_ID_ALPHABET, random_id
+from config.service_auth import service_headers
+
+logger = logging.getLogger(__name__)
 
 # "bzs_" + 32 chars from the simple-id alphabet (160 random bits). The storage-api
 # mints hosted session ids in the same format.
 SESSION_ID_PREFIX = "bzs_"
-SESSION_ID_ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz"
 SESSION_ID_LENGTH = 32
-SESSION_ID_RE = re.compile(r"^bzs_[0-9a-hjkmnp-tv-z]{32}$")
+SESSION_ID_RE = re.compile(rf"^{SESSION_ID_PREFIX}[{SIMPLE_ID_ALPHABET}]{{{SESSION_ID_LENGTH}}}$")
 SESSION_TOOL_NAME = "blazemeter_session"
-# End-user credential the call runs with, sent to the storage API on every
-# session-scoped request (sessions are bound to it; the API keeps only its HMAC).
-CREDENTIAL_HEADER = "X-Bzm-Credential"
 
 SESSION_STORAGE_TIMEOUT_SECONDS = env_float("SESSION_STORAGE_TIMEOUT_SECONDS", 15.0, minimum=0.1)
+# stdio lifecycle; the same rules and defaults as the storage-api sweeper.
+SESSION_IDLE_TIMEOUT_SECONDS = env_int("SESSION_IDLE_TIMEOUT_SECONDS", 7 * 24 * 3600, minimum=1)
+SESSION_PURGE_GRACE_SECONDS = env_int("SESSION_PURGE_GRACE_SECONDS", 3600, minimum=0)
+SESSION_SWEEP_INTERVAL_SECONDS = env_int("SESSION_SWEEP_INTERVAL_SECONDS", 60, minimum=1)
 
 
 def generate_session_id() -> str:
-    body = "".join(secrets.choice(SESSION_ID_ALPHABET) for _ in range(SESSION_ID_LENGTH))
-    return f"{SESSION_ID_PREFIX}{body}"
+    return f"{SESSION_ID_PREFIX}{random_id(SESSION_ID_LENGTH)}"
 
 
 def is_valid_session_id(value: Any) -> bool:
@@ -61,7 +66,7 @@ class SessionState(str, Enum):
 
 @dataclass(frozen=True)
 class ChatSession:
-    """One conversation's workspace for tasks and dataframes. Never deleted, only expired."""
+    """One conversation's workspace for tasks and dataframes. Expired, then purged."""
 
     session_id: str
     owner_id: str
@@ -75,6 +80,8 @@ class SessionErrorCode(str, Enum):
     REQUIRED = "SESSION_REQUIRED"
     INVALID = "SESSION_INVALID"
     EXPIRED = "SESSION_EXPIRED"
+    UNAVAILABLE = "SESSION_UNAVAILABLE"
+    SERVICE_ERROR = "SESSION_SERVICE_ERROR"
 
 
 _RECOVERY_HINT = (
@@ -90,6 +97,13 @@ SESSION_ERROR_MESSAGES = {
     ),
     SessionErrorCode.INVALID: f"Invalid session_id. {_RECOVERY_HINT}",
     SessionErrorCode.EXPIRED: f"This session expired. {_RECOVERY_HINT}",
+    # Transient: the session (if any) is still valid, so no renegotiation.
+    SessionErrorCode.UNAVAILABLE: "The session service is unavailable right now. Retry the same call in a moment.",
+    # Not transient: the service rejected this MCP server's request (configuration).
+    SessionErrorCode.SERVICE_ERROR: (
+        "The session service rejected this server's request. This is a server configuration "
+        "problem and retrying will not help; report it to the server administrator."
+    ),
 }
 
 
@@ -105,7 +119,8 @@ class SessionPort(ABC):
     Chat-session registry. Lookups are scoped to the owner and to the credential
     the session was created with (opaque, e.g. the BlazeMeter Authorization value):
     a session owned by someone else, or used with another credential, is reported
-    exactly like an unknown one (INVALID).
+    exactly like an unknown one (INVALID). Failures are SessionError, with
+    UNAVAILABLE when the registry cannot answer.
     """
 
     @abstractmethod
@@ -122,26 +137,72 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-class InMemorySessionProvider(SessionPort):
-    """stdio: sessions live as long as the process and never expire on their own."""
+@dataclass
+class _Entry:
+    session: ChatSession
+    # HMAC of the creating credential (process-local key; the credential is never kept).
+    credential_hash: bytes
+    # First "expired, renegotiate" answer: the purge grace starts here.
+    expired_notified_at: Optional[datetime] = None
 
-    def __init__(self) -> None:
-        self._sessions: dict[str, ChatSession] = {}
-        # HMAC of the creating credential per session (process-local key; the
-        # credential itself is never kept).
-        self._credential_hashes: dict[str, bytes] = {}
+    def purgeable(self, now: datetime, grace: timedelta) -> bool:
+        since = self.expired_notified_at or self.session.expired_at
+        return since is not None and now - since >= grace
+
+
+class InMemorySessionProvider(SessionPort):
+    """
+    stdio: the storage-api lifecycle, in process. ACTIVE → EXPIRED after the idle
+    timeout → purged once the grace has passed since the first "expired" answer
+    (or since expiry if nobody asked). ``on_purge(owner_id, session_id)`` releases
+    what the session held (its partition). Sweeps run on open/touch, at most once
+    per sweep interval: a stdio process has no background service to run them.
+    """
+
+    def __init__(
+            self,
+            idle_timeout_seconds: float = SESSION_IDLE_TIMEOUT_SECONDS,
+            purge_grace_seconds: float = SESSION_PURGE_GRACE_SECONDS,
+            sweep_interval_seconds: float = SESSION_SWEEP_INTERVAL_SECONDS,
+            on_purge: Optional[Callable[[str, str], None]] = None,
+            clock: Callable[[], datetime] = _utc_now,
+    ) -> None:
+        self._entries: dict[str, _Entry] = {}
         self._hash_key = secrets.token_bytes(32)
         self._lock = asyncio.Lock()
+        self._idle_timeout = timedelta(seconds=idle_timeout_seconds)
+        self._purge_grace = timedelta(seconds=purge_grace_seconds)
+        self._sweep_interval = timedelta(seconds=sweep_interval_seconds)
+        self._on_purge = on_purge
+        self._clock = clock
+        self._last_sweep: Optional[datetime] = None
 
     def _credential_hash(self, credential: str) -> bytes:
         return hmac.new(self._hash_key, credential.encode("utf-8"), hashlib.sha256).digest()
 
+    def _expire_if_idle(self, entry: _Entry, now: datetime) -> None:
+        session = entry.session
+        if session.state is SessionState.ACTIVE and now - session.last_seen_at >= self._idle_timeout:
+            entry.session = replace(session, state=SessionState.EXPIRED, expired_at=now)
+
+    def _sweep(self, now: datetime) -> None:
+        if self._last_sweep is not None and now - self._last_sweep < self._sweep_interval:
+            return
+        self._last_sweep = now
+        for session_id, entry in list(self._entries.items()):
+            self._expire_if_idle(entry, now)
+            if entry.session.state is SessionState.EXPIRED and entry.purgeable(now, self._purge_grace):
+                del self._entries[session_id]
+                if self._on_purge is not None:
+                    self._on_purge(entry.session.owner_id, session_id)
+
     async def open(self, owner_id: str, credential: str) -> ChatSession:
         async with self._lock:
+            now = self._clock()
+            self._sweep(now)
             session_id = generate_session_id()
-            while session_id in self._sessions:
+            while session_id in self._entries:
                 session_id = generate_session_id()
-            now = _utc_now()
             session = ChatSession(
                 session_id=session_id,
                 owner_id=owner_id,
@@ -149,25 +210,30 @@ class InMemorySessionProvider(SessionPort):
                 created_at=now,
                 last_seen_at=now,
             )
-            self._sessions[session_id] = session
-            self._credential_hashes[session_id] = self._credential_hash(credential)
+            self._entries[session_id] = _Entry(session, self._credential_hash(credential))
             return session
 
     async def touch(self, session_id: str, owner_id: str, credential: str) -> ChatSession:
         async with self._lock:
-            session = self._sessions.get(session_id)
-            expected = self._credential_hashes.get(session_id, b"")
+            now = self._clock()
+            self._sweep(now)
+            entry = self._entries.get(session_id)
             if (
-                session is None
-                or session.owner_id != owner_id
-                or not hmac.compare_digest(expected, self._credential_hash(credential))
+                entry is None
+                or entry.session.owner_id != owner_id
+                or not hmac.compare_digest(entry.credential_hash, self._credential_hash(credential))
             ):
                 raise SessionError(SessionErrorCode.INVALID)
-            if session.state is SessionState.EXPIRED:
+            self._expire_if_idle(entry, now)
+            if entry.session.state is SessionState.EXPIRED:
+                if entry.expired_notified_at is None:
+                    entry.expired_notified_at = now
                 raise SessionError(SessionErrorCode.EXPIRED)
-            touched = replace(session, last_seen_at=_utc_now())
-            self._sessions[session_id] = touched
-            return touched
+            entry.session = replace(entry.session, last_seen_at=now)
+            return entry.session
+
+
+_TRANSIENT_STATUSES = frozenset({408, 429})
 
 
 class HttpSessionProvider(SessionPort):
@@ -182,40 +248,60 @@ class HttpSessionProvider(SessionPort):
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._caller_token = caller_token
-        self._timeout = timeout_seconds
-        self._transport = transport
+        # Shared client: touch runs on every tool call.
+        if transport is not None:
+            self._http = SharedAsyncClient(
+                lambda: httpx.AsyncClient(transport=transport, timeout=timeout_seconds)
+            )
+        else:
+            self._http = SharedAsyncClient(
+                lambda: httpx.AsyncClient(http2=True, timeout=timeout_seconds)
+            )
 
     def _headers(self, credential: str) -> dict[str, str]:
-        return {"Authorization": f"Bearer {self._caller_token}", CREDENTIAL_HEADER: credential}
+        # Explicit credential: open/touch run before the session is bound to the context.
+        return service_headers(self._caller_token, credential)
 
-    def _client(self) -> httpx.AsyncClient:
-        if self._transport is not None:
-            return httpx.AsyncClient(transport=self._transport, timeout=self._timeout)
-        return httpx.AsyncClient(http2=True, timeout=self._timeout)
+    async def _post(self, path: str, owner_id: str, credential: str) -> httpx.Response:
+        try:
+            return await self._http.get().post(
+                f"{self._base_url}{path}",
+                headers=self._headers(credential),
+                json={"owner_id": owner_id},
+            )
+        except httpx.HTTPError as exc:
+            logger.warning("session storage %s unreachable: %s", path, type(exc).__name__)
+            raise SessionError(SessionErrorCode.UNAVAILABLE) from exc
+
+    @staticmethod
+    def _session_or_unavailable(response: httpx.Response) -> ChatSession:
+        status_code = response.status_code
+        if status_code in _TRANSIENT_STATUSES or status_code >= 500:
+            logger.warning("session storage answered %s", status_code)
+            raise SessionError(SessionErrorCode.UNAVAILABLE)
+        if status_code >= 400:
+            # 401/403: caller token or credential header; 4xx: contract mismatch.
+            logger.error("session storage rejected the MCP request with %s", status_code)
+            raise SessionError(SessionErrorCode.SERVICE_ERROR)
+        try:
+            return _session_from_payload(response.json())
+        except (ValueError, KeyError, TypeError, AttributeError) as exc:
+            logger.warning("session storage returned an invalid session payload")
+            raise SessionError(SessionErrorCode.UNAVAILABLE) from exc
 
     async def open(self, owner_id: str, credential: str) -> ChatSession:
-        async with self._client() as client:
-            response = await client.post(
-                f"{self._base_url}/sessions",
-                headers=self._headers(credential),
-                json={"owner_id": owner_id},
-            )
-        response.raise_for_status()
-        return _session_from_payload(response.json())
+        response = await self._post("/sessions", owner_id, credential)
+        return self._session_or_unavailable(response)
 
     async def touch(self, session_id: str, owner_id: str, credential: str) -> ChatSession:
-        async with self._client() as client:
-            response = await client.post(
-                f"{self._base_url}/sessions/{quote(session_id, safe='')}/touch",
-                headers=self._headers(credential),
-                json={"owner_id": owner_id},
-            )
+        response = await self._post(
+            f"/sessions/{quote(session_id, safe='')}/touch", owner_id, credential
+        )
         if response.status_code == 404:
             raise SessionError(SessionErrorCode.INVALID)
         if response.status_code == 410:
             raise SessionError(SessionErrorCode.EXPIRED)
-        response.raise_for_status()
-        return _session_from_payload(response.json())
+        return self._session_or_unavailable(response)
 
 
 def _session_from_payload(payload: dict[str, Any]) -> ChatSession:

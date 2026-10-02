@@ -34,7 +34,6 @@ from config.storage import (
     resolve_session_scope,
 )
 from config.session_context import SessionContextMissing
-from config.token import BzmToken
 from models.result import BaseResult
 from tools.utils import generate_simple_id, SIMPLE_ID_LENGTH
 
@@ -563,8 +562,6 @@ async def finalize_tool_result(
         origin_manager: str,
         session_storage: Optional[SessionStoragePort] = None,
         scope_resolver: Optional[SessionScopeResolverPort] = None,
-        token: Optional[BzmToken] = None,
-        ctx: Any = None,
         scope: Optional[SessionScope] = None,
         excluded_actions: Optional[set[str]] = None,
 ) -> Any:
@@ -573,7 +570,7 @@ async def finalize_tool_result(
 
     excluded_actions: skip auto materialization (still honors result_format=dataframe).
     SessionStoragePort is required once this path would persist; missing session storage fails closed.
-    Pass ``scope`` to skip token/ctx resolution (used by the async task runner).
+    Pass ``scope`` to skip resolving the current session (used by the async task runner).
     """
     if not isinstance(result, BaseResult) or result.error or result.result is None:
         return result
@@ -593,7 +590,7 @@ async def finalize_tool_result(
 
     if scope is None:
         try:
-            scope = resolve_session_scope(ctx, token=token, scope_resolver=scope_resolver)
+            scope = resolve_session_scope(scope_resolver=scope_resolver)
         except SessionContextMissing:
             # Public tools running without a session keep results inline.
             return result

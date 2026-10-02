@@ -21,9 +21,7 @@ from typing import Any, Optional
 from urllib.parse import quote
 
 import httpx
-from mcp.server.fastmcp import Context
 
-from config.token import BzmToken
 
 
 class StorageNotConfiguredError(RuntimeError):
@@ -93,7 +91,7 @@ class SessionStoragePort(ABC):
 
 class SessionScopeResolverPort(ABC):
     @abstractmethod
-    def resolve(self, ctx: Optional[Context], token: Optional[BzmToken]) -> SessionScope:
+    def resolve(self) -> SessionScope:
         raise NotImplementedError
 
 
@@ -107,7 +105,7 @@ class DefaultSessionScopeResolver(SessionScopeResolverPort):
     falling back to a shared partition.
     """
 
-    def resolve(self, ctx: Optional[Context], token: Optional[BzmToken]) -> SessionScope:
+    def resolve(self) -> SessionScope:
         from config.session_context import SessionContextMissing, current_identity, current_session
 
         identity = current_identity()
@@ -120,13 +118,11 @@ class DefaultSessionScopeResolver(SessionScopeResolverPort):
 
 
 def resolve_session_scope(
-        ctx: Any,
-        token: Optional[BzmToken] = None,
         scope_resolver: Optional[SessionScopeResolverPort] = None,
 ) -> SessionScope:
     """Resolve partition keys for the current validated chat session."""
     resolver = scope_resolver or DefaultSessionScopeResolver()
-    return resolver.resolve(ctx, token)
+    return resolver.resolve()
 
 
 class InMemorySessionStorageProvider(SessionStoragePort):
@@ -164,6 +160,10 @@ class InMemorySessionStorageProvider(SessionStoragePort):
     async def delete_partition(self, scope: SessionScope) -> bool:
         return self._partitions.pop((scope.user_id, scope.mcp_session_id), None) is not None
 
+    def discard_session(self, user_id: str, mcp_session_id: str) -> None:
+        """Drop a purged session's partition (stdio session provider ``on_purge``)."""
+        self._partitions.pop((user_id, mcp_session_id), None)
+
 
 class HttpSessionStorageProvider(SessionStoragePort):
     def __init__(
@@ -172,23 +172,22 @@ class HttpSessionStorageProvider(SessionStoragePort):
         timeout_seconds: Optional[float] = None,
         caller_token: Optional[str] = None,
     ) -> None:
+        from config.http_clients import SharedAsyncClient
         from config.session import SESSION_STORAGE_TIMEOUT_SECONDS
 
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout_seconds if timeout_seconds is not None else SESSION_STORAGE_TIMEOUT_SECONDS
+        # Shared: partitions are read and written on most tool calls.
+        self._http = SharedAsyncClient(lambda: httpx.AsyncClient(http2=True, timeout=self._timeout))
         # The storage-api only serves partitions to the MCP caller identity.
-        self._headers = {"Authorization": f"Bearer {caller_token}"} if caller_token else {}
+        self._caller_token = caller_token
 
     def _request_headers(self) -> dict[str, str]:
         """Caller identity plus the end-user credential of the current validated call."""
-        from config.session import CREDENTIAL_HEADER
         from config.session_context import current_credential
+        from config.service_auth import service_headers
 
-        headers = dict(self._headers)
-        credential = current_credential()
-        if credential:
-            headers[CREDENTIAL_HEADER] = credential
-        return headers
+        return service_headers(self._caller_token, current_credential())
 
     def _url_for_scope(self, scope: SessionScope) -> str:
         user_id = quote(scope.user_id, safe="")
@@ -205,33 +204,30 @@ class HttpSessionStorageProvider(SessionStoragePort):
             response.raise_for_status()
 
     async def put_partition(self, scope: SessionScope, payload: SessionPartitionPayload) -> None:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
-            response = await client.put(
-                self._url_for_scope(scope),
-                headers=self._request_headers(),
-                json=payload.to_dict(),
-            )
-            response.raise_for_status()
+        response = await self._http.get().put(
+            self._url_for_scope(scope),
+            headers=self._request_headers(),
+            json=payload.to_dict(),
+        )
+        response.raise_for_status()
 
     async def get_partition(self, scope: SessionScope) -> SessionPartition | None:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
-            response = await client.get(
-                self._url_for_scope(scope),
-                headers=self._request_headers(),
-            )
-            if response.status_code == 404:
-                return None
-            response.raise_for_status()
-            return SessionPartition.from_dict(response.json())
+        response = await self._http.get().get(
+            self._url_for_scope(scope),
+            headers=self._request_headers(),
+        )
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return SessionPartition.from_dict(response.json())
 
     async def delete_partition(self, scope: SessionScope) -> bool:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
-            response = await client.delete(
-                self._url_for_scope(scope),
-                headers=self._request_headers(),
-            )
-            response.raise_for_status()
-            payload = response.json()
-            return bool(payload.get("deleted"))
+        response = await self._http.get().delete(
+            self._url_for_scope(scope),
+            headers=self._request_headers(),
+        )
+        response.raise_for_status()
+        payload = response.json()
+        return bool(payload.get("deleted"))
 
 

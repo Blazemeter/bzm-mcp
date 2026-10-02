@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from config.env import env_float, env_int, env_str
-from config.runtime import storage_caller_token
+from config.service_auth import service_caller_token
 
 
 def test_unset_or_blank_uses_default(monkeypatch):
@@ -39,9 +39,9 @@ def test_invalid_or_below_minimum_falls_back_to_default(monkeypatch):
     assert env_int("SOME_VALUE", 7, minimum=1) == 7
 
 
-def test_storage_caller_token_prefers_generic_then_ticket_variable(monkeypatch):
+def test_service_caller_token_prefers_generic_then_ticket_variable(monkeypatch):
     monkeypatch.delenv("BZM_MCP_STORAGE_CALLER_TOKEN", raising=False)
     monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "ticket-token")
-    assert storage_caller_token() == "ticket-token"
+    assert service_caller_token() == "ticket-token"
     monkeypatch.setenv("BZM_MCP_STORAGE_CALLER_TOKEN", "storage-token")
-    assert storage_caller_token() == "storage-token"
+    assert service_caller_token() == "storage-token"

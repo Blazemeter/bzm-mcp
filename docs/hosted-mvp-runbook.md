@@ -54,7 +54,10 @@ a different credential, even a rotated key of the same user, is `SESSION_INVALID
 Hosted session lifecycle (owned by the storage-api): 7 days without a keep-alive →
 `SESSION_EXPIRED` ("get a new session"); one hour after that first answer the session
 and its partitions are purged, and the id then answers `SESSION_INVALID`, which asks
-for a new session as well. stdio sessions last as long as the process.
+for a new session as well. stdio applies the same rules in process
+(`BZM_MCP_SESSION_IDLE_TIMEOUT_SECONDS`, `BZM_MCP_SESSION_PURGE_GRACE_SECONDS`,
+checked on session calls at most every `BZM_MCP_SESSION_SWEEP_INTERVAL_SECONDS`)
+and releases a purged session's partition.
 
 `blazemeter_help` and `blazemeter_skills` are public: no API key needed and
 `session_id` optional. With a valid token + session they run in that session;
@@ -62,7 +65,11 @@ otherwise they run inline without a session (no task, no partition) and add a wa
 
 `Mcp-Session-Id` / FastMCP `ctx.session_id` are transport sessions and are not used.
 Errors: `SESSION_REQUIRED`, `SESSION_INVALID` (unknown or someone else's),
-`SESSION_EXPIRED`, `AUTH_INVALID`, `AUTH_UNAVAILABLE`.
+`SESSION_EXPIRED`, `SESSION_UNAVAILABLE` (session registry unreachable: retry the
+same call, the session is not lost), `SESSION_SERVICE_ERROR` (the registry rejected the
+MCP request: caller token, credential header or contract mismatch; retrying will not help),
+`AUTH_INVALID` (with BlazeMeter's reason when
+it gives one), `AUTH_UNAVAILABLE`.
 
 ## Session Storage Service
 

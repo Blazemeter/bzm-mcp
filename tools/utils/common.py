@@ -23,7 +23,6 @@ import inspect
 import os
 import platform
 import re
-import secrets
 import sys
 import time
 import traceback
@@ -37,19 +36,18 @@ import httpx
 from mcp.types import CallToolResult
 from pydantic import BaseModel
 
-from config.blazemeter import BZM_API_BASE_URL
-from config.context_resolution import resolve_ctx_token, resolve_ctx_user_config
+from config.blazemeter import BZM_API_BASE_URL, NO_API_TOKEN_MESSAGE
+from config.context_resolution import resolve_ctx_user_config
+from config.http_clients import SharedAsyncClient
+from config.ids import SIMPLE_ID_ALPHABET, SIMPLE_ID_LENGTH, random_id
 from config.security import validate_http_request_endpoint
 from config.token import BzmToken
 from config.version import __version__
 from models.result import BaseResult, HttpBaseResult, ToolResult
 
-SIMPLE_ID_ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz"
-SIMPLE_ID_LENGTH = 8
-
 
 def generate_simple_id() -> str:
-    return "".join(secrets.choice(SIMPLE_ID_ALPHABET) for _ in range(SIMPLE_ID_LENGTH))
+    return random_id(SIMPLE_ID_LENGTH)
 
 
 def normalize_simple_id(simple_id: str) -> str:
@@ -259,12 +257,6 @@ def validate_non_empty_str_arg(
     return None
 
 
-def _resolve_tool_token(ctx: Any) -> Optional[BzmToken]:
-    if ctx is None:
-        return None
-    return resolve_ctx_token(ctx)
-
-
 def _resolve_invocation(
         args: tuple[Any, ...],
         kwargs: Dict[str, Any],
@@ -380,8 +372,6 @@ def tool_result(
                         action=action,
                         args=tool_args,
                         origin_manager=func.__name__,
-                        token=_resolve_tool_token(ctx),
-                        ctx=ctx,
                         excluded_actions=excluded,
                     )
                     postprocess_ms = int((time.monotonic() - post_started) * 1000)
@@ -572,6 +562,15 @@ def run_as_task(
     return decorator
 
 
+# Reused across tool calls (one connection pool per process) instead of a new
+# TCP/TLS + HTTP/2 handshake per request; closed on HTTP server shutdown.
+bzm_http_client = SharedAsyncClient(
+    lambda: httpx.AsyncClient(base_url=BZM_API_BASE_URL, http2=True, timeout=timeout)
+)
+# Absolute URLs outside the BlazeMeter API (web pages, Log Analyzer).
+web_http_client = SharedAsyncClient(lambda: httpx.AsyncClient(http2=True, timeout=timeout))
+
+
 async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
                       result_formatter: Callable = None,
                       result_formatter_params: Optional[dict] = None,
@@ -581,68 +580,69 @@ async def api_request(token: Optional[BzmToken], method: str, endpoint: str,
     Handles authentication errors gracefully.
     """
     if not token:
-        return BaseResult(
-            error="No API token. Set BLAZEMETER_API_KEY env var with file path or API_KEY_ID and API_KEY_SECRET secrets in docker catalog configuration."
-        )
+        return BaseResult(error=NO_API_TOKEN_MESSAGE)
 
     headers = kwargs.pop("headers", {})
     headers["Authorization"] = token.as_basic_auth()
     headers["User-Agent"] = user_agent
 
-    async with (httpx.AsyncClient(base_url=BZM_API_BASE_URL, http2=True, timeout=timeout) as client):
-        try:
-            resp = await client.request(method, endpoint, headers=headers, **kwargs)
-            resp.raise_for_status()
-            content_type = resp.headers.get("content-type", "")
-            if "application/json" in content_type.lower():
-                response_dict = resp.json()
-                result = response_dict.get("result", [])
-            else:
-                response_dict = {}
-                result = resp.text
-            default_total = 0
-            if not isinstance(result, list):  # Generalize result always as a list
-                result = [result]
-                default_total = 1
-            final_result = result_formatter(result, result_formatter_params) if result_formatter else result
-            return BaseResult(
-                result=final_result,
-                error=response_dict.get("error", None),
-                total=response_dict.get("total", default_total),
-                has_more=response_dict.get("total", 0) - (
-                        response_dict.get("skip", 0) + response_dict.get("limit", 0)) > 0
-            )
-        except httpx.HTTPStatusError as e:
-            status_code = e.response.status_code
-            error_msg = None
-            if status_code in [401, 403]:
-                # Try to extract detailed error message from response body
-                error_msg = "Invalid credentials"
+    client = bzm_http_client.get()
+    try:
+        resp = await client.request(method, endpoint, headers=headers, **kwargs)
+        resp.raise_for_status()
+        content_type = resp.headers.get("content-type", "")
+        if "application/json" in content_type.lower():
+            response_dict = resp.json()
+            result = response_dict.get("result", [])
+        else:
+            response_dict = {}
+            result = resp.text
+        default_total = 0
+        if not isinstance(result, list):  # Generalize result always as a list
+            result = [result]
+            default_total = 1
+        final_result = result_formatter(result, result_formatter_params) if result_formatter else result
+        return BaseResult(
+            result=final_result,
+            error=response_dict.get("error", None),
+            total=response_dict.get("total", default_total),
+            has_more=response_dict.get("total", 0) - (
+                    response_dict.get("skip", 0) + response_dict.get("limit", 0)) > 0
+        )
+    except httpx.HTTPStatusError as e:
+        status_code = e.response.status_code
+        error_msg = None
+        if status_code in [401, 403]:
+            # Try to extract detailed error message from response body
+            error_msg = "Invalid credentials"
 
+            try:
                 error_body = e.response.json()
-                if isinstance(error_body, dict):
-                    api_error = error_body.get("error")
-                    if api_error:
-                        if isinstance(api_error, dict):
-                            error_msg = api_error.get("message", error_msg)
-                        else:
-                            error_msg = str(api_error)
-                    elif "message" in error_body:
-                        error_msg = error_body.get("message", error_msg)
+            except ValueError:  # HTML from a proxy/WAF: keep the generic message
+                error_body = None
+            if isinstance(error_body, dict):
+                api_error = error_body.get("error")
+                if api_error:
+                    if isinstance(api_error, dict):
+                        error_msg = api_error.get("message", error_msg)
+                    else:
+                        error_msg = str(api_error)
+                elif "message" in error_body:
+                    error_msg = error_body.get("message", error_msg)
 
-                    # Check for data retention related keywords
-                    error_text = str(error_body).lower()
-                    if any(keyword in error_text for keyword in ["retention", "expired", "no longer available"]):
-                        error_msg = "Data retention period expired: Report data is no longer available due to data retention policy"
+                # Check for data retention related keywords
+                error_text = str(error_body).lower()
+                if any(keyword in error_text for keyword in ["retention", "expired", "no longer available"]):
+                    error_msg = "Data retention period expired: Report data is no longer available due to data retention policy"
 
-            elif status_code in [404]:
-                error_msg = "Not Found. Please ask the user to verify if the request is valid."
+        elif status_code in [404]:
+            error_msg = "Not Found. Please ask the user to verify if the request is valid."
 
-            if error_msg:
-                return BaseResult(
-                    error=error_msg
-                )
-            raise
+        if error_msg:
+            return BaseResult(
+                error=error_msg
+            )
+        raise
 
 
 async def http_request(method: str, endpoint: str,
@@ -660,23 +660,23 @@ async def http_request(method: str, endpoint: str,
     headers = kwargs.pop("headers", {})
     headers["User-Agent"] = user_agent
 
-    async with (httpx.AsyncClient(base_url="", http2=True, timeout=timeout) as client):
-        try:
-            resp = await client.request(method, endpoint, headers=headers, **kwargs)
-            resp.raise_for_status()
-            result = resp.text
-            error = None
-            final_result = result_formatter(result, result_formatter_params) if result_formatter else result
+    client = web_http_client.get()
+    try:
+        resp = await client.request(method, endpoint, headers=headers, **kwargs)
+        resp.raise_for_status()
+        result = resp.text
+        error = None
+        final_result = result_formatter(result, result_formatter_params) if result_formatter else result
+        return HttpBaseResult(
+            result=final_result,
+            error=error,
+        )
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code in [401, 403]:
             return HttpBaseResult(
-                result=final_result,
-                error=error,
+                error="Invalid credentials"
             )
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code in [401, 403]:
-                return HttpBaseResult(
-                    error="Invalid credentials"
-                )
-            raise
+        raise
 
 
 def get_date_time_iso(timestamp: int) -> Optional[str]:

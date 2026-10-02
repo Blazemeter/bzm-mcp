@@ -14,11 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from config.runtime import AppRuntime
-from config.session import SESSION_TOOL_NAME, SessionPort
+import logging
+
+from config.session import SESSION_TOOL_NAME, SessionError, SessionErrorCode, SessionPort
 from config.session_context import SessionContextMissing, current_credential, current_identity
 from models.result import BaseResult
 from tools.actions.session import ACTIONS, HEADER, HINTS
 from tools.mcp_entrypoint import register_managed_tool
+
+logger = logging.getLogger(__name__)
 
 
 class SessionManager:
@@ -32,7 +36,14 @@ class SessionManager:
         credential = current_credential()
         if identity is None or not credential:
             raise SessionContextMissing("The caller identity was not verified for this call.")
-        session = await self.sessions.open(identity.user_id, credential)
+        try:
+            session = await self.sessions.open(identity.user_id, credential)
+        except SessionError as exc:
+            return BaseResult(error=exc.message, error_code=exc.code.value)
+        except Exception:
+            logger.exception("Opening a chat session failed")
+            unavailable = SessionError(SessionErrorCode.UNAVAILABLE)
+            return BaseResult(error=unavailable.message, error_code=unavailable.code.value)
         return BaseResult(
             result=[{
                 "session_id": session.session_id,

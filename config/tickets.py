@@ -24,7 +24,8 @@ from typing import Any, Literal
 
 import httpx
 
-from config.env import env_str
+from config.http_clients import SharedAsyncClient
+from config.service_auth import service_caller_token
 
 logger = logging.getLogger(__name__)
 
@@ -91,25 +92,21 @@ class HttpTicketClient(TicketPort):
         self.public_base_url = public_base_url.rstrip("/")
         self._timeout = timeout_seconds
         self._http = http
-        self._owned_http: httpx.AsyncClient | None = None
+        self._owned_http = (
+            SharedAsyncClient(lambda: httpx.AsyncClient(timeout=self._timeout)) if http is None else None
+        )
 
     def _headers(self) -> dict[str, str]:
-        from config.session import CREDENTIAL_HEADER
         from config.session_context import current_credential
+        from config.service_auth import service_headers
 
-        headers = {"Authorization": f"Bearer {self._caller_token}"}
         # The storage API verifies the promoted session against this credential.
-        credential = current_credential()
-        if credential:
-            headers[CREDENTIAL_HEADER] = credential
-        return headers
+        return service_headers(self._caller_token, current_credential())
 
     def _client(self) -> httpx.AsyncClient:
         if self._http is not None:
             return self._http
-        if self._owned_http is None:
-            self._owned_http = httpx.AsyncClient(timeout=self._timeout)
-        return self._owned_http
+        return self._owned_http.get()
 
     async def _request(
         self, method: str, path: str, json: dict[str, Any]
@@ -208,11 +205,6 @@ class HttpTicketClient(TicketPort):
         return minted
 
 
-def storage_caller_token() -> str:
-    """MCP caller identity for the storage API; sessions, partitions and tickets share it."""
-    return env_str("STORAGE_CALLER_TOKEN") or env_str("TICKET_STORAGE_CALLER_TOKEN")
-
-
 def build_ticket_client(
     transport: Literal["stdio", "streamable-http"],
     storage_base_url: str | None = None,
@@ -228,7 +220,7 @@ def build_ticket_client(
     timeout_seconds = (
         float(timeout_raw) if timeout_raw.strip() else DEFAULT_TICKET_TIMEOUT_SECONDS
     )
-    caller_token = storage_caller_token()
+    caller_token = service_caller_token()
     if not caller_token:
         raise ValueError(
             "BZM_MCP_STORAGE_CALLER_TOKEN (or BZM_MCP_TICKET_STORAGE_CALLER_TOKEN) is required "

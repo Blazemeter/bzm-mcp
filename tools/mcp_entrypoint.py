@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from typing import Annotated, Any, Awaitable, Callable, Dict, Optional, Set, Union
 
 import httpx
-from mcp.server.fastmcp import Context
+from mcp.server.fastmcp import Context, FastMCP
 from pydantic import Field
 
 from config.blazemeter import SUPPORT_MESSAGE
@@ -125,10 +125,7 @@ async def _validate_session(
         return _session_error(exc.code)
     except Exception:
         logger.exception("Session validation failed")
-        return BaseResult(
-            error="Could not validate the session right now. Try again.",
-            error_code="SESSION_UNAVAILABLE",
-        )
+        return _session_error(SessionErrorCode.UNAVAILABLE)
 
 
 async def _enter_call(
@@ -270,7 +267,6 @@ def register_managed_tool(
                     action,
                     ctx,
                     _run,
-                    token=token,
                     tool_args=args,
                     dataframe_excluded_actions=excluded_actions,
                     disable_dataframe_materialization=disable_materialization,
@@ -329,10 +325,14 @@ def _declare_session_id_required(mcp: Any, name: str) -> None:
     gate, which answers SESSION_REQUIRED with the recovery guidance instead of a
     bare schema validation error.
     """
-    manager = getattr(mcp, "_tool_manager", None)
-    tool = manager.get_tool(name) if manager is not None else None
-    if tool is None:  # test doubles that are not FastMCP
+    if not isinstance(mcp, FastMCP):  # test doubles
         return
+    # FastMCP has no public hook to edit a generated schema; if this private
+    # path moves in an upgrade, fail at startup rather than publish a schema
+    # where session_id looks optional.
+    tool = mcp._tool_manager.get_tool(name)
+    if tool is None or not isinstance(getattr(tool, "parameters", None), dict):
+        raise RuntimeError(f"Cannot declare session_id as required on tool {name!r}.")
     tool.parameters.setdefault("properties", {})[SESSION_ID_ARG] = {
         "type": "string",
         "title": "Session Id",

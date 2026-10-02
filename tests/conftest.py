@@ -74,6 +74,22 @@ def pytest_configure(config):
     )
 
 
+# ContextVar tokens set by make_ctx in the running test, reset on its teardown.
+_make_ctx_bindings: list = []
+
+
+@pytest.fixture(autouse=True)
+def _reset_make_ctx_bindings(default_session_context):
+    # Depends on default_session_context so it is torn down first (LIFO resets).
+    yield
+    while _make_ctx_bindings:
+        var, token = _make_ctx_bindings.pop()
+        try:
+            var.reset(token)
+        except ValueError:
+            pass  # set inside an event loop task: gone with that task's context
+
+
 def make_ctx(token: BzmToken, session_id: str, *, bind_session: bool = True):
     """
     Fake FastMCP ctx carrying ``token``.
@@ -81,15 +97,19 @@ def make_ctx(token: BzmToken, session_id: str, *, bind_session: bool = True):
     The ctx itself no longer decides the partition (only the validated session
     does), so by default this also binds ``token.id`` + ``session_id`` as the
     validated session of the running test, like the tool entrypoint would. The
-    autouse ``default_session_context`` fixture restores the previous binding on
-    teardown.
+    binding is undone when the test ends, with or without the default session
+    context.
     """
     if bind_session and token is not None:
         from config.identity import Identity
         from config.session_context import _current_identity, _current_session
 
-        _current_identity.set(Identity(user_id=token.id))
-        _current_session.set(make_chat_session(session_id, token.id))
+        _make_ctx_bindings.append(
+            (_current_identity, _current_identity.set(Identity(user_id=token.id)))
+        )
+        _make_ctx_bindings.append(
+            (_current_session, _current_session.set(make_chat_session(session_id, token.id)))
+        )
     request_state = SimpleNamespace(
         **{
             BZM_TOKEN_STATE_ATTR: token,
@@ -104,6 +124,19 @@ def make_ctx(token: BzmToken, session_id: str, *, bind_session: bool = True):
         session_id=session_id,
         request_context=SimpleNamespace(request=request),
     )
+
+
+@pytest.fixture(autouse=True)
+def _fresh_shared_http_clients():
+    """
+    Each test runs in its own event loop (asyncio.run), and a shared client that
+    opened a real connection (live tests) is bound to that loop. Forget it after
+    the test, without closing it: closing needs the loop that is already gone.
+    """
+    yield
+    from config.http_clients import discard_http_clients
+
+    discard_http_clients()
 
 
 @pytest.fixture(autouse=True)
