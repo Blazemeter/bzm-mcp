@@ -30,8 +30,46 @@ async tasks share the same session partitions as dataframes.
 Tool registrations call `run_tool_with_runtime(runtime, ...)` so tracing stays
 unaware of dataframe types. There is no process-global dataframe store.
 
-Partition key: `{user_id}/{mcp_session_id}` via `DefaultSessionScopeResolver`
-(`Mcp-Session-Id` header, then FastMCP `ctx.session_id`).
+Partition key: `{user_id}/{mcp_session_id}` via `DefaultSessionScopeResolver`,
+taken only from the validated chat session of the current tool call:
+
+1. Every tool call verifies the token with BlazeMeter `GET /user`
+   (`AppRuntime.identity`); `user_id` is the verified BlazeMeter user id.
+2. Every tool except `blazemeter_session` requires `session_id` (from
+   `blazemeter_session` action `get`, once per conversation). The entrypoint checks it
+   is ACTIVE and owned by that user (`AppRuntime.sessions`: in memory on stdio,
+   storage-api `/sessions` on streamable-http) and records the keep-alive.
+   `session_id` is a top-level parameter in each tool's published input schema:
+   required on every tool, optional on `blazemeter_help`/`blazemeter_skills`, absent
+   on `blazemeter_session`. A call without it still reaches the gate, which answers
+   `SESSION_REQUIRED` with the recovery guidance.
+3. Only then are identity and session bound in request-scoped ContextVars; outside a
+   validated call the resolver fails closed (no shared `anonymous`/`default` partition).
+
+Sessions are bound to the credential they were opened with (opaque; today the
+BlazeMeter `Authorization` value). The storage-api keeps only its HMAC and every
+storage call (touch, partitions, mint, credentials) sends it in `X-Bzm-Credential`;
+a different credential, even a rotated key of the same user, is `SESSION_INVALID`.
+
+Hosted session lifecycle (owned by the storage-api): 7 days without a keep-alive →
+`SESSION_EXPIRED` ("get a new session"); one hour after that first answer the session
+and its partitions are purged, and the id then answers `SESSION_INVALID`, which asks
+for a new session as well. stdio applies the same rules in process
+(`BZM_MCP_SESSION_IDLE_TIMEOUT_SECONDS`, `BZM_MCP_SESSION_PURGE_GRACE_SECONDS`,
+checked on session calls at most every `BZM_MCP_SESSION_SWEEP_INTERVAL_SECONDS`)
+and releases a purged session's partition.
+
+`blazemeter_help` and `blazemeter_skills` are public: no API key needed and
+`session_id` optional. With a valid token + session they run in that session;
+otherwise they run inline without a session (no task, no partition) and add a warning.
+
+`Mcp-Session-Id` / FastMCP `ctx.session_id` are transport sessions and are not used.
+Errors: `SESSION_REQUIRED`, `SESSION_INVALID` (unknown or someone else's),
+`SESSION_EXPIRED`, `SESSION_UNAVAILABLE` (session registry unreachable: retry the
+same call, the session is not lost), `SESSION_SERVICE_ERROR` (the registry rejected the
+MCP request: caller token, credential header or contract mismatch; retrying will not help),
+`AUTH_INVALID` (with BlazeMeter's reason when
+it gives one), `AUTH_UNAVAILABLE`.
 
 ## Session Storage Service
 

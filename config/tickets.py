@@ -24,6 +24,9 @@ from typing import Any, Literal
 
 import httpx
 
+from config.http_clients import SharedAsyncClient
+from config.service_auth import service_caller_token
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_UPLOAD_PUBLIC_BASE_URL = "http://127.0.0.1:8090"
@@ -89,17 +92,21 @@ class HttpTicketClient(TicketPort):
         self.public_base_url = public_base_url.rstrip("/")
         self._timeout = timeout_seconds
         self._http = http
-        self._owned_http: httpx.AsyncClient | None = None
+        self._owned_http = (
+            SharedAsyncClient(lambda: httpx.AsyncClient(timeout=self._timeout)) if http is None else None
+        )
 
     def _headers(self) -> dict[str, str]:
-        return {"Authorization": f"Bearer {self._caller_token}"}
+        from config.session_context import current_credential
+        from config.service_auth import service_headers
+
+        # The storage API verifies the promoted session against this credential.
+        return service_headers(self._caller_token, current_credential())
 
     def _client(self) -> httpx.AsyncClient:
         if self._http is not None:
             return self._http
-        if self._owned_http is None:
-            self._owned_http = httpx.AsyncClient(timeout=self._timeout)
-        return self._owned_http
+        return self._owned_http.get()
 
     async def _request(
         self, method: str, path: str, json: dict[str, Any]
@@ -213,10 +220,11 @@ def build_ticket_client(
     timeout_seconds = (
         float(timeout_raw) if timeout_raw.strip() else DEFAULT_TICKET_TIMEOUT_SECONDS
     )
-    caller_token = os.getenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "").strip()
+    caller_token = service_caller_token()
     if not caller_token:
         raise ValueError(
-            "BZM_MCP_TICKET_STORAGE_CALLER_TOKEN is required for streamable-http transport."
+            "BZM_MCP_STORAGE_CALLER_TOKEN (or BZM_MCP_TICKET_STORAGE_CALLER_TOKEN) is required "
+            "for streamable-http transport."
         )
     public_base_url = os.getenv("BZM_MCP_UPLOAD_PUBLIC_BASE_URL", "").strip()
     if not public_base_url:

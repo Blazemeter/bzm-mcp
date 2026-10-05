@@ -20,6 +20,7 @@ from tools.billing_manager import register as register_billing_manager
 from tools.execution_manager import register as register_execution_manager
 from tools.help_manager import register as register_help_manager
 from tools.project_manager import register as register_project_manager
+from tools.session_manager import register as register_session_manager
 from tools.skills_manager import register as register_skills_manager
 from tools.test_manager import register as register_test_manager
 from tools.tools_manager import register as register_tools_manager
@@ -36,6 +37,8 @@ def register_tools(mcp, runtime: AppRuntime):
         runtime: App runtime (transport + auth port and shared collaborators)
     """
     configure_task_storage(runtime.storage)
+    # First: every other tool needs the session_id this one returns.
+    register_session_manager(mcp, runtime)
     register_user_manager(mcp, runtime)
     register_project_manager(mcp, runtime)
     register_workspace_manager(mcp, runtime)

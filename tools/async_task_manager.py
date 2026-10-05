@@ -26,6 +26,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Set
 
+from config.env import env_int
 from config.storage import (
     SessionPartitionPayload,
     SessionScope,
@@ -43,11 +44,6 @@ from tools.utils import (
     normalize_simple_id,
 )
 
-# Match DefaultSessionScopeResolver fallbacks when token/ctx are absent.
-DEFAULT_USER_ID = "anonymous"
-DEFAULT_SESSION_ID = "default"
-DEFAULT_SCOPE = SessionScope(user_id=DEFAULT_USER_ID, mcp_session_id=DEFAULT_SESSION_ID)
-
 # Crockford-like base32 alphabet used by generate_simple_id / task ids (tests assert against this).
 TASK_ID_ALPHABET = SIMPLE_ID_ALPHABET
 
@@ -60,10 +56,10 @@ STATUS_CANCELLED = "cancelled"
 
 TERMINAL_STATES = {STATUS_COMPLETED, STATUS_FAILED, STATUS_CANCELLED}
 ACTIVE_STATES = {STATUS_PARKING, STATUS_WORKING, STATUS_INPUT_REQUIRED}
-MAX_PARALLEL_TASKS = 10
+MAX_PARALLEL_TASKS = env_int("MAX_PARALLEL_TASKS", 10, minimum=1)
 
 TASK_ID_MAX_ATTEMPTS = 10
-_MAX_SESSION_CACHES = 256
+_MAX_SESSION_CACHES = env_int("MAX_SESSION_TASK_CACHES", 256, minimum=1)
 
 logger = logging.getLogger(__name__)
 
@@ -110,8 +106,9 @@ class TaskRecord:
     asyncio_task: Optional[asyncio.Task] = None
     started_running_at: Optional[float] = None
     finished_at: Optional[float] = None
-    user_id: str = DEFAULT_USER_ID
-    mcp_session_id: str = DEFAULT_SESSION_ID
+    # The chat session that created the task (partition owner + session id).
+    user_id: str = ""
+    mcp_session_id: str = ""
 
     def set_status(self, status: str, status_message: str):
         self.status = status
@@ -275,8 +272,8 @@ def _deserialize_record(payload: Dict[str, Any]) -> TaskRecord:
             if payload.get("finished_at") is not None
             else None
         ),
-        user_id=str(payload.get("user_id") or DEFAULT_USER_ID),
-        mcp_session_id=str(payload.get("mcp_session_id") or DEFAULT_SESSION_ID),
+        user_id=str(payload.get("user_id") or ""),
+        mcp_session_id=str(payload.get("mcp_session_id") or ""),
     )
 
 
@@ -468,7 +465,8 @@ async def submit_task(
         action: Dict[str, Any],
         coro_factory: Callable[[], Awaitable[Any]],
         time_to_live_ms: Optional[int] = None,
-        scope: SessionScope = DEFAULT_SCOPE,
+        *,
+        scope: SessionScope,
 ) -> str:
     cache = await _get_or_create_cache(scope)
     async with cache.lock:
@@ -498,7 +496,8 @@ async def submit_task(
 
 async def get_task_record(
         task_id: str,
-        scope: SessionScope = DEFAULT_SCOPE,
+        *,
+        scope: SessionScope,
 ) -> Optional[TaskRecord]:
     normalized = _task_key(task_id)
     cache = await _get_or_create_cache(scope)
@@ -509,7 +508,8 @@ async def get_task_record(
 
 async def remove_task(
         task_id: str,
-        scope: SessionScope = DEFAULT_SCOPE,
+        *,
+        scope: SessionScope,
 ) -> bool:
     normalized = _task_key(task_id)
     cache = await _get_or_create_cache(scope)
@@ -546,7 +546,8 @@ def task_snapshot(task_record: TaskRecord, include_result: bool = False) -> Dict
 
 async def list_tasks(
         status_list: Optional[List[str]] = None,
-        scope: SessionScope = DEFAULT_SCOPE,
+        *,
+        scope: SessionScope,
 ) -> List[TaskRecord]:
     cache = await _get_or_create_cache(scope)
     async with cache.lock:
@@ -568,7 +569,8 @@ def is_active_status(status: str) -> bool:
 
 async def cancel_task(
         task_id: str,
-        scope: SessionScope = DEFAULT_SCOPE,
+        *,
+        scope: SessionScope,
 ) -> Optional[TaskRecord]:
     """
     Request cancellation for a task in this session partition.
@@ -613,9 +615,5 @@ async def cancel_task(
 
 
 def session_scope_from_manager(manager: Any) -> SessionScope:
-    """Resolve Storage partition keys from a Manager instance (token + ctx)."""
-    return resolve_session_scope(
-        getattr(manager, "ctx", None),
-        token=getattr(manager, "token", None),
-        scope_resolver=getattr(manager, "scope_resolver", None),
-    )
+    """Storage partition keys of the validated session (using the manager's resolver, if any)."""
+    return resolve_session_scope(scope_resolver=getattr(manager, "scope_resolver", None))
