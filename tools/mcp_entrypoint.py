@@ -142,7 +142,9 @@ async def _enter_call(
     Nothing reaches the request context unless it passed: the identity only after
     BlazeMeter accepted the token, the session only when it is ACTIVE, owned by
     that identity and used with the credential it was created with. Nested calls
-    (help/skills batch re-entry) inherit the caller's validated context.
+    (help/skills batch re-entry) inherit the caller's validated context: a gated
+    tool answers SESSION_INVALID to a nested session_id other than the inherited
+    one; a public tool ignores it and keeps the inherited session.
     Public tools (static help/skills content) never block: without a valid token
     or session they run with no identity and no session, plus a warning.
     """

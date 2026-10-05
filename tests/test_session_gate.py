@@ -130,6 +130,9 @@ def harness():
                 return BaseResult(result=[{"dataframes": len(listed)}])
             case "batch":
                 return await mcp.tools["probe"]({"action": "whoami", "args": args.get("sub_args", {})}, None)
+            case "public_batch":
+                # Like help/skills batch: a public tool re-entering itself.
+                return await mcp.tools["public_probe"]({"action": "whoami", "args": args.get("sub_args", {})}, None)
         return BaseResult(error="unknown")
 
     register_managed_tool(
@@ -420,6 +423,16 @@ def test_public_tools_never_block_on_a_bad_session_or_token(harness):
         assert body.get("error") is None
         assert any("Running without a session" in w for w in body["warning"])
         assert harness["seen"][-1] == (None, None)
+
+
+def test_public_nested_calls_inherit_the_session_and_ignore_another_one(harness):
+    session_id = harness["open_session"]()
+    other = harness["open_session"]()
+    body = harness["call"](
+        "public_probe", "public_batch", ALICE, session_id=session_id, sub_args={"session_id": other}
+    )
+    assert body.get("error") is None
+    assert harness["seen"][-1][1].session_id == session_id
 
 
 def test_public_tool_descriptions_do_not_demand_a_session(harness):
