@@ -22,12 +22,10 @@ from typing import Any, Optional
 import httpx
 
 from config.blazemeter import BZM_API_BASE_URL, NO_API_TOKEN_MESSAGE, USER_ENDPOINT
-from config.env import env_float, env_int
+from config.env import env_float
 from config.http_clients import SharedAsyncClient
 from config.token import BzmToken
 
-# How long a successful verification may be reused once the cache is integrated.
-IDENTITY_CACHE_TTL_SECONDS = env_int("IDENTITY_CACHE_TTL_SECONDS", 300, minimum=0)
 # Every tool call waits for this check, so it gets its own short budget
 # instead of the general API timeout.
 IDENTITY_TIMEOUT_SECONDS = env_float("IDENTITY_TIMEOUT_SECONDS", 10.0, minimum=0.1)
@@ -91,7 +89,8 @@ class BlazeMeterIdentityVerifier(IdentityPort):
 
     async def verify(self, token: Optional[BzmToken]) -> Identity:
         # TODO(cache): once CachePort (CACHE_METHOD) is integrated, reuse successful
-        # verifications for IDENTITY_CACHE_TTL_SECONDS. Key on the whole token
+        # verifications for a configurable TTL (env IDENTITY_CACHE_TTL_SECONDS, default
+        # 300s, added and documented with the cache itself). Key on the whole token
         # credential (id:secret), never on the token id alone: a key without the
         # secret would let a forged "id:anything" token inherit a cached identity.
         # Do not cache failures from IdentityUnavailable.

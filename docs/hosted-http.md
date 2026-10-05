@@ -73,7 +73,6 @@ docker run --rm -p 8000:8000 \
 | `BZM_MCP_STORAGE_CALLER_TOKEN` | Bearer token MCP uses for storage-api sessions and partitions. Must match storage-api `BZM_STORAGE_MCP_CALLER_TOKEN`. Falls back to `BZM_MCP_TICKET_STORAGE_CALLER_TOKEN`; one of them is required for streamable-http. | — |
 | `BZM_MCP_TICKET_STORAGE_CALLER_TOKEN` | Bearer token MCP uses when calling storage-api mint/credential endpoints. Must match storage-api `BZM_STORAGE_MCP_CALLER_TOKEN`. Required for streamable-http. | — |
 | `BZM_MCP_SESSION_STORAGE_TIMEOUT_SECONDS` | Timeout for storage-api session and partition calls | `15` |
-| `BZM_MCP_IDENTITY_CACHE_TTL_SECONDS` | Reuse window for a verified token once the cache is integrated (not active yet) | `300` |
 | `BZM_MCP_IDENTITY_TIMEOUT_SECONDS` | Timeout for the BlazeMeter `GET /user` check that runs before every tool call | `10` |
 | `BZM_MCP_SESSION_IDLE_TIMEOUT_SECONDS` | stdio only: a session expires after this long without a call (hosted: storage-api `BZM_STORAGE_SESSION_IDLE_TIMEOUT_SECONDS`) | `604800` |
 | `BZM_MCP_SESSION_PURGE_GRACE_SECONDS` | stdio only: an expired session and its partition are purged this long after the first "expired" answer | `3600` |
