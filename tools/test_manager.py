@@ -41,9 +41,12 @@ from tools.mcp_entrypoint import register_managed_tool
 from tools.utils import (
     Operations,
     api_request,
+    bypass_method_cache,
+    invalidate_cached_method,
     search,
     require_confirmation,
     run_as_task,
+    ttl_cache_method,
 )
 from tools.utils.uploads import HttpAssetMinter, StdioAssetUploader
 
@@ -65,6 +68,7 @@ class TestManager(Manager):
         self.scope_resolver = scope_resolver
         self.tickets = tickets
 
+    @ttl_cache_method(ttl_seconds=30)
     @run_as_task()
     async def read(self, test_id: int | None) -> BaseResult:
         if not isinstance(test_id, int) or test_id < 1:
@@ -113,13 +117,16 @@ class TestManager(Manager):
                 "scriptType": "jmeter",
             },
         }
-        return await api_request(
+        result = await api_request(
             self.token,
             "POST",
             f"{TESTS_ENDPOINT}",
             result_formatter=format_tests,
             json=test_body,
         )
+        if not result.error:
+            await bridge.forget_project(self.token, self.ctx, project_id)
+        return result
 
     @require_confirmation(operation=Operations.DELETE)
     @run_as_task()
@@ -137,6 +144,8 @@ class TestManager(Manager):
         )
         if test_deleted_result.error:
             return test_deleted_result
+        await invalidate_cached_method(self, TestManager.read, test_id)
+        await bridge.forget_project(self.token, self.ctx, test_result.result[0].project_id)
         test_deleted_result.result = [f"Test {test_id} Deleted Successfully"]
         return test_deleted_result
 
@@ -148,7 +157,7 @@ class TestManager(Manager):
         file_paths: list[str] | None,
         main_script: str | None = None,
     ) -> BaseResult:
-        return await StdioAssetUploader(self.file_access, self.scope_resolver).upload(
+        result = await StdioAssetUploader(self.file_access, self.scope_resolver).upload(
             self.token,
             self.ctx,
             test_id,
@@ -156,6 +165,10 @@ class TestManager(Manager):
             main_script,
             self.read,
         )
+        # Even a partial upload may have changed the test (files, main script): drop the cached read.
+        if isinstance(test_id, int):
+            await invalidate_cached_method(self, TestManager.read, test_id)
+        return result
 
     @require_confirmation(operation=Operations.CREATE)
     @run_as_task()
@@ -282,7 +295,7 @@ class TestManager(Manager):
         if not performance_test.is_valid():
             raise ValueError("PerformanceTestObject must have a valid test_id")
 
-        test_data = await self.read(performance_test.test_id)
+        test_data = await self._read_for_update(performance_test.test_id)
         if test_data.error:
             return test_data
 
@@ -300,13 +313,7 @@ class TestManager(Manager):
         override_executions = [test_data_override] if test_data_override else None
         configuration_body = {"overrideExecutions": override_executions}
 
-        return await api_request(
-            self.token,
-            "PATCH",
-            f"{TESTS_ENDPOINT}/{performance_test.test_id}",
-            result_formatter=format_tests,
-            json=configuration_body,
-        )
+        return await self._update(performance_test.test_id, configuration_body)
 
     @require_confirmation(operation=Operations.UPDATE)
     @run_as_task()
@@ -321,7 +328,7 @@ class TestManager(Manager):
         except ValueError as e:
             return BaseResult(error=str(e))
 
-        test_data = await self.read(test_id)
+        test_data = await self._read_for_update(test_id)
         if test_data.error:
             return test_data
 
@@ -331,13 +338,24 @@ class TestManager(Manager):
         merged_configuration = merge_failure_criteria_into_configuration_dict(
             configuration, fc
         )
-        return await api_request(
+        return await self._update(test_id, {"configuration": merged_configuration})
+
+    async def _read_for_update(self, test_id: int) -> BaseResult:
+        # A PATCH merges into what this returns: never a cached (possibly pre-write) copy.
+        with bypass_method_cache():
+            return await self.read(test_id)
+
+    async def _update(self, test_id: int, body: dict[str, Any]) -> BaseResult:
+        result = await api_request(
             self.token,
             "PATCH",
             f"{TESTS_ENDPOINT}/{test_id}",
             result_formatter=format_tests,
-            json={"configuration": merged_configuration},
+            json=body,
         )
+        if not result.error:
+            await invalidate_cached_method(self, TestManager.read, test_id)
+        return result
 
     @run_as_task()
     async def failure_criteria_meta(self, args: dict[str, Any]) -> BaseResult:

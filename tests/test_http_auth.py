@@ -345,3 +345,32 @@ class TestBuildRuntime:
         assert user_config["token"] is token
         assert getattr(ctx.request_context, BZM_USER_CONFIG_STATE_ATTR, None) == user_config
         assert manager.token is token
+
+
+def test_shutdown_closes_shared_clients_even_if_closing_the_cache_fails(monkeypatch):
+    import uvicorn
+    from mcp.server.fastmcp import FastMCP
+
+    import config.http_clients as http_clients_module
+    from config.auth import run_streamable_http
+    from config.cache import NullCache, configure_cache
+
+    class FailingCloseCache(NullCache):
+        async def close(self):
+            raise RuntimeError("cache close failed")
+
+    closed = []
+
+    async def serve(self, *args, **kwargs):
+        return None
+
+    async def aclose_http_clients():
+        closed.append(True)
+
+    monkeypatch.setattr(uvicorn.Server, "serve", serve)
+    monkeypatch.setattr(http_clients_module, "aclose_http_clients", aclose_http_clients)
+    configure_cache(FailingCloseCache())
+
+    with pytest.raises(RuntimeError, match="cache close failed"):
+        run_streamable_http(FastMCP("shutdown-test"))
+    assert closed == [True]

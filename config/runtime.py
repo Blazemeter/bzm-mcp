@@ -23,8 +23,9 @@ from config.auth import (
     HttpAuthProvider,
     StdioAuthProvider,
 )
+from config.cache import CachePort, build_cache_from_env
 from config.file_access import FileAccessPort, build_file_access
-from config.identity import BlazeMeterIdentityVerifier, IdentityPort
+from config.identity import BlazeMeterIdentityVerifier, CachedIdentityVerifier, IdentityPort
 from config.session import HttpSessionProvider, InMemorySessionProvider, SessionPort
 from config.storage import (
     DefaultSessionScopeResolver,
@@ -54,6 +55,7 @@ class AppRuntime:
     tickets: Optional[TicketPort] = None
     identity: IdentityPort = field(default_factory=BlazeMeterIdentityVerifier)
     sessions: SessionPort = field(default_factory=InMemorySessionProvider)
+    cache: Optional[CachePort] = None
 
     def resolve_user_config(self, ctx: Any) -> dict[str, Any]:
         user_config = dict(self.user_config)
@@ -110,12 +112,13 @@ def build_runtime(
         startup_confirmation_mode: ConfirmMode = ConfirmMode.DELETE,
 ) -> AppRuntime:
     """
-    Compose auth, identity, chat sessions, file access and session storage.
+    Compose auth, identity, sessions, file access, storage and cache.
 
-    - stdio: process-lifetime ``startup_token``; in-memory sessions and partitions.
-    - streamable-http: request-scoped auth; the storage API owns sessions and
-      partitions and is called with the MCP caller token.
-    - both: every tool call verifies the token against BlazeMeter (identity).
+    - stdio: process-lifetime ``startup_token`` and in-memory session storage.
+    - streamable-http: request-scoped auth and storage API-backed sessions/partitions.
+    - cache: in-memory on stdio; the storage API cache (/cache) on streamable-http.
+    - both: every tool call verifies the token against BlazeMeter (identity); a
+      successful check is reused for BZM_MCP_IDENTITY_CACHE_TTL_SECONDS (cache).
     """
     if transport == "stdio":
         stdio_user_config = {
@@ -132,7 +135,8 @@ def build_runtime(
             scope_resolver=DefaultSessionScopeResolver(),
             user_config=stdio_user_config,
             tickets=None,
-            identity=BlazeMeterIdentityVerifier(),
+            cache=build_cache_from_env(),
+            identity=CachedIdentityVerifier(BlazeMeterIdentityVerifier()),
             # A purged session releases its partition.
             sessions=InMemorySessionProvider(on_purge=stdio_storage.discard_session),
         )
@@ -162,8 +166,14 @@ def build_runtime(
             scope_resolver=DefaultSessionScopeResolver(),
             user_config={},
             tickets=build_ticket_client(transport, storage_base_url),
-            identity=BlazeMeterIdentityVerifier(),
+            identity=CachedIdentityVerifier(BlazeMeterIdentityVerifier()),
             sessions=HttpSessionProvider(base_url=storage_base_url, caller_token=caller_token),
+            # Same MCP caller identity the ticket and session clients use.
+            cache=build_cache_from_env(
+                transport,
+                storage_base_url=storage_base_url,
+                caller_token=caller_token,
+            ),
         )
 
     raise ValueError(f"Unknown transport: {transport}")

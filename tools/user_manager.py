@@ -23,7 +23,7 @@ from formatters.user import format_users
 from models.manager import Manager
 from models.result import BaseResult
 from tools.mcp_entrypoint import register_managed_tool
-from tools.utils import api_request, run_as_task
+from tools.utils import api_request, run_as_task, ttl_cache_method
 
 
 class UserManager(Manager):
@@ -34,6 +34,7 @@ class UserManager(Manager):
     ):
         super().__init__(ctx)
 
+    @ttl_cache_method(ttl_seconds=30)
     @run_as_task()
     async def read(self) -> BaseResult:
         return await api_request(

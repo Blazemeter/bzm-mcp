@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from config.cache import configure_cache
 from config.runtime import AppRuntime
 from tools.account_manager import register as register_account_manager
 from tools.async_task_manager import configure_task_storage
@@ -37,6 +38,8 @@ def register_tools(mcp, runtime: AppRuntime):
         runtime: App runtime (transport + auth port and shared collaborators)
     """
     configure_task_storage(runtime.storage)
+    if runtime.cache is not None:
+        configure_cache(runtime.cache)
     # First: every other tool needs the session_id this one returns.
     register_session_manager(mcp, runtime)
     register_user_manager(mcp, runtime)

@@ -15,6 +15,7 @@ limitations under the License.
 """
 from __future__ import annotations
 
+import hashlib
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -22,6 +23,7 @@ from typing import Any, Optional
 import httpx
 
 from config.blazemeter import BZM_API_BASE_URL, NO_API_TOKEN_MESSAGE, USER_ENDPOINT
+from config.cache import CacheScope, build_cache_key, get_cache
 from config.env import env_float
 from config.http_clients import SharedAsyncClient
 from config.token import BzmToken
@@ -29,6 +31,9 @@ from config.token import BzmToken
 # Every tool call waits for this check, so it gets its own short budget
 # instead of the general API timeout.
 IDENTITY_TIMEOUT_SECONDS = env_float("IDENTITY_TIMEOUT_SECONDS", 10.0, minimum=0.1)
+# How long a successful check is reused; 0 verifies every call. A revoked key
+# keeps working until its entry expires.
+IDENTITY_CACHE_TTL_SECONDS = env_float("IDENTITY_CACHE_TTL_SECONDS", 300.0, minimum=0.0)
 
 
 @dataclass(frozen=True)
@@ -88,12 +93,6 @@ class BlazeMeterIdentityVerifier(IdentityPort):
         self._http = SharedAsyncClient(lambda: httpx.AsyncClient(**options))
 
     async def verify(self, token: Optional[BzmToken]) -> Identity:
-        # TODO(cache): once CachePort (CACHE_METHOD) is integrated, reuse successful
-        # verifications for a configurable TTL (env IDENTITY_CACHE_TTL_SECONDS, default
-        # 300s, added and documented with the cache itself). Key on the whole token
-        # credential (id:secret), never on the token id alone: a key without the
-        # secret would let a forged "id:anything" token inherit a cached identity.
-        # Do not cache failures from IdentityUnavailable.
         if token is None:
             raise InvalidCredentials(NO_API_TOKEN_MESSAGE)
         from tools.utils.common import user_agent
@@ -119,6 +118,38 @@ class BlazeMeterIdentityVerifier(IdentityPort):
         if user_id is None or not str(user_id).strip():
             raise IdentityUnavailable()  # 200 without a user: BlazeMeter's problem, not the key's
         return Identity(user_id=str(user_id).strip())
+
+
+class CachedIdentityVerifier(IdentityPort):
+    """
+    Reuse the successful verifications of ``inner`` for ``ttl_seconds`` (process cache).
+
+    The key is a hash of the whole credential (id:secret), never the token id alone: a
+    key without the secret would let a forged "id:anything" token inherit a cached
+    identity, and the secret itself never reaches the cache (hosted, keys travel to the
+    storage API). Failures are never cached: a rejected key is checked again on its next
+    call and an outage (IdentityUnavailable) never sticks. Concurrent checks of one
+    credential share one call.
+    """
+
+    def __init__(self, inner: IdentityPort, ttl_seconds: float = IDENTITY_CACHE_TTL_SECONDS) -> None:
+        self._inner = inner
+        self._ttl_seconds = ttl_seconds
+
+    async def verify(self, token: Optional[BzmToken]) -> Identity:
+        if token is None or self._ttl_seconds <= 0:
+            return await self._inner.verify(token)
+        digest = hashlib.sha256(token.as_basic_auth().encode("utf-8")).hexdigest()
+
+        async def _verified_user_id() -> str:
+            return (await self._inner.verify(token)).user_id
+
+        user_id = await get_cache().get_or_load(
+            build_cache_key(CacheScope.GLOBAL, "identity", digest),
+            _verified_user_id,
+            self._ttl_seconds,
+        )
+        return Identity(user_id=user_id)
 
 
 def _error_message(response: httpx.Response) -> Optional[str]:

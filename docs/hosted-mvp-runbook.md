@@ -34,7 +34,9 @@ Partition key: `{user_id}/{mcp_session_id}` via `DefaultSessionScopeResolver`,
 taken only from the validated chat session of the current tool call:
 
 1. Every tool call verifies the token with BlazeMeter `GET /user`
-   (`AppRuntime.identity`); `user_id` is the verified BlazeMeter user id.
+   (`AppRuntime.identity`); `user_id` is the verified BlazeMeter user id. A successful
+   check is reused for `BZM_MCP_IDENTITY_CACHE_TTL_SECONDS` (default 300), keyed on a
+   hash of the whole credential; failures are never cached.
 2. Every tool except `blazemeter_session` requires `session_id` (from
    `blazemeter_session` action `get`, once per conversation). The entrypoint checks it
    is ACTIVE and owned by that user (`AppRuntime.sessions`: in memory on stdio,

@@ -44,7 +44,6 @@ class TestBatchControls:
         mcp = FakeMcp()
         register_help_tool(mcp, build_runtime("stdio"))
         help_tool = mcp.tools[f"{TOOLS_PREFIX}_help"]
-        HelpManager.help_tree = {}
         monkeypatch.setattr(HelpManager, "MAX_BATCH_CONCURRENCY", 2)
 
         active_calls = {"current": 0, "max": 0}
