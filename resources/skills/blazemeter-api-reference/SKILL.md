@@ -50,7 +50,7 @@ BlazeMeter MCP tools provide programmatic access to BlazeMeter, complementing th
   - `blazemeter_tests` with action `create` - Create new tests
   - `blazemeter_tests` with action `configure_load` - Configure load settings
   - `blazemeter_tests` with action `configure_locations` - Configure location distribution
-  - `blazemeter_tests` with action `upload_assets` - Upload test assets
+  - `blazemeter_tests` with action `upload_assets` - Stdio: upload local file paths. HTTP: mint a one-shot POST URL (no file bytes).
   - Required args: `test_id` (integer) or `project_id` (integer)
 
 - **Execution Management**: 

@@ -13,12 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Optional
+from typing import Any, Optional
 
 from mcp.server.fastmcp import Context
 
 from config.blazemeter import EXECUTIONS_ENDPOINT
-from config.token import BzmToken
 from formatters.execution import (
     format_summary_report,
     format_request_stats,
@@ -28,16 +27,26 @@ from formatters.execution import (
 from models.manager import Manager
 from models.result import BaseResult
 from tools import bridge
-from tools.utils import api_request
+from tools.utils import api_request, run_as_task
 
 EXECUTION_ARCHIVED_MSG = ("Execution report is archived. It is not possible to read execution "
                           "information from an archived execution.")
+# Report name -> (path under the execution, formatter).
+_REPORTS = {
+    "summary": ("reports/default/summary", format_summary_report),
+    "errors": ("reports/errorsreport/data", format_error_report),
+    "request_stats": ("reports/aggregatereport/data", format_request_stats),
+    "anomalies_stats": ("anomalies/stats", format_anomalies_stats),
+}
 
 
 class ReportManager(Manager):
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        ctx: Context,
+    ):
+        super().__init__(ctx)
 
     def _extract_execution_name(self, execution_result: BaseResult) -> Optional[str]:
         """Extract execution name from execution result if available."""
@@ -52,8 +61,19 @@ class ReportManager(Manager):
         return (execution_result.result and len(execution_result.result) > 0 and
                 execution_result.result[0].get("result").archived)
 
-    async def read_summary(self, master_id: int):
-        execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
+    async def read_report(
+            self,
+            master_id: int,
+            report: str,
+            execution_result: Optional[BaseResult] = None,
+    ) -> BaseResult:
+        """
+        One report of an execution. A caller reading several reports of the same
+        execution passes ``execution_result`` (access and archival check) to read it once.
+        """
+        if execution_result is None:
+            # Check if it's valid or allowed
+            execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
         if execution_result.error:
             return execution_result
 
@@ -62,20 +82,23 @@ class ReportManager(Manager):
                 error=EXECUTION_ARCHIVED_MSG,
             )
 
-        # Extract execution name from execution result if available
-        execution_name = self._extract_execution_name(execution_result)
-
+        path, formatter = _REPORTS[report]
         return await api_request(
             self.token,
             "GET",
-            f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/default/summary",
-            result_formatter=format_summary_report,
+            f"{EXECUTIONS_ENDPOINT}/{master_id}/{path}",
+            result_formatter=formatter,
             result_formatter_params={
                 "execution_id": master_id,
-                "execution_name": execution_name
-            }
+                "execution_name": self._extract_execution_name(execution_result),
+            },
         )
 
+    @run_as_task()
+    async def read_summary(self, master_id: int):
+        return await self.read_report(master_id, "summary")
+
+    @run_as_task()
     async def read_error(self, master_id: Optional[int]):
         """
         Get error report for a given master_id with formatted, AI-friendly structure.
@@ -83,29 +106,9 @@ class ReportManager(Manager):
         """
         if not isinstance(master_id, int) or master_id < 1:
             return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
+        return await self.read_report(master_id, "errors")
 
-        # Check if it's valid or allowed
-        execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
-        if execution_result.error:
-            return execution_result
-
-        execution_name = self._extract_execution_name(execution_result)
-        if self._evaluate_archived(execution_result):
-            return BaseResult(
-                error=EXECUTION_ARCHIVED_MSG,
-            )
-
-        return await api_request(
-            self.token,
-            "GET",
-            f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/errorsreport/data",
-            result_formatter=format_error_report,
-            result_formatter_params={
-                "execution_id": master_id,
-                "execution_name": execution_name
-            }
-        )
-
+    @run_as_task()
     async def read_request_stats(self, master_id: Optional[int]):
         """
         Get request statistics report for a given master_id with formatted, AI-friendly structure.
@@ -113,30 +116,9 @@ class ReportManager(Manager):
         """
         if not isinstance(master_id, int) or master_id < 1:
             return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
+        return await self.read_report(master_id, "request_stats")
 
-        # Check if it's valid or allowed
-        execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
-        if execution_result.error:
-            return execution_result
-
-        execution_name = self._extract_execution_name(execution_result)
-        if self._evaluate_archived(execution_result):
-            return BaseResult(
-                error=EXECUTION_ARCHIVED_MSG,
-            )
-
-        # Get request stats data from API with formatter
-        return await api_request(
-            self.token,
-            "GET",
-            f"{EXECUTIONS_ENDPOINT}/{master_id}/reports/aggregatereport/data",
-            result_formatter=format_request_stats,
-            result_formatter_params={
-                "execution_id": master_id,
-                "execution_name": execution_name
-            }
-        )
-
+    @run_as_task()
     async def read_anomalies_stats(self, master_id: Optional[int]):
         """
         Get anomaly statistics for a given master_id (test execution).
@@ -146,25 +128,4 @@ class ReportManager(Manager):
         """
         if not isinstance(master_id, int) or master_id < 1:
             return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
-
-        execution_result = await bridge.read_execution(self.token, self.ctx, master_id)
-        if execution_result.error:
-            return execution_result
-
-        if self._evaluate_archived(execution_result):
-            return BaseResult(
-                error=EXECUTION_ARCHIVED_MSG,
-            )
-
-        execution_name = self._extract_execution_name(execution_result)
-
-        return await api_request(
-            self.token,
-            "GET",
-            f"{EXECUTIONS_ENDPOINT}/{master_id}/anomalies/stats",
-            result_formatter=format_anomalies_stats,
-            result_formatter_params={
-                "execution_id": master_id,
-                "execution_name": execution_name,
-            },
-        )
+        return await self.read_report(master_id, "anomalies_stats")

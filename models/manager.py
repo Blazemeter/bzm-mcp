@@ -13,14 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Optional
-
 from mcp.server.fastmcp import Context
 
-from config.token import BzmToken
-
+from config.context_resolution import resolve_ctx_token
 
 class Manager:
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        self.token = token
+    def __init__(
+        self,
+        ctx: Context,
+    ):
         self.ctx = ctx
+        self.token = resolve_ctx_token(ctx)

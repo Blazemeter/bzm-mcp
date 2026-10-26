@@ -16,7 +16,7 @@ limitations under the License.
 
 import lxml.html
 
-from tools.help_utils import process_inline_elements, table_to_markdown, html_to_markdown
+from tools.utils.help import process_inline_elements, table_to_markdown, html_to_markdown
 
 
 class TestHelpUtilsHrefInterpolation:

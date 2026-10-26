@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from tools import skills_utils
+from tools.utils import skills
 
 
 @pytest.fixture
@@ -39,37 +39,37 @@ def isolated_skills_resources(tmp_path, monkeypatch):
     )
     (refs_dir / "guide.md").write_text("# Guide\n", encoding="utf-8")
 
-    monkeypatch.setattr(skills_utils, "get_resources_path", lambda: resources_path)
+    monkeypatch.setattr(skills, "get_resources_path", lambda: resources_path)
     return resources_path
 
 
 class TestSkillsUtilsPathTraversalProtection:
     def test_read_skill_file_rejects_parent_directory_traversal(self, isolated_skills_resources):
-        content, error = skills_utils.read_skill_file("safe-skill", "../../etc/passwd")
+        content, error = skills.read_skill_file("safe-skill", "../../etc/passwd")
 
         assert content is None
         assert error == "Invalid file path: parent directory traversal is not allowed"
 
     def test_read_skill_file_rejects_unix_absolute_path(self, isolated_skills_resources):
-        content, error = skills_utils.read_skill_file("safe-skill", "/etc/passwd")
+        content, error = skills.read_skill_file("safe-skill", "/etc/passwd")
 
         assert content is None
         assert error == "Invalid file path: absolute paths are not allowed"
 
     def test_read_skill_file_rejects_windows_absolute_path(self, isolated_skills_resources):
-        content, error = skills_utils.read_skill_file("safe-skill", "C:/Windows/win.ini")
+        content, error = skills.read_skill_file("safe-skill", "C:/Windows/win.ini")
 
         assert content is None
         assert error == "Invalid file path: absolute paths are not allowed"
 
     def test_read_skill_file_rejects_invalid_skill_name(self, isolated_skills_resources):
-        content, error = skills_utils.read_skill_file("../safe-skill", "SKILL.md")
+        content, error = skills.read_skill_file("../safe-skill", "SKILL.md")
 
         assert content is None
         assert error == "Invalid skill name: ../safe-skill"
 
     def test_read_skill_file_allows_valid_relative_path(self, isolated_skills_resources):
-        content, error = skills_utils.read_skill_file("safe-skill", "references/guide.md")
+        content, error = skills.read_skill_file("safe-skill", "references/guide.md")
 
         assert error is None
         assert content == "# Guide\n"
@@ -77,12 +77,12 @@ class TestSkillsUtilsPathTraversalProtection:
 
 class TestSkillUriValidation:
     def test_is_skill_uri_rejects_path_traversal_segments(self):
-        assert not skills_utils.is_skill_uri(
+        assert not skills.is_skill_uri(
             "blazemeter-skill-safe-skill://references/../../etc/passwd"
         )
 
     def test_parse_skill_uri_accepts_valid_uri(self):
-        skill_name, file_path = skills_utils.parse_skill_uri(
+        skill_name, file_path = skills.parse_skill_uri(
             "blazemeter-skill-safe-skill://references/guide.md"
         )
 
@@ -91,20 +91,20 @@ class TestSkillUriValidation:
 
     def test_parse_skill_uri_rejects_invalid_uri(self):
         with pytest.raises(ValueError, match="Invalid Skill URI"):
-            skills_utils.parse_skill_uri("blazemeter-skill-safe-skill://../../etc/passwd")
+            skills.parse_skill_uri("blazemeter-skill-safe-skill://../../etc/passwd")
 
 
 class TestSkillResourcesListingSecurity:
     def test_list_skill_resources_uri_rejects_invalid_skill_name(self, isolated_skills_resources):
         with pytest.raises(ValueError, match="Invalid skill name"):
-            skills_utils.list_skill_resources_uri("../safe-skill")
+            skills.list_skill_resources_uri("../safe-skill")
 
     def test_list_skill_resources_uri_rejects_missing_skill_folder(self, isolated_skills_resources):
         with pytest.raises(ValueError, match="Skill folder not found"):
-            skills_utils.list_skill_resources_uri("unknown-skill")
+            skills.list_skill_resources_uri("unknown-skill")
 
     def test_list_skill_resources_uri_returns_only_paths_inside_skill(self, isolated_skills_resources):
-        resources = skills_utils.list_skill_resources_uri("safe-skill")
+        resources = skills.list_skill_resources_uri("safe-skill")
 
         assert "blazemeter-skill-safe-skill://SKILL.md" in resources
         assert "blazemeter-skill-safe-skill://references/guide.md" in resources

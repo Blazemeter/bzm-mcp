@@ -21,7 +21,7 @@ import httpx
 import pytest
 
 from config.blazemeter import HELP_INDEX_URL, HELP_TOC_URL
-from tools.help_utils import convert_js_to_py_dict, html_to_markdown
+from tools.utils.help import convert_js_to_py_dict, html_to_markdown
 from tools.utils import http_request
 
 

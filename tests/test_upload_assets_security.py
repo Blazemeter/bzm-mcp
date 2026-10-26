@@ -7,39 +7,40 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
+    10|Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from pathlib import Path
-
-from tools.test_manager import TestManager as UploadAssetsManager
+from config.file_access import LocalPathFileSource
+from config.security import detect_sensitive_upload_path_reason
+from config.storage import DefaultSessionScopeResolver
+from tools.utils.uploads import StdioAssetUploader
 
 
 class TestUploadAssetsSensitivePathDetection:
     def test_detects_sensitive_system_prefixes(self):
-        assert UploadAssetsManager._detect_sensitive_path_reason("/etc/passwd") is not None
-        assert UploadAssetsManager._detect_sensitive_path_reason(r"C:\Windows\System32\config\SAM") is not None
-        assert UploadAssetsManager._detect_sensitive_path_reason(r"D:\Windows\System32\config\SAM") is not None
+        assert detect_sensitive_upload_path_reason("/etc/passwd") is not None
+        assert detect_sensitive_upload_path_reason(r"C:\Windows\System32\config\SAM") is not None
+        assert detect_sensitive_upload_path_reason(r"D:\Windows\System32\config\SAM") is not None
 
     def test_detects_sensitive_user_secret_directories(self):
-        assert UploadAssetsManager._detect_sensitive_path_reason("/home/user/.ssh/id_rsa") is not None
-        assert UploadAssetsManager._detect_sensitive_path_reason(r"C:\Users\john\.aws\credentials") is not None
-        assert UploadAssetsManager._detect_sensitive_path_reason(r"C:\Users\john\.azure\azureProfile.json") is not None
+        assert detect_sensitive_upload_path_reason("/home/user/.ssh/id_rsa") is not None
+        assert detect_sensitive_upload_path_reason(r"C:\Users\john\.aws\credentials") is not None
+        assert detect_sensitive_upload_path_reason(r"C:\Users\john\.azure\azureProfile.json") is not None
 
     def test_detects_sensitive_file_name_and_extensions(self):
-        assert UploadAssetsManager._detect_sensitive_path_reason("/workspace/.env") is not None
-        assert UploadAssetsManager._detect_sensitive_path_reason("/workspace/certificates/server.key") is not None
-        assert UploadAssetsManager._detect_sensitive_path_reason("/workspace/.netrc") is not None
-        assert UploadAssetsManager._detect_sensitive_path_reason("/workspace/env/terraform.tfstate") is not None
+        assert detect_sensitive_upload_path_reason("/workspace/.env") is not None
+        assert detect_sensitive_upload_path_reason("/workspace/certificates/server.key") is not None
+        assert detect_sensitive_upload_path_reason("/workspace/.netrc") is not None
+        assert detect_sensitive_upload_path_reason("/workspace/env/terraform.tfstate") is not None
 
     def test_allows_regular_test_assets(self):
-        assert UploadAssetsManager._detect_sensitive_path_reason("/workspace/tests/demo.jmx") is None
-        assert UploadAssetsManager._detect_sensitive_path_reason("/workspace/data/input.csv") is None
-        assert UploadAssetsManager._detect_sensitive_path_reason("relative/path/archive.zip") is None
+        assert detect_sensitive_upload_path_reason("/workspace/tests/demo.jmx") is None
+        assert detect_sensitive_upload_path_reason("/workspace/data/input.csv") is None
+        assert detect_sensitive_upload_path_reason("relative/path/archive.zip") is None
 
 
 class TestUploadAssetsFileValidation:
@@ -52,15 +53,12 @@ class TestUploadAssetsFileValidation:
 
         missing_file = tmp_path / "missing.csv"
 
-        valid_files = []
-        invalid_files = []
-        blocked_files = []
-
-        UploadAssetsManager._validate_files(
-            [str(safe_file), str(env_file), str(missing_file)],
-            valid_files,
-            invalid_files,
-            blocked_files,
+        uploader = StdioAssetUploader(
+            file_access=LocalPathFileSource(),
+            scope_resolver=DefaultSessionScopeResolver(),
+        )
+        valid_files, invalid_files, blocked_files = uploader.classify_files(
+            [str(safe_file), str(env_file), str(missing_file)]
         )
 
         assert valid_files == [str(safe_file)]

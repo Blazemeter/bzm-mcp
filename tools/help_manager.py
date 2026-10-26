@@ -14,40 +14,158 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import asyncio
+import contextlib
+import contextvars
+import logging
 from copy import deepcopy
 from itertools import chain
-from typing import Optional, Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import httpx
 from mcp.server.fastmcp import Context
-from pydantic import Field
 
 from config.blazemeter import TOOLS_PREFIX, SUPPORT_MESSAGE, \
     HELP_INDEX_URL, HELP_TOC_URL, HELP_BASE_CONTENT_URL
-from config.token import BzmToken
+from config.cache import CacheScope, StorePlan, build_cache_key, get_cache
+from config.runtime import AppRuntime
 from formatters.help import format_help_info
 from models.manager import Manager
 from models.result import BaseResult
-from tools.help_utils import convert_js_to_py_dict
-from telemetry import run_tool
-from tools.utils import http_request, format_sanitized_traceback
+from tools.utils.help import convert_js_to_py_dict
+from tools.mcp_entrypoint import register_managed_tool
+from tools.utils import http_request, format_sanitized_traceback, run_as_task
+
+
+logger = logging.getLogger(__name__)
+
+# One help tool call (batch sub-actions included): the index rebuilt for lookups the
+# cache could not serve (cache disabled, unreachable, or a piece it refused), so every
+# later lookup of the same call reuses that one build.
+_call_rebuild: contextvars.ContextVar[Optional[Dict[str, Any]]] = contextvars.ContextVar(
+    "help_call_rebuild", default=None
+)
+
+
+def _help_key(*parts: str) -> str:
+    return build_cache_key(CacheScope.GLOBAL, "help", *parts)
 
 
 class HelpManager(Manager):
-    help_tree = None  # Static to share between different instance of HelpManager
-    help_items_index = {}
-    help_index_nodes = {}
-    help_content_cache = {}
+    # Help index and pages are static content shared by every caller: GLOBAL cache,
+    # refreshed every 12 hours so long-lived hosted workers pick up doc updates.
+    HELP_CACHE_TTL_SECONDS = 12 * 60 * 60
+    # The full index can be several MB, so it is cached as small pieces that each
+    # fit the remote cache limits and are read on their own:
+    #   help:categories                 categories and their subcategories
+    #   help:section:<cat>:<sub>        the entries of one subcategory
+    #   help:subnodes:<cat>             "<sub>:<help_id>" -> child pages, per category
+    HELP_PUBLISH_CONCURRENCY = 16
     MAX_BATCH_CONCURRENCY = 100
     CONTENT_TRUST = "trusted"
     CONTENT_TRUST_NOTE = (
         "Help content is sourced from curated BlazeMeter documentation domains and is trusted by design."
     )
 
-    def __init__(self, token: Optional[BzmToken], ctx: Context):
-        super().__init__(token, ctx)
+    def __init__(
+        self,
+        ctx: Context,
+    ):
+        super().__init__(ctx)
 
-    async def _load_help_tree(self):
+    @staticmethod
+    def split_help_index(help_index: Dict[str, Any]) -> Dict[str, Any]:
+        """Cut the full index into the cache pieces (key -> value) described above."""
+        tree = help_index.get("tree", {})
+        pieces: Dict[str, Any] = {
+            _help_key("categories"): [
+                {"category": category, "subcategories": list(subcategories.keys())}
+                for category, subcategories in tree.items()
+            ]
+        }
+        for category, subcategories in tree.items():
+            children_by_page: Dict[str, Any] = {}
+            for subcategory, items in subcategories.items():
+                pieces[_help_key("section", category, subcategory)] = items
+                for item in items:
+                    children = HelpManager.get_sub_nodes(help_index, category, subcategory, item["help_id"])
+                    if children:
+                        children_by_page[f"{subcategory}:{item['help_id']}"] = children
+            pieces[_help_key("subnodes", category)] = children_by_page
+        return pieces
+
+    @staticmethod
+    async def _rebuild_help_pieces() -> Dict[str, Any]:
+        """Build the index once (single-flight), publish every piece, return them all."""
+
+        async def _build_and_publish() -> Dict[str, Any]:
+            pieces = HelpManager.split_help_index(await HelpManager._build_help_index())
+            cache = get_cache()
+            limit = asyncio.Semaphore(HelpManager.HELP_PUBLISH_CONCURRENCY)
+
+            async def _publish(key: str, value: Any) -> None:
+                async with limit:
+                    try:
+                        await cache.set(key, value, HelpManager.HELP_CACHE_TTL_SECONDS)
+                    except Exception as exc:
+                        logger.warning("help cache piece %s not stored: %s", key, exc)
+
+            categories_key = _help_key("categories")
+            await asyncio.gather(*(
+                _publish(key, value) for key, value in pieces.items() if key != categories_key
+            ))
+            # Categories last: once they are visible, the other pieces already are.
+            await _publish(categories_key, pieces[categories_key])
+            return pieces
+
+        return await get_cache().get_or_load(
+            _help_key("rebuild"),
+            _build_and_publish,
+            HelpManager.HELP_CACHE_TTL_SECONDS,
+            store_policy=lambda _pieces: None,  # the pieces are the cache; this only single-flights
+        )
+
+    @staticmethod
+    async def _help_piece(*parts: str, default: Any = None) -> Any:
+        key = _help_key(*parts)
+        entry = await get_cache().get(key)
+        if entry is not None:
+            return entry.value
+        call_rebuild = _call_rebuild.get()
+        if call_rebuild is None:
+            return (await HelpManager._rebuild_help_pieces()).get(key, default)
+        if "pieces" not in call_rebuild:
+            # A future, not the pieces: concurrent batch sub-actions wait for the same build.
+            call_rebuild["pieces"] = asyncio.ensure_future(HelpManager._rebuild_help_pieces())
+        return (await asyncio.shield(call_rebuild["pieces"])).get(key, default)
+
+    @staticmethod
+    @contextlib.contextmanager
+    def rebuild_scope():
+        """Share one fallback rebuild across the lookups of a help tool call (nested calls join it)."""
+        if _call_rebuild.get() is not None:
+            yield
+            return
+        token = _call_rebuild.set({})
+        try:
+            yield
+        finally:
+            _call_rebuild.reset(token)
+
+    @staticmethod
+    async def get_help_categories() -> List[Dict[str, Any]]:
+        return await HelpManager._help_piece("categories", default=[])
+
+    @staticmethod
+    async def _has_subcategory(category_id: str, subcategory_id: str) -> bool:
+        return any(
+            entry["category"] == category_id and subcategory_id in entry["subcategories"]
+            for entry in await HelpManager.get_help_categories()
+        )
+
+    @staticmethod
+    async def _build_help_index() -> Dict[str, Any]:
+        help_items_index: Dict[str, Any] = {}
+        help_index_nodes: Dict[Any, Any] = {}
         help_index_url = HELP_INDEX_URL
         help_index_response = await http_request("GET", endpoint=help_index_url)
 
@@ -124,10 +242,10 @@ class HelpManager(Manager):
                 help_tree[category][subcategory] = []
             help_tree[category][subcategory].append(item)
 
-            HelpManager.help_items_index[f"{category}:{subcategory}:{new_id}"] = tree_id
+            help_items_index[f"{category}:{subcategory}:{new_id}"] = tree_id
 
-            if tree_id not in HelpManager.help_index_nodes:
-                HelpManager.help_index_nodes[tree_id] = {
+            if tree_id not in help_index_nodes:
+                help_index_nodes[tree_id] = {
                     "category": category,
                     "subcategory": subcategory,
                     "help_id": new_id,
@@ -135,36 +253,32 @@ class HelpManager(Manager):
                 }
         if '' in help_tree.keys():
             help_tree['root_category'] = help_tree.pop('')  # Assign a name to the root category
-        HelpManager.help_tree = help_tree
+        return {
+            "tree": help_tree,
+            "items_index": help_items_index,
+            "index_nodes": help_index_nodes,
+        }
 
+    @run_as_task()
     async def list_help_categories(self) -> BaseResult:
-        if HelpManager.help_tree is None:
-            await self._load_help_tree()
-        categories = []
-        for key in HelpManager.help_tree.keys():
-            category = {
-                "category": key,
-                "subcategories": list(HelpManager.help_tree[key].keys()),
-            }
-            categories.append(category)
         return BaseResult(
-            result=categories,
+            result=await HelpManager.get_help_categories(),
             info=["A list of subcategories is provided for each category"]
         )
 
+    @run_as_task()
     async def list_help_category_content(self, category_id: str, subcategory_id_list: List[str]) -> BaseResult:
         if not isinstance(subcategory_id_list, list) or not subcategory_id_list:
             return BaseResult(
                 error="Missing required argument 'subcategory_id_list'. Please provide a non-empty list."
             )
-        if HelpManager.help_tree is None:
-            await self._load_help_tree()
         results = []
         for subcategory_id in subcategory_id_list:
             if subcategory_id == "":
                 subcategory_id = "self"
-            if category_id in HelpManager.help_tree.keys() and subcategory_id in HelpManager.help_tree[category_id]:
-                results.append(HelpManager.help_tree[category_id][subcategory_id])
+            # Check the (small) categories piece first so unknown ids never trigger a rebuild.
+            if await HelpManager._has_subcategory(category_id, subcategory_id):
+                results.append(await HelpManager._help_piece("section", category_id, subcategory_id, default=[]))
             else:
                 results.append(
                     BaseResult(warning=[f"Category '{category_id}' and subcategory '{subcategory_id}' not found."]))
@@ -173,20 +287,28 @@ class HelpManager(Manager):
         )
 
     @staticmethod
-    def get_sub_nodes(category_id: str, subcategory_id: str, help_id: str) -> Any:
+    def get_sub_nodes(help_index: Dict[str, Any], category_id: str, subcategory_id: str, help_id: str) -> Any:
+        items_index = help_index.get("items_index", {})
+        index_nodes = help_index.get("index_nodes", {})
         index_id = f"{category_id}:{subcategory_id}:{help_id}"
         sub_nodes_items = []
-        if index_id in HelpManager.help_items_index:
-            node_id = HelpManager.help_items_index[index_id]
-            sub_nodes = HelpManager.help_index_nodes[node_id]["sub_nodes"]
+        if index_id in items_index:
+            node_id = items_index[index_id]
+            sub_nodes = index_nodes[node_id]["sub_nodes"]
             for sub_node in sub_nodes:
-                if sub_node in HelpManager.help_index_nodes:
-                    sub_nodes_items.append(HelpManager.help_index_nodes[sub_node])
+                if sub_node in index_nodes:
+                    sub_nodes_items.append(deepcopy(index_nodes[sub_node]))
         return sub_nodes_items
 
     @staticmethod
+    async def _page_sub_nodes(category_id: str, subcategory_id: str, help_id: str) -> List[Any]:
+        if not any(entry["category"] == category_id for entry in await HelpManager.get_help_categories()):
+            return []
+        children_by_page = await HelpManager._help_piece("subnodes", category_id, default={})
+        return children_by_page.get(f"{subcategory_id}:{help_id}", [])
+
+    @staticmethod
     async def get_help_object(category_id: str, subcategory_id: str, help_id: str) -> Any:
-        help_cache_key = f"{category_id}:{subcategory_id}:{help_id}"
         help_base_url = HELP_BASE_CONTENT_URL
         help_url = f"{help_base_url}/"  # BlazeMeter doesn't use category_id
         if subcategory_id != "self":
@@ -197,31 +319,41 @@ class HelpManager(Manager):
         else:
             help_url += f"{help_id}"
 
-        help_object = {}
-        # If it's cached, it returns the cached version.
-        if help_cache_key in HelpManager.help_content_cache:
-            help_object = HelpManager.help_content_cache[help_cache_key]
-            help_object["help_cached"] = True
-        else:
-            help_object["help_cached"] = False
+        async def _load_help_object() -> Dict[str, Any]:
+            loaded: Dict[str, Any] = {}
             try:
                 result = await http_request("GET", endpoint=help_url, result_formatter=format_help_info,
                                             result_formatter_params={"base_url": help_url})
                 # Expand or "Augment" the content ending with ""
                 if result.result is not None:
                     if result.result.get("help_content", "").endswith("In this section:"):
-                        help_object["sub_nodes"] = HelpManager.get_sub_nodes(category_id, subcategory_id, help_id)
-                    help_object["help_result"] = result.result
-                    # Store on cache
-                    HelpManager.help_content_cache[help_cache_key] = help_object
+                        loaded["sub_nodes"] = await HelpManager._page_sub_nodes(
+                            category_id, subcategory_id, help_id
+                        )
+                    loaded["help_result"] = result.result
                 else:
-                    help_object["help_result"] = f"URL:{help_url}, Error:{result.error}"
+                    loaded["help_result"] = f"URL:{help_url}, Error:{result.error}"
             except httpx.HTTPStatusError as e:
                 status_code = e.response.status_code
                 reason_phrase = e.response.reason_phrase
-                help_object["help_result"] = (
+                loaded["help_result"] = (
                     f"URL:{help_url}, Error: HTTP {status_code} {reason_phrase}"
                 )
+            return loaded
+
+        def _store_only_content(loaded: Dict[str, Any]) -> StorePlan | None:
+            # Errors are rendered as strings; keep them out of the cache so they are retried.
+            return StorePlan() if isinstance(loaded.get("help_result"), dict) else None
+
+        cache_events: Dict[str, int] = {}
+        help_object = await get_cache().get_or_load(
+            build_cache_key(CacheScope.GLOBAL, "help", "content", category_id, subcategory_id, help_id),
+            _load_help_object,
+            HelpManager.HELP_CACHE_TTL_SECONDS,
+            store_policy=_store_only_content,
+            observer=lambda metric, value: cache_events.__setitem__(metric, cache_events.get(metric, 0) + value),
+        )
+        help_object["help_cached"] = cache_events.get("hits", 0) > 0
         help_object["help_id"] = help_id
         # Trust policy note for future audits:
         # Help content comes from curated BlazeMeter help sources and is considered trusted by design.
@@ -230,13 +362,12 @@ class HelpManager(Manager):
 
         return help_object
 
+    @run_as_task()
     async def read_help_info(self, category_id: str, subcategory_id: str, help_id_list: List[str]) -> BaseResult:
         if not isinstance(help_id_list, list) or not help_id_list:
             return BaseResult(
                 error="Missing required argument 'help_id_list'. Please provide a non-empty list."
             )
-        if HelpManager.help_tree is None:
-            await self._load_help_tree()
         results = []
         if subcategory_id == "":
             subcategory_id = "self"
@@ -254,10 +385,74 @@ class HelpManager(Manager):
             }],
         )
 
+def register(mcp, runtime: AppRuntime):
+    help_tool = None
 
-def register(mcp, token: Optional[BzmToken]):
-    @mcp.tool(
+    async def _dispatch(action, args, token, ctx):
+        with HelpManager.rebuild_scope():
+            return await _dispatch_action(action, args, token, ctx)
+
+    async def _dispatch_action(action, args, token, ctx):
+        args = args or {}
+        help_manager = HelpManager(ctx)
+        match action:
+            case "list_help_categories":
+                return await help_manager.list_help_categories()
+            case "list_help_category_content":
+                return await help_manager.list_help_category_content(
+                    args.get("category_id", "home"),
+                    args.get("subcategory_id_list")
+                )
+            case "read_help_info":
+                return await help_manager.read_help_info(
+                    args.get("category_id", "home"),
+                    args.get("subcategory_id", ""),
+                    args.get("help_id_list")
+                )
+            case "batch":
+                # Sub-actions share one help index load: the cache single-flights concurrent misses.
+                batch_calls = args.get("batch_calls", [])
+                if not isinstance(batch_calls, list) or not batch_calls:
+                    return BaseResult(
+                        error="batch_calls must be a non-empty list of dicts with 'action' and 'args'")
+
+                semaphore = asyncio.Semaphore(HelpManager.MAX_BATCH_CONCURRENCY)
+
+                async def process_call(call: Dict[str, Any]) -> BaseResult | List[BaseResult]:
+                    sub_action = call.get("action", "")
+                    sub_args = call.get("args", {})
+                    async with semaphore:
+                        try:
+                            # Recursively call the help function itself
+                            return await help_tool({"action": sub_action, "args": sub_args}, ctx)
+                        except httpx.HTTPStatusError:
+                            return BaseResult(
+                                error=f"HTTP error in sub-action {sub_action}: {format_sanitized_traceback()}"
+                            )
+                        except Exception:
+                            return BaseResult(
+                                error=f"Error in sub-action {sub_action}: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}")
+
+                # Parallel execution with asyncio.gather
+                results = await asyncio.gather(*[process_call(call) for call in batch_calls],
+                                               return_exceptions=True)
+                # Handle any exceptions returned
+                processed_results = [
+                    r if not isinstance(r, Exception) else BaseResult(error=f"Unhandled exception: {str(r)}")
+                    for r in results
+                ]
+                return BaseResult(result=processed_results)
+            case _:
+                return BaseResult(
+                    error=f"Action {action} not found in help manager tool"
+                )
+
+    help_tool = register_managed_tool(
+        mcp,
+        runtime,
         name=f"{TOOLS_PREFIX}_help",
+        # Static content: usable without an API key; session_id optional.
+        public=True,
         description="""
 Operations on documentation and help information.
 **Note**: If you need to call this action multiple times (even with different parameters), 
@@ -280,81 +475,8 @@ Hints:
 - Always generates the url attributes as a link in markdown format (like command_url).
 - **CRITICAL**: For multiple actions, always use the 'batch' action.
 - **CRITICAL**: Always follow the action schema exactly. If args are required, include args with exact names/types.
-"""
+""",
+        dispatch=_dispatch,
+        excluded_actions={'batch'},
+        support_message=SUPPORT_MESSAGE,
     )
-    async def help_main(
-            action: str = Field(description="The action id to execute"),
-            args: Dict[str, Any] = Field(description="Dictionary with parameters", default=None),
-            ctx: Context = Field(description="Context object providing access to MCP capabilities")
-    ) -> BaseResult:
-        if args is None:
-            args = {}
-
-        help_manager = HelpManager(token, ctx)
-
-        async def _dispatch():
-            match action:
-                case "list_help_categories":
-                    return await help_manager.list_help_categories()
-                case "list_help_category_content":
-                    return await help_manager.list_help_category_content(
-                        args.get("category_id", "home"),
-                        args.get("subcategory_id_list")
-                    )
-                case "read_help_info":
-                    return await help_manager.read_help_info(
-                        args.get("category_id", "home"),
-                        args.get("subcategory_id", ""),
-                        args.get("help_id_list")
-                    )
-                case "batch":
-                    # Make sure this initialization doesn't run in parallel
-                    if HelpManager.help_tree is None:
-                        await help_manager._load_help_tree()
-
-                    batch_calls = args.get("batch_calls", [])
-                    if not isinstance(batch_calls, list) or not batch_calls:
-                        return BaseResult(
-                            error="batch_calls must be a non-empty list of dicts with 'action' and 'args'")
-
-                    semaphore = asyncio.Semaphore(HelpManager.MAX_BATCH_CONCURRENCY)
-
-                    async def process_call(call: Dict[str, Any]) -> BaseResult | List[BaseResult]:
-                        sub_action = call.get("action", "")
-                        sub_args = call.get("args", {})
-                        async with semaphore:
-                            try:
-                                # Recursively call the help function itself
-                                return await help_main(sub_action, sub_args, ctx)
-                            except httpx.HTTPStatusError:
-                                return BaseResult(
-                                    error=f"HTTP error in sub-action {sub_action}: {format_sanitized_traceback()}"
-                                )
-                            except Exception:
-                                return BaseResult(
-                                    error=f"Error in sub-action {sub_action}: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}")
-
-                    # Parallel execution with asyncio.gather
-                    results = await asyncio.gather(*[process_call(call) for call in batch_calls],
-                                                   return_exceptions=True)
-                    # Handle any exceptions returned
-                    processed_results = [
-                        r if not isinstance(r, Exception) else BaseResult(error=f"Unhandled exception: {str(r)}")
-                        for r in results
-                    ]
-                    return BaseResult(result=processed_results)
-                case _:
-                    return BaseResult(
-                        error=f"Action {action} not found in help manager tool"
-                    )
-
-        try:
-            return await run_tool(f"{TOOLS_PREFIX}_help", action, ctx, _dispatch)
-        except httpx.HTTPStatusError:
-            return BaseResult(
-                error=f"Error: {format_sanitized_traceback()}"
-            )
-        except Exception:
-            return BaseResult(
-                error=f"Error: {format_sanitized_traceback()}\n{SUPPORT_MESSAGE}"
-            )
