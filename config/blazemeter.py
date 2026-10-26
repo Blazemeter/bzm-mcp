@@ -20,6 +20,10 @@ TOOLS_PREFIX: str = "blazemeter"
 WEBSITE: str = "https://github.com/Blazemeter/bzm-mcp/"
 GITHUB: str = "https://github.com/Blazemeter/bzm-mcp"
 SUPPORT_MESSAGE: str = "If you think this is a bug, please contact BlazeMeter support or report issue at https://github.com/Blazemeter/bzm-mcp/issues"
+NO_API_TOKEN_MESSAGE: str = (
+    "No API token. Set BLAZEMETER_API_KEY env var with file path or API_KEY_ID and "
+    "API_KEY_SECRET secrets in docker catalog configuration."
+)
 
 HELP_TOC_URL = "https://help.blazemeter.com/docs/Data/Tocs/"
 HELP_INDEX_URL = f"{HELP_TOC_URL}azure_toc_public.js"

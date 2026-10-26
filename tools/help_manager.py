@@ -324,6 +324,8 @@ def register(mcp, runtime: AppRuntime):
         mcp,
         runtime,
         name=f"{TOOLS_PREFIX}_help",
+        # Static content: usable without an API key; session_id optional.
+        public=True,
         description="""
 Operations on documentation and help information.
 **Note**: If you need to call this action multiple times (even with different parameters), 

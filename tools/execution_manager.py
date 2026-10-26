@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 from mcp.server.fastmcp import Context
 
-from config.blazemeter import TOOLS_PREFIX, EXECUTIONS_ENDPOINT, SUPPORT_MESSAGE
+from config.blazemeter import TOOLS_PREFIX, EXECUTIONS_ENDPOINT, NO_API_TOKEN_MESSAGE, SUPPORT_MESSAGE
 from config.runtime import AppRuntime
 from formatters.execution import format_executions, format_executions_detailed, format_executions_status
 from models.manager import Manager
@@ -26,7 +26,8 @@ from models.result import BaseResult
 from tools import bridge
 from tools.report_manager import ReportManager
 from tools.mcp_entrypoint import register_managed_tool
-from tools.utils import api_request, timeout, user_agent, format_sanitized_traceback, require_confirmation, Operations, run_as_task, search
+from tools.utils.common import web_http_client
+from tools.utils import api_request, user_agent, format_sanitized_traceback, require_confirmation, Operations, run_as_task, search
 
 
 class ExecutionManager(Manager):
@@ -41,9 +42,7 @@ class ExecutionManager(Manager):
                                         json_body: Optional[Dict[str, Any]] = None) -> BaseResult:
         token = self.token
         if not token:
-            return BaseResult(
-                error="No API token. Set BLAZEMETER_API_KEY env var with file path or API_KEY_ID and API_KEY_SECRET secrets."
-            )
+            return BaseResult(error=NO_API_TOKEN_MESSAGE)
 
         url = f"https://log-analyzer.blazemeter.com/analyzer/{execution_id}"
         headers = {
@@ -54,10 +53,11 @@ class ExecutionManager(Manager):
         }
 
         try:
-            async with httpx.AsyncClient(http2=True, timeout=timeout) as client:
-                resp = await self._make_analyzer_http_request(client, method, url, headers, json_body)
-                resp.raise_for_status()
-                return self._parse_analyzer_response(resp)
+            resp = await self._make_analyzer_http_request(
+                web_http_client.get(), method, url, headers, json_body
+            )
+            resp.raise_for_status()
+            return self._parse_analyzer_response(resp)
         except httpx.HTTPStatusError as e:
             return self._handle_analyzer_http_error(e, execution_id)
         except Exception as e:
