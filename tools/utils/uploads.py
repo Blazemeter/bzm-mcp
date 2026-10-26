@@ -160,7 +160,7 @@ class StdioAssetUploader:
         if test_data.error:
             return BaseResult(error=test_data.error)
 
-        scope = self._scope_resolver.resolve(ctx, token)
+        scope = self._scope_resolver.resolve()
         mapped_file_paths = self._file_access.map_paths(file_paths, scope=scope)
         mapped_main_script = None
         if main_script:
@@ -309,7 +309,7 @@ class HttpAssetMinter:
         if test_data.error:
             return BaseResult(error=test_data.error)
 
-        scope = self._scope_resolver.resolve(ctx, token)
+        scope = self._scope_resolver.resolve()
         try:
             await self._tickets.put_credential(
                 scope.user_id, scope.mcp_session_id, token.as_basic_auth()

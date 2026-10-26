@@ -162,6 +162,8 @@ def run_streamable_http(mcp: FastMCP) -> None:
     register_health_routes(mcp)
 
     async def _serve() -> None:
+        from config.http_clients import aclose_http_clients
+
         app = BearerAuthMiddleware(mcp.streamable_http_app())
         config = uvicorn.Config(
             app,
@@ -172,9 +174,10 @@ def run_streamable_http(mcp: FastMCP) -> None:
         try:
             await uvicorn.Server(config).serve()
         finally:
-            # Release pooled connections (e.g. the remote cache client) on shutdown.
+            # Release the cache client and the shared service clients on shutdown.
             from config.cache import get_cache
 
             await get_cache().close()
+            await aclose_http_clients()
 
     anyio.run(_serve)

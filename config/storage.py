@@ -21,9 +21,7 @@ from typing import Any, Optional
 from urllib.parse import quote
 
 import httpx
-from mcp.server.fastmcp import Context
 
-from config.token import BzmToken
 
 
 class StorageNotConfiguredError(RuntimeError):
@@ -93,57 +91,38 @@ class SessionStoragePort(ABC):
 
 class SessionScopeResolverPort(ABC):
     @abstractmethod
-    def resolve(self, ctx: Optional[Context], token: Optional[BzmToken]) -> SessionScope:
+    def resolve(self) -> SessionScope:
         raise NotImplementedError
 
 
 class DefaultSessionScopeResolver(SessionScopeResolverPort):
     """
-    Resolve scope from request/ctx metadata.
+    Resolve the partition from the validated chat session of the current tool call.
 
-    Hosted HTTP receives `Mcp-Session-Id` via header.
-    Local stdio/docker falls back to FastMCP context session_id when available.
+    The tool entrypoint binds the verified BlazeMeter user and the ACTIVE session
+    it owns; nothing else (transport Mcp-Session-Id, FastMCP ctx.session_id, the raw
+    token id) is trusted. Outside a validated call this fails closed instead of
+    falling back to a shared partition.
     """
 
-    @staticmethod
-    def _resolve_session_id(ctx: Optional[Context]) -> str:
-        if ctx is None:
-            return "default"
-        request = getattr(getattr(ctx, "request_context", None), "request", None)
-        if request is not None:
-            session_id = request.headers.get("mcp-session-id")
-            if session_id and session_id.strip():
-                return session_id.strip()
-        session_id = getattr(ctx, "session_id", None)
-        if session_id is not None and str(session_id).strip():
-            return str(session_id).strip()
-        return "default"
+    def resolve(self) -> SessionScope:
+        from config.session_context import SessionContextMissing, current_identity, current_session
 
-    @staticmethod
-    def _resolve_user_id(token: Optional[BzmToken]) -> str:
-        if token is not None and token.id.strip():
-            return token.id.strip()
-        return "anonymous"
-
-    def resolve(self, ctx: Optional[Context], token: Optional[BzmToken]) -> SessionScope:
-        return SessionScope(
-            user_id=self._resolve_user_id(token),
-            mcp_session_id=self._resolve_session_id(ctx),
-        )
+        identity = current_identity()
+        session = current_session()
+        if identity is None or session is None:
+            raise SessionContextMissing(
+                "No validated session in this call; session-scoped data needs a session_id."
+            )
+        return SessionScope(user_id=identity.user_id, mcp_session_id=session.session_id)
 
 
 def resolve_session_scope(
-        ctx: Any,
-        token: Optional[BzmToken] = None,
         scope_resolver: Optional[SessionScopeResolverPort] = None,
 ) -> SessionScope:
-    """Resolve partition keys from auth token + MCP session context."""
+    """Resolve partition keys for the current validated chat session."""
     resolver = scope_resolver or DefaultSessionScopeResolver()
-    resolved_token = token
-    if resolved_token is None:
-        from config.context_resolution import resolve_ctx_token
-        resolved_token = resolve_ctx_token(ctx)
-    return resolver.resolve(ctx, resolved_token)
+    return resolver.resolve()
 
 
 class InMemorySessionStorageProvider(SessionStoragePort):
@@ -181,15 +160,34 @@ class InMemorySessionStorageProvider(SessionStoragePort):
     async def delete_partition(self, scope: SessionScope) -> bool:
         return self._partitions.pop((scope.user_id, scope.mcp_session_id), None) is not None
 
+    def discard_session(self, user_id: str, mcp_session_id: str) -> None:
+        """Drop a purged session's partition (stdio session provider ``on_purge``)."""
+        self._partitions.pop((user_id, mcp_session_id), None)
+
 
 class HttpSessionStorageProvider(SessionStoragePort):
     def __init__(
         self,
         base_url: str,
-        timeout_seconds: float = 15.0,
+        timeout_seconds: Optional[float] = None,
+        caller_token: Optional[str] = None,
     ) -> None:
+        from config.http_clients import SharedAsyncClient
+        from config.session import SESSION_STORAGE_TIMEOUT_SECONDS
+
         self._base_url = base_url.rstrip("/")
-        self._timeout = timeout_seconds
+        self._timeout = timeout_seconds if timeout_seconds is not None else SESSION_STORAGE_TIMEOUT_SECONDS
+        # Shared: partitions are read and written on most tool calls.
+        self._http = SharedAsyncClient(lambda: httpx.AsyncClient(http2=True, timeout=self._timeout))
+        # The storage-api only serves partitions to the MCP caller identity.
+        self._caller_token = caller_token
+
+    def _request_headers(self) -> dict[str, str]:
+        """Caller identity plus the end-user credential of the current validated call."""
+        from config.session_context import current_credential
+        from config.service_auth import service_headers
+
+        return service_headers(self._caller_token, current_credential())
 
     def _url_for_scope(self, scope: SessionScope) -> str:
         user_id = quote(scope.user_id, safe="")
@@ -206,30 +204,30 @@ class HttpSessionStorageProvider(SessionStoragePort):
             response.raise_for_status()
 
     async def put_partition(self, scope: SessionScope, payload: SessionPartitionPayload) -> None:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
-            response = await client.put(
-                self._url_for_scope(scope),
-                json=payload.to_dict(),
-            )
-            response.raise_for_status()
+        response = await self._http.get().put(
+            self._url_for_scope(scope),
+            headers=self._request_headers(),
+            json=payload.to_dict(),
+        )
+        response.raise_for_status()
 
     async def get_partition(self, scope: SessionScope) -> SessionPartition | None:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
-            response = await client.get(
-                self._url_for_scope(scope),
-            )
-            if response.status_code == 404:
-                return None
-            response.raise_for_status()
-            return SessionPartition.from_dict(response.json())
+        response = await self._http.get().get(
+            self._url_for_scope(scope),
+            headers=self._request_headers(),
+        )
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return SessionPartition.from_dict(response.json())
 
     async def delete_partition(self, scope: SessionScope) -> bool:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
-            response = await client.delete(
-                self._url_for_scope(scope),
-            )
-            response.raise_for_status()
-            payload = response.json()
-            return bool(payload.get("deleted"))
+        response = await self._http.get().delete(
+            self._url_for_scope(scope),
+            headers=self._request_headers(),
+        )
+        response.raise_for_status()
+        payload = response.json()
+        return bool(payload.get("deleted"))
 
 

@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 from typing import Any, Literal, Optional
 
@@ -25,6 +25,8 @@ from config.auth import (
 )
 from config.cache import CachePort, build_cache_from_env
 from config.file_access import FileAccessPort, build_file_access
+from config.identity import BlazeMeterIdentityVerifier, IdentityPort
+from config.session import HttpSessionProvider, InMemorySessionProvider, SessionPort
 from config.storage import (
     DefaultSessionScopeResolver,
     HttpSessionStorageProvider,
@@ -32,7 +34,8 @@ from config.storage import (
     SessionScopeResolverPort,
     SessionStoragePort,
 )
-from config.tickets import TicketPort, build_ticket_client, storage_caller_token
+from config.service_auth import service_caller_token
+from config.tickets import TicketPort, build_ticket_client
 from config.token import BzmToken
 from tools.utils import ConfirmMode
 
@@ -50,6 +53,8 @@ class AppRuntime:
     scope_resolver: SessionScopeResolverPort
     user_config: dict[str, Any]
     tickets: Optional[TicketPort] = None
+    identity: IdentityPort = field(default_factory=BlazeMeterIdentityVerifier)
+    sessions: SessionPort = field(default_factory=InMemorySessionProvider)
     cache: Optional[CachePort] = None
 
     def resolve_user_config(self, ctx: Any) -> dict[str, Any]:
@@ -107,11 +112,12 @@ def build_runtime(
         startup_confirmation_mode: ConfirmMode = ConfirmMode.DELETE,
 ) -> AppRuntime:
     """
-    Compose auth, file access, session storage and cache for the selected transport.
+    Compose auth, identity, sessions, file access, storage and cache.
 
     - stdio: process-lifetime ``startup_token`` and in-memory session storage.
-    - streamable-http: request-scoped auth and storage API-backed partitions.
+    - streamable-http: request-scoped auth and storage API-backed sessions/partitions.
     - cache: in-memory on stdio; the storage API cache (/cache) on streamable-http.
+    - both: every tool call verifies the token against BlazeMeter (identity).
     """
     if transport == "stdio":
         stdio_user_config = {
@@ -119,15 +125,19 @@ def build_runtime(
             "token": startup_token,
             "confirmation_mode": startup_confirmation_mode.name,
         }
+        stdio_storage = InMemorySessionStorageProvider()
         return AppRuntime(
             transport=transport,
             auth=StdioAuthProvider(startup_token),
-            storage=InMemorySessionStorageProvider(),
+            storage=stdio_storage,
             file_access=build_file_access(transport),
             scope_resolver=DefaultSessionScopeResolver(),
             user_config=stdio_user_config,
             tickets=None,
             cache=build_cache_from_env(),
+            identity=BlazeMeterIdentityVerifier(),
+            # A purged session releases its partition.
+            sessions=InMemorySessionProvider(on_purge=stdio_storage.discard_session),
         )
 
     if transport == "streamable-http":
@@ -136,8 +146,15 @@ def build_runtime(
             raise ValueError(
                 "BZM_STORAGE_API_BASE_URL is required for streamable-http transport."
             )
+        caller_token = service_caller_token()
+        if not caller_token:
+            raise ValueError(
+                "BZM_MCP_STORAGE_CALLER_TOKEN (or BZM_MCP_TICKET_STORAGE_CALLER_TOKEN) is required "
+                "for streamable-http transport."
+            )
         storage: SessionStoragePort = HttpSessionStorageProvider(
             base_url=storage_base_url,
+            caller_token=caller_token,
         )
         storage.ensure_available()
         return AppRuntime(
@@ -148,11 +165,13 @@ def build_runtime(
             scope_resolver=DefaultSessionScopeResolver(),
             user_config={},
             tickets=build_ticket_client(transport, storage_base_url),
-            # Same MCP caller identity the ticket client uses.
+            identity=BlazeMeterIdentityVerifier(),
+            sessions=HttpSessionProvider(base_url=storage_base_url, caller_token=caller_token),
+            # Same MCP caller identity the ticket and session clients use.
             cache=build_cache_from_env(
                 transport,
                 storage_base_url=storage_base_url,
-                caller_token=storage_caller_token(),
+                caller_token=caller_token,
             ),
         )
 
