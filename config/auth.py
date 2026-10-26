@@ -174,10 +174,13 @@ def run_streamable_http(mcp: FastMCP) -> None:
         try:
             await uvicorn.Server(config).serve()
         finally:
-            # Release the cache client and the shared service clients on shutdown.
+            # Release the cache and the shared service clients on shutdown; a failure
+            # closing the cache must not leave the shared clients open.
             from config.cache import get_cache
 
-            await get_cache().close()
-            await aclose_http_clients()
+            try:
+                await get_cache().close()
+            finally:
+                await aclose_http_clients()
 
     anyio.run(_serve)

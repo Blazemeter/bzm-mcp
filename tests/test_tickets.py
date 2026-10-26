@@ -19,6 +19,7 @@ import httpx
 import pytest
 
 from config.tickets import (
+    DEFAULT_TICKET_TIMEOUT_SECONDS,
     DEFAULT_UPLOAD_PUBLIC_BASE_URL,
     HttpTicketClient,
     TicketClientError,
@@ -190,3 +191,15 @@ def test_owned_client_is_reused(monkeypatch):
     asyncio.run(client.put_credential("u", "s", "Basic abc"))
     asyncio.run(client.put_credential("u", "s", "Basic abc"))
     assert len(created) == 1
+
+
+def test_build_ticket_client_timeout_uses_the_env_helpers(monkeypatch):
+    monkeypatch.setenv("BZM_STORAGE_API_BASE_URL", "https://storage.internal")
+    monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_CALLER_TOKEN", "caller-secret")
+    monkeypatch.setenv("BZM_MCP_UPLOAD_PUBLIC_BASE_URL", DEFAULT_UPLOAD_PUBLIC_BASE_URL)
+    monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_TIMEOUT_SECONDS", "7.5")
+    assert build_ticket_client("streamable-http")._timeout == 7.5
+    # Invalid or below the minimum: the default, like every BZM_MCP_* tunable (no startup crash).
+    for raw in ("not-a-number", "0"):
+        monkeypatch.setenv("BZM_MCP_TICKET_STORAGE_TIMEOUT_SECONDS", raw)
+        assert build_ticket_client("streamable-http")._timeout == DEFAULT_TICKET_TIMEOUT_SECONDS

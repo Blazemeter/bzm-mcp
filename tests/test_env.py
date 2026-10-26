@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from config.env import env_float, env_int, env_str
+from config.env import env_bool, env_float, env_int, env_str
 from config.service_auth import service_caller_token
 
 
@@ -45,3 +45,15 @@ def test_service_caller_token_prefers_generic_then_ticket_variable(monkeypatch):
     assert service_caller_token() == "ticket-token"
     monkeypatch.setenv("BZM_MCP_STORAGE_CALLER_TOKEN", "storage-token")
     assert service_caller_token() == "storage-token"
+
+
+def test_bool_values(monkeypatch):
+    for raw, expected in [("true", True), ("ON", True), ("1", True), ("yes", True),
+                          ("false", False), ("Off", False), ("0", False), ("no", False)]:
+        monkeypatch.setenv("BZM_MCP_SOME_FLAG", raw)
+        assert env_bool("SOME_FLAG", not expected) is expected
+    monkeypatch.setenv("BZM_MCP_SOME_FLAG", "maybe")
+    assert env_bool("SOME_FLAG", True) is True
+    assert env_bool("SOME_FLAG", False) is False
+    monkeypatch.delenv("BZM_MCP_SOME_FLAG")
+    assert env_bool("SOME_FLAG", True) is True

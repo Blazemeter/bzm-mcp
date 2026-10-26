@@ -412,9 +412,11 @@ class ExecutionManager(Manager):
             return BaseResult(error="Missing or invalid required argument 'execution_id'. Expected integer.")
 
         report_manager = ReportManager(self.ctx)
-        summary_result = await report_manager.read_summary(execution_id)
-        error_result = await report_manager.read_error(execution_id)
-        stats_result = await report_manager.read_request_stats(execution_id)
+        # One execution read (access and archival check) for the three reports.
+        execution_result = await self.read(execution_id)
+        summary_result = await report_manager.read_report(execution_id, "summary", execution_result)
+        error_result = await report_manager.read_report(execution_id, "errors", execution_result)
+        stats_result = await report_manager.read_report(execution_id, "request_stats", execution_result)
 
         result_payload = {
             "summary": summary_result.result if not summary_result.error else None,

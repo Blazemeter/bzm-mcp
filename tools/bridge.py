@@ -66,6 +66,15 @@ async def read_project(token: BzmToken, ctx: Context, project_id: int) -> BaseRe
     return await ProjectManager(_with_token_context(ctx, token)).read(project_id)
 
 
+async def forget_project(token: BzmToken, ctx: Context, project_id: int) -> None:
+    """Drop the cached project read: its tests_count changes when a test is created or deleted."""
+    from tools.project_manager import ProjectManager
+    from tools.utils import invalidate_cached_method
+    await invalidate_cached_method(
+        ProjectManager(_with_token_context(ctx, token)), ProjectManager.read, project_id
+    )
+
+
 async def read_workspace(token: BzmToken, ctx: Context, workspace_id: int) -> BaseResult:
     from tools.workspace_manager import WorkspaceManager
     return await WorkspaceManager(_with_token_context(ctx, token)).read(workspace_id)

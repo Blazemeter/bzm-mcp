@@ -25,7 +25,7 @@ from config.auth import (
 )
 from config.cache import CachePort, build_cache_from_env
 from config.file_access import FileAccessPort, build_file_access
-from config.identity import BlazeMeterIdentityVerifier, IdentityPort
+from config.identity import BlazeMeterIdentityVerifier, CachedIdentityVerifier, IdentityPort
 from config.session import HttpSessionProvider, InMemorySessionProvider, SessionPort
 from config.storage import (
     DefaultSessionScopeResolver,
@@ -117,7 +117,8 @@ def build_runtime(
     - stdio: process-lifetime ``startup_token`` and in-memory session storage.
     - streamable-http: request-scoped auth and storage API-backed sessions/partitions.
     - cache: in-memory on stdio; the storage API cache (/cache) on streamable-http.
-    - both: every tool call verifies the token against BlazeMeter (identity).
+    - both: every tool call verifies the token against BlazeMeter (identity); a
+      successful check is reused for BZM_MCP_IDENTITY_CACHE_TTL_SECONDS (cache).
     """
     if transport == "stdio":
         stdio_user_config = {
@@ -135,7 +136,7 @@ def build_runtime(
             user_config=stdio_user_config,
             tickets=None,
             cache=build_cache_from_env(),
-            identity=BlazeMeterIdentityVerifier(),
+            identity=CachedIdentityVerifier(BlazeMeterIdentityVerifier()),
             # A purged session releases its partition.
             sessions=InMemorySessionProvider(on_purge=stdio_storage.discard_session),
         )
@@ -165,7 +166,7 @@ def build_runtime(
             scope_resolver=DefaultSessionScopeResolver(),
             user_config={},
             tickets=build_ticket_client(transport, storage_base_url),
-            identity=BlazeMeterIdentityVerifier(),
+            identity=CachedIdentityVerifier(BlazeMeterIdentityVerifier()),
             sessions=HttpSessionProvider(base_url=storage_base_url, caller_token=caller_token),
             # Same MCP caller identity the ticket and session clients use.
             cache=build_cache_from_env(

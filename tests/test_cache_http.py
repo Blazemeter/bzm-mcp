@@ -218,14 +218,14 @@ def test_ttl_cache_method_hits_return_typed_models_through_the_api(http_cache, r
 
 
 def test_build_cache_picks_the_backend_per_transport(monkeypatch):
-    monkeypatch.delenv("BZM_CACHE_ENABLED", raising=False)
+    monkeypatch.delenv("BZM_MCP_CACHE_ENABLED", raising=False)
     assert isinstance(build_cache_from_env(), InMemoryTTLCache)
     hosted = build_cache_from_env("streamable-http", storage_base_url="http://storage", caller_token="t")
     # Hosted keeps no in-process cache state: everything lives behind the API.
     assert isinstance(hosted, HttpCache)
     with pytest.raises(ValueError):
         build_cache_from_env("streamable-http", storage_base_url="http://storage", caller_token="")
-    monkeypatch.setenv("BZM_CACHE_ENABLED", "false")
+    monkeypatch.setenv("BZM_MCP_CACHE_ENABLED", "false")
     assert isinstance(build_cache_from_env("streamable-http"), NullCache)
 
 
@@ -291,3 +291,26 @@ def test_large_help_index_lives_behind_the_api_as_small_pieces(remote, monkeypat
     assert calls["n"] == 1  # every piece fit, so later reads never rebuilt
     assert "global:help:categories" in remote.entries
     assert sum(key.startswith("global:help:section:guide:") for key in remote.entries) == 40
+
+
+def test_remote_cache_client_is_shared_cookieless_and_closed_on_shutdown(remote):
+    from config.http_clients import aclose_http_clients
+
+    def handler(request):
+        response = remote.handler(request)
+        response.headers["set-cookie"] = "bzm_sess=abc; Path=/"
+        return response
+
+    cache = HttpCache("http://storage", "mcp-caller", transport=httpx.MockTransport(handler))
+
+    async def scenario():
+        await cache.set(KEY, {"a": 1}, 30)
+        await cache.get(KEY)
+        client = cache._http()
+        await aclose_http_clients()
+        return client
+
+    client = asyncio.run(scenario())
+    assert len(remote.requests) == 2
+    assert all("cookie" not in request.headers for request in remote.requests)
+    assert client.is_closed

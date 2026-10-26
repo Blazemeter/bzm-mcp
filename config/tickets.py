@@ -24,6 +24,7 @@ from typing import Any, Literal
 
 import httpx
 
+from config.env import env_float, env_str
 from config.http_clients import SharedAsyncClient
 from config.service_auth import service_caller_token
 
@@ -205,11 +206,6 @@ class HttpTicketClient(TicketPort):
         return minted
 
 
-def storage_caller_token() -> str:
-    """MCP caller identity for the storage API; tickets and the cache share it."""
-    return service_caller_token()
-
-
 def build_ticket_client(
     transport: Literal["stdio", "streamable-http"],
     storage_base_url: str | None = None,
@@ -221,9 +217,8 @@ def build_ticket_client(
         raise ValueError(
             "BZM_STORAGE_API_BASE_URL is required for streamable-http transport."
         )
-    timeout_raw = os.getenv("BZM_MCP_TICKET_STORAGE_TIMEOUT_SECONDS", "")
-    timeout_seconds = (
-        float(timeout_raw) if timeout_raw.strip() else DEFAULT_TICKET_TIMEOUT_SECONDS
+    timeout_seconds = env_float(
+        "TICKET_STORAGE_TIMEOUT_SECONDS", DEFAULT_TICKET_TIMEOUT_SECONDS, minimum=0.1
     )
     caller_token = service_caller_token()
     if not caller_token:
@@ -231,7 +226,7 @@ def build_ticket_client(
             "BZM_MCP_STORAGE_CALLER_TOKEN (or BZM_MCP_TICKET_STORAGE_CALLER_TOKEN) is required "
             "for streamable-http transport."
         )
-    public_base_url = os.getenv("BZM_MCP_UPLOAD_PUBLIC_BASE_URL", "").strip()
+    public_base_url = env_str("UPLOAD_PUBLIC_BASE_URL")
     if not public_base_url:
         raise ValueError(
             "BZM_MCP_UPLOAD_PUBLIC_BASE_URL is required for streamable-http transport."

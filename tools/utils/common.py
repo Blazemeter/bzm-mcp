@@ -17,6 +17,7 @@ limitations under the License.
 Simple utilities for BlazeMeter MCP tools.
 """
 import asyncio
+import contextlib
 import contextvars
 import functools
 import inspect
@@ -155,6 +156,7 @@ _disable_dataframe_materialization = contextvars.ContextVar(
 )
 _tool_result_depth = contextvars.ContextVar("tool_result_depth", default=0)
 _cache_debug_context = contextvars.ContextVar("cache_debug_context", default=None)
+_cache_bypass = contextvars.ContextVar("cache_bypass", default=False)
 _result_debug_enabled = False
 
 
@@ -619,6 +621,69 @@ def _strip_per_call_fields(value: Any) -> Any:
     return value
 
 
+_RESULT_FORMATS = ("auto", "dataframe", "raw")
+
+
+def _method_cache_key(
+        scope: CacheScope,
+        qualified_name: str,
+        args: tuple,
+        kwargs: dict,
+        user_id: Optional[str],
+        *,
+        result_format: str,
+        materialize: int,
+        inline: int,
+) -> str:
+    return build_cache_key(
+        scope,
+        qualified_name,
+        f"args={_cache_compact_value(args)}",
+        f"kwargs={_cache_compact_value(kwargs)}",
+        f"format={result_format}",
+        f"materialize={materialize}",
+        f"inline={inline}",
+        user_id=user_id,
+    )
+
+
+@contextlib.contextmanager
+def bypass_method_cache():
+    """Cached methods called inside load fresh and store nothing (read-modify-write paths)."""
+    token = _cache_bypass.set(True)
+    try:
+        yield
+    finally:
+        _cache_bypass.reset(token)
+
+
+async def invalidate_cached_method(manager: Any, method: Any, *args, **kwargs) -> None:
+    """
+    Drop every cached variant of ``method(*args, **kwargs)`` for the caller, after a write.
+
+    Pass the arguments exactly as callers do (same positional/keyword form): they are part of the key.
+    """
+    scope = method.cache_scope
+    if scope is CacheScope.USER:
+        user_id = resolve_cache_user_id(manager)
+        if user_id is None:
+            return  # nothing was cached for this caller
+    else:
+        user_id = None
+    cache = get_cache()
+    keys = [
+        _method_cache_key(
+            scope, method.cache_qualified_name, args, kwargs, user_id,
+            result_format=result_format, materialize=materialize, inline=inline,
+        )
+        for result_format in _RESULT_FORMATS
+        for materialize in (0, 1)
+        for inline in (0, 1)
+    ]
+    # Best effort, like every cache write: a failed delete never fails the write it follows.
+    await asyncio.gather(*(cache.delete(key) for key in keys), return_exceptions=True)
+
+
 def ttl_cache_method(ttl_seconds: float = 30, scope: CacheScope = CacheScope.USER):
     """
     Async TTL cache for manager instance methods (bursts and internal re-reads).
@@ -630,7 +695,10 @@ def ttl_cache_method(ttl_seconds: float = 30, scope: CacheScope = CacheScope.USE
     - Place it above @run_as_task: a hit skips the task entirely. When the call
       returns a snapshot of a task that is still running, the snapshot is cached
       for this session only and dropped as soon as the task finishes; session
-      dataframe references are likewise cached for their session only.
+      dataframe references are never stored (the dataframe can be removed), only
+      shared with concurrent calls of the same session.
+    - Writes read their base state under ``bypass_method_cache()`` and call
+      ``invalidate_cached_method`` once they succeed.
     """
 
     def decorator(func: Callable[..., Awaitable[Any]]):
@@ -638,6 +706,8 @@ def ttl_cache_method(ttl_seconds: float = 30, scope: CacheScope = CacheScope.USE
 
         @functools.wraps(func)
         async def wrapper(self, *args, **kwargs):
+            if _cache_bypass.get():
+                return await func(self, *args, **kwargs)
             if scope is CacheScope.USER:
                 user_id = resolve_cache_user_id(self)
                 if user_id is None:
@@ -649,15 +719,11 @@ def ttl_cache_method(ttl_seconds: float = 30, scope: CacheScope = CacheScope.USE
             # Inline calls (nested inside a running tool/task, e.g. bridge validations) always
             # get the domain result; top-level calls may get a task snapshot or a dataframe
             # reference. Separate keys keep one from ever being served to the other.
-            key = build_cache_key(
-                scope,
-                qualified_name,
-                f"args={_cache_compact_value(args)}",
-                f"kwargs={_cache_compact_value(kwargs)}",
-                f"format={_result_format_context.get()}",
-                f"materialize={int(not _disable_dataframe_materialization.get())}",
-                f"inline={int(_task_management_enabled.get())}",
-                user_id=user_id,
+            key = _method_cache_key(
+                scope, qualified_name, args, kwargs, user_id,
+                result_format=_result_format_context.get(),
+                materialize=int(not _disable_dataframe_materialization.get()),
+                inline=int(_task_management_enabled.get()),
             )
 
             from tools.async_task_manager import add_task_terminal_callback, session_scope_from_manager
@@ -688,7 +754,7 @@ def ttl_cache_method(ttl_seconds: float = 30, scope: CacheScope = CacheScope.USE
                         after_store=_drop_when_task_finishes,
                     )
                 if is_dataframe_reference(value):
-                    return StorePlan(bound_to=binding, transform=_strip_per_call_fields)
+                    return StorePlan(bound_to=binding, store=False, transform=_strip_per_call_fields)
                 return StorePlan(transform=_strip_per_call_fields)
 
             return await cache.get_or_load(
@@ -700,6 +766,8 @@ def ttl_cache_method(ttl_seconds: float = 30, scope: CacheScope = CacheScope.USE
                 observer=_accumulate_cache_debug,
             )
 
+        wrapper.cache_scope = scope
+        wrapper.cache_qualified_name = qualified_name
         return wrapper
 
     return decorator

@@ -14,10 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import asyncio
+import contextlib
+import contextvars
 import logging
 from copy import deepcopy
 from itertools import chain
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import httpx
 from mcp.server.fastmcp import Context
@@ -35,6 +37,13 @@ from tools.utils import http_request, format_sanitized_traceback, run_as_task
 
 
 logger = logging.getLogger(__name__)
+
+# One help tool call (batch sub-actions included): the index rebuilt for lookups the
+# cache could not serve (cache disabled, unreachable, or a piece it refused), so every
+# later lookup of the same call reuses that one build.
+_call_rebuild: contextvars.ContextVar[Optional[Dict[str, Any]]] = contextvars.ContextVar(
+    "help_call_rebuild", default=None
+)
 
 
 def _help_key(*parts: str) -> str:
@@ -121,7 +130,26 @@ class HelpManager(Manager):
         entry = await get_cache().get(key)
         if entry is not None:
             return entry.value
-        return (await HelpManager._rebuild_help_pieces()).get(key, default)
+        call_rebuild = _call_rebuild.get()
+        if call_rebuild is None:
+            return (await HelpManager._rebuild_help_pieces()).get(key, default)
+        if "pieces" not in call_rebuild:
+            # A future, not the pieces: concurrent batch sub-actions wait for the same build.
+            call_rebuild["pieces"] = asyncio.ensure_future(HelpManager._rebuild_help_pieces())
+        return (await asyncio.shield(call_rebuild["pieces"])).get(key, default)
+
+    @staticmethod
+    @contextlib.contextmanager
+    def rebuild_scope():
+        """Share one fallback rebuild across the lookups of a help tool call (nested calls join it)."""
+        if _call_rebuild.get() is not None:
+            yield
+            return
+        token = _call_rebuild.set({})
+        try:
+            yield
+        finally:
+            _call_rebuild.reset(token)
 
     @staticmethod
     async def get_help_categories() -> List[Dict[str, Any]]:
@@ -361,6 +389,10 @@ def register(mcp, runtime: AppRuntime):
     help_tool = None
 
     async def _dispatch(action, args, token, ctx):
+        with HelpManager.rebuild_scope():
+            return await _dispatch_action(action, args, token, ctx)
+
+    async def _dispatch_action(action, args, token, ctx):
         args = args or {}
         help_manager = HelpManager(ctx)
         match action:

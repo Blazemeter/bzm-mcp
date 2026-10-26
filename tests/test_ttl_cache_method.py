@@ -20,7 +20,7 @@ from config.cache import CacheScope
 from config.token import BzmToken
 from models.manager import Manager
 from models.result import BaseResult
-from tests.conftest import make_ctx
+from tests.conftest import make_ctx, use_session
 from tools.utils import run_as_task, set_result_debug_enabled, tool_result, ttl_cache_method
 
 
@@ -154,13 +154,14 @@ def test_concurrent_calls_share_one_upstream_call():
     asyncio.run(scenario())
 
 
-def test_session_dataframe_reference_is_not_served_to_another_session():
+def test_session_dataframe_reference_is_never_stored():
+    # The dataframe can be removed at any time: a stored reference could point at nothing.
     async def scenario():
         await _manager(CountingManager, session_id="sess-a").dataframe_reference()
         await _manager(CountingManager, session_id="sess-a").dataframe_reference()
-        assert CountingManager.calls == 1
-        await _manager(CountingManager, session_id="sess-b").dataframe_reference()
         assert CountingManager.calls == 2
+        await _manager(CountingManager, session_id="sess-b").dataframe_reference()
+        assert CountingManager.calls == 3
 
     asyncio.run(scenario())
 
@@ -339,3 +340,65 @@ def test_register_tools_wires_the_runtime_cache():
     runtime = replace(build_runtime("stdio"), cache=runtime_cache)
     register_tools(FakeMcp(), runtime)
     assert get_cache() is runtime_cache
+
+
+def test_removed_dataframe_is_not_served_again(in_memory_session_storage, session_scope):
+    from tools.dataframe_manager import is_dataframe_reference, remove_dataframe
+    from tools.utils.common import _result_format_context
+
+    class RowsManager(Manager):
+        @ttl_cache_method(ttl_seconds=30)
+        @run_as_task()
+        async def read(self) -> BaseResult:
+            CountingManager.calls += 1
+            return BaseResult(result=[{"row": i} for i in range(3)])
+
+    async def scenario():
+        token = _result_format_context.set("dataframe")
+        try:
+            manager = _manager(RowsManager, session_id=session_scope.mcp_session_id)
+            first = await manager.read()
+            assert is_dataframe_reference(first)
+            assert await remove_dataframe(first.result[0]["dataframe_id"], in_memory_session_storage, session_scope)
+            second = await manager.read()
+        finally:
+            _result_format_context.reset(token)
+        assert second.result[0]["dataframe_id"] != first.result[0]["dataframe_id"]
+        assert await remove_dataframe(second.result[0]["dataframe_id"], in_memory_session_storage, session_scope)
+        assert CountingManager.calls == 2
+
+    asyncio.run(scenario())
+
+
+def test_concurrent_dataframe_reads_of_one_session_share_one_load():
+    class SlowReference(Manager):
+        @ttl_cache_method(ttl_seconds=30)
+        async def read(self) -> BaseResult:
+            CountingManager.calls += 1
+            await asyncio.sleep(0.02)
+            return BaseResult(result=[{"stored_as_dataframe": True, "dataframe_id": "df1"}])
+
+    async def scenario():
+        manager = _manager(SlowReference)
+        results = await asyncio.gather(*(manager.read() for _ in range(5)))
+        assert all(result.result[0]["dataframe_id"] == "df1" for result in results)
+        assert CountingManager.calls == 1
+
+    asyncio.run(scenario())
+
+
+def test_waiters_of_another_session_share_one_load():
+    async def call_in(session_id):
+        with use_session(session_id=session_id):
+            return await _manager(TaskManager, session_id=session_id).long_read()
+
+    async def scenario():
+        owner = asyncio.create_task(call_in("bzs_" + "a" * 32))
+        await asyncio.sleep(0)  # session A owns the load
+        others = [asyncio.create_task(call_in("bzs_" + "b" * 32)) for _ in range(5)]
+        results = await asyncio.gather(owner, *others)
+        await asyncio.sleep(0.2)  # let the background tasks run their body
+        assert len({result.result[0]["task_id"] for result in results[1:]}) == 1
+        assert TaskManager.calls == 2
+
+    asyncio.run(scenario())

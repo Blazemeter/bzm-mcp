@@ -21,9 +21,6 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# TODO(env): CACHE_METHOD adds its own env parsing (config/cache.py _env_bool/_env_number,
-# full BZM_CACHE_* names). When both branches land in STREAMABLE_HTTP, move it onto
-# these helpers so there is a single parser (prefix, defaults, invalid-value policy).
 # Tunables read from the environment use this prefix (e.g. BZM_MCP_MAX_PARALLEL_TASKS).
 ENV_PREFIX = "BZM_MCP_"
 
@@ -71,3 +68,21 @@ def env_float(name: str, default: float, *, minimum: Optional[float] = None) -> 
         logger.warning("%s%s=%s is below %s; using default %s", ENV_PREFIX, name, parsed, minimum, default)
         return default
     return parsed
+
+
+_TRUE_VALUES = {"1", "true", "yes", "on"}
+_FALSE_VALUES = {"0", "false", "no", "off"}
+
+
+def env_bool(name: str, default: bool) -> bool:
+    """``BZM_MCP_<name>`` as a bool (1/true/yes/on, 0/false/no/off); anything else falls back to ``default``."""
+    value = _raw(name)
+    if value is None:
+        return default
+    normalized = value.lower()
+    if normalized in _TRUE_VALUES:
+        return True
+    if normalized in _FALSE_VALUES:
+        return False
+    logger.warning("Invalid %s%s=%r; using default %s", ENV_PREFIX, name, value, default)
+    return default

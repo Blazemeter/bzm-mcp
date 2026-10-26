@@ -307,12 +307,12 @@ def test_user_keys_require_a_user_id_and_are_namespaced():
 
 
 def test_build_cache_from_env(monkeypatch):
-    monkeypatch.setenv("BZM_CACHE_ENABLED", "false")
+    monkeypatch.setenv("BZM_MCP_CACHE_ENABLED", "false")
     assert isinstance(build_cache_from_env(), NullCache)
 
-    monkeypatch.setenv("BZM_CACHE_ENABLED", "true")
-    monkeypatch.setenv("BZM_CACHE_MAX_ENTRIES", "7")
-    monkeypatch.setenv("BZM_CACHE_SWEEP_INTERVAL_SECONDS", "not-a-number")
+    monkeypatch.setenv("BZM_MCP_CACHE_ENABLED", "true")
+    monkeypatch.setenv("BZM_MCP_CACHE_MAX_ENTRIES", "7")
+    monkeypatch.setenv("BZM_MCP_CACHE_SWEEP_INTERVAL_SECONDS", "not-a-number")
     cache = build_cache_from_env()
     assert isinstance(cache, InMemoryTTLCache)
     assert cache._max_entries == 7
@@ -381,3 +381,25 @@ def test_transform_applies_to_the_stored_value_only():
         assert (await cache.get("k")).value == {"data": 1}
 
     asyncio.run(scenario())
+
+
+def test_cache_env_names_carry_the_mcp_prefix(monkeypatch):
+    from config.cache import DEFAULT_MAX_ENTRIES
+
+    # Renamed before release: the unprefixed BZM_CACHE_* names are not read.
+    monkeypatch.delenv("BZM_MCP_CACHE_ENABLED", raising=False)
+    monkeypatch.setenv("BZM_CACHE_ENABLED", "false")
+    monkeypatch.setenv("BZM_CACHE_MAX_ENTRIES", "7")
+    cache = build_cache_from_env()
+    assert isinstance(cache, InMemoryTTLCache)
+    assert cache._max_entries == DEFAULT_MAX_ENTRIES
+
+
+def test_cache_env_below_minimum_uses_the_default(monkeypatch):
+    from config.cache import DEFAULT_MAX_ENTRIES, DEFAULT_SWEEP_INTERVAL_SECONDS
+
+    monkeypatch.setenv("BZM_MCP_CACHE_MAX_ENTRIES", "0")
+    monkeypatch.setenv("BZM_MCP_CACHE_SWEEP_INTERVAL_SECONDS", "-5")
+    cache = build_cache_from_env()
+    assert cache._max_entries == DEFAULT_MAX_ENTRIES
+    assert cache._sweep_interval == DEFAULT_SWEEP_INTERVAL_SECONDS

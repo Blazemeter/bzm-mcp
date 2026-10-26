@@ -190,3 +190,56 @@ def test_listing_results_are_copies(monkeypatch):
         assert again.result[0][0]["title"] == "Intro"
 
     asyncio.run(scenario())
+
+
+class _FakeMcp:
+    def __init__(self):
+        self.tools = {}
+
+    def tool(self, name, description):
+        def decorator(func):
+            self.tools[name] = func
+            return func
+        return decorator
+
+
+def _help_tool_without_cache():
+    from config.cache import NullCache
+    from config.runtime import build_runtime
+
+    runtime = build_runtime("stdio")
+    configure_cache(NullCache())
+    mcp = _FakeMcp()
+    help_manager_module.register(mcp, runtime)
+    return mcp.tools["blazemeter_help"]
+
+
+def test_one_help_call_builds_the_index_once_without_cache(monkeypatch):
+    calls = _counting_build(monkeypatch)
+    tool = _help_tool_without_cache()
+    payload = {"action": "list_help_category_content",
+               "args": {"category_id": "guide", "subcategory_id_list": ["self", "api"]}}
+    body = asyncio.run(tool(payload, None)).structuredContent
+    assert body.get("error") is None
+    assert calls["count"] == 1
+
+
+def test_one_help_batch_builds_the_index_once_without_cache(monkeypatch):
+    calls = _counting_build(monkeypatch)
+    tool = _help_tool_without_cache()
+    content = {"action": "list_help_category_content",
+               "args": {"category_id": "guide", "subcategory_id_list": ["self", "api"]}}
+    payload = {"action": "batch", "args": {"batch_calls": [
+        content, {"action": "list_help_categories", "args": {}}, content]}}
+    body = asyncio.run(tool(payload, None)).structuredContent
+    assert body.get("error") is None
+    assert calls["count"] == 1
+
+
+def test_each_help_call_rebuilds_without_cache(monkeypatch):
+    calls = _counting_build(monkeypatch)
+    tool = _help_tool_without_cache()
+    payload = {"action": "list_help_categories", "args": {}}
+    asyncio.run(tool(payload, None))
+    asyncio.run(tool(payload, None))
+    assert calls["count"] == 2

@@ -20,7 +20,6 @@ import copy
 import heapq
 import json
 import logging
-import os
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
@@ -32,6 +31,9 @@ from urllib.parse import quote
 import httpx
 
 from config import cache_codec
+from config.env import env_bool, env_float, env_int
+from config.http_clients import SharedAsyncClient
+from config.service_auth import service_headers
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +104,9 @@ class StorePlan:
     # Waiters sharing the load receive the transformed value as well.
     transform: Optional[Callable[[Any], Any]] = None
     after_store: Optional[Callable[[], Awaitable[None]]] = None
+    # False: share the load with concurrent waiters (binding rules apply) but keep nothing,
+    # for values that can go stale without the cache knowing (e.g. a removable dataframe).
+    store: bool = True
 
 
 StorePolicy = Callable[[Any], Optional[StorePlan]]
@@ -209,8 +214,9 @@ class CachePort(ABC):
                 if plan is not None and not plan.copy_values:
                     return shared_value
                 return copy.deepcopy(shared_value)
-            # The shared value belongs to another binding: load our own, uncached.
-            return await loader()
+            # The shared value belongs to another binding: go round again, so the waiters
+            # of this binding share one load (one of them becomes the owner).
+            continue
 
         future = loop.create_future()
         self._inflight[key] = future
@@ -234,9 +240,9 @@ class CachePort(ABC):
         shared_value = value
         try:
             plan = policy(value)
-            if plan is not None:
-                if plan.transform is not None:
-                    shared_value = plan.transform(copy.deepcopy(value))
+            if plan is not None and plan.transform is not None:
+                shared_value = plan.transform(copy.deepcopy(value))
+            if plan is not None and plan.store:
                 ttl = plan.ttl_seconds if plan.ttl_seconds is not None else ttl_seconds
                 await self.set(
                     key,
@@ -452,24 +458,6 @@ class InMemoryTTLCache(CachePort):
                 logger.exception("cache sweeper failed; continuing")
 
 
-def _env_bool(name: str, default: bool) -> bool:
-    raw = os.getenv(name)
-    if raw is None or not raw.strip():
-        return default
-    return raw.strip().lower() not in {"0", "false", "no", "off"}
-
-
-def _env_number(name: str, default: float, cast: Callable[[str], Any]) -> Any:
-    raw = os.getenv(name)
-    if raw is None or not raw.strip():
-        return default
-    try:
-        return cast(raw.strip())
-    except ValueError:
-        logger.warning("Invalid %s=%r; using default %s", name, raw, default)
-        return default
-
-
 class CacheValueTooLarge(ValueError):
     """The encoded value exceeds what the remote cache accepts; it is not cached."""
 
@@ -496,35 +484,28 @@ class HttpCache(CachePort):
     ) -> None:
         super().__init__()
         self._base_url = base_url.rstrip("/")
-        self._headers = {"Authorization": f"Bearer {caller_token}"}
-        self._timeout = timeout_seconds
+        # Same contract as the session, partition and ticket clients: caller identity
+        # headers and a shared, cookie-less client closed on server shutdown.
+        self._headers = service_headers(caller_token)
         self._max_value_bytes = max_value_bytes
-        self._transport = transport
-        self._client: Optional[httpx.AsyncClient] = None
+        if transport is not None:
+            self._shared = SharedAsyncClient(
+                lambda: httpx.AsyncClient(transport=transport, timeout=timeout_seconds)
+            )
+        else:
+            self._shared = SharedAsyncClient(
+                lambda: httpx.AsyncClient(http2=True, timeout=timeout_seconds)
+            )
         self._client_loop: Optional[asyncio.AbstractEventLoop] = None
         self._degraded = False
 
     def _http(self) -> httpx.AsyncClient:
-        # One pooled client per event loop (a pool cannot be shared across loops).
         loop = asyncio.get_running_loop()
-        if self._client is None or self._client_loop is not loop or self._client.is_closed:
-            self._retire_client()
-            if self._transport is not None:
-                self._client = httpx.AsyncClient(transport=self._transport, timeout=self._timeout)
-            else:
-                self._client = httpx.AsyncClient(http2=True, timeout=self._timeout)
+        if self._client_loop is not loop:
+            # A pool cannot be shared across event loops: forget the previous loop's client.
+            self._shared.discard()
             self._client_loop = loop
-        return self._client
-
-    def _retire_client(self) -> None:
-        client, loop = self._client, self._client_loop
-        self._client, self._client_loop = None, None
-        if client is None or client.is_closed:
-            return
-        # A client can only be closed on its own loop; a finished loop already
-        # released its connections.
-        if loop is not None and not loop.is_closed() and loop.is_running():
-            asyncio.run_coroutine_threadsafe(client.aclose(), loop)
+        return self._shared.get()
 
     def _url(self, key: str) -> str:
         return f"{self._base_url}/cache/entries/{quote(key, safe='')}"
@@ -631,9 +612,8 @@ class HttpCache(CachePort):
         self._report_success()
 
     async def close(self) -> None:
-        client, self._client, self._client_loop = self._client, None, None
-        if client is not None and not client.is_closed:
-            await client.aclose()
+        self._client_loop = None
+        await self._shared.aclose()
 
 
 def build_cache_from_env(
@@ -642,16 +622,16 @@ def build_cache_from_env(
         caller_token: Optional[str] = None,
 ) -> CachePort:
     """
-    Build the process cache from BZM_CACHE_* env vars.
+    Build the process cache from BZM_MCP_CACHE_* env vars (config.env helpers).
 
-    - stdio: in-memory (BZM_CACHE_MAX_ENTRIES 2048, BZM_CACHE_SWEEP_INTERVAL_SECONDS 30,
-      BZM_CACHE_SWEEP_BATCH_SIZE 500).
-    - streamable-http: only the storage API cache (BZM_CACHE_HTTP_TIMEOUT_SECONDS 2,
-      BZM_CACHE_HTTP_MAX_VALUE_BYTES 1048576); no in-process state, so what backs
+    - stdio: in-memory (BZM_MCP_CACHE_MAX_ENTRIES 2048, BZM_MCP_CACHE_SWEEP_INTERVAL_SECONDS 30,
+      BZM_MCP_CACHE_SWEEP_BATCH_SIZE 500).
+    - streamable-http: only the storage API cache (BZM_MCP_CACHE_HTTP_TIMEOUT_SECONDS 2,
+      BZM_MCP_CACHE_HTTP_MAX_VALUE_BYTES 1048576); no in-process state, so what backs
       the API can change without touching the MCP.
-    - BZM_CACHE_ENABLED=false (default true): no cache in either transport.
+    - BZM_MCP_CACHE_ENABLED=false (default true): no cache in either transport.
     """
-    if not _env_bool("BZM_CACHE_ENABLED", True):
+    if not env_bool("CACHE_ENABLED", True):
         return NullCache()
     if transport == "streamable-http":
         if not storage_base_url or not caller_token:
@@ -659,11 +639,11 @@ def build_cache_from_env(
         return HttpCache(
             storage_base_url,
             caller_token,
-            timeout_seconds=_env_number(
-                "BZM_CACHE_HTTP_TIMEOUT_SECONDS", DEFAULT_HTTP_TIMEOUT_SECONDS, float
+            timeout_seconds=env_float(
+                "CACHE_HTTP_TIMEOUT_SECONDS", DEFAULT_HTTP_TIMEOUT_SECONDS, minimum=0.1
             ),
-            max_value_bytes=_env_number(
-                "BZM_CACHE_HTTP_MAX_VALUE_BYTES", DEFAULT_HTTP_MAX_VALUE_BYTES, int
+            max_value_bytes=env_int(
+                "CACHE_HTTP_MAX_VALUE_BYTES", DEFAULT_HTTP_MAX_VALUE_BYTES, minimum=1
             ),
         )
     return _build_in_memory_cache()
@@ -671,11 +651,12 @@ def build_cache_from_env(
 
 def _build_in_memory_cache() -> InMemoryTTLCache:
     return InMemoryTTLCache(
-        max_entries=_env_number("BZM_CACHE_MAX_ENTRIES", DEFAULT_MAX_ENTRIES, int),
-        sweep_interval_seconds=_env_number(
-            "BZM_CACHE_SWEEP_INTERVAL_SECONDS", DEFAULT_SWEEP_INTERVAL_SECONDS, float
+        max_entries=env_int("CACHE_MAX_ENTRIES", DEFAULT_MAX_ENTRIES, minimum=1),
+        # 0 disables the background sweeper (expired entries still drop on read).
+        sweep_interval_seconds=env_float(
+            "CACHE_SWEEP_INTERVAL_SECONDS", DEFAULT_SWEEP_INTERVAL_SECONDS, minimum=0.0
         ),
-        sweep_batch_size=_env_number("BZM_CACHE_SWEEP_BATCH_SIZE", DEFAULT_SWEEP_BATCH_SIZE, int),
+        sweep_batch_size=env_int("CACHE_SWEEP_BATCH_SIZE", DEFAULT_SWEEP_BATCH_SIZE, minimum=1),
     )
 
 
