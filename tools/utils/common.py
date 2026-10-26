@@ -40,7 +40,7 @@ from config.blazemeter import BZM_API_BASE_URL, NO_API_TOKEN_MESSAGE
 from config.cache import CacheScope, StorePlan, build_cache_key, get_cache
 from config.context_resolution import resolve_ctx_user_config
 from config.http_clients import SharedAsyncClient
-from config.ids import SIMPLE_ID_LENGTH, random_id
+from config.ids import SIMPLE_ID_ALPHABET, SIMPLE_ID_LENGTH, random_id
 from config.session_context import current_identity
 from config.security import validate_http_request_endpoint
 from config.token import BzmToken
